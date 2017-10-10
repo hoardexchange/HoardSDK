@@ -60,6 +60,10 @@
       <HintPath>packages\NLog.4.4.12\lib\net45\NLog.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="RestSharp, Version=105.2.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\RestSharp.105.2.3\lib\net452\RestSharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -74,7 +78,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BC\BCComm.cs" />
-    <Compile Include="BC\Contracts\GameInfoContract.cs" />
+    <Compile Include="BC\Contracts\GameCenterContract.cs" />
+    <Compile Include="BC\Contracts\GameContract.cs" />
+    <Compile Include="Client.cs" />
     <Compile Include="Commons.cs" />
     <Compile Include="GameItem.cs" />
     <Compile Include="GBDesc.cs" />

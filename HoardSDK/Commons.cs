@@ -9,5 +9,10 @@ namespace Hoard
     public class PlayerID
     {
         public ulong ID;
+
+        public PlayerID(ulong id)
+        {
+            ID = id;
+        }
     }
 }

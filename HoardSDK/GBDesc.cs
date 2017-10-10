@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
-    public struct GBDesc
+    public class GBDesc
     {
         public string Url;
-        public string Key;
+        public string GameContract;
+        public string PublicKey;
     }
 }

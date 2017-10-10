@@ -11,6 +11,7 @@ namespace Hoard
         public bool IsSingedIn { get; private set;}
 
         private BC.BCComm bcComm = null;
+        private Exception Exception = null;
 
         public HoardService()
         {
@@ -25,12 +26,10 @@ namespace Hoard
         public async Task<bool> Init(HoardServiceOptions options)
         {
             bcComm = new BC.BCComm(options.BlockChainClientUrl);
-            string GBurl = await bcComm.GetGBUrl(options.GameID);
-            if (GBurl == null)
-                return false;
 
-            GBDesc gbDesc = new GBDesc();
-            gbDesc.Url = GBurl;
+            GBDesc gbDesc = await bcComm.GetGBDesc(options.GameID);
+            if (gbDesc == null)
+                return false;
 
             GameBackendDesc = gbDesc;
 
@@ -44,7 +43,10 @@ namespace Hoard
 
         public async Task<bool> SignIn(PlayerID id)
         {
-            throw new NotImplementedException();
+            //create hoard client
+            Client client = new Client(GameBackendDesc);
+            //connect to backend
+            return await client.Connect(id);
         }
 
         public async Task<ItemCRC[]> RequestItemsCRC(ItemID[] items)

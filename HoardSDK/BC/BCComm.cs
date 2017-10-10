@@ -15,26 +15,32 @@ namespace Hoard.BC
     class BCComm
     {
         private Web3 web = null;
-        private GameInfoContract gameInfo = null;
+        private GameCenterContract gameCenter = null;
 
-        private string GameInfoAddress = "0x1ea8a28bc9908a224f68870cf333eac9086f4118";
+        private const string GameInfoAddress = "0x1ea8a28bc9908a224f68870cf333eac9086f4118";
 
         public BCComm(string bcClientUrl)
         {
             web = new Web3(bcClientUrl);
 
-            gameInfo = new GameInfoContract(web, GameInfoAddress);
+            gameCenter = new GameCenterContract(web, GameInfoAddress);
         }
 
-        public async Task<string> GetGBUrl(ulong gameID)
+        public async Task<GBDesc> GetGBDesc(ulong gameID)
         {
-            bool exist = await gameInfo.GetGameExistsAsync(gameID);
+            bool exist = await gameCenter.GetGameExistsAsync(gameID);
             if (exist)
             {
-                //var gInfo = await gameInfo.GetGameInfoAsync(gameID);
-                //return gInfo.Name;
-                var gInfo = await gameInfo.GetGameContact(gameID);
-                return gInfo.ToString();
+                GBDesc desc = new GBDesc();                
+                desc.GameContract = await gameCenter.GetGameContractAsync(gameID);
+
+                //bool added = await gameCenter.AddGameAsync(1, "myGame", desc.GameContract);
+
+                var gInfo = await gameCenter.GetGameInfoAsync(gameID);
+                desc.Url = System.Text.Encoding.UTF8.GetString(gInfo.Name);
+                desc.PublicKey = "";//TODO: get it from BC somehow
+
+                return desc;
             }
             return null;
         }
