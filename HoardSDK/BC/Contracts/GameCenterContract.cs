@@ -1,8 +1,10 @@
 ﻿using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
+using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using Org.BouncyCastle.Math;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
@@ -68,11 +70,51 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<bool>(gameID);
         }
 
-        public Task<bool> AddGameAsync(ulong id, string name, string owner)
+        public async Task<TransactionReceipt> MineAndGetReceiptAsync(Web3 web3, string transactionHash)
+        {
+            //await new Nethereum.Geth.RPC.Miner.MinerStart(web3.Client).SendRequestAsync(6);
+
+            var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
+
+            while (receipt == null)
+            {
+                Thread.Sleep(1000);
+                receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
+            }
+
+           // await new Nethereum.Geth.RPC.Miner.MinerStop(web3.Client).SendRequestAsync();
+            return receipt;
+        }
+
+        public async Task<string> AddGameAsync(ulong id, string name, string owner)
         {
             var function = GetFunctionAddGame();
             byte[] nameBin = System.Text.Encoding.UTF8.GetBytes(name);
-            return function.CallAsync<bool>(id, name, owner);
+
+            //
+            string pw = "dev";
+            string address = "0xa0464599df2154ec933497d712643429e81d4628";// Nethereum.Signer.EthECKey.GetPublicAddress(privateKey); //could do checksum
+            var accountUnlockTime = 120;
+            var unlockResult = await web3.Personal.UnlockAccount.SendRequestAsync(address, pw, accountUnlockTime);
+            Task<string> ts = function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), id, name, owner);
+            var txHash = await ts;
+            var receipt = await MineAndGetReceiptAsync(web3, txHash);            
+
+            return "dupa";
+            //var txCount = await web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(address).ConfigureAwait(false);
+
+            //return false;
+            /*var data = function.GetData(score);
+            var encoded = web3.OfflineTransactionSigning.SignTransaction(privateKey, contract.Address, 0,
+              txCount.Value, 1000000000000L, 900000, data);
+            return await web3.Eth.Transactions.SendRawTransaction.SendRequestAsync(encoded).ConfigureAwait(false);
+
+            var
+            function = GetFunctionSetTopScore();
+            return function.CreateTransactionInput(addressFrom, gas, valueAmount, score, ethEcdsa.V, ethEcdsa.R, ethEcdsa.S);
+            //
+            function.CreateTransactionInput("0xa0464599df2154ec933497d712643429e81d4628",)
+            return function.SendTransactionAsync(id, name, owner);*/
         }
     }
 }

@@ -26,10 +26,16 @@ namespace Hoard
         public async Task<bool> Init(HoardServiceOptions options)
         {
             bcComm = new BC.BCComm(options.BlockChainClientUrl);
+            string connectionResponse = await bcComm.Connect();
 
             GBDesc gbDesc = await bcComm.GetGBDesc(options.GameID);
             if (gbDesc == null)
+            {
+                string p = await bcComm.AddGame();
+                gbDesc = new GBDesc();
+                gbDesc.Url = options.GameBackendUrl;
                 return false;
+            }
 
             GameBackendDesc = gbDesc;
 
