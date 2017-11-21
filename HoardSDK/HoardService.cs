@@ -31,7 +31,7 @@ namespace Hoard
             GBDesc gbDesc = await bcComm.GetGBDesc(options.GameID);
             if (gbDesc == null)
             {
-                string p = await bcComm.AddGame();
+                bool p = await bcComm.AddGame();
                 gbDesc = new GBDesc();
                 gbDesc.Url = options.GameBackendUrl;
                 return false;

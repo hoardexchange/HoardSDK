@@ -21,7 +21,7 @@ namespace Hoard.BC.Contracts
 
     class GameCenterContract
     {        
-        public static string ABI = @"[{'constant':true,'inputs':[{'name':'gameId','type':'uint64'}],'name':'getGameInfo','outputs':[{'name':'id','type':'uint64'},{'name':'name','type':'bytes32'}],'payable':false,'type':'function'},{'constant':false,'inputs':[{'name':'gameId','type':'uint64'}],'name':'removeGame','outputs':[{'name':'','type':'bool'}],'payable':false,'type':'function'},{'constant':false,'inputs':[{'name':'gameId','type':'uint64'},{'name':'name','type':'bytes32'},{'name':'gameOwner','type':'address'}],'name':'addGame','outputs':[{'name':'','type':'bool'}],'payable':false,'type':'function'},{'constant':true,'inputs':[{'name':'gameId','type':'uint64'}],'name':'getGameContact','outputs':[{'name':'','type':'address'}],'payable':false,'type':'function'},{'constant':true,'inputs':[{'name':'gameId','type':'uint64'}],'name':'gameExists','outputs':[{'name':'','type':'bool'}],'payable':false,'type':'function'},{'inputs':[],'payable':false,'type':'constructor'},{'anonymous':false,'inputs':[{'indexed':false,'name':'gameOwner','type':'address'},{'indexed':false,'name':'gameId','type':'uint64'}],'name':'GameAdded','type':'event'},{'anonymous':false,'inputs':[{'indexed':false,'name':'gameOwner','type':'address'},{'indexed':false,'name':'gameId','type':'uint64'}],'name':'GameRemoved','type':'event'}]";
+        public static string ABI = @"[ { 'constant': true, 'inputs': [ { 'name': 'gameId', 'type': 'uint64' } ], 'name': 'getGameInfo', 'outputs': [ { 'name': 'id', 'type': 'uint64' }, { 'name': 'name', 'type': 'bytes32' } ], 'payable': false, 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'gameId', 'type': 'uint64' } ], 'name': 'removeGame', 'outputs': [], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'gameIdsMap', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'gameInfoMap', 'outputs': [ { 'name': 'gameId', 'type': 'uint64' }, { 'name': 'name', 'type': 'bytes32' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'gameId', 'type': 'uint64' } ], 'name': 'getGameContact', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'owner', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'nextGameId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'name', 'type': 'bytes32' }, { 'name': 'gameOwner', 'type': 'address' } ], 'name': 'addGame', 'outputs': [], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'gameOwnersMap', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'gameId', 'type': 'uint64' } ], 'name': 'gameExists', 'outputs': [ { 'name': '', 'type': 'bool' } ], 'payable': false, 'type': 'function' }, { 'inputs': [], 'payable': false, 'type': 'constructor' }, { 'anonymous': false, 'inputs': [ { 'indexed': false, 'name': 'gameOwner', 'type': 'address' }, { 'indexed': false, 'name': 'gameId', 'type': 'uint64' } ], 'name': 'GameAdded', 'type': 'event' }, { 'anonymous': false, 'inputs': [ { 'indexed': false, 'name': 'gameOwner', 'type': 'address' }, { 'indexed': false, 'name': 'gameId', 'type': 'uint64' } ], 'name': 'GameRemoved', 'type': 'event' } ]";
 
         private readonly Web3 web3;
         private Contract contract;
@@ -70,51 +70,14 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<bool>(gameID);
         }
 
-        public async Task<TransactionReceipt> MineAndGetReceiptAsync(Web3 web3, string transactionHash)
-        {
-            //await new Nethereum.Geth.RPC.Miner.MinerStart(web3.Client).SendRequestAsync(6);
-
-            var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
-
-            while (receipt == null)
-            {
-                Thread.Sleep(1000);
-                receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
-            }
-
-           // await new Nethereum.Geth.RPC.Miner.MinerStop(web3.Client).SendRequestAsync();
-            return receipt;
-        }
-
-        public async Task<string> AddGameAsync(ulong id, string name, string owner)
+        public async Task<bool> AddGameAsync(BCComm comm, ulong id, string name, string owner)
         {
             var function = GetFunctionAddGame();
-            byte[] nameBin = System.Text.Encoding.UTF8.GetBytes(name);
 
-            //
-            string pw = "dev";
-            string address = "0xa0464599df2154ec933497d712643429e81d4628";// Nethereum.Signer.EthECKey.GetPublicAddress(privateKey); //could do checksum
-            var accountUnlockTime = 120;
-            var unlockResult = await web3.Personal.UnlockAccount.SendRequestAsync(address, pw, accountUnlockTime);
-            Task<string> ts = function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), id, name, owner);
-            var txHash = await ts;
-            var receipt = await MineAndGetReceiptAsync(web3, txHash);            
-
-            return "dupa";
-            //var txCount = await web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(address).ConfigureAwait(false);
-
-            //return false;
-            /*var data = function.GetData(score);
-            var encoded = web3.OfflineTransactionSigning.SignTransaction(privateKey, contract.Address, 0,
-              txCount.Value, 1000000000000L, 900000, data);
-            return await web3.Eth.Transactions.SendRawTransaction.SendRequestAsync(encoded).ConfigureAwait(false);
-
-            var
-            function = GetFunctionSetTopScore();
-            return function.CreateTransactionInput(addressFrom, gas, valueAmount, score, ethEcdsa.V, ethEcdsa.R, ethEcdsa.S);
-            //
-            function.CreateTransactionInput("0xa0464599df2154ec933497d712643429e81d4628",)
-            return function.SendTransactionAsync(id, name, owner);*/
+            return await comm.EvaluateOnBC((address) =>
+            {
+                return function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), id, name, owner);
+            });
         }
     }
 }

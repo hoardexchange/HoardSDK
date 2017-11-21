@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Nethereum.Web3;
 using Hoard.BC.Contracts;
+using System.Threading;
+using Nethereum.Hex.HexTypes;
 
 namespace Hoard.BC
 {
@@ -43,9 +45,17 @@ namespace Hoard.BC
                     GBDesc desc = new GBDesc();
                     desc.GameContract = await gameCenter.GetGameContractAsync(gameID);
 
-                    var gInfo = await gameCenter.GetGameInfoAsync(gameID);
-                    desc.Url = System.Text.Encoding.UTF8.GetString(gInfo.Name);
-                    desc.PublicKey = "";//TODO: get it from BC somehow
+                    {
+                        GameContract game = new GameContract(web, desc.GameContract);
+                        
+                        //bool ret = await game.SetGameServerURLAsync(this, @"http://ec2-52-57-192-150.eu-central-1.compute.amazonaws.com:8000");
+                        string url = await game.GetGameServerURLAsync();
+
+                        //TODO: get name of this game
+                        //var gInfo = await gameCenter.GetGameInfoAsync(gameID);
+                        desc.Url = url;
+                        desc.PublicKey = "";//TODO: get it from BC somehow
+                    }
 
                     return desc;
                 }
@@ -56,10 +66,35 @@ namespace Hoard.BC
             return null;
         }
 
-        public async Task<string> AddGame()
+        public async Task<bool> AddGame()
         {
-            string added = await gameCenter.AddGameAsync(0, "myGame", "0xa0464599df2154ec933497d712643429e81d4628");
+            bool added = await gameCenter.AddGameAsync(this, 0, "myGame", "0xa0464599df2154ec933497d712643429e81d4628");
             return added;
+        }
+
+        /// <summary>
+        /// temporary function to call functions on blockchain
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> EvaluateOnBC(Func<string, Task<string>> job)
+        {
+            string pw = "dev";
+            string address = "0xa0464599df2154ec933497d712643429e81d4628";// Nethereum.Signer.EthECKey.GetPublicAddress(privateKey); //could do checksum
+            var accountUnlockTime = 120;
+            var unlockResult = await web.Personal.UnlockAccount.SendRequestAsync(address, pw, accountUnlockTime);
+
+            Task<string> ts = job(address);// function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), id, name, owner);
+
+            var txHash = await ts;
+
+            var receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txHash);
+            while (receipt == null)
+            {
+                Thread.Sleep(1000);
+                receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txHash);
+            }
+
+            return ulong.Parse(receipt.Status.ToString()) == 1;
         }
     }
 }
