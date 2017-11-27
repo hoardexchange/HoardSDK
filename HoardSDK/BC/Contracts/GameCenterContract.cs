@@ -9,13 +9,14 @@ using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
 {
+    [FunctionOutput]
     class GameInfoDTO
     {
-        [Parameter("uint64", "id", 1, true)]
+        [Parameter("uint64", "id", 1)]
         public ulong ID { get; set; }
 
-        [Parameter("bytes32", "name", 2, true)]
-        public byte[] Name { get; set; }
+        [Parameter("bytes32", "name", 2)]
+        public string Name { get; set; }
 
     }
 
@@ -61,7 +62,7 @@ namespace Hoard.BC.Contracts
         public Task<GameInfoDTO> GetGameInfoAsync(ulong gameID)
         {
             var function = GetFunctionGetGameInfo();
-            return function.CallAsync<GameInfoDTO>(gameID);
+            return function.CallDeserializingToObjectAsync<GameInfoDTO>(gameID);
         }
 
         public Task<bool> GetGameExistsAsync(ulong gameID)

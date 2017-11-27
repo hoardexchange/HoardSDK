@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
-    public struct ItemID
+    public struct Item
     {
         public ulong ID;
+        public ulong Count;
     }
 
     public struct ItemCRC

@@ -8,6 +8,7 @@ namespace Hoard
 {
     public class GBDesc
     {
+        public string Name;
         public string Url;
         public string GameContract;
         public string PublicKey;

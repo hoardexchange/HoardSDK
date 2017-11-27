@@ -42,9 +42,22 @@ namespace Hoard
             return true;
         }
 
-        public async Task<ItemID[]> RequestItemList()
+        public async Task<Item[]> RequestItemList()
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<Item[]> RequestItemListFromBC(PlayerID playerId)
+        {
+            //get all item count
+            ulong count = await bcComm.GetGameItemCount(GameBackendDesc.GameContract);
+            //iterate for all items and get balance
+            List<Item> itemList = new List<Item>();
+            for(ulong i=0;i<count;++i)
+            {
+                //Item item = await bcComm.GetItemBalance(GameBackendDesc.GameContract, playerId);
+            }
+            return itemList.ToArray();
         }
 
         public async Task<bool> SignIn(PlayerID id)
@@ -55,12 +68,12 @@ namespace Hoard
             return await client.Connect(id);
         }
 
-        public async Task<ItemCRC[]> RequestItemsCRC(ItemID[] items)
+        public async Task<ItemCRC[]> RequestItemsCRC(Item[] items)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<ItemData> RequestItemData(ItemID id)
+        public async Task<ItemData> RequestItemData(Item id)
         {
             throw new NotImplementedException();
         }

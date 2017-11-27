@@ -50,9 +50,9 @@ namespace Hoard.BC
                         
                         //bool ret = await game.SetGameServerURLAsync(this, @"http://ec2-52-57-192-150.eu-central-1.compute.amazonaws.com:8000");
                         string url = await game.GetGameServerURLAsync();
-
-                        //TODO: get name of this game
-                        //var gInfo = await gameCenter.GetGameInfoAsync(gameID);
+                        
+                        var gInfo = await gameCenter.GetGameInfoAsync(gameID);
+                        desc.Name = gInfo.Name;
                         desc.Url = url;
                         desc.PublicKey = "";//TODO: get it from BC somehow
                     }
@@ -60,10 +60,17 @@ namespace Hoard.BC
                     return desc;
                 }
             }
-            catch(Exception)
+            catch(Exception ex)
             {
+                ;
             }
             return null;
+        }
+
+        public Task<ulong> GetGameItemCount(string gameContract)
+        {
+            GameContract game = new GameContract(web, gameContract);
+            return game.GetNextAssetIdAsync();
         }
 
         public async Task<bool> AddGame()
