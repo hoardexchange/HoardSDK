@@ -30,28 +30,5 @@ namespace Hoard
 
             return fileName;
         }
-
-        //public Account(string utcFilePath)
-        //{
-        //    this.utcFilePath = utcFilePath;
-        //}
-
-        //public bool Unlock(string password)
-        //{
-        //    if(unlockedAccount == null)
-        //    {
-        //        try
-        //        {
-        //            var json = File.ReadAllText(utcFilePath);
-        //            unlockedAccount = Nethereum.Web3.Accounts.Account.LoadFromKeyStore(json, password);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.Write("Cannot unlock account: " + ex.ToString());
-        //        }
-        //    }
-
-        //    return unlockedAccount != null;
-        //}
     }
 }
