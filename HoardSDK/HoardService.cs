@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Hoard
 {
@@ -12,6 +13,9 @@ namespace Hoard
 
         private BC.BCComm bcComm = null;
         private Exception Exception = null;
+
+        private readonly string accountsDir = null;
+        private readonly List<Account> accounts = null;
 
         public HoardService()
         {
@@ -38,6 +42,9 @@ namespace Hoard
             }
 
             GameBackendDesc = gbDesc;
+
+            InitAccounts(options.AccountsDir);
+            this.accountsDir = options.AccountsDir;
 
             return true;
         }
@@ -76,6 +83,55 @@ namespace Hoard
         public async Task<ItemData> RequestItemData(Item id)
         {
             throw new NotImplementedException();
+        }
+
+        public void InitAccounts(string path) 
+        {
+            var accountsFiles = ListAccountsUTCFiles(path);
+
+            if(accountsFiles)
+            {
+                foreach(var fileName in accountsFiles)
+                {
+                    this.accounts.Add(new Account(System.IO.Combile(path, fileName)))
+                }
+            }
+        }
+
+        public CreateNewAccount(string password)
+        {
+            this.accounts.Add(Account.Create(password, this.accountsDir));
+        }
+
+        public List<string> ListAccounts()
+        {
+            List<string> addresses = new List<string>();
+
+            foreach(var account in this.accounts)
+            {
+                addresses
+            }
+        }
+
+        private List<string> ListAccountsUTCFiles(string path)
+        {
+            FileInfo[] files = System.IO.GetFiles("UTC--*");
+
+            if(files.Length > 0)
+            {
+                List<string> ret = new List<string>();
+
+                foreach(var file in files)
+                {
+                    ret.Add(file.Name());
+                }
+
+                return ret;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }
