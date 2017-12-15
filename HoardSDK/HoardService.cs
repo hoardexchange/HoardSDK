@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 
+using Nethereum.Web3.Accounts;
+
 namespace Hoard
 {
     public class HoardService
@@ -14,8 +16,7 @@ namespace Hoard
         private BC.BCComm bcComm = null;
         private Exception Exception = null;
 
-        private readonly string accountsDir = null;
-        private readonly List<Account> accounts = null;
+        private List<Account> accounts = new List<Account>();
 
         public HoardService()
         {
@@ -29,7 +30,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> Init(HoardServiceOptions options)
         {
-            bcComm = new BC.BCComm(options.BlockChainClientUrl);
+            InitAccounts(options.AccountsDir, options.DefaultAccountPass);
+
+            bcComm = new BC.BCComm(options.BlockChainClientUrl, Accounts[0]);
             string connectionResponse = await bcComm.Connect();
 
             GBDesc gbDesc = await bcComm.GetGBDesc(options.GameID);
@@ -42,9 +45,6 @@ namespace Hoard
             }
 
             GameBackendDesc = gbDesc;
-
-            InitAccounts(options.AccountsDir);
-            this.accountsDir = options.AccountsDir;
 
             return true;
         }
@@ -85,53 +85,38 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        public void InitAccounts(string path) 
+        public void InitAccounts(string path, string password) 
         {
+            if (!System.IO.Directory.Exists(path))
+            {
+                System.IO.Directory.CreateDirectory(path);
+            }
+
             var accountsFiles = ListAccountsUTCFiles(path);
 
-            if(accountsFiles)
+            // if no account in acounts dir create one with default password.
+            if (accountsFiles.Length == 0)
             {
-                foreach(var fileName in accountsFiles)
-                {
-                    this.accounts.Add(new Account(System.IO.Combile(path, fileName)))
-                }
+                accountsFiles = new string[1];
+                accountsFiles[0] = AccountCreator.CreateAccountUTCFile(password, path);
+            }
+
+            foreach(var fileName in accountsFiles)
+            {
+                var json = File.ReadAllText(System.IO.Path.Combine(path, fileName));
+
+                this.accounts.Add(Account.LoadFromKeyStore(json, password));
             }
         }
 
-        public CreateNewAccount(string password)
+        public List<Account> Accounts
         {
-            this.accounts.Add(Account.Create(password, this.accountsDir));
+            get { return this.accounts; }
         }
 
-        public List<string> ListAccounts()
+        public string[] ListAccountsUTCFiles(string path)
         {
-            List<string> addresses = new List<string>();
-
-            foreach(var account in this.accounts)
-            {
-                addresses
-            }
-        }
-
-        private List<string> ListAccountsUTCFiles(string path)
-        {
-            FileInfo[] files = System.IO.GetFiles("UTC--*");
-
-            if(files.Length > 0)
-            {
-                List<string> ret = new List<string>();
-
-                foreach(var file in files)
-                {
-                    ret.Add(file.Name());
-                }
-
-                return ret;
-            }
-            else
-            {
-                return null;
-            }
+            return Directory.GetFiles(path, "UTC--*");
         }
     }
 }

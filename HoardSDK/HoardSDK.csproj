@@ -78,6 +78,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Account.cs" />
     <Compile Include="BC\BCComm.cs" />
     <Compile Include="BC\Contracts\GameCenterContract.cs" />
     <Compile Include="BC\Contracts\GameContract.cs" />

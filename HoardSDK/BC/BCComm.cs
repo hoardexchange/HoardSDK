@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nethereum.Web3;
+using Nethereum.Web3.Accounts;
 using Hoard.BC.Contracts;
 using System.Threading;
 using Nethereum.Hex.HexTypes;
@@ -22,9 +23,9 @@ namespace Hoard.BC
         //private const string GameInfoAddress = "0x846f3a06aa6bde218e5f966d91e3e4d4ae2bd3ec";
         private const string GameInfoAddress = "0x846f3a06aa6bde218e5f966d91e3e4d4ae2bd3ec";
 
-        public BCComm(string bcClientUrl)
+        public BCComm(string bcClientUrl, Account account)
         {
-            web = new Web3(bcClientUrl);
+            web = new Web3(account, bcClientUrl);
 
             gameCenter = new GameCenterContract(web, GameInfoAddress);
         }

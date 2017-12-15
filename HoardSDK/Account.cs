@@ -1,18 +1,16 @@
-using Nethereum.ABI.Encoders;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.KeyStore;
-using Nethereum.Signer;
-using Nethereum.Web3;
+using Nethereum.Web3.Accounts;
+using System.IO;
 
 namespace Hoard
 {
 
-    public class Account 
+    public class AccountCreator
     {
         private string utcFilePath = "";
-        private Nethereum.Web3.Account unlockedAccount = null;
+        private Nethereum.Web3.Accounts.Account unlockedAccount = null;
 
-        static Create(string password, string path)
+        public static string CreateAccountUTCFile(string password, string path)
         {
             //Generate a private key pair using SecureRandom
             var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
@@ -30,29 +28,30 @@ namespace Hoard
                 newfile.Flush();
             }
 
-            return new Account(fileName);
+            return fileName;
         }
 
-        public Account(string utcFilePath)
-        {
-            this.utcFilePath = utcFilePath;
-        }
+        //public Account(string utcFilePath)
+        //{
+        //    this.utcFilePath = utcFilePath;
+        //}
 
-        public boolean Unlock(string password)
-        {
-            if(unlockedAccount == null)
-            {
-                try
-                {
-                    unlockedAccount = Nethereum.Web3.Account.LoadFromKeyStoreFile(utcFilePath, password);
-                }
-                catch (Exception ex)
-                {
-                    Console.Write("Cannot unlock account");
-                }
-            }
+        //public bool Unlock(string password)
+        //{
+        //    if(unlockedAccount == null)
+        //    {
+        //        try
+        //        {
+        //            var json = File.ReadAllText(utcFilePath);
+        //            unlockedAccount = Nethereum.Web3.Accounts.Account.LoadFromKeyStore(json, password);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Console.Write("Cannot unlock account: " + ex.ToString());
+        //        }
+        //    }
 
-            return unlockedAccount != null;
-        }
+        //    return unlockedAccount != null;
+        //}
     }
 }

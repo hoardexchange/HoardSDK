@@ -12,5 +12,6 @@ namespace Hoard
         public string GameBackendUrl { get; set; } = "";
         public string BlockChainClientUrl { get; set; } = "";
         public string AccountsDir { get; set; } = "";
+        public string DefaultAccountPass { get; set; } = "dev";
     }
 }
