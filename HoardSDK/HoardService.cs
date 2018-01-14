@@ -31,8 +31,8 @@ namespace Hoard
         public async Task<bool> Init(HoardServiceOptions options)
         {
             InitAccounts(options.AccountsDir, options.DefaultAccountPass);
-
-            bcComm = new BC.BCComm(options.BlockChainClientUrl, Accounts[0]);
+            
+            bcComm = new BC.BCComm(options.RpcClient, Accounts[0]);
             string connectionResponse = await bcComm.Connect();
 
             GBDesc gbDesc = await bcComm.GetGBDesc(options.GameID);

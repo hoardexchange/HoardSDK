@@ -32,15 +32,33 @@ namespace Hoard
 
         public async Task<bool> Connect(PlayerID id)
         {
-            GBClient = new RestClient(Description.Url);
+            GBClient = new RestClient(@"http://192.168.186.128");// Description.Url);
 
-            //handshake
-            var request = new RestRequest("auth/{id}", Method.POST);
-            request.AddUrlSegment("id", id.ID.ToString());
 
             RequestHandle = new CancellationTokenSource();
-            
+
+            //handshake
+
+            //1. GET challenge token
+            var request = new RestRequest("login", Method.GET);
             var response = await GBClient.ExecuteTaskAsync(request, RequestHandle.Token);
+
+            if (response.ErrorException != null)
+                return false;
+
+            string challengeToken = response.Content;
+
+            //ulong nonce = CalculateNonce(challengeToken);
+
+            SessionKey = response.Content;
+
+
+
+            request.AddUrlSegment("id", id.ID.ToString());
+
+            
+            
+            //var response = await GBClient.ExecuteTaskAsync(request, RequestHandle.Token);
 
             if (response.ErrorException != null)
                 return false;
