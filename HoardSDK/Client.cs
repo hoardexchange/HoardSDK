@@ -32,7 +32,7 @@ namespace Hoard
 
         public async Task<bool> Connect(PlayerID id)
         {
-            GBClient = new RestClient(@"http://192.168.186.128");// Description.Url);
+            GBClient = new RestClient(Description.Url);
 
 
             RequestHandle = new CancellationTokenSource();
