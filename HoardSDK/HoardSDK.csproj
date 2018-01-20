@@ -67,6 +67,7 @@
     <Compile Include="BC\Contracts\GameContract.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Commons.cs" />
+    <Compile Include="Eth\Utils.cs" />
     <Compile Include="GameItem.cs" />
     <Compile Include="GBDesc.cs" />
     <Compile Include="HoardService.cs" />
@@ -96,7 +97,15 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="HashLib\HashLib.csproj">
+      <Project>{31880fb6-5b86-42b8-ab92-864045b5d7a2}</Project>
+      <Name>HashLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

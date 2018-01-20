@@ -16,6 +16,8 @@ namespace Hoard
         private BC.BCComm bcComm = null;
         private Exception Exception = null;
 
+        private Client client = null;
+
         private List<Account> accounts = new List<Account>();
 
         public HoardService()
@@ -45,12 +47,14 @@ namespace Hoard
             }
 
             GameBackendDesc = gbDesc;
+            GameBackendDesc.Url = @"http://ec2-52-57-192-150.eu-central-1.compute.amazonaws.com"; // TODO: Set proper url in game contract info. (remove port).
 
             return true;
         }
 
         public async Task<Item[]> RequestItemList()
         {
+            var ret = await client.Get("assets/" + accounts[0].Address + "/", null);
             throw new NotImplementedException();
         }
 
@@ -70,9 +74,9 @@ namespace Hoard
         public async Task<bool> SignIn(PlayerID id)
         {
             //create hoard client
-            Client client = new Client(GameBackendDesc);
+            client = new Client(GameBackendDesc);
             //connect to backend
-            return await client.Connect(id);
+            return await client.Connect(id, accounts[0]);
         }
 
         public async Task<ItemCRC[]> RequestItemsCRC(Item[] items)
@@ -94,7 +98,7 @@ namespace Hoard
 
             var accountsFiles = ListAccountsUTCFiles(path);
 
-            // if no account in acounts dir create one with default password.
+            // if no account in accounts dir create one with default password.
             if (accountsFiles.Length == 0)
             {
                 accountsFiles = new string[1];

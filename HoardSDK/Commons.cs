@@ -8,9 +8,9 @@ namespace Hoard
 {
     public class PlayerID
     {
-        public ulong ID;
+        public string ID;
 
-        public PlayerID(ulong id)
+        public PlayerID(string id)
         {
             ID = id;
         }
