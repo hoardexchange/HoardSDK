@@ -15,8 +15,7 @@ namespace Hoard.BC
     {
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
-
-        //private const string GameInfoAddress = "0x846f3a06aa6bde218e5f966d91e3e4d4ae2bd3ec";
+        
         private const string GameInfoAddress = "0x846f3a06aa6bde218e5f966d91e3e4d4ae2bd3ec";
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
@@ -34,32 +33,25 @@ namespace Hoard.BC
 
         public async Task<GBDesc> GetGBDesc(ulong gameID)
         {
-            try
+            bool exist = await gameCenter.GetGameExistsAsync(gameID);
+            if (exist)
             {
-                bool exist = await gameCenter.GetGameExistsAsync(gameID);
-                if (exist)
+                GBDesc desc = new GBDesc();
+                desc.GameContract = await gameCenter.GetGameContractAsync(gameID);
+
                 {
-                    GBDesc desc = new GBDesc();
-                    desc.GameContract = await gameCenter.GetGameContractAsync(gameID);
+                    GameContract game = new GameContract(web, desc.GameContract);
 
-                    {
-                        GameContract game = new GameContract(web, desc.GameContract);
+                    string url = await game.GetGameServerURLAsync();
                         
-                        //bool ret = await game.SetGameServerURLAsync(this, @"http://ec2-52-57-192-150.eu-central-1.compute.amazonaws.com:8000");
-                        string url = await game.GetGameServerURLAsync();
-                        
-                        var gInfo = await gameCenter.GetGameInfoAsync(gameID);
-                        desc.Name = gInfo.Name;
-                        desc.Url = url;
-                        desc.PublicKey = "";//TODO: get it from BC somehow
-                    }
-
-                    return desc;
+                    var gInfo = await gameCenter.GetGameInfoAsync(gameID);
+                    desc.GameID = gameID;
+                    desc.Name = gInfo.Name;
+                    desc.Url = url;
+                    desc.PublicKey = "";//TODO: get it from BC somehow
                 }
-            }
-            catch(Exception ex)
-            {
-                ;
+
+                return desc;
             }
             return null;
         }

@@ -7,9 +7,6 @@ namespace Hoard
 
     public class AccountCreator
     {
-        private string utcFilePath = "";
-        private Nethereum.Web3.Accounts.Account unlockedAccount = null;
-
         public static string CreateAccountUTCFile(string password, string path)
         {
             //Generate a private key pair using SecureRandom

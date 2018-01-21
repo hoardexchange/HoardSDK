@@ -13,15 +13,22 @@ namespace Hoard
     /// <summary>
     /// Hoard client that communicates with game backend
     /// </summary>
-    class Client
+    class GBClient
     {
+        public struct AssetInfo
+        {
+            public ulong game_id { get; set; }
+            public ulong asset_id { get; set; }
+            public ulong amount { get; set; }
+            public string user_address { get; set; }
+        };
         public GBDesc Description { get; private set; }
         public bool IsBusy
         {
             get { return RequestHandle != null; }
         }
 
-        private RestClient GBClient = null;
+        private RestClient Client = null;
         private string SessionKey = null;
 
         private IList<RestResponseCookie> currentCookies = null;
@@ -30,14 +37,14 @@ namespace Hoard
         private CancellationTokenSource RequestHandle = null;
         private object locker = new object();
 
-        public Client(GBDesc desc)
+        public GBClient(GBDesc desc)
         {
             Description = desc;
         }
 
         public async Task<bool> Connect(PlayerID id, Account account)
         {
-            GBClient = new RestClient(Description.Url);
+            Client = new RestClient(Description.Url);
             // GBClient = new RestClient(@"http://172.16.81.128:8000"); // Local test purpose
 
 
@@ -47,7 +54,7 @@ namespace Hoard
 
             //1. GET challenge token
             var request = new RestRequest("login/", Method.GET);
-            var response = await GBClient.ExecuteTaskAsync(request, RequestHandle.Token);
+            var response = await Client.ExecuteTaskAsync(request, RequestHandle.Token);
 
             if (response.ErrorException != null)
                 return false;
@@ -75,9 +82,9 @@ namespace Hoard
             });
 
             PrepareRequest(requestPost);
-            var responseLogin = await GBClient.ExecuteTaskAsync(requestPost, RequestHandle.Token);
+            var responseLogin = await Client.ExecuteTaskAsync(requestPost, RequestHandle.Token);
 
-            if (responseLogin.ErrorException != null)
+            if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK)
                 return false;
 
             SessionKey = response.Content;
@@ -109,14 +116,26 @@ namespace Hoard
             req.AddHeader("X-CSRFToken", csrfToken);
         }
 
-        public async Task<object> Get(string url, object data)
+        public async Task<T> GetData<T>(string url, object data)
         {
             var request = new RestRequest(url, Method.GET);
             request.AddJsonBody(data);
 
             PrepareRequest(request);
 
-            var response = await GBClient.ExecuteTaskAsync(request);
+            var response = await Client.ExecuteTaskAsync<T>(request);
+
+            return response.Data;
+        }
+
+        public async Task<string> GetJson(string url, object data)
+        {
+            var request = new RestRequest(url, Method.GET);
+            request.AddJsonBody(data);
+
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request);
 
             return response.Content;
         }

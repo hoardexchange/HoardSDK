@@ -14,9 +14,8 @@ namespace Hoard
         public bool IsSingedIn { get; private set;}
 
         private BC.BCComm bcComm = null;
-        private Exception Exception = null;
 
-        private Client client = null;
+        private GBClient client = null;
 
         private List<Account> accounts = new List<Account>();
 
@@ -54,8 +53,21 @@ namespace Hoard
 
         public async Task<Item[]> RequestItemList()
         {
-            var ret = await client.Get("assets/" + accounts[0].Address + "/", null);
-            throw new NotImplementedException();
+            
+            var list = await client.GetData<List<GBClient.AssetInfo>>("assets/" + accounts[0].Address + "/", null);
+            List<Item> items = new List<Item>();
+            list.ForEach(asset =>
+            {
+                if (asset.game_id == GameBackendDesc.GameID)
+                {
+                    items.Add(new Item
+                    {
+                        Count = asset.amount,
+                        ID = asset.asset_id,
+                    });
+                }
+            });
+            return items.ToArray();
         }
 
         public async Task<Item[]> RequestItemListFromBC(PlayerID playerId)
@@ -74,7 +86,7 @@ namespace Hoard
         public async Task<bool> SignIn(PlayerID id)
         {
             //create hoard client
-            client = new Client(GameBackendDesc);
+            client = new GBClient(GameBackendDesc);
             //connect to backend
             return await client.Connect(id, accounts[0]);
         }
