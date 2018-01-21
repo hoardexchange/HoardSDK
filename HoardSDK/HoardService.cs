@@ -78,7 +78,14 @@ namespace Hoard
             List<Item> itemList = new List<Item>();
             for(ulong i=0;i<count;++i)
             {
-                //Item item = await bcComm.GetItemBalance(GameBackendDesc.GameContract, playerId);
+                ulong itemCount = await bcComm.GetItemBalance(GameBackendDesc.GameContract, playerId, i);
+                if (itemCount > 0)
+                {
+                    Item item = new Hoard.Item();
+                    item.ID = i;
+                    item.Count = itemCount;
+                    itemList.Add(item);
+                }
             }
             return itemList.ToArray();
         }

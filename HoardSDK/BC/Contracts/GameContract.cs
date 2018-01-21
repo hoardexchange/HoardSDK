@@ -29,6 +29,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("nextAssetId");
         }
 
+        public Function GetFunctionBalanceOf()
+        {
+            return contract.GetFunction("balanceOf");
+        }
+
         public Function GetFunctionGameSrvURL()
         {
             return contract.GetFunction("gameSrvURL");
@@ -43,6 +48,12 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionNextAssetId();
             return function.CallAsync<ulong>();
+        }
+
+        public Task<ulong> GetItemBalance(string address, ulong itemID)
+        {
+            var function = GetFunctionBalanceOf();
+            return function.CallAsync<ulong>(address, itemID);
         }
 
         public Task<string> GetGameServerURLAsync()

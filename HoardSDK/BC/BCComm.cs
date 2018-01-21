@@ -16,7 +16,7 @@ namespace Hoard.BC
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         
-        private const string GameInfoAddress = "0x846f3a06aa6bde218e5f966d91e3e4d4ae2bd3ec";
+        private const string GameInfoAddress = "0x61a3be6fed442969c70018a4c80de6befac6d7c0";
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
         {
@@ -60,6 +60,12 @@ namespace Hoard.BC
         {
             GameContract game = new GameContract(web, gameContract);
             return game.GetNextAssetIdAsync();
+        }
+
+        public Task<ulong> GetItemBalance(string gameContract, PlayerID pid, ulong itemID)
+        {
+            GameContract game = new GameContract(web, gameContract);
+            return game.GetItemBalance(pid.ID, itemID);
         }
 
         public async Task<bool> AddGame()
