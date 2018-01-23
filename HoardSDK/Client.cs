@@ -31,6 +31,8 @@ namespace Hoard
         private RestClient Client = null;
         private string SessionKey = null;
 
+        public string signedPlayerID { get; private set; } = null;
+
         private IList<RestResponseCookie> currentCookies = null;
         private string csrfToken = null;
 
@@ -42,7 +44,7 @@ namespace Hoard
             Description = desc;
         }
 
-        public async Task<bool> Connect(PlayerID id, Account account)
+        public async Task<bool> Connect(Account account)
         {
             Client = new RestClient(Description.Url);
             // GBClient = new RestClient(@"http://172.16.81.128:8000"); // Local test purpose
@@ -77,7 +79,7 @@ namespace Hoard
             {
                 token = response.Content,
                 nonce = "0x" + nonceHex,
-                address = id.ID,
+                address = account.Address,
                 signature = sig
             });
 
@@ -89,6 +91,8 @@ namespace Hoard
 
             SessionKey = response.Content;
             UpdateCookies(responseLogin.Cookies);
+
+            signedPlayerID = account.Address;
 
             //is this needed?
             lock (locker)
@@ -138,6 +142,15 @@ namespace Hoard
             var response = await Client.ExecuteTaskAsync(request);
 
             return response.Content;
+        }
+
+        public bool IsSessionValid()
+        {
+            foreach (var cookie in currentCookies)
+                if (cookie.Expired)
+                    return false;
+
+            return true;
         }
 
         public void Abort()

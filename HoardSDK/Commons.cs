@@ -12,7 +12,28 @@ namespace Hoard
 
         public PlayerID(string id)
         {
-            ID = id;
+            ID = id.ToLower();
         }
+
+        public static implicit operator PlayerID(string d)
+        {
+            return new PlayerID(d);
+        }
+
+        public override int GetHashCode() 
+        {
+            return ID.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as PlayerID);
+        }
+
+        public bool Equals(PlayerID obj)
+        {
+            return obj != null && obj.ID.ToLower() == ID;
+        }
+
     }
 }

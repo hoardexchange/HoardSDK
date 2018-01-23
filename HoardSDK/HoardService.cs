@@ -11,13 +11,12 @@ namespace Hoard
     public class HoardService
     {
         public GBDesc GameBackendDesc { get; private set;}
-        public bool IsSingedIn { get; private set;}
 
         private BC.BCComm bcComm = null;
 
         private GBClient client = null;
 
-        private List<Account> accounts = new List<Account>();
+        private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
 
         public HoardService()
         {
@@ -51,10 +50,9 @@ namespace Hoard
             return true;
         }
 
-        public async Task<Item[]> RequestItemList()
+        public async Task<Item[]> RequestItemList(PlayerID id)
         {
-            
-            var list = await client.GetData<List<GBClient.AssetInfo>>("assets/" + accounts[0].Address + "/", null);
+            var list = await client.GetData<List<GBClient.AssetInfo>>("assets/" + accounts[id].Address + "/", null);
             List<Item> items = new List<Item>();
             list.ForEach(asset =>
             {
@@ -90,12 +88,23 @@ namespace Hoard
             return itemList.ToArray();
         }
 
+        public bool IsSignedIn(PlayerID id)
+        {
+            if (client != null)
+                return client.signedPlayerID == id.ID 
+                    && client.IsSessionValid();
+            else
+                return false;
+        }
+
         public async Task<bool> SignIn(PlayerID id)
         {
+            if (IsSignedIn(id))
+                return true;
             //create hoard client
             client = new GBClient(GameBackendDesc);
             //connect to backend
-            return await client.Connect(id, accounts[0]);
+            return await client.Connect(accounts[id]);
         }
 
         public async Task<ItemCRC[]> RequestItemsCRC(Item[] items)
@@ -128,13 +137,14 @@ namespace Hoard
             {
                 var json = File.ReadAllText(System.IO.Path.Combine(path, fileName));
 
-                this.accounts.Add(Account.LoadFromKeyStore(json, password));
+                var account = Account.LoadFromKeyStore(json, password);
+                this.accounts.Add(account.Address, account);
             }
         }
 
         public List<Account> Accounts
         {
-            get { return this.accounts; }
+            get { return accounts.Values.ToList(); }
         }
 
         public string[] ListAccountsUTCFiles(string path)
