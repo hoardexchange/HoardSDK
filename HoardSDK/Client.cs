@@ -86,7 +86,7 @@ namespace Hoard
             PrepareRequest(requestPost);
             var responseLogin = await Client.ExecuteTaskAsync(requestPost, RequestHandle.Token);
 
-            if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK)
+            if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
                 return false;
 
             SessionKey = response.Content;

@@ -45,7 +45,6 @@ namespace Hoard
             }
 
             GameBackendDesc = gbDesc;
-            GameBackendDesc.Url = @"http://ec2-52-57-192-150.eu-central-1.compute.amazonaws.com"; // TODO: Set proper url in game contract info. (remove port).
 
             return true;
         }
