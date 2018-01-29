@@ -31,7 +31,7 @@ namespace Hoard
         private RestClient Client = null;
         private string SessionKey = null;
 
-        public string signedPlayerID { get; private set; } = null;
+        public PlayerID signedPlayerID { get; private set; } = null;
 
         private IList<RestResponseCookie> currentCookies = null;
         private string csrfToken = null;
@@ -44,7 +44,7 @@ namespace Hoard
             Description = desc;
         }
 
-        public async Task<bool> Connect(Account account)
+        public bool Connect(Account account)
         {
             Client = new RestClient(Description.Url);
             // GBClient = new RestClient(@"http://172.16.81.128:8000"); // Local test purpose
@@ -56,7 +56,7 @@ namespace Hoard
 
             //1. GET challenge token
             var request = new RestRequest("login/", Method.GET);
-            var response = await Client.ExecuteTaskAsync(request, RequestHandle.Token);
+            var response = Client.Execute(request);
 
             if (response.ErrorException != null)
                 return false;
@@ -72,19 +72,13 @@ namespace Hoard
 
             var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, account.PrivateKey);
 
-
-            var requestPost = new RestRequest("login/", Method.POST);
-            requestPost.AddJsonBody(
-            new
+            var responseLogin = PostJson("login/", new
             {
                 token = response.Content,
                 nonce = "0x" + nonceHex,
                 address = account.Address,
                 signature = sig
-            });
-
-            PrepareRequest(requestPost);
-            var responseLogin = await Client.ExecuteTaskAsync(requestPost, RequestHandle.Token);
+            }).Result;
 
             if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
                 return false;
@@ -94,12 +88,12 @@ namespace Hoard
 
             signedPlayerID = account.Address;
 
-            //is this needed?
-            lock (locker)
-            {
-                RequestHandle.Dispose();
-                RequestHandle = null;
-            }
+            ////is this needed?
+            //lock (locker)
+            //{
+            //    RequestHandle.Dispose();
+            //    RequestHandle = null;
+            //}
 
             return true;
         }
@@ -144,6 +138,18 @@ namespace Hoard
             return response.Content;
         }
 
+        public async Task<IRestResponse> PostJson(string url, object data)
+        {
+            var request = new RestRequest(url, Method.POST);
+            request.AddJsonBody(data);
+
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request);
+
+            return response;
+        }
+
         public bool IsSessionValid()
         {
             foreach (var cookie in currentCookies)
@@ -156,11 +162,11 @@ namespace Hoard
         public void Abort()
         {
             //is this needed?
-            lock (locker)
-            {
-                if (RequestHandle != null)
-                    RequestHandle.Cancel();
-            }
+            //lock (locker)
+            //{
+            //    if (RequestHandle != null)
+            //        RequestHandle.Cancel();
+            //}
         }
     }
 }

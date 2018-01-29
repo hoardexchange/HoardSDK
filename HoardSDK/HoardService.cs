@@ -4,6 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 
+#if DEBUG
+using System.Diagnostics;
+#endif
+
 using Nethereum.Web3.Accounts;
 
 namespace Hoard
@@ -28,25 +32,11 @@ namespace Hoard
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        public async Task<bool> Init(HoardServiceOptions options)
+        public bool Init(HoardServiceOptions options)
         {
             InitAccounts(options.AccountsDir, options.DefaultAccountPass);
-            
-            bcComm = new BC.BCComm(options.RpcClient, Accounts[0]);
-            string connectionResponse = await bcComm.Connect();
 
-            GBDesc gbDesc = await bcComm.GetGBDesc(options.GameID);
-            if (gbDesc == null)
-            {
-                bool p = await bcComm.AddGame();
-                gbDesc = new GBDesc();
-                gbDesc.Url = options.GameBackendUrl;
-                return false;
-            }
-
-            GameBackendDesc = gbDesc;
-
-            return true;
+            return InitGBDescriptor(options);
         }
 
         public async Task<Item[]> RequestItemList(PlayerID id)
@@ -90,20 +80,20 @@ namespace Hoard
         public bool IsSignedIn(PlayerID id)
         {
             if (client != null)
-                return client.signedPlayerID == id.ID 
+                return client.signedPlayerID.Equals(id) 
                     && client.IsSessionValid();
             else
                 return false;
         }
 
-        public async Task<bool> SignIn(PlayerID id)
+        public bool SignIn(PlayerID id)
         {
             if (IsSignedIn(id))
                 return true;
             //create hoard client
             client = new GBClient(GameBackendDesc);
             //connect to backend
-            return await client.Connect(accounts[id]);
+            return client.Connect(accounts[id]);
         }
 
         public async Task<ItemCRC[]> RequestItemsCRC(Item[] items)
@@ -116,8 +106,40 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        public void InitAccounts(string path, string password) 
+        private bool InitGBDescriptor(HoardServiceOptions options)
         {
+#if DEBUG
+            Debug.WriteLine("Initializing GB descriptor.");
+#endif
+            bcComm = new BC.BCComm(options.RpcClient, Accounts[0]);
+            //string connectionResponse = await bcComm.Connect();
+
+            GBDesc gbDesc = bcComm.GetGBDesc(options.GameID).Result;
+
+//            if (gbDesc == null)
+//            {
+//#if DEBUG
+//                Debug.WriteLine("Cannot get GB url from BC.");
+//#endif
+//                bool p = await bcComm.AddGame();
+//                gbDesc = new GBDesc();
+//                gbDesc.Url = options.GameBackendUrl;
+//                return false;
+//            }
+
+            GameBackendDesc = gbDesc;
+#if DEBUG
+            Debug.WriteLine("GB descriptor initialized.");
+#endif
+            return true;
+        }
+
+
+        private void InitAccounts(string path, string password) 
+        {
+#if DEBUG
+            Debug.WriteLine(String.Format("Initializing account from path: {0}", path), "INFO");
+#endif
             if (!System.IO.Directory.Exists(path))
             {
                 System.IO.Directory.CreateDirectory(path);
@@ -128,17 +150,27 @@ namespace Hoard
             // if no account in accounts dir create one with default password.
             if (accountsFiles.Length == 0)
             {
+#if DEBUG
+                Debug.WriteLine("No account found. Generating one.", "INFO");
+#endif
                 accountsFiles = new string[1];
                 accountsFiles[0] = AccountCreator.CreateAccountUTCFile(password, path);
             }
 
             foreach(var fileName in accountsFiles)
             {
+#if DEBUG
+                Debug.WriteLine(String.Format("Loading account {0}", fileName), "INFO");
+#endif
                 var json = File.ReadAllText(System.IO.Path.Combine(path, fileName));
 
                 var account = Account.LoadFromKeyStore(json, password);
                 this.accounts.Add(account.Address, account);
             }
+
+#if DEBUG
+            Debug.WriteLine("Accounts initialized.", "INFO");
+#endif
         }
 
         public List<Account> Accounts
