@@ -22,6 +22,8 @@ namespace Hoard
 
         private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
 
+        private Dictionary<string, string> gameCoinsContracts = new Dictionary<string, string>();
+
         public HoardService()
         {
             
@@ -37,6 +39,11 @@ namespace Hoard
             InitAccounts(options.AccountsDir, options.DefaultAccountPass);
 
             return InitGBDescriptor(options);
+        }
+
+        public void RegisterGameCoinContract(string symbol, string contractAddress) // TODO: This function should be private and address shoul be taken from GameContract
+        {
+            gameCoinsContracts.Add(symbol, contractAddress);
         }
 
         public async Task<Item[]> RequestItemList(PlayerID id)
@@ -75,6 +82,14 @@ namespace Hoard
                 }
             }
             return itemList.ToArray();
+        }
+
+        public async Task<ulong> RequestGameCoinsBalansOf(PlayerID playerId, string coinSymbol)
+        {
+            if (gameCoinsContracts.ContainsKey(coinSymbol))
+                return await bcComm.GetGameCoinBalanceOf(playerId.ID, gameCoinsContracts[coinSymbol]);
+            else
+                return 0;
         }
 
         public bool IsSignedIn(PlayerID id)

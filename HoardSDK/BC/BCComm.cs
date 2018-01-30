@@ -16,7 +16,7 @@ namespace Hoard.BC
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         
-        private const string GameInfoAddress = "0x61a3be6fed442969c70018a4c80de6befac6d7c0";
+        private const string GameInfoAddress = "0x65026df5e2621349ce4991c53411684162b219e8";
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
         {
@@ -47,13 +47,22 @@ namespace Hoard.BC
                     var gInfo = await gameCenter.GetGameInfoAsync(gameID);
                     desc.GameID = gameID;
                     desc.Name = gInfo.Name;
-                    desc.Url = url;
+                    desc.Url = !url.StartsWith("http") ? "http://" + url : url;
                     desc.PublicKey = "";//TODO: get it from BC somehow
                 }
 
                 return desc;
             }
             return null;
+        }
+
+        public Task<ulong> GetGameCoinBalanceOf(string address, string tokenContractAddress)
+        {
+            GameCoinContract gameCoin = new GameCoinContract(web, tokenContractAddress);
+
+            var function = gameCoin.GetFunctionBalanceOf();
+
+            return function.CallAsync<ulong>(address);
         }
 
         public Task<ulong> GetGameItemCount(string gameContract)
