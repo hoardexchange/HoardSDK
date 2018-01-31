@@ -16,7 +16,7 @@ namespace Hoard.BC
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         
-        private const string GameInfoAddress = "0x65026df5e2621349ce4991c53411684162b219e8";
+        private const string GameInfoAddress = "0xca9f528d2e10482a90822a4f406c9037c5b079af";
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
         {
@@ -60,9 +60,7 @@ namespace Hoard.BC
         {
             GameCoinContract gameCoin = new GameCoinContract(web, tokenContractAddress);
 
-            var function = gameCoin.GetFunctionBalanceOf();
-
-            return function.CallAsync<ulong>(address);
+            return gameCoin.BalanceOf(address);
         }
 
         public Task<ulong> GetGameItemCount(string gameContract)
@@ -75,6 +73,22 @@ namespace Hoard.BC
         {
             GameContract game = new GameContract(web, gameContract);
             return game.GetItemBalance(pid.ID, itemID);
+        }
+
+        public async Task<GameCoinContract[]> GetGameCoinsContacts(string gameContract)
+        {
+            GameContract game = new GameContract(web, gameContract);
+            ulong length = await game.GetGameCoinsContactsLengthAsync();
+
+            GameCoinContract[] ret = new GameCoinContract[length];
+
+            for (ulong i = 0; i < length; ++i)
+            {
+                var address = await game.GetGameCoinsContactsAsync(i);
+                ret[i] = new GameCoinContract(web, address);
+            }
+
+            return ret;
         }
 
         public async Task<bool> AddGame()

@@ -22,7 +22,7 @@ namespace Hoard
 
         private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
 
-        private Dictionary<string, string> gameCoinsContracts = new Dictionary<string, string>();
+        private Dictionary<string, BC.Contracts.GameCoinContract> gameCoinsContracts = new Dictionary<string, BC.Contracts.GameCoinContract>();
 
         public HoardService()
         {
@@ -41,9 +41,9 @@ namespace Hoard
             return InitGBDescriptor(options);
         }
 
-        public void RegisterGameCoinContract(string symbol, string contractAddress) // TODO: This function should be private and address shoul be taken from GameContract
+        private void RegisterGameCoinContract(string symbol, BC.Contracts.GameCoinContract gameCoinContract) // TODO: This function should be private and address shoul be taken from GameContract
         {
-            gameCoinsContracts.Add(symbol, contractAddress);
+            gameCoinsContracts.Add(symbol, gameCoinContract);
         }
 
         public async Task<Item[]> RequestItemList(PlayerID id)
@@ -84,10 +84,15 @@ namespace Hoard
             return itemList.ToArray();
         }
 
+        private async Task<BC.Contracts.GameCoinContract[]> RequestGameCoinsContracts()
+        {
+            return await bcComm.GetGameCoinsContacts(GameBackendDesc.GameContract);
+        }
+
         public async Task<ulong> RequestGameCoinsBalansOf(PlayerID playerId, string coinSymbol)
         {
             if (gameCoinsContracts.ContainsKey(coinSymbol))
-                return await bcComm.GetGameCoinBalanceOf(playerId.ID, gameCoinsContracts[coinSymbol]);
+                return await gameCoinsContracts[coinSymbol].BalanceOf(playerId.ID);
             else
                 return 0;
         }
@@ -146,6 +151,11 @@ namespace Hoard
 #if DEBUG
             Debug.WriteLine("GB descriptor initialized.");
 #endif
+            var gcContracts = RequestGameCoinsContracts().Result;
+
+            foreach (var gc in gcContracts)
+                RegisterGameCoinContract(gc.Symbol().Result, gc);
+
             return true;
         }
 
