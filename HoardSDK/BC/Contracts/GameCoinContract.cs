@@ -31,6 +31,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("symbol");
         }
 
+        private Function GetFunctionName()
+        {
+            return contract.GetFunction("name");
+        }
+
         public Task<ulong> BalanceOf(string address)
         {
             var function = GetFunctionBalanceOf();
@@ -43,5 +48,10 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
+        public Task<string> Name()
+        {
+            var function = GetFunctionName();
+            return function.CallAsync<string>();
+        }
     }
 }

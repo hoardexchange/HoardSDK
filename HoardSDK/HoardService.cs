@@ -25,9 +25,7 @@ namespace Hoard
         private Dictionary<string, BC.Contracts.GameCoinContract> gameCoinsContracts = new Dictionary<string, BC.Contracts.GameCoinContract>();
 
         public HoardService()
-        {
-            
-        }
+        {}
 
         /// <summary>
         /// Connects to BC and fills missing options
@@ -50,18 +48,38 @@ namespace Hoard
         {
             var list = await client.GetData<List<GBClient.AssetInfo>>("assets/" + accounts[id].Address + "/", null);
             List<Item> items = new List<Item>();
-            list.ForEach(asset =>
+
+            if (list != null)
             {
-                if (asset.game_id == GameBackendDesc.GameID)
+                list.ForEach(asset =>
                 {
-                    items.Add(new Item
+                    if (asset.game_id == GameBackendDesc.GameID)
                     {
-                        Count = asset.amount,
-                        ID = asset.asset_id,
-                    });
-                }
-            });
+                        items.Add(new Item
+                        {
+                            Count = asset.amount,
+                            ID = asset.asset_id,
+                        });
+                    }
+                });
+            }
+
             return items.ToArray();
+        }
+
+        public async Task<Coin[]> RequestGameCoinList(PlayerID id)
+        {
+            var gameContracts = await bcComm.GetGameCoinsContacts(GameBackendDesc.GameContract);
+
+            List<Coin> ret = new List<Coin>();
+
+            foreach(var gc in gameContracts)
+            {
+                var balance = await gc.BalanceOf(id.ID);
+                ret.Add(new Coin(await gc.Symbol(), await gc.Name(), balance));
+            }
+
+            return ret.ToArray();
         }
 
         public async Task<Item[]> RequestItemListFromBC(PlayerID playerId)
@@ -132,24 +150,17 @@ namespace Hoard
             Debug.WriteLine("Initializing GB descriptor.");
 #endif
             bcComm = new BC.BCComm(options.RpcClient, Accounts[0]);
-            //string connectionResponse = await bcComm.Connect();
 
             GBDesc gbDesc = bcComm.GetGBDesc(options.GameID).Result;
 
-//            if (gbDesc == null)
-//            {
-//#if DEBUG
-//                Debug.WriteLine("Cannot get GB url from BC.");
-//#endif
-//                bool p = await bcComm.AddGame();
-//                gbDesc = new GBDesc();
-//                gbDesc.Url = options.GameBackendUrl;
-//                return false;
-//            }
-
             GameBackendDesc = gbDesc;
 #if DEBUG
-            Debug.WriteLine("GB descriptor initialized.");
+            Debug.WriteLine(String.Format("GB descriptor initialized.\n {0} \n {1} \n {2} \n {3}",
+                gbDesc.GameContract,
+                gbDesc.GameID,
+                gbDesc.Name,
+                gbDesc.Url
+                ));
 #endif
             var gcContracts = RequestGameCoinsContracts().Result;
 

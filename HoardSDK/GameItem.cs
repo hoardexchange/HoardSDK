@@ -26,4 +26,18 @@ namespace Hoard
     public class GameItem
     {
     }
+
+    public class Coin
+    {
+        public ulong Count { get; private set; } = 0;
+        public string Symbol { get; private set; } = null;
+        public string Name { get; private set; } = null;
+
+        public Coin(string symbol, string name, ulong count)
+        {
+            Symbol = symbol;
+            Name = name;
+            Count = count;
+        }
+    }
 }
