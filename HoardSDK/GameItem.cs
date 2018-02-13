@@ -18,61 +18,31 @@ namespace Hoard
         public ItemCRC DataCRC;
     }
 
-    public class Coin
-    {
-        public string Symbol { get; private set; } = null;
-        public string Name { get; private set; } = null;
-        public string ContractAddress { get; private set; } = null;
-        public ulong TotalSuplly { get; private set; }
-
-        public Coin(string symbol, string name, string contractAddress, ulong totalSuplly)
-        {
-            Name = name;
-            Symbol = symbol;
-            ContractAddress = contractAddress;
-            TotalSuplly = totalSuplly;
-        }
-    }
-
-    public class CoinBalance
-    {
-        public Coin Coin { get; private set; } = null;
-        public ulong Balance { get; private set; } = 0;
-
-        public CoinBalance(Coin coin, ulong balance)
-        {
-            Coin = coin;
-            Balance = balance;
-        }
-    }
-
     public class GameAsset
     {
-        public string Name { get; private set; } = null;
         public string Symbol { get; private set; } = null;
+        public string Name { get; private set; } = null;
         public string ContractAddress { get; private set; } = null;
         public ulong TotalSuplly { get; private set; }
-
         public ulong AssetId { get; private set; }
 
-        public GameAsset(string name, string symbol, string contractAddress, ulong totalSuplly, ulong assetId)
+        public GameAsset(string symbol, string name, string contractAddress, ulong totalSuplly, ulong assetId)
         {
             Name = name;
             Symbol = symbol;
             ContractAddress = contractAddress;
             TotalSuplly = totalSuplly;
-            AssetId = assetId;
         }
     }
 
-    public class GameAssetBalance
+    public struct GameAssetBalance
     {
-        public GameAsset GameAsset { get; private set; } = null;
-        public ulong Balance { get; private set; } = 0;
+        public GameAsset GameAsset;
+        public readonly ulong Balance;
 
-        public GameAssetBalance(GameAsset gameAsset, ulong balance)
+        public GameAssetBalance(GameAsset ga, ulong balance)
         {
-            GameAsset = gameAsset;
+            GameAsset = ga;
             Balance = balance;
         }
     }   

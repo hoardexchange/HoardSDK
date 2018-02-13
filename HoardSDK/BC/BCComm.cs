@@ -22,13 +22,18 @@ namespace Hoard.BC
         {
             web = new Web3(account, client);
 
-            gameCenter = new GameCenterContract(web, GameInfoAddress);
+            gameCenter = GetContract<GameCenterContract>(GameInfoAddress);
         }
 
         public async Task<string> Connect()
         {
             var ver = new Nethereum.RPC.Web3.Web3ClientVersion(web.Client);
             return await ver.SendRequestAsync();
+        }
+
+        public TContract GetContract<TContract>(string contractAddress)
+        {
+            return (TContract)Activator.CreateInstance(typeof(TContract), web, contractAddress);
         }
 
         public async Task<GBDesc> GetGBDesc(ulong gameID)
@@ -55,13 +60,6 @@ namespace Hoard.BC
             return null;
         }
 
-        public Task<ulong> GetGameCoinBalanceOf(string address, string tokenContractAddress)
-        {
-            GameCoinContract gameCoin = new GameCoinContract(web, tokenContractAddress);
-
-            return gameCoin.BalanceOf(address);
-        }
-
         public Task<ulong> GetGameAssetBalanceOf(string address, string tokenContractAddress)
         {
             GameAssetContract gameAsset = new GameAssetContract(web, tokenContractAddress);
@@ -72,7 +70,7 @@ namespace Hoard.BC
         public Task<ulong> GetAssetBalanceOf(string gameContract, PlayerID pid, ulong itemID)
         {
             GameContract game = new GameContract(web, gameContract);
-            return game.GetItemBalance(pid.ID, itemID);
+            return game.GetAssetBalance(pid.ID, itemID);
         }
 
         public Task<ulong> GetGameAssetCount(string gameContract)
@@ -97,23 +95,14 @@ namespace Hoard.BC
             return ret;
         }
 
-        public async Task<GameCoinContract[]> GetGameCoinsContacts(string gameContract)
+        public async Task<GameExchangeContract> GetGameExchangeContract(string gameContract)
         {
             GameContract game = new GameContract(web, gameContract);
-            ulong length = await game.GetGameCoinsContactsLengthAsync();
 
-            GameCoinContract[] ret = new GameCoinContract[length];
-
-            for (ulong i = 0; i < length; ++i)
-            {
-                var address = await game.GetGameCoinsContactsAsync(i);
-                ret[i] = new GameCoinContract(web, address);
-            }
-
-            return ret;
+            return new GameExchangeContract(web, await game.GameGameExchangeContractAsync());
         }
 
-
+        // TEST METHODS BELOW.
 
 
 

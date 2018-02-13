@@ -16,54 +16,44 @@ namespace Hoard
     public class HoardService
     {
         public GBDesc GameBackendDesc { get; private set;}
-        public Dictionary<string, BC.Contracts.GameAssetContract> GameAssetsContracts { get; private set; } = new Dictionary<string, BC.Contracts.GameAssetContract>();
-        public GameExchangeService gameExchangeService { get; private set; }
+        public Dictionary<ulong, GameAsset> GameAssetIdDict { get; private set; } = new Dictionary<ulong, GameAsset>();
+        public Dictionary<string, GameAsset> GameAssetSymbolDict { get; private set; } = new Dictionary<string, GameAsset>();
+        public GameExchangeService GameExchangeService { get; private set; }
 
         private BC.BCComm bcComm = null;
         private GBClient client = null;
         private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
-        private Dictionary<string, BC.Contracts.GameCoinContract> gameCoinsContracts = new Dictionary<string, BC.Contracts.GameCoinContract>();
 
         public HoardService()
         {}
 
-        public async Task<Coin[]> RequestGameCoinList()
+        public GameAsset GetGameAsset(ulong assetId)
         {
-            var gameContracts = await bcComm.GetGameCoinsContacts(GameBackendDesc.GameContract);
-
-            List<Coin> ret = new List<Coin>();
-
-            foreach(var gc in gameContracts)
-            {
-                ret.Add(new Coin(await gc.Name(), await gc.Symbol(), gc.Address, await gc.TotalSupply()));
-            }
-
-            return ret.ToArray();
+            if (GameAssetIdDict.ContainsKey(assetId))
+                return GameAssetIdDict[assetId];
+            else
+                return null;
         }
 
-        public async Task<GameAsset[]> RequestGameAssetList()
+        public GameAsset GetGameAsset(string symbol)
         {
-            var gameAssetContracts = await bcComm.GetGameAssetContacts(GameBackendDesc.GameContract);
-
-            List<GameAsset> ret = new List<GameAsset>();
-
-            uint i = 0;
-            foreach (var gac in gameAssetContracts)
-            {
-                ret.Add(new GameAsset(await gac.Name(), await gac.Symbol(), gac.Address, await gac.TotalSupply(), i++));
-            }
-
-            return ret.ToArray();
+            if (GameAssetSymbolDict.ContainsKey(symbol))
+                return GameAssetSymbolDict[symbol];
+            else
+                return null;
         }
 
-        public async Task<GameAssetBalance[]> RequestGameAssetBalanceOf(PlayerID playerId)
+        public GameAsset[] GameAssets()
+        {
+            return GameAssetSymbolDict.Values.ToArray();
+        }
+
+        public async Task<GameAssetBalance[]> RequestGameAssetsBalanceOf(PlayerID playerId)
         {
             //iterate for all items and get balance
             List<GameAssetBalance> assetBalancesList = new List<GameAssetBalance>();
 
-            var gameAssets = await RequestGameAssetList();
-
-            foreach (var ga in gameAssets)
+            foreach (var ga in GameAssets())
             {
                 var balance = await bcComm.GetGameAssetBalanceOf(playerId.ID, ga.ContractAddress);
                 assetBalancesList.Add(new GameAssetBalance(ga, balance));
@@ -72,38 +62,20 @@ namespace Hoard
             return assetBalancesList.ToArray();
         }
 
-        public async Task<ulong> RequestGameAssetBalanceOf(string assetContractAddress, PlayerID id)
+        public async Task<ulong> RequestGameAssetBalanceOf(GameAsset asset, PlayerID id)
         {
-            return await bcComm.GetGameAssetBalanceOf(id.ID, assetContractAddress);
+            return await bcComm.GetGameAssetBalanceOf(id.ID, asset.ContractAddress);
         }
 
-        public async Task<CoinBalance[]> RequestGameCoinBalanceOf(PlayerID playerId)
+        private async Task<bool> RefreshGameAssets()
         {
-            //iterate for all coins and get balance
-            List<CoinBalance> coinBalancesList = new List<CoinBalance>();
+            var gaContracts = await RequestGameAssetContracts();
 
-            var gameCoins = await RequestGameCoinList();
+            ulong i = 0;
+            foreach (var gac in gaContracts)
+                await RegisterGameAssetContract(gac, i++);
 
-            foreach (var gc in gameCoins)
-            {
-                var balance = await bcComm.GetGameCoinBalanceOf(playerId.ID, gc.ContractAddress);
-                coinBalancesList.Add(new CoinBalance(gc, balance));
-            }
-
-            return coinBalancesList.ToArray();
-        }
-
-        public async Task<ulong> RequestGameCoinBalanceOf(string assetContractAddress, PlayerID id)
-        {
-            return await bcComm.GetGameCoinBalanceOf(id.ID, assetContractAddress);
-        }
-
-        public async Task<ulong> RequestGameCoinsBalansOf(PlayerID playerId, string coinSymbol)
-        {
-            if (gameCoinsContracts.ContainsKey(coinSymbol))
-                return await gameCoinsContracts[coinSymbol].BalanceOf(playerId.ID);
-            else
-                return 0;
+            return true;
         }
 
         public bool IsSignedIn(PlayerID id)
@@ -123,7 +95,8 @@ namespace Hoard
             client = new GBClient(GameBackendDesc);
             
             // Init game exchange. TODO: redesign it and make all this initialization in seprated function.
-            gameExchangeService = new GameExchangeService(client, bcComm);
+            GameExchangeService = new GameExchangeService(client, bcComm);
+            GameExchangeService.Init(bcComm.GetContract<BC.Contracts.GameContract>(GameBackendDesc.GameContract));
 
             //connect to backend
             return client.Connect(accounts[id]);
@@ -143,39 +116,33 @@ namespace Hoard
             return InitGBDescriptor(options);
         }
 
-        private void RegisterGameCoinContract(string symbol, BC.Contracts.GameCoinContract gameCoinContract)
+        private async Task<object> RegisterGameAssetContract(BC.Contracts.GameAssetContract gameAssetContract, ulong assetId)
         {
-            if (!gameCoinsContracts.ContainsKey(symbol))
-            {
-                gameCoinsContracts.Add(symbol, gameCoinContract);
-            }
-            else
-            {
-                throw new Exception("Truing to register same key twice");
-            }
-        }
+            var symbol = await gameAssetContract.Symbol();
 
-        private void RegisterGameAssetContract(string symbol, BC.Contracts.GameAssetContract gameAssetContract)
-        {
-            if (!GameAssetsContracts.ContainsKey(symbol))
+            if (!GameAssetSymbolDict.ContainsKey(symbol))
             {
-                GameAssetsContracts.Add(symbol, gameAssetContract);
+                var ga = new GameAsset(
+                    symbol,
+                    await gameAssetContract.Name(),
+                    gameAssetContract.Address,
+                    await gameAssetContract.TotalSupply(),
+                    assetId);
+
+                GameAssetSymbolDict.Add(symbol, ga);
+                GameAssetIdDict.Add(assetId, ga);
             }
             else
             {
                 throw new Exception("Truing to register same key twice");
             }
 
+            return null;
         }
 
         private async Task<BC.Contracts.GameAssetContract[]> RequestGameAssetContracts()
         {
             return await bcComm.GetGameAssetContacts(GameBackendDesc.GameContract);
-        }
-
-        private async Task<BC.Contracts.GameCoinContract[]> RequestGameCoinsContracts()
-        {
-            return await bcComm.GetGameCoinsContacts(GameBackendDesc.GameContract);
         }
 
         public List<Account> Accounts
@@ -201,15 +168,8 @@ namespace Hoard
                 gbDesc.Url
                 ));
 #endif
-            var gcContracts = RequestGameCoinsContracts().Result;
 
-            foreach (var gc in gcContracts)
-                RegisterGameCoinContract(gc.Symbol().Result, gc);
-
-            var gaContracts = RequestGameAssetContracts().Result;
-
-            foreach (var ga in gaContracts)
-                RegisterGameAssetContract(ga.Symbol().Result, ga);
+            RefreshGameAssets().Wait();
 
             return true;
         }

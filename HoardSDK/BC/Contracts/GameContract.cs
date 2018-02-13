@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
 {
-    class GameContract
+    public class GameContract
     {
         public static string ABI = @"[ { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'assetTokens', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameCoinsContactsLength', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'constactAddress', 'type': 'address' } ], 'name': 'setGameAssetContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint256' } ], 'name': 'gameCoinsContacts', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'constactAddress', 'type': 'address' } ], 'name': 'addGameAssetContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'balanceOf', 'outputs': [ { 'name': 'balance', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_gameSrvURL', 'type': 'string' } ], 'name': 'setGameSrvURL', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'nextAssetId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'adr', 'type': 'address' } ], 'name': 'addGameCoinContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'index', 'type': 'uint64' } ], 'name': 'setGameCoinContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'totalBalanceOf', 'outputs': [ { 'name': '', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameSrvURL', 'outputs': [ { 'name': '', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameOwner', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'inputs': [ { 'name': '_gameOwner', 'type': 'address' }, { 'name': '_gameId', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'constructor' } ]";
 
@@ -44,19 +44,19 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("setGameSrvURL");
         }
 
-        private Function GetFunctionGameCoinsContacts()
+        private Function GetFunctionGameAssetContacts()
         {
-            return contract.GetFunction("gameCoinsContacts");
-        }
-
-        private Function GetFunctionGameCoinsContactsLength()
-        {
-            return contract.GetFunction("gameCoinsContactsLength");
+            return contract.GetFunction("gameAssetContacts");
         }
 
         private Function GetFunctionAssetTokens()
         {
             return contract.GetFunction("assetTokens");
+        }
+
+        private Function GetFunctionGameExchange()
+        {
+            return contract.GetFunction("gameExchange");
         }
 
         public Task<ulong> GetNextAssetIdAsync()
@@ -65,7 +65,7 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<ulong>();
         }
 
-        public Task<ulong> GetItemBalance(string address, ulong itemID)
+        public Task<ulong> GetAssetBalance(string address, ulong itemID)
         {
             var function = GetFunctionBalanceOf();
             return function.CallAsync<ulong>(address, itemID);
@@ -87,22 +87,16 @@ namespace Hoard.BC.Contracts
             });
         }
 
-        public Task<string> GetGameCoinsContactsAsync(ulong index)
-        {
-            var function = GetFunctionGameCoinsContacts();
-            return function.CallAsync<string>(index);
-        }
-
-        public Task<ulong> GetGameCoinsContactsLengthAsync()
-        {
-            var function = GetFunctionGameCoinsContactsLength();
-            return function.CallAsync<ulong>();
-        }
-
         public Task<string> GetGameAssetContractAsync(ulong assetId)
         {
             var function = GetFunctionAssetTokens();
             return function.CallAsync<string>(assetId);
+        }
+
+        public Task<string> GameGameExchangeContractAsync()
+        {
+            var function = GetFunctionGameExchange();
+            return function.CallAsync<string>();
         }
     }
 }

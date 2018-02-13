@@ -8,7 +8,7 @@ using Nethereum.Contracts;
 
 namespace Hoard.BC.Contracts
 {
-    class GameExchangeContract
+    public class GameExchangeContract
     {
         public static string ABI = @"";
 
@@ -28,12 +28,12 @@ namespace Hoard.BC.Contracts
 
         public Task<object> Trade(
             string tokenGet, 
-            uint amountGet, 
-            string tokenGive, 
-            uint amountGive, 
-            uint expires, 
-            uint nonce, 
-            uint amount)
+            ulong amountGet, 
+            string tokenGive,
+            ulong amountGive,
+            ulong expires,
+            ulong nonce,
+            ulong amount)
         {
             var function = GetFunctionTrade();
             return function.CallAsync<object>(
