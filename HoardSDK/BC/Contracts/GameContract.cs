@@ -13,7 +13,7 @@ namespace Hoard.BC.Contracts
 {
     class GameContract
     {
-        public static string ABI = @"[ { 'constant': true, 'inputs': [], 'name': 'gameCoinsContactsLength', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint256' } ], 'name': 'gameCoinsContacts', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'balanceOf', 'outputs': [ { 'name': 'balance', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_gameSrvURL', 'type': 'string' } ], 'name': 'setGameSrvURL', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'nextAssetId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'adr', 'type': 'address' } ], 'name': 'addGameCoinContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'index', 'type': 'uint64' } ], 'name': 'setGameCoinContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'totalBalanceOf', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'receiver', 'type': 'address' }, { 'name': 'assetId', 'type': 'uint64' }, { 'name': 'amount', 'type': 'uint64' } ], 'name': 'transfer', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameSrvURL', 'outputs': [ { 'name': '', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'from', 'type': 'address' }, { 'name': 'to', 'type': 'address' }, { 'name': 'assetId', 'type': 'uint64' }, { 'name': 'amount', 'type': 'uint64' } ], 'name': 'gameOwnerTransfer', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'amount', 'type': 'uint64' } ], 'name': 'addGameAsset', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameOwner', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'assetId', 'type': 'uint64' }, { 'name': 'amount', 'type': 'uint64' } ], 'name': 'burn', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'inputs': [ { 'name': '_gameOwner', 'type': 'address' }, { 'name': '_gameId', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'constructor' } ]";
+        public static string ABI = @"[ { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'assetTokens', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameCoinsContactsLength', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'constactAddress', 'type': 'address' } ], 'name': 'setGameAssetContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint256' } ], 'name': 'gameCoinsContacts', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'constactAddress', 'type': 'address' } ], 'name': 'addGameAssetContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'balanceOf', 'outputs': [ { 'name': 'balance', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_gameSrvURL', 'type': 'string' } ], 'name': 'setGameSrvURL', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'nextAssetId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'adr', 'type': 'address' } ], 'name': 'addGameCoinContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'index', 'type': 'uint64' } ], 'name': 'setGameCoinContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'totalBalanceOf', 'outputs': [ { 'name': '', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameSrvURL', 'outputs': [ { 'name': '', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameOwner', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'inputs': [ { 'name': '_gameOwner', 'type': 'address' }, { 'name': '_gameId', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'constructor' } ]";
 
         private readonly Web3 web3;
         private Contract contract;
@@ -24,34 +24,39 @@ namespace Hoard.BC.Contracts
             this.contract = web3.Eth.GetContract(ABI, address);
         }
 
-        public Function GetFunctionNextAssetId()
+        private Function GetFunctionNextAssetId()
         {
             return contract.GetFunction("nextAssetId");
         }
 
-        public Function GetFunctionBalanceOf()
+        private Function GetFunctionBalanceOf()
         {
             return contract.GetFunction("balanceOf");
         }
 
-        public Function GetFunctionGameSrvURL()
+        private Function GetFunctionGameSrvURL()
         {
             return contract.GetFunction("gameSrvURL");
         }
 
-        public Function GetFunctionSetGameSrvURL()
+        private Function GetFunctionSetGameSrvURL()
         {
             return contract.GetFunction("setGameSrvURL");
         }
 
-        public Function GetFunctionGameCoinsContacts()
+        private Function GetFunctionGameCoinsContacts()
         {
             return contract.GetFunction("gameCoinsContacts");
         }
 
-        public Function GetFunctionGameCoinsContactsLength()
+        private Function GetFunctionGameCoinsContactsLength()
         {
             return contract.GetFunction("gameCoinsContactsLength");
+        }
+
+        private Function GetFunctionAssetTokens()
+        {
+            return contract.GetFunction("assetTokens");
         }
 
         public Task<ulong> GetNextAssetIdAsync()
@@ -92,6 +97,12 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionGameCoinsContactsLength();
             return function.CallAsync<ulong>();
+        }
+
+        public Task<string> GetGameAssetContractAsync(ulong assetId)
+        {
+            var function = GetFunctionAssetTokens();
+            return function.CallAsync<string>(assetId);
         }
     }
 }

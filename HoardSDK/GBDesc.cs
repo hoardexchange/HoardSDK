@@ -12,6 +12,5 @@ namespace Hoard
         public string Name;
         public string Url;
         public string GameContract;
-        public string PublicKey;
     }
 }

@@ -63,12 +63,16 @@
   <ItemGroup>
     <Compile Include="Account.cs" />
     <Compile Include="BC\BCComm.cs" />
+    <Compile Include="BC\Contracts\GameAssetContract.cs" />
     <Compile Include="BC\Contracts\GameCoinContract.cs" />
     <Compile Include="BC\Contracts\GameCenterContract.cs" />
     <Compile Include="BC\Contracts\GameContract.cs" />
+    <Compile Include="BC\Contracts\GameExchangeContract.cs" />
+    <Compile Include="BC\Contracts\GameTokenContract.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Commons.cs" />
     <Compile Include="Eth\Utils.cs" />
+    <Compile Include="GameExchangeService.cs" />
     <Compile Include="GameItem.cs" />
     <Compile Include="GBDesc.cs" />
     <Compile Include="HoardService.cs" />

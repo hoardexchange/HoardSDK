@@ -11,12 +11,12 @@ namespace Hoard.BC
     /// Internal class for Blockchain communication.
     /// Uses Nethereum library.
     /// </summary>
-    class BCComm
+    public class BCComm
     {
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         
-        private const string GameInfoAddress = "0xff1936ff98d4c5d8b1cbf5e4cfb65b6b42fb9657";
+        private const string GameInfoAddress = "0x64661beb0a25fd7bf8ba0d819ecfb0a05bee1302";
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
         {
@@ -48,7 +48,6 @@ namespace Hoard.BC
                     desc.GameID = gameID;
                     desc.Name = gInfo.Name;
                     desc.Url = !url.StartsWith("http") ? "http://" + url : url;
-                    desc.PublicKey = "";//TODO: get it from BC somehow
                 }
 
                 return desc;
@@ -63,16 +62,39 @@ namespace Hoard.BC
             return gameCoin.BalanceOf(address);
         }
 
-        public Task<ulong> GetGameItemCount(string gameContract)
+        public Task<ulong> GetGameAssetBalanceOf(string address, string tokenContractAddress)
+        {
+            GameAssetContract gameAsset = new GameAssetContract(web, tokenContractAddress);
+
+            return gameAsset.BalanceOf(address);
+        }
+
+        public Task<ulong> GetAssetBalanceOf(string gameContract, PlayerID pid, ulong itemID)
+        {
+            GameContract game = new GameContract(web, gameContract);
+            return game.GetItemBalance(pid.ID, itemID);
+        }
+
+        public Task<ulong> GetGameAssetCount(string gameContract)
         {
             GameContract game = new GameContract(web, gameContract);
             return game.GetNextAssetIdAsync();
         }
 
-        public Task<ulong> GetItemBalance(string gameContract, PlayerID pid, ulong itemID)
+        public async Task<GameAssetContract[]> GetGameAssetContacts(string gameContract)
         {
             GameContract game = new GameContract(web, gameContract);
-            return game.GetItemBalance(pid.ID, itemID);
+            ulong length = await game.GetNextAssetIdAsync();
+
+            GameAssetContract[] ret = new GameAssetContract[length];
+
+            for (ulong i = 0; i < length; ++i)
+            {
+                var address = await game.GetGameAssetContractAsync(i);
+                ret[i] = new GameAssetContract(web, address);
+            }
+
+            return ret;
         }
 
         public async Task<GameCoinContract[]> GetGameCoinsContacts(string gameContract)
@@ -90,6 +112,22 @@ namespace Hoard.BC
 
             return ret;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         public async Task<bool> AddGame()
         {

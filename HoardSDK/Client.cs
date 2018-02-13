@@ -13,7 +13,7 @@ namespace Hoard
     /// <summary>
     /// Hoard client that communicates with game backend
     /// </summary>
-    class GBClient
+    public class GBClient
     {
         public struct AssetInfo
         {
