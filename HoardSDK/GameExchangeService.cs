@@ -23,7 +23,7 @@ namespace Hoard
 
         public void Init(BC.Contracts.GameContract gameContract)
         {
-            GameExchangeContract = bcComm.GetContract<BC.Contracts.GameExchangeContract>(gameContract.GameGameExchangeContractAsync().Result);
+            GameExchangeContract = bcComm.GetContract<BC.Contracts.GameExchangeContract>(gameContract.GameExchangeContractAsync().Result);
         }
 
         public async Task<Order[]> ListOrders(GameAsset gaGet, GameAsset gaGive)

@@ -93,7 +93,7 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>(assetId);
         }
 
-        public Task<string> GameGameExchangeContractAsync()
+        public Task<string> GameExchangeContractAsync()
         {
             var function = GetFunctionGameExchange();
             return function.CallAsync<string>();

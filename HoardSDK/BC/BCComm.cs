@@ -16,7 +16,7 @@ namespace Hoard.BC
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         
-        private const string GameInfoAddress = "0x64661beb0a25fd7bf8ba0d819ecfb0a05bee1302";
+        private const string GameInfoAddress = "0x8bd82aa39b051a224433756c883a6d61f015d6b0";
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
         {
@@ -99,7 +99,7 @@ namespace Hoard.BC
         {
             GameContract game = new GameContract(web, gameContract);
 
-            return new GameExchangeContract(web, await game.GameGameExchangeContractAsync());
+            return new GameExchangeContract(web, await game.GameExchangeContractAsync());
         }
 
         // TEST METHODS BELOW.
