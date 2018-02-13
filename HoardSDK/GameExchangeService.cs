@@ -93,10 +93,10 @@ namespace Hoard
 
         public void UpdateGameAssetsObjs(GameAsset gaGet, GameAsset gaGive)
         {
-            if (tokenGet == gaGet.ContractAddress)
+            if (gaGet != null && tokenGet == gaGet.ContractAddress)
                 gameAssetGet = gaGet;
 
-            if (tokenGive == gaGive.ContractAddress)
+            if (gaGive != null && tokenGive == gaGive.ContractAddress)
                 gameAssetGive = gaGive;
         }
     }

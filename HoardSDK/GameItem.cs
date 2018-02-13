@@ -32,6 +32,7 @@ namespace Hoard
             Symbol = symbol;
             ContractAddress = contractAddress;
             TotalSuplly = totalSuplly;
+            AssetId = assetId;
         }
     }
 

@@ -67,9 +67,12 @@ namespace Hoard
             return await bcComm.GetGameAssetBalanceOf(id.ID, asset.ContractAddress);
         }
 
-        private async Task<bool> RefreshGameAssets()
+        public async Task<bool> RefreshGameAssets()
         {
             var gaContracts = await RequestGameAssetContracts();
+
+            GameAssetSymbolDict.Clear();
+            GameAssetIdDict.Clear();
 
             ulong i = 0;
             foreach (var gac in gaContracts)
