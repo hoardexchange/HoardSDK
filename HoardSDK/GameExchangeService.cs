@@ -14,11 +14,13 @@ namespace Hoard
         private BC.BCComm bcComm = null;
         private GBClient client = null;
         private BC.Contracts.GameExchangeContract GameExchangeContract = null;
+        private HoardService hoard = null;
 
-        public GameExchangeService(GBClient client, BC.BCComm bcComm)
+        public GameExchangeService(GBClient client, BC.BCComm bcComm, HoardService hoard)
         {
             this.client = client;
             this.bcComm = bcComm;
+            this.hoard = hoard; // FIXME: Circular dep.
         }
 
         public void Init(BC.Contracts.GameContract gameContract)
@@ -36,7 +38,13 @@ namespace Hoard
             var list = JsonConvert.DeserializeObject<Order[]>(jsonStr);
 
             foreach (var l in list)
-                l.UpdateGameAssetsObjs(gaGet, gaGive);
+            {
+                l.UpdateGameAssetsObjs(
+                    this.hoard.GameAssetAddressDict[l.tokenGet.ToLower()],
+                    this.hoard.GameAssetAddressDict[l.tokenGive.ToLower()]
+                    );
+            }
+                
 
             return list;
         }

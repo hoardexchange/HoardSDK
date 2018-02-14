@@ -25,14 +25,16 @@ namespace Hoard
         public string ContractAddress { get; private set; } = null;
         public ulong TotalSuplly { get; private set; }
         public ulong AssetId { get; private set; }
+        public string AssetType { get; private set; }
 
-        public GameAsset(string symbol, string name, string contractAddress, ulong totalSuplly, ulong assetId)
+        public GameAsset(string symbol, string name, string contractAddress, ulong totalSuplly, ulong assetId, string assetType)
         {
             Name = name;
             Symbol = symbol;
             ContractAddress = contractAddress;
             TotalSuplly = totalSuplly;
             AssetId = assetId;
+            AssetType = assetType;
         }
     }
 

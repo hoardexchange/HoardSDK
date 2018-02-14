@@ -16,7 +16,7 @@ namespace Hoard.BC
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         
-        private const string GameInfoAddress = "0x8bd82aa39b051a224433756c883a6d61f015d6b0";
+        private const string GameInfoAddress = "0x7fa56e70800766fce0e2319824f262abb6f60b07";
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
         {

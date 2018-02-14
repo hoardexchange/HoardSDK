@@ -18,6 +18,7 @@ namespace Hoard
         public GBDesc GameBackendDesc { get; private set;}
         public Dictionary<ulong, GameAsset> GameAssetIdDict { get; private set; } = new Dictionary<ulong, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetSymbolDict { get; private set; } = new Dictionary<string, GameAsset>();
+        public Dictionary<string, GameAsset> GameAssetAddressDict { get; private set; } = new Dictionary<string, GameAsset>();
         public GameExchangeService GameExchangeService { get; private set; }
 
         private BC.BCComm bcComm = null;
@@ -73,6 +74,7 @@ namespace Hoard
 
             GameAssetSymbolDict.Clear();
             GameAssetIdDict.Clear();
+            GameAssetAddressDict.Clear();
 
             ulong i = 0;
             foreach (var gac in gaContracts)
@@ -98,7 +100,7 @@ namespace Hoard
             client = new GBClient(GameBackendDesc);
             
             // Init game exchange. TODO: redesign it and make all this initialization in seprated function.
-            GameExchangeService = new GameExchangeService(client, bcComm);
+            GameExchangeService = new GameExchangeService(client, bcComm, this);
             GameExchangeService.Init(bcComm.GetContract<BC.Contracts.GameContract>(GameBackendDesc.GameContract));
 
             //connect to backend
@@ -130,10 +132,12 @@ namespace Hoard
                     await gameAssetContract.Name(),
                     gameAssetContract.Address,
                     await gameAssetContract.TotalSupply(),
-                    assetId);
+                    assetId,
+                    await gameAssetContract.AssetType());
 
                 GameAssetSymbolDict.Add(symbol, ga);
                 GameAssetIdDict.Add(assetId, ga);
+                GameAssetAddressDict.Add(ga.ContractAddress, ga);
             }
             else
             {
