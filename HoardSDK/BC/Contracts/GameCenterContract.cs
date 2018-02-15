@@ -27,6 +27,8 @@ namespace Hoard.BC.Contracts
         private readonly Web3 web3;
         private Contract contract;
 
+        public string Address { get { return contract.Address; } }
+
         public GameCenterContract(Web3 web3, string address)
         {
             this.web3 = web3;

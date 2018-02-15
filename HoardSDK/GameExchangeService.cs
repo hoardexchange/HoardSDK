@@ -49,12 +49,24 @@ namespace Hoard
             return list;
         }
 
-        public async Task<bool> Trade(Order order, ulong amount)
+        public async Task<string> Trade(Order order, ulong amount)
         {
-            await GameExchangeContract.Trade(order.tokenGet, order.amountGet, order.tokenGive, order.amountGive, order.expires, order.nonce, amount);
-
-            return true; // TODO: Provide error handling.
+            return await GameExchangeContract.Trade(
+                order.tokenGet,
+                order.amountGet,
+                order.tokenGive,
+                order.amountGive,
+                order.expires,
+                order.nonce,
+                amount,
+                hoard.Accounts[0].Address);
         }
+
+        public async Task<string> Deposit(GameAsset asset, ulong amount)
+        {
+            return await asset.Contract.Transfer(GameExchangeContract.Address, amount, hoard.Accounts[0].Address);
+        }
+
     }
 
     public class Order
@@ -101,11 +113,8 @@ namespace Hoard
 
         public void UpdateGameAssetsObjs(GameAsset gaGet, GameAsset gaGive)
         {
-            if (gaGet != null && tokenGet == gaGet.ContractAddress)
-                gameAssetGet = gaGet;
-
-            if (gaGive != null && tokenGive == gaGive.ContractAddress)
-                gameAssetGive = gaGive;
+            gameAssetGet = gaGet;
+            gameAssetGive = gaGive;
         }
     }
 

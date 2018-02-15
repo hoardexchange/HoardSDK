@@ -15,6 +15,8 @@ namespace Hoard.BC.Contracts
         private readonly Web3 web3;
         private Contract contract;
 
+        public string Address { get { return contract.Address; } }
+
         public GameExchangeContract(Web3 web3, string address)
         {
             this.web3 = web3;
@@ -26,17 +28,28 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("trade");
         }
 
-        public Task<object> Trade(
+        public async Task<string> Trade(
             string tokenGet, 
             ulong amountGet, 
             string tokenGive,
             ulong amountGive,
             ulong expires,
             ulong nonce,
-            ulong amount)
+            ulong amount,
+            string from)
         {
             var function = GetFunctionTrade();
-            return function.CallAsync<object>(
+            var gas = await function.EstimateGasAsync(tokenGet,
+                amountGet,
+                tokenGive,
+                amountGive,
+                expires,
+                nonce,
+                amount);
+            return await function.SendTransactionAsync(
+                from,
+                gas,
+                new Nethereum.Hex.HexTypes.HexBigInteger(0),
                 tokenGet, 
                 amountGet, 
                 tokenGive, 
@@ -45,6 +58,5 @@ namespace Hoard.BC.Contracts
                 nonce, 
                 amount);
         }
-
     }
 }

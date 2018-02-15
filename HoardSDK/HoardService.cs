@@ -130,7 +130,7 @@ namespace Hoard
                 var ga = new GameAsset(
                     symbol,
                     await gameAssetContract.Name(),
-                    gameAssetContract.Address,
+                    gameAssetContract,
                     await gameAssetContract.TotalSupply(),
                     assetId,
                     await gameAssetContract.AssetType());
