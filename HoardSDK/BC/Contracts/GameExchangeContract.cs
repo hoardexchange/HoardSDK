@@ -28,21 +28,43 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("trade");
         }
 
+        private Function GetFunctionTestTrade()
+        {
+            return contract.GetFunction("testTrade");
+        }
+
         private Function GetFunctionWithdrawToken()
         {
             return contract.GetFunction("withdrawToken");
         }
 
-        public async Task<string> Trade(
+        public async Task<bool> Trade(
             string tokenGet, 
             ulong amountGet, 
             string tokenGive,
             ulong amountGive,
             ulong expires,
             ulong nonce,
+            string user,
             ulong amount,
             string from)
         {
+            var testTradeFun = GetFunctionTestTrade();
+
+            var test = await testTradeFun.CallAsync<bool>(
+                tokenGet,
+                amountGet,
+                tokenGive,
+                amountGive,
+                expires,
+                nonce,
+                user,
+                amount,
+                from);
+
+            if (!test)
+                return false;
+
             var function = GetFunctionTrade();
             var gas = await function.EstimateGasAsync(tokenGet,
                 amountGet,
@@ -50,25 +72,33 @@ namespace Hoard.BC.Contracts
                 amountGive,
                 expires,
                 nonce,
+                user,
                 amount);
-            return await function.SendTransactionAsync(
+
+            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(
                 from,
                 gas,
                 new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                null,
                 tokenGet, 
                 amountGet, 
                 tokenGive, 
                 amountGive, 
                 expires, 
-                nonce, 
+                nonce,
+                user,
                 amount);
+            return receipt.Status.Value == 1;
         }
 
-        public async Task<string> Withdraw(string tokenAddress, ulong value, string from)
+        public async Task<bool> Withdraw(string tokenAddress, ulong value, string from)
         {
             var function = GetFunctionWithdrawToken();
             var gas = await function.EstimateGasAsync(tokenAddress, value);
-            return await function.SendTransactionAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), tokenAddress, value);
+            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, tokenAddress, value);
+            return receipt.Status.Value == 1;
         }
     }
 }

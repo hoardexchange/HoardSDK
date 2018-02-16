@@ -83,11 +83,13 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
-        public async Task<string> Transfer(string addressTo, ulong value, string from)
+        public async Task<bool> Transfer(string addressTo, ulong value, string from)
         {
             var function = GetFunctionTransfer();
             var gas = await function.EstimateGasAsync(addressTo, value);
-            return await function.SendTransactionAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), addressTo, value);
+            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, addressTo, value);
+            return receipt.Status.Value == 1;
         }
     }
 }

@@ -49,7 +49,7 @@ namespace Hoard
             return list;
         }
 
-        public async Task<string> Trade(Order order, ulong amount)
+        public async Task<bool> Trade(Order order, ulong amount)
         {
             return await GameExchangeContract.Trade(
                 order.tokenGet,
@@ -58,16 +58,17 @@ namespace Hoard
                 order.amountGive,
                 order.expires,
                 order.nonce,
+                order.user,
                 amount,
                 hoard.Accounts[0].Address);
         }
 
-        public async Task<string> Deposit(GameAsset asset, ulong amount)
+        public async Task<bool> Deposit(GameAsset asset, ulong amount)
         {
             return await asset.Contract.Transfer(GameExchangeContract.Address, amount, hoard.Accounts[0].Address);
         }
 
-        public async Task<string> Withdraw(GameAsset asset, ulong amount)
+        public async Task<bool> Withdraw(GameAsset asset, ulong amount)
         {
             return await GameExchangeContract.Withdraw(asset.ContractAddress, amount, hoard.Accounts[0].Address);
         }
@@ -101,10 +102,14 @@ namespace Hoard
         // [JsonConverter(typeof(BigIntegerConverter))]
         public ulong amount { get; private set; }
 
+        [JsonProperty(propertyName: "user")]
+        // [JsonConverter(typeof(BigIntegerConverter))]
+        public string user { get; private set; }
+
         public GameAsset gameAssetGet { get; private set; } = null;
         public GameAsset gameAssetGive { get; private set; } = null;
 
-        public Order(string tokenGet, ulong amountGet, string tokenGive, ulong amountGive, ulong expires, ulong nonce, ulong amount)
+        public Order(string tokenGet, ulong amountGet, string tokenGive, ulong amountGive, ulong expires, ulong nonce, ulong amount, string user)
         {
             this.tokenGet = tokenGet;
             this.amountGet = amountGet;
@@ -113,6 +118,7 @@ namespace Hoard
             this.expires = expires;
             this.nonce = nonce;
             this.amount = amount;
+            this.user = user;
         }
 
         public void UpdateGameAssetsObjs(GameAsset gaGet, GameAsset gaGive)
