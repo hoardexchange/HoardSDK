@@ -67,6 +67,10 @@ namespace Hoard
             return await asset.Contract.Transfer(GameExchangeContract.Address, amount, hoard.Accounts[0].Address);
         }
 
+        public async Task<string> Withdraw(GameAsset asset, ulong amount)
+        {
+            return await GameExchangeContract.Withdraw(asset.ContractAddress, amount, hoard.Accounts[0].Address);
+        }
     }
 
     public class Order

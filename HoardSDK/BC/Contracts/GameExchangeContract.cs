@@ -28,6 +28,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("trade");
         }
 
+        private Function GetFunctionWithdrawToken()
+        {
+            return contract.GetFunction("withdrawToken");
+        }
+
         public async Task<string> Trade(
             string tokenGet, 
             ulong amountGet, 
@@ -57,6 +62,13 @@ namespace Hoard.BC.Contracts
                 expires, 
                 nonce, 
                 amount);
+        }
+
+        public async Task<string> Withdraw(string tokenAddress, ulong value, string from)
+        {
+            var function = GetFunctionWithdrawToken();
+            var gas = await function.EstimateGasAsync(tokenAddress, value);
+            return await function.SendTransactionAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), tokenAddress, value);
         }
     }
 }
