@@ -16,7 +16,7 @@ namespace Hoard.BC
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         
-        private const string GameInfoAddress = "0x5e8de79b24c1ac207baf6bc39f4c900d4a8c9a10";
+        private const string GameInfoAddress = "0xd864c8c3e3b94b6a59897bddb9b39f72c49a8455";
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
         {
@@ -112,17 +112,6 @@ namespace Hoard.BC
 
 
 
-
-
-
-
-
-
-        public async Task<bool> AddGame()
-        {
-            bool added = await gameCenter.AddGameAsync(this, 0, "myGame", "0x6c9a67c91526adf3f0f7b32cac05f77bad0fb39f");
-            return added;
-        }
 
         /// <summary>
         /// temporary function to call functions on blockchain
