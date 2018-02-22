@@ -95,7 +95,7 @@ namespace Hoard.BC.Contracts
         public async Task<bool> Withdraw(string tokenAddress, ulong value, string from)
         {
             var function = GetFunctionWithdrawToken();
-            var gas = await function.EstimateGasAsync(tokenAddress, value);
+            var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), tokenAddress, value);
             gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
             var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, tokenAddress, value);
             return receipt.Status.Value == 1;

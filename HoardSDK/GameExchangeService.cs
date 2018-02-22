@@ -46,7 +46,7 @@ namespace Hoard
             }
                 
 
-            return list;
+            return list.ToList().FindAll(e => e.amount < e.amountGet).ToArray();
         }
 
         public async Task<bool> Trade(Order order, ulong amount)
