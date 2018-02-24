@@ -102,6 +102,20 @@ namespace Hoard.BC
             return new GameExchangeContract(web, await game.GameExchangeContractAsync());
         }
 
+        public Task<bool> RequestPayoutPlayerReward(string gameAssetContractAddress, ulong amount, string gameContract, string from)
+        {
+            GameContract game = new GameContract(web, gameContract);
+
+            return game.PayoutPlayerReward(gameAssetContractAddress, amount, from);
+        }
+
+        public Task<bool> RequestAssetTransfer(string to, string gameAssetContractAddress, ulong amount, string from)
+        {
+            GameAssetContract assetContract = new GameAssetContract(web, gameAssetContractAddress);
+
+            return assetContract.Transfer(to, amount, from);
+        }
+
         // TEST METHODS BELOW.
 
 

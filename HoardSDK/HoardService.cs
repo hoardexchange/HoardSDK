@@ -19,6 +19,7 @@ namespace Hoard
         public Dictionary<ulong, GameAsset> GameAssetIdDict { get; private set; } = new Dictionary<ulong, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetSymbolDict { get; private set; } = new Dictionary<string, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetAddressDict { get; private set; } = new Dictionary<string, GameAsset>();
+        public Dictionary<string, GameAsset> GameAssetNameDict { get; private set; } = new Dictionary<string, GameAsset>();
         public GameExchangeService GameExchangeService { get; private set; }
 
         private BC.BCComm bcComm = null;
@@ -75,12 +76,40 @@ namespace Hoard
             GameAssetSymbolDict.Clear();
             GameAssetIdDict.Clear();
             GameAssetAddressDict.Clear();
+            GameAssetNameDict.Clear();
 
             ulong i = 0;
             foreach (var gac in gaContracts)
                 await RegisterGameAssetContract(gac, i++);
 
             return true;
+        }
+
+        public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset, ulong amount)
+        {
+            return await bcComm.RequestPayoutPlayerReward(
+                gameAsset.ContractAddress,
+                amount,
+                GameBackendDesc.GameContract,
+                Accounts[0].Address);
+        }
+
+        public async Task<bool> RequestAssetTransferToGameContract(GameAsset gameAsset, ulong amount)
+        {
+            return await bcComm.RequestAssetTransfer(
+                GameBackendDesc.GameContract,
+                gameAsset.ContractAddress,
+                amount,
+                Accounts[0].Address);
+        }
+
+        public async Task<bool> RequestAssetTransfer(string to, GameAsset gameAsset, ulong amount)
+        {
+            return await bcComm.RequestAssetTransfer(
+                to,
+                gameAsset.ContractAddress,
+                amount,
+                Accounts[0].Address);
         }
 
         public bool IsSignedIn(PlayerID id)
@@ -138,6 +167,7 @@ namespace Hoard
                 GameAssetSymbolDict.Add(symbol, ga);
                 GameAssetIdDict.Add(assetId, ga);
                 GameAssetAddressDict.Add(ga.ContractAddress, ga);
+                GameAssetNameDict.Add(ga.Name, ga);
             }
             else
             {
