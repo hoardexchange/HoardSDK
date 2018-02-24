@@ -66,7 +66,11 @@ namespace Hoard.BC.Contracts
                 return false;
 
             var function = GetFunctionTrade();
-            var gas = await function.EstimateGasAsync(tokenGet,
+            var gas = await function.EstimateGasAsync(
+                from,
+                new Nethereum.Hex.HexTypes.HexBigInteger(1000000),
+                new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                tokenGet,
                 amountGet,
                 tokenGive,
                 amountGive,
