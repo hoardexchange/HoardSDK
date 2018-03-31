@@ -66,6 +66,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("payoutPlayerReward");
         }
 
+        private Function GetFunctionName()
+        {
+            return contract.GetFunction("name");
+        }
+
         public Task<ulong> GetNextAssetIdAsync()
         {
             var function = GetFunctionNextAssetId();
@@ -113,6 +118,12 @@ namespace Hoard.BC.Contracts
             gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
             var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, assetTokenAddress, amount);
             return receipt.Status.Value == 1;
+        }
+
+        public async Task<bool> Name()
+        {
+            var function = GetFunctionName();
+            return function.CallAsync<string>();
         }
     }
 }
