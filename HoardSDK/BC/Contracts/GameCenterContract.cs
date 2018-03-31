@@ -35,9 +35,9 @@ namespace Hoard.BC.Contracts
             this.contract = web3.Eth.GetContract(ABI, address);
         }
 
-        public Function GetFunctionGetGameInfo()
+        public Function GetFunctionName()
         {
-            return contract.GetFunction("getGameInfo");
+            return contract.GetFunction("name");
         }
 
         public Function GetFunctionGetGameContract()
@@ -61,10 +61,10 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>(gameID);
         }
 
-        public Task<GameInfoDTO> GetGameInfoAsync(ulong gameID)
+        public Task<string> NameAsync(ulong gameID)
         {
-            var function = GetFunctionGetGameInfo();
-            return function.CallDeserializingToObjectAsync<GameInfoDTO>(gameID);
+            var function = GetFunctionName();
+            return function.CallAsync<string>();
         }
 
         public Task<bool> GetGameExistsAsync(ulong gameID)

@@ -48,10 +48,9 @@ namespace Hoard.BC
                     GameContract game = new GameContract(web, desc.GameContract);
 
                     string url = await game.GetGameServerURLAsync();
-                        
-                    var gInfo = await gameCenter.GetGameInfoAsync(gameID);
+
                     desc.GameID = gameID;
-                    desc.Name = gInfo.Name;
+                    desc.Name = game.name();
                     desc.Url = !url.StartsWith("http") ? "http://" + url : url;
                 }
 
