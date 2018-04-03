@@ -50,7 +50,7 @@ namespace Hoard.BC
                     string url = await game.GetGameServerURLAsync();
 
                     desc.GameID = gameID;
-                    desc.Name = game.Name();
+                    desc.Name = await game.Name();
                     desc.Url = !url.StartsWith("http") ? "http://" + url : url;
                 }
 
