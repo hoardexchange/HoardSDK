@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Nethereum.Web3.Accounts;
 using Org.BouncyCastle.Math;
+using System.Net;
 
 namespace Hoard
 {
@@ -47,6 +48,7 @@ namespace Hoard
         public bool Connect(Account account)
         {
             Client = new RestClient(Description.Url);
+            //Client = new RestClient("http://localhost:8000");
             // GBClient = new RestClient(@"http://172.16.81.128:8000"); // Local test purpose
 
 
@@ -126,6 +128,33 @@ namespace Hoard
             return response.Data;
         }
 
+        public async Task<byte[]> GetRawData(string url)
+        {
+            var request = new RestRequest(url, Method.GET);
+       
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request);
+
+            byte[] data = null;
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                data = response.RawBytes;
+            }
+            return data;
+        }
+
+        public async Task<string> Delete(string url)
+        {
+            var request = new RestRequest(url, Method.DELETE);
+
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request);
+
+            return response.Content;
+        }
+
         public async Task<string> GetJson(string url, object data)
         {
             var request = new RestRequest(url, Method.GET);
@@ -142,6 +171,21 @@ namespace Hoard
         {
             var request = new RestRequest(url, Method.POST);
             request.AddJsonBody(data);
+
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request);
+
+            return response;
+        }
+
+        public async Task<IRestResponse> PostWithFile(string url, Parameter[] parameters, byte[] file)
+        {
+            var request = new RestRequest(url, Method.POST);
+
+            foreach (Parameter p in parameters)
+                request.AddParameter(p);
+            request.AddFile("file", file, "file");
 
             PrepareRequest(request);
 

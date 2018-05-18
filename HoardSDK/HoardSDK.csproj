@@ -69,6 +69,9 @@
     <Compile Include="BC\Contracts\GameTokenContract.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Commons.cs" />
+    <Compile Include="DataStorage\DataStorageBackend.cs" />
+    <Compile Include="DataStorage\DataStorageUtils.cs" />
+    <Compile Include="DataStorage\DataStorageService.cs" />
     <Compile Include="Eth\Utils.cs" />
     <Compile Include="GameExchangeService.cs" />
     <Compile Include="GameItem.cs" />

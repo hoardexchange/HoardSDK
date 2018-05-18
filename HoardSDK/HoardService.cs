@@ -21,6 +21,7 @@ namespace Hoard
         public Dictionary<string, GameAsset> GameAssetAddressDict { get; private set; } = new Dictionary<string, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetNameDict { get; private set; } = new Dictionary<string, GameAsset>();
         public GameExchangeService GameExchangeService { get; private set; }
+        public DataStorageService DataStorageService { get; private set; }
 
         private BC.BCComm bcComm = null;
         private GBClient client = null;
@@ -134,6 +135,11 @@ namespace Hoard
 
             //connect to backend
             return client.Connect(accounts[id]);
+        }
+
+        public void InitDataStorage()
+        {
+            DataStorageService = new DataStorageService(client, this);
         }
 
         // PRIVATE SECTION
