@@ -123,25 +123,19 @@ namespace Hoard
 
             PrepareRequest(request);
 
-            var response = await Client.ExecuteTaskAsync<T>(request);
+            var response = await Client.ExecuteTaskAsync<T>(request).ConfigureAwait(false); ;
 
             return response.Data;
         }
 
-        public async Task<byte[]> GetRawData(string url)
+        public async Task<IRestResponse> Get(string url)
         {
             var request = new RestRequest(url, Method.GET);
-       
+
             PrepareRequest(request);
 
-            var response = await Client.ExecuteTaskAsync(request);
-
-            byte[] data = null;
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                data = response.RawBytes;
-            }
-            return data;
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
+            return response;
         }
 
         public async Task<string> Delete(string url)
@@ -150,7 +144,7 @@ namespace Hoard
 
             PrepareRequest(request);
 
-            var response = await Client.ExecuteTaskAsync(request);
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response.Content;
         }
@@ -162,7 +156,7 @@ namespace Hoard
 
             PrepareRequest(request);
 
-            var response = await Client.ExecuteTaskAsync(request);
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response.Content;
         }
@@ -174,7 +168,7 @@ namespace Hoard
 
             PrepareRequest(request);
 
-            var response = await Client.ExecuteTaskAsync(request);
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response;
         }
@@ -189,7 +183,7 @@ namespace Hoard
 
             PrepareRequest(request);
 
-            var response = await Client.ExecuteTaskAsync(request);
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response;
         }

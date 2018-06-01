@@ -26,11 +26,11 @@ namespace Hoard
             }
         }
 
-        abstract public string LoadHashFromServer(ulong assetId);
+        abstract public DataStorageService.Result LoadHashFromServer(ulong assetId, out string hash);
 
-        abstract public byte[] LoadDataFromServer(ulong assetId);
+        abstract public DataStorageService.Result LoadDataFromServer(ulong assetId, out byte[] data);
 
-        abstract public void UploadDataToServer(ulong assetId, byte[] data);
+        abstract public DataStorageService.Result UploadDataToServer(ulong assetId, byte[] data);
     }
 
     //DataStorageBackendLocal is for test purpose only!
@@ -43,25 +43,30 @@ namespace Hoard
             this.StorageBasePath = StorageBasePath;
         }
 
-        public override string LoadHashFromServer(ulong assetId)
+        public override DataStorageService.Result LoadHashFromServer(ulong assetId, out string hash)
         {
-            byte[] data = LoadDataFromServer(assetId);
-            if (data == null)
-                return null;
+            byte[] data = null;
+            DataStorageService.Result result = LoadDataFromServer(assetId, out data);
+            if (!result.Success)
+            {
+                hash = null;
+                return new DataStorageService.Result("No data for given assetId");
+            }
 
-            return ComputeHash(data);
+            hash = ComputeHash(data);
+            return new DataStorageService.Result();
         }
 
-        public override byte[] LoadDataFromServer(ulong assetId)
+        public override DataStorageService.Result LoadDataFromServer(ulong assetId, out byte[] data)
         {
-            byte[] data = DataStorageUtils.LoadFromDisk(StorageBasePath + "/" + GBDesc.GameID + "/" + assetId);
-            return data;
+            data = DataStorageUtils.LoadFromDisk(StorageBasePath + "/" + GBDesc.GameID + "/" + assetId);
+            return new DataStorageService.Result();
         }
 
-        public override void UploadDataToServer(ulong assetId, byte[] data)
+        public override DataStorageService.Result UploadDataToServer(ulong assetId, byte[] data)
         {
             DataStorageUtils.SaveToDisk(StorageBasePath + "/" + GBDesc.GameID + "/" + assetId, data);
-            return;
+            return new DataStorageService.Result();
         }
     }
 
@@ -79,31 +84,48 @@ namespace Hoard
             public string hash;
         }
 
-        public override string LoadHashFromServer(ulong assetId)
+        public override DataStorageService.Result LoadHashFromServer(ulong assetId, out string hash)
         {
-            var task = Client.GetJson("/res/?game_id=" + GBDesc.GameID + "&asset_id=" + assetId, null);
+            var task = Client.Get("/res/?game_id=" + GBDesc.GameID + "&asset_id=" + assetId);
             task.Wait();
-            var jsonStr = task.Result;
+            var task_result = task.Result;
+
+            hash = null;
+            if (task_result.StatusCode != HttpStatusCode.OK)
+                return new DataStorageService.Result(task_result.StatusDescription);
+
+            var jsonStr = task_result.Content;
 
             AssetHash[] gameDataInfo = JsonConvert.DeserializeObject<AssetHash[]>(jsonStr);
             if (gameDataInfo.Length>0)
             {
-                return gameDataInfo[0].hash;
+                hash = gameDataInfo[0].hash;
+                if (hash!=null)
+                    return new DataStorageService.Result();
             }
 
-            return null;
+            hash = null;
+            return new DataStorageService.Result("Error retrieving asset hash");
         }
 
-        public override byte[] LoadDataFromServer(ulong assetId)
+        public override DataStorageService.Result LoadDataFromServer(ulong assetId, out byte[] data)
         {
-            byte[] data = null;
-            var task = Client.GetRawData("/res_download/" + GBDesc.GameID + "/" + assetId + "/");
+            var task = Client.Get("/res_download/" + GBDesc.GameID + "/" + assetId + "/");
             task.Wait();
-            data = task.Result;
-            return data;
+            var task_result = task.Result;
+
+            data = task_result.RawBytes;
+
+            if (task_result.StatusCode != HttpStatusCode.OK)
+                return new DataStorageService.Result(task_result.StatusDescription);
+
+            if (data==null)
+                return new DataStorageService.Result("No data");
+
+            return new DataStorageService.Result();
         }
 
-        public override void UploadDataToServer(ulong assetId, byte[] data)
+        public override DataStorageService.Result UploadDataToServer(ulong assetId, byte[] data)
         {
             // delete old resource
             var delete_task = Client.Delete("/res_delete/" + GBDesc.GameID + "/" + assetId + "/");
@@ -130,6 +152,11 @@ namespace Hoard
             var create_task = Client.PostWithFile("/res/", parameters, data);
             create_task.Wait();
             var create_task_response = create_task.Result;
+
+            if (create_task_response.StatusCode != HttpStatusCode.Created)
+                return new DataStorageService.Result(create_task_response.StatusDescription);
+            else
+                return new DataStorageService.Result();
         }
     }
 }
