@@ -34,7 +34,7 @@ namespace Hoard
             Name = name;
             Symbol = symbol;
             Contract = contract;
-            ContractAddress = contract.Address;
+            ContractAddress = (contract != null) ? contract.Address : null;
             TotalSuplly = totalSuplly;
             AssetId = assetId;
             AssetType = assetType;

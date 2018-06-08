@@ -60,8 +60,16 @@ namespace Hoard
 
             foreach (var ga in GameAssets())
             {
-                var balance = await bcComm.GetGameAssetBalanceOf(playerId.ID, ga.ContractAddress);
-                assetBalancesList.Add(new GameAssetBalance(ga, balance));
+                if (ga.ContractAddress != null)
+                {
+                    var balance = await bcComm.GetGameAssetBalanceOf(playerId.ID, ga.ContractAddress);
+                    assetBalancesList.Add(new GameAssetBalance(ga, balance));
+                }
+                else
+                {
+                    // TODO: external item assume 1?
+                    assetBalancesList.Add(new GameAssetBalance(ga, 1));
+                }
             }
 
             return assetBalancesList.ToArray();
@@ -84,6 +92,26 @@ namespace Hoard
             ulong i = 0;
             foreach (var gac in gaContracts)
                 await RegisterGameAssetContract(gac, i++);
+
+            // get non-hoard-specific items
+            foreach (var providers in Providers)
+                foreach (var provider in providers.Value)
+                {
+                    GameAsset[] gameAssets = null;
+                    provider.getItems(out gameAssets);
+
+                    if (gameAssets!=null)
+                    {
+                        foreach (var ga in gameAssets)
+                        {
+                            GameAssetSymbolDict.Add(ga.Symbol, ga);
+                            GameAssetIdDict.Add(ga.AssetId, ga);
+                            // TODO:
+                            //GameAssetAddressDict.Add(ga.ContractAddress, ga);
+                            GameAssetNameDict.Add(ga.Name, ga);
+                        }
+                    }
+                }
 
             return true;
         }
