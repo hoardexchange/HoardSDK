@@ -21,10 +21,12 @@ namespace Hoard
         public Dictionary<string, GameAsset> GameAssetAddressDict { get; private set; } = new Dictionary<string, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetNameDict { get; private set; } = new Dictionary<string, GameAsset>();
         public GameExchangeService GameExchangeService { get; private set; }
-        public DataStorageService DataStorageService { get; private set; }
+
+        // a list of providers for given asset type
+        public Dictionary<string, List<Provider>> Providers { get; private set; } = new Dictionary<string, List<Provider>>();
 
         private BC.BCComm bcComm = null;
-        private GBClient client = null;
+        public GBClient client { get; private set; } = null;
         private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
 
         public HoardService()
@@ -137,9 +139,52 @@ namespace Hoard
             return client.Connect(accounts[id]);
         }
 
-        public void InitDataStorage()
+        public void RegisterProvider(string assetType, Provider provider)
         {
-            DataStorageService = new DataStorageService(client, this);
+            List<Provider> providers = null;
+            if (!Providers.TryGetValue(assetType, out providers))
+            {
+                providers = new List<Provider>();
+                Providers[assetType] = providers;
+            }
+
+            if (!providers.Contains(provider))
+            {
+                Providers[assetType].Add(provider);
+            }
+        }
+
+        public Result RequestProperties(GameAsset item, out Property[] props)
+        {
+            props = null;
+
+            List<Provider> providers = null;
+            if (Providers.TryGetValue(item.AssetType, out providers))
+            {
+                foreach(var provider in providers)
+                {
+                    return provider.getProperties(item, out props);
+                }
+            }
+
+            return new Result();
+        }
+
+        public Result RequestProperties(GameAsset item, string name, out Property[] props)
+        {
+            props = null;
+
+            List<Provider> providers = null;
+            if (Providers.TryGetValue(item.AssetType, out providers))
+            {
+                foreach (var provider in providers)
+                {
+                    if (provider.getPropertyNames().Contains<string>(name))
+                        return provider.getProperties(item, out props);
+                }
+            }
+
+            return new Result();
         }
 
         // PRIVATE SECTION

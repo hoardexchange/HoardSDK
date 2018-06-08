@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using RestSharp;
 
 namespace Hoard
 {
@@ -18,41 +16,24 @@ namespace Hoard
         public Dictionary<ulong, AssetFile> assets = new Dictionary<ulong, AssetFile>(); // assetId to cached AssetFile
     }
 
-    public class DataStorageService
+    public class DataProvider : Provider
     {
+        private string propertyName = "file";
+
         private const int DataStorageService_Ver = 0; // cache version
 
         private GBDesc GBDesc = null;
         private string CacheBasePath = null;
         private GameDataInfo GameDataInfo = null;
         private DataStorageBackend DataStorageBackend = null;
-        HoardService hoard;
 
-        public class Result
-        {
-            public Result()
-            {
-                Success = true;
-                Error = "";
-            }
-            public Result(string error)
-            {
-                Success = false;
-                Error = error;
-            }
-
-            public bool Success { get; private set; }
-            public string Error { get; private set; }
-        }
-
-        public DataStorageService(GBClient client, HoardService hoard)
+        public DataProvider(HoardService hoard)
         {
             this.GBDesc = hoard.GameBackendDesc;
-            this.hoard = hoard; // FIXME: Circular dep.
 
             CacheBasePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "files_cache");
 
-            byte[] gameDataInfoSerialized = DataStorageUtils.LoadFromDisk( GetGameDataPath() );
+            byte[] gameDataInfoSerialized = DataStorageUtils.LoadFromDisk(GetGameDataPath());
             if (gameDataInfoSerialized != null)
             {
                 GameDataInfo = DataStorageUtils.Deserialize(gameDataInfoSerialized);
@@ -67,7 +48,7 @@ namespace Hoard
             }
 
             //DataStorageBackend = new DataStorageBackendLocal("e:/hoard/DSS/server/"); // local test (storege on local disk)
-            DataStorageBackend = new DataStorageBackendHoard(client);
+            DataStorageBackend = new DataStorageBackendHoard(hoard.client);
             DataStorageBackend.Init(hoard.GameBackendDesc);
         }
 
@@ -91,9 +72,9 @@ namespace Hoard
             return DataStorageBackend.UploadDataToServer(assetId, data);
         }
 
-        public void Store(ulong assetId, byte[] data)
+        public Result Store(ulong assetId, byte[] data)
         {
-            DataStorageBackend.UploadDataToServer(assetId, data);
+            return DataStorageBackend.UploadDataToServer(assetId, data);
         }
 
         public Result Load(ulong assetId, out byte[] data)
@@ -151,8 +132,43 @@ namespace Hoard
         byte[] Decrypt(byte[] data)
         {
             //TODO
-            //hoard.Accounts[0];
             return data;
         }
-    } 
+
+        /* Provider interface implementation */
+
+        override public string[] getPropertyNames()
+        {
+            return new string[1] { propertyName };
+        }
+
+        override public Result getItems(out GameAsset[] items)
+        {
+            items = null;
+            return new Result("Not supported");
+        }
+
+        override public Result getProperties(GameAsset item, out Property[] props)
+        {
+            props = null;
+            byte[] data = null;
+
+            Result result = Load(item.AssetId, out data);
+            if (!result.Success)
+                return result;
+
+            props = new Property[1];
+            props[0] = new Property { name = propertyName, data = data };
+            return result;
+        }
+
+        override public Result getProperties(GameAsset item, string name, out Property[] props)
+        {
+            if (name == propertyName)
+                return getProperties(item, out props);
+
+            props = null;
+            return new Result("DataProvider doesn't support '" + name + "'");
+        }
+    }
 }

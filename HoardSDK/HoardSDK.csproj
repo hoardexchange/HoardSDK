@@ -69,9 +69,6 @@
     <Compile Include="BC\Contracts\GameTokenContract.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Commons.cs" />
-    <Compile Include="DataStorage\DataStorageBackend.cs" />
-    <Compile Include="DataStorage\DataStorageUtils.cs" />
-    <Compile Include="DataStorage\DataStorageService.cs" />
     <Compile Include="Eth\Utils.cs" />
     <Compile Include="GameExchangeService.cs" />
     <Compile Include="GameItem.cs" />
@@ -79,6 +76,8 @@
     <Compile Include="HoardService.cs" />
     <Compile Include="HoardServiceOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Provider.cs" />
+    <Compile Include="Result.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
