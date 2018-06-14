@@ -142,33 +142,23 @@ namespace Hoard
             return new string[1] { propertyName };
         }
 
-        override public Result getItems(out GameAsset[] items)
+        override public Result getItems(out List<GameAsset> items)
         {
             items = null;
             return new Result("Not supported");
         }
 
-        override public Result getProperties(GameAsset item, out Property[] props)
+        override public Result getProperties(GameAsset item)
         {
-            props = null;
             byte[] data = null;
 
             Result result = Load(item.AssetId, out data);
             if (!result.Success)
                 return result;
 
-            props = new Property[1];
-            props[0] = new Property { name = propertyName, data = data };
+            item.Properties[propertyName] = data;
+
             return result;
-        }
-
-        override public Result getProperties(GameAsset item, string name, out Property[] props)
-        {
-            if (name == propertyName)
-                return getProperties(item, out props);
-
-            props = null;
-            return new Result("DataProvider doesn't support '" + name + "'");
         }
     }
 }

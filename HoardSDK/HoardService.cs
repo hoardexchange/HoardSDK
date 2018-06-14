@@ -97,7 +97,7 @@ namespace Hoard
             foreach (var providers in Providers)
                 foreach (var provider in providers.Value)
                 {
-                    GameAsset[] gameAssets = null;
+                    List<GameAsset> gameAssets = null;
                     provider.getItems(out gameAssets);
 
                     if (gameAssets!=null)
@@ -182,33 +182,29 @@ namespace Hoard
             }
         }
 
-        public Result RequestProperties(GameAsset item, out Property[] props)
+        public Result RequestProperties(GameAsset item)
         {
-            props = null;
-
             List<Provider> providers = null;
             if (Providers.TryGetValue(item.AssetType, out providers))
             {
                 foreach(var provider in providers)
                 {
-                    return provider.getProperties(item, out props);
+                    return provider.getProperties(item);
                 }
             }
 
             return new Result();
         }
 
-        public Result RequestProperties(GameAsset item, string name, out Property[] props)
+        public Result RequestProperties(GameAsset item, string name)
         {
-            props = null;
-
             List<Provider> providers = null;
             if (Providers.TryGetValue(item.AssetType, out providers))
             {
                 foreach (var provider in providers)
                 {
                     if (provider.getPropertyNames().Contains<string>(name))
-                        return provider.getProperties(item, out props);
+                        return provider.getProperties(item);
                 }
             }
 

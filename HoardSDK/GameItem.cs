@@ -29,6 +29,8 @@ namespace Hoard
 
         public BC.Contracts.GameAssetContract Contract { get; private set; } = null;
 
+        public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+
         public GameAsset(string symbol, string name, BC.Contracts.GameAssetContract contract, ulong totalSuplly, ulong assetId, string assetType)
         {
             Name = name;
