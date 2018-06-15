@@ -20,7 +20,7 @@ namespace Hoard
 
         virtual public GBClient GetGameBackendClient() { return null; }
 
-        virtual public GameExchangeService GetExchangeService() { return null; }
+        virtual public ExchangeService GetExchangeService() { return null; }
 
         virtual public Task<ulong> GetGameAssetBalanceOf(string address, string tokenContractAddress)
         {
@@ -188,7 +188,7 @@ namespace Hoard
             return client;
         }
 
-        override public GameExchangeService GetExchangeService()
+        override public ExchangeService GetExchangeService()
         {
             return GameExchangeService;
         }

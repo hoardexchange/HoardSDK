@@ -22,7 +22,7 @@ namespace Hoard
 
         public GBDesc GameBackendDesc { get; private set; } = new GBDesc();
         public GBClient GameBackendClient { get; private set; } = null;
-        public GameExchangeService GameExchangeService { get; private set; } = null;
+        public ExchangeService GameExchangeService { get; private set; } = null;
 
         // a list of providers for given asset type
         public Dictionary<string, List<Provider>> Providers { get; private set; } = new Dictionary<string, List<Provider>>();
