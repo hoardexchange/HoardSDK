@@ -48,7 +48,7 @@ namespace Hoard
             }
 
             //DataStorageBackend = new DataStorageBackendLocal("e:/hoard/DSS/server/"); // local test (storege on local disk)
-            DataStorageBackend = new DataStorageBackendHoard(hoard.client);
+            DataStorageBackend = new DataStorageBackendHoard(hoard.GameBackendClient);
             DataStorageBackend.Init(hoard.GameBackendDesc);
         }
 

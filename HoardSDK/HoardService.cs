@@ -15,18 +15,21 @@ namespace Hoard
 {
     public class HoardService
     {
-        public GBDesc GameBackendDesc { get; private set;}
         public Dictionary<ulong, GameAsset> GameAssetIdDict { get; private set; } = new Dictionary<ulong, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetSymbolDict { get; private set; } = new Dictionary<string, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetAddressDict { get; private set; } = new Dictionary<string, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetNameDict { get; private set; } = new Dictionary<string, GameAsset>();
-        public GameExchangeService GameExchangeService { get; private set; }
+
+        public GBDesc GameBackendDesc { get; private set; } = new GBDesc();
+        public GBClient GameBackendClient { get; private set; } = null;
+        public GameExchangeService GameExchangeService { get; private set; } = null;
 
         // a list of providers for given asset type
         public Dictionary<string, List<Provider>> Providers { get; private set; } = new Dictionary<string, List<Provider>>();
 
-        private BC.BCComm bcComm = null;
-        public GBClient client { get; private set; } = null;
+        // dafault provider with signin, game backend and exchange support
+        private HoardProvider DefaultProvider = null;
+
         private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
 
         public HoardService()
@@ -62,7 +65,7 @@ namespace Hoard
             {
                 if (ga.ContractAddress != null)
                 {
-                    var balance = await bcComm.GetGameAssetBalanceOf(playerId.ID, ga.ContractAddress);
+                    var balance = await DefaultProvider.GetGameAssetBalanceOf(playerId.ID, ga.ContractAddress);
                     assetBalancesList.Add(new GameAssetBalance(ga, balance));
                 }
                 else
@@ -77,23 +80,16 @@ namespace Hoard
 
         public async Task<ulong> RequestGameAssetBalanceOf(GameAsset asset, PlayerID id)
         {
-            return await bcComm.GetGameAssetBalanceOf(id.ID, asset.ContractAddress);
+            return await DefaultProvider.GetGameAssetBalanceOf(id.ID, asset.ContractAddress);
         }
 
         public async Task<bool> RefreshGameAssets()
         {
-            var gaContracts = await RequestGameAssetContracts();
-
             GameAssetSymbolDict.Clear();
             GameAssetIdDict.Clear();
             GameAssetAddressDict.Clear();
             GameAssetNameDict.Clear();
 
-            ulong i = 0;
-            foreach (var gac in gaContracts)
-                await RegisterGameAssetContract(gac, i++);
-
-            // get non-hoard-specific items
             foreach (var providers in Providers)
                 foreach (var provider in providers.Value)
                 {
@@ -106,8 +102,8 @@ namespace Hoard
                         {
                             GameAssetSymbolDict.Add(ga.Symbol, ga);
                             GameAssetIdDict.Add(ga.AssetId, ga);
-                            // TODO:
-                            //GameAssetAddressDict.Add(ga.ContractAddress, ga);
+                            if (ga.ContractAddress!=null)
+                                GameAssetAddressDict.Add(ga.ContractAddress, ga);
                             GameAssetNameDict.Add(ga.Name, ga);
                         }
                     }
@@ -118,53 +114,34 @@ namespace Hoard
 
         public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset, ulong amount)
         {
-            return await bcComm.RequestPayoutPlayerReward(
-                gameAsset.ContractAddress,
-                amount,
-                GameBackendDesc.GameContract,
-                Accounts[0].Address);
+            return await DefaultProvider.RequestPayoutPlayerReward(gameAsset, amount);
         }
 
         public async Task<bool> RequestAssetTransferToGameContract(GameAsset gameAsset, ulong amount)
         {
-            return await bcComm.RequestAssetTransfer(
-                GameBackendDesc.GameContract,
-                gameAsset.ContractAddress,
-                amount,
-                Accounts[0].Address);
+            return await DefaultProvider.RequestAssetTransferToGameContract(gameAsset, amount);
         }
 
         public async Task<bool> RequestAssetTransfer(string to, GameAsset gameAsset, ulong amount)
         {
-            return await bcComm.RequestAssetTransfer(
-                to,
-                gameAsset.ContractAddress,
-                amount,
-                Accounts[0].Address);
+            return await DefaultProvider.RequestAssetTransfer(to, gameAsset, amount);
         }
 
         public bool IsSignedIn(PlayerID id)
         {
-            if (client != null)
-                return client.signedPlayerID.Equals(id) 
-                    && client.IsSessionValid();
-            else
-                return false;
+            return DefaultProvider.IsSignedIn(id);
         }
 
         public bool SignIn(PlayerID id)
         {
-            if (IsSignedIn(id))
-                return true;
-            //create hoard client
-            client = new GBClient(GameBackendDesc);
-            
-            // Init game exchange. TODO: redesign it and make all this initialization in seprated function.
-            GameExchangeService = new GameExchangeService(client, bcComm, this);
-            GameExchangeService.Init(bcComm.GetContract<BC.Contracts.GameContract>(GameBackendDesc.GameContract));
+            if (!DefaultProvider.SignIn(id))
+                return false;
 
-            //connect to backend
-            return client.Connect(accounts[id]);
+            GameBackendDesc = DefaultProvider.GetGameBackendDesc();
+            GameBackendClient = DefaultProvider.GetGameBackendClient();
+            GameExchangeService = DefaultProvider.GetExchangeService();
+
+            return true;
         }
 
         public void RegisterProvider(string assetType, Provider provider)
@@ -179,6 +156,11 @@ namespace Hoard
             if (!providers.Contains(provider))
             {
                 Providers[assetType].Add(provider);
+            }
+
+            if (provider is HoardProvider)
+            {
+                DefaultProvider = provider as HoardProvider;
             }
         }
 
@@ -222,39 +204,15 @@ namespace Hoard
         {
             InitAccounts(options.AccountsDir, options.DefaultAccountPass);
 
-            return InitGBDescriptor(options);
-        }
+            if (DefaultProvider == null)
+                return false;
 
-        private async Task<object> RegisterGameAssetContract(BC.Contracts.GameAssetContract gameAssetContract, ulong assetId)
-        {
-            var symbol = await gameAssetContract.Symbol();
+            if (!DefaultProvider.Init())
+                return false;
 
-            if (!GameAssetSymbolDict.ContainsKey(symbol))
-            {
-                var ga = new GameAsset(
-                    symbol,
-                    await gameAssetContract.Name(),
-                    gameAssetContract,
-                    await gameAssetContract.TotalSupply(),
-                    assetId,
-                    await gameAssetContract.AssetType());
+            RefreshGameAssets().Wait();
 
-                GameAssetSymbolDict.Add(symbol, ga);
-                GameAssetIdDict.Add(assetId, ga);
-                GameAssetAddressDict.Add(ga.ContractAddress, ga);
-                GameAssetNameDict.Add(ga.Name, ga);
-            }
-            else
-            {
-                throw new Exception("Truing to register same key twice");
-            }
-
-            return null;
-        }
-
-        private async Task<BC.Contracts.GameAssetContract[]> RequestGameAssetContracts()
-        {
-            return await bcComm.GetGameAssetContacts(GameBackendDesc.GameContract);
+            return true;
         }
 
         public List<Account> Accounts
@@ -262,28 +220,9 @@ namespace Hoard
             get { return accounts.Values.ToList(); }
         }
 
-        private bool InitGBDescriptor(HoardServiceOptions options)
+        public Account GetAccount(PlayerID id)
         {
-#if DEBUG
-            Debug.WriteLine("Initializing GB descriptor.");
-#endif
-            bcComm = new BC.BCComm(options.RpcClient, Accounts[0]);
-
-            GBDesc gbDesc = bcComm.GetGBDesc(options.GameID).Result;
-
-            GameBackendDesc = gbDesc;
-#if DEBUG
-            Debug.WriteLine(String.Format("GB descriptor initialized.\n {0} \n {1} \n {2} \n {3}",
-                gbDesc.GameContract,
-                gbDesc.GameID,
-                gbDesc.Name,
-                gbDesc.Url
-                ));
-#endif
-
-            RefreshGameAssets().Wait();
-
-            return true;
+           return accounts[id];
         }
 
         private void InitAccounts(string path, string password) 
