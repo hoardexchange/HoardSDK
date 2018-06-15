@@ -69,7 +69,9 @@ namespace Hoard
 
         private RestClient cryptoKittiesClient;
 
-        private string[] properties = new string[1] { "genotype" };
+        private const string property_genotype = "genotype";
+        private const string property_image = "image";
+        private string[] properties = new string[2] { property_genotype, property_image };
 
         private Web3 web3 = null;
         private Contract contract = null;
@@ -133,6 +135,7 @@ namespace Hoard
         public class KittyAPIResult
         {
             public string id;
+            public string image_url;
         }
 
         public class UserKittiesAPIResult
@@ -155,10 +158,10 @@ namespace Hoard
             if (userKitties==null)
                 return new Result("unable to parse user kitties response from " + cryptoKittiesClient.BaseUrl + ", Content: " + response.Content);
 
-            foreach (var kittyId in userKitties.kitties)
+            foreach (var kitty in userKitties.kitties)
             {
                 BigInteger tokenBigInt;
-                if (BigInteger.TryParse(kittyId.id, out tokenBigInt))
+                if (BigInteger.TryParse(kitty.id, out tokenBigInt))
                 {
                     var gameAsset = new CryptoKitty(
                         "CK", //symbol
@@ -172,6 +175,12 @@ namespace Hoard
 
                     items.Add(gameAsset);
                     getProperties(gameAsset);
+
+                    if (kitty.image_url != null)
+                    {
+                        byte[] image = getImage(kitty.image_url);
+                        gameAsset.Properties[property_image] = image;
+                    }
                 }
             }
 
@@ -279,7 +288,7 @@ namespace Hoard
                     var result2 = task2.Result;
                     BigInteger genes = result2.genes;
 
-                    cryptoKitty.Properties[properties[0]] = genes.ToString();
+                    cryptoKitty.Properties[property_genotype] = genes.ToString();
 
                     return new Result();
                 }
@@ -288,6 +297,15 @@ namespace Hoard
             }
 
             return new Result("no props");
+        }
+
+        private byte[] getImage(string url)
+        {
+            var uri = new Uri(url);
+            RestClient imageClient = new RestClient(uri.Scheme + "://" + uri.Authority);
+            var request = new RestRequest(uri.PathAndQuery, Method.GET);
+            byte[] image = imageClient.DownloadData(request);
+            return image;
         }
     }
 }
