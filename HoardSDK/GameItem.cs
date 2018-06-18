@@ -18,6 +18,7 @@ namespace Hoard
         public ItemCRC DataCRC;
     }
 
+    // Props holds set of values identified individually by string, it can by anything like single values, custom objects or binary data
     public class Props
     {
         public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
@@ -51,7 +52,10 @@ namespace Hoard
 
         public BC.Contracts.GameAssetContract Contract { get; private set; } = null;
 
+        // GameAsset's properties
         public Props Properties { get; set; } = new Props();
+
+        // GameAsset's Instances contains properties of particular item identified by tokenId (see ERC721), used for NFT tokens
         public Dictionary<string, Instance> Instances { get; set; } = null;
 
         public GameAsset(string symbol, string name, BC.Contracts.GameAssetContract contract, ulong totalSuplly, ulong assetId, string assetType)

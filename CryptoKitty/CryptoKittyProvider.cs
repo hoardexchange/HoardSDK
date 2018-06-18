@@ -50,6 +50,7 @@ namespace Hoard
     public class CryptoKittyProvider : Provider
     {
         private IClient blockchainClient;
+        private bool mainnet;
         private string contractAddress;
         private string ownerAddress;
         private List<string> tokenIds;
@@ -93,9 +94,10 @@ namespace Hoard
             return isOk;
         }
 
-        public CryptoKittyProvider(Nethereum.JsonRpc.Client.IClient _client, string _contractAddress, string _ownerAddress)
+        public CryptoKittyProvider(Nethereum.JsonRpc.Client.IClient _client, bool _mainnet, string _contractAddress, string _ownerAddress)
         {
             blockchainClient = _client;
+            mainnet = _mainnet;
             contractAddress = _contractAddress;
             ownerAddress = _ownerAddress;
             //tokenIds = new List<string>();
@@ -118,7 +120,13 @@ namespace Hoard
 
         override public Result getItems(out List<GameAsset> items)
         {
-            return getItemsFromCryptoAPIbyOwner(out items);
+            if (mainnet)
+            {
+                // its not possible to get tokenId's by owner from BC mainnet nodes, cryptokitty "tokensOfOwner" is very inefficient and timeouts
+                return getItemsFromCryptoAPIbyOwner(out items);
+            }
+
+            return getItemsFromBCbyOwner(out items);
         }
 
         public class KittyAPIResult
@@ -216,8 +224,6 @@ namespace Hoard
 
         private Result getItemsFromBCbyOwner(out List<GameAsset> items)
         {
-            // its not possible to get tokenId's by owner from BC mainnet nodes, cryptokitty "tokensOfOwner" is very inefficient and timeouts
-
             items = new List<GameAsset>();
             
             BigInteger owner = new BigInteger(0);
