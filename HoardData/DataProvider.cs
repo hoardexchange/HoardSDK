@@ -156,7 +156,7 @@ namespace Hoard
             if (!result.Success)
                 return result;
 
-            item.Properties[propertyName] = data;
+            item.Properties.Set(propertyName, data);
 
             return result;
         }

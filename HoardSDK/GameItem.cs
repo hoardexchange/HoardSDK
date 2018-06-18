@@ -18,6 +18,28 @@ namespace Hoard
         public ItemCRC DataCRC;
     }
 
+    public class Props
+    {
+        public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+
+        public object Get(string propertyName)
+        {
+            object prop;
+            Properties.TryGetValue(propertyName, out prop);
+            return prop;
+        }
+
+        public void Set(string propertyName, object propertyValue)
+        {
+            Properties[propertyName] = propertyValue;
+        }
+    }
+
+    public class Instance
+    {
+        public Props Properties { get; set; } = new Props();
+    }
+
     public class GameAsset
     {
         public string Symbol { get; private set; } = null;
@@ -29,7 +51,8 @@ namespace Hoard
 
         public BC.Contracts.GameAssetContract Contract { get; private set; } = null;
 
-        public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+        public Props Properties { get; set; } = new Props();
+        public Dictionary<string, Instance> Instances { get; set; } = null;
 
         public GameAsset(string symbol, string name, BC.Contracts.GameAssetContract contract, ulong totalSuplly, ulong assetId, string assetType)
         {

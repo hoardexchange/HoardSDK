@@ -13,17 +13,6 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Hoard
 {
-    public class CryptoKitty : GameAsset
-    {
-        public BigInteger TokenId { get; private set; }
-
-        public CryptoKitty(string symbol, string name, BC.Contracts.GameAssetContract contract, ulong totalSuplly, ulong assetId, string assetType, BigInteger tokenId) :
-            base(symbol, name, contract, totalSuplly, assetId, assetType)
-        {
-            TokenId = tokenId;
-        }
-    }
-
     [FunctionOutput]
     public class GetKittyBCOutput
     {
@@ -147,7 +136,7 @@ namespace Hoard
         {
             items = new List<GameAsset>();
 
-            var request = new RestRequest("kitties?owner_wallet_address="+ownerAddress+"&limit=1&offset=0", Method.GET);
+            var request = new RestRequest("kitties?owner_wallet_address="+ownerAddress+"&limit=10&offset=0", Method.GET);
             var response = cryptoKittiesClient.Execute(request);
 
             if (response.StatusCode != HttpStatusCode.OK)
@@ -158,31 +147,31 @@ namespace Hoard
             if (userKitties==null)
                 return new Result("unable to parse user kitties response from " + cryptoKittiesClient.BaseUrl + ", Content: " + response.Content);
 
+            var item = new GameAsset(
+                "CK", //symbol
+                "CryptoKitties", //name
+                null, //TODO: contract
+                1, //totalSupply
+                0, //assetId
+                "cryptokitty" //assetType
+            );
+
+            items.Add(item);
+
+            item.Instances = new Dictionary<string, Instance>();
             foreach (var kitty in userKitties.kitties)
             {
-                BigInteger tokenBigInt;
-                if (BigInteger.TryParse(kitty.id, out tokenBigInt))
+                Instance kittyInstance = new Instance();
+                item.Instances[kitty.id] = kittyInstance;
+
+                if (kitty.image_url != null)
                 {
-                    var gameAsset = new CryptoKitty(
-                        "CK", //symbol
-                        "CryptoKitties", //name
-                        null, //TODO: contract
-                        1, //totalSupply
-                        1000 + (ulong)tokenBigInt, //assetId // TODO !!!! currently assetId must be unique in hoard service
-                        "cryptokitty", //assetType
-                        tokenBigInt // tokenId
-                    );
-
-                    items.Add(gameAsset);
-                    getProperties(gameAsset);
-
-                    if (kitty.image_url != null)
-                    {
-                        byte[] image = getImage(kitty.image_url);
-                        gameAsset.Properties[property_image] = image;
-                    }
+                    byte[] image = getImage(kitty.image_url);
+                    kittyInstance.Properties.Set(property_image, image);
                 }
             }
+
+            getProperties(item);
 
             return new Result();
         }
@@ -196,28 +185,31 @@ namespace Hoard
             ulong totallSupply = task1.Result;
             BigInteger totallSupplyBigInt = new BigInteger(totallSupply);
 
-            foreach (var token in tokenIds)
+            var item = new GameAsset(
+                "CK", //symbol
+                "CryptoKitties", //name
+                null, //TODO: contract
+                1, //totalSupply
+                0, //assetId
+                "cryptokitty" //assetType
+            );
+
+            items.Add(item);
+
+            item.Instances = new Dictionary<string, Instance>();
+            foreach (var tokenId in tokenIds)
             {
                 BigInteger tokenBigInt;
-                if (BigInteger.TryParse(token, out tokenBigInt))
+                if (BigInteger.TryParse(tokenId, out tokenBigInt))
                 {
                     if (tokenBigInt <= totallSupplyBigInt)
                     {
-                        var gameAsset = new CryptoKitty(
-                            "CK", //symbol
-                            "CryptoKitties", //name
-                            null, //TODO: contract
-                            1, //totalSupply
-                            1000 + (ulong)tokenBigInt, //assetId // TODO !!!! currently assetId must be unique in hoard service
-                            "cryptokitty", //assetType
-                            tokenBigInt // tokenId
-                        );
-
-                        items.Add(gameAsset);
-                        getProperties(gameAsset);
+                        item.Instances[tokenId] = new Instance();
                     }
                 }
             }
+
+            getProperties(item);
 
             return new Result();
         }
@@ -245,28 +237,33 @@ namespace Hoard
             var task1 = tokensOfOwnerFunc.CallAsync<List<BigInteger>>(owner);
             List<BigInteger> tokens = task1.Result;
 
-            if (tokens==null)
+            if (tokens == null)
             {
                 return new Result("unable to retrive tokensOfOwner");
             }
+            
+            var item = new GameAsset(
+                "CK", //symbol
+                "CryptoKitties", //name
+                null, //TODO: contract
+                1, //totalSupply
+                0, //assetId
+                "cryptokitty" //assetType
+            );
 
+            items.Add(item);
+
+            item.Instances = new Dictionary<string, Instance>();
             if (tokens.Count > 0)
             {
                 for (int i = 0; i < tokens.Count; ++i)
                 {
-                    var gameAsset = new CryptoKitty(
-                        "CK", //symbol
-                        "CryptoKitties", //name
-                        null, //TODO: contract
-                        1, //totalSupply
-                        1000 + (ulong)tokens[0], //assetId // TODO !!!! currently assetId must be unique in hoard service
-                        "cryptokitty", //assetType
-                        tokens[i] // tokenId
-                    );
-                       
-                    items.Add(gameAsset);
+                    string tokenId = tokens[i].ToString();
+                    item.Instances[tokenId] = new Instance();
                 }
             }
+
+            getProperties(item);
 
             return new Result();
         }
@@ -280,20 +277,21 @@ namespace Hoard
         {
             if (item.AssetType == "cryptokitty")
             {
-                CryptoKitty cryptoKitty = item as CryptoKitty;
-                if (cryptoKitty != null)
+                foreach (KeyValuePair<string, Instance> entry in item.Instances)
                 {
-                    Function getFunc = contract.GetFunction("getKitty");
-                    var task2 = getFunc.CallDeserializingToObjectAsync<GetKittyBCOutput>(cryptoKitty.TokenId);
-                    var result2 = task2.Result;
-                    BigInteger genes = result2.genes;
+                    BigInteger tokenBigInt;
+                    if (BigInteger.TryParse(entry.Key, out tokenBigInt))
+                    {
+                        Function getFunc = contract.GetFunction("getKitty");
+                        var task2 = getFunc.CallDeserializingToObjectAsync<GetKittyBCOutput>(tokenBigInt);
+                        var result2 = task2.Result;
+                        BigInteger genes = result2.genes;
 
-                    cryptoKitty.Properties[property_genotype] = genes.ToString();
-
-                    return new Result();
+                        entry.Value.Properties.Set(property_genotype, genes.ToString());
+                    }
+                    else
+                        new Result("invalid tokenId");
                 }
-                else
-                    return new Result("not cryptokitty item");
             }
 
             return new Result("no props");

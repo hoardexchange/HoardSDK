@@ -13,5 +13,6 @@ namespace Hoard
         public Nethereum.JsonRpc.Client.IClient RpcClient { get; set; } = null;
         public string AccountsDir { get; set; } = "";
         public string DefaultAccountPass { get; set; } = "dev";
+        public bool PrivateNetwork { get; set; } = true;
     }
 }

@@ -15,7 +15,6 @@ namespace Hoard
 {
     public class HoardService
     {
-        public Dictionary<ulong, GameAsset> GameAssetIdDict { get; private set; } = new Dictionary<ulong, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetSymbolDict { get; private set; } = new Dictionary<string, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetAddressDict { get; private set; } = new Dictionary<string, GameAsset>();
         public Dictionary<string, GameAsset> GameAssetNameDict { get; private set; } = new Dictionary<string, GameAsset>();
@@ -34,14 +33,6 @@ namespace Hoard
 
         public HoardService()
         {}
-
-        public GameAsset GetGameAsset(ulong assetId)
-        {
-            if (GameAssetIdDict.ContainsKey(assetId))
-                return GameAssetIdDict[assetId];
-            else
-                return null;
-        }
 
         public GameAsset GetGameAsset(string symbol)
         {
@@ -63,15 +54,15 @@ namespace Hoard
 
             foreach (var ga in GameAssets())
             {
-                if (ga.ContractAddress != null)
+                if (ga.Instances!=null)
                 {
-                    var balance = await DefaultProvider.GetGameAssetBalanceOf(playerId.ID, ga.ContractAddress);
-                    assetBalancesList.Add(new GameAssetBalance(ga, balance));
+                    var balance = ga.Instances.Count;
+                    assetBalancesList.Add(new GameAssetBalance(ga, (ulong)ga.Instances.Count));
                 }
                 else
                 {
-                    // TODO: external item assume 1?
-                    assetBalancesList.Add(new GameAssetBalance(ga, 1));
+                    var balance = await DefaultProvider.GetGameAssetBalanceOf(playerId.ID, ga.ContractAddress);
+                    assetBalancesList.Add(new GameAssetBalance(ga, balance));
                 }
             }
 
@@ -86,7 +77,6 @@ namespace Hoard
         public async Task<bool> RefreshGameAssets()
         {
             GameAssetSymbolDict.Clear();
-            GameAssetIdDict.Clear();
             GameAssetAddressDict.Clear();
             GameAssetNameDict.Clear();
 
@@ -101,7 +91,6 @@ namespace Hoard
                         foreach (var ga in gameAssets)
                         {
                             GameAssetSymbolDict.Add(ga.Symbol, ga);
-                            GameAssetIdDict.Add(ga.AssetId, ga);
                             if (ga.ContractAddress!=null)
                                 GameAssetAddressDict.Add(ga.ContractAddress, ga);
                             GameAssetNameDict.Add(ga.Name, ga);
