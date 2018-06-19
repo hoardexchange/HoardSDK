@@ -204,6 +204,24 @@ namespace Hoard
             return true;
         }
 
+        public void Shutdown()
+        {
+            GameAssetSymbolDict.Clear();
+            GameAssetAddressDict.Clear();
+            GameAssetNameDict.Clear();
+
+            Providers.Clear();
+
+            if (DefaultProvider != null)
+                DefaultProvider.Shutdown();
+
+            ClearAccounts();
+
+            GameBackendDesc = null;
+            GameBackendClient = null;
+            GameExchangeService = null;
+        }
+
         public List<Account> Accounts
         {
             get { return accounts.Values.ToList(); }
@@ -250,6 +268,11 @@ namespace Hoard
 #if DEBUG
             Debug.WriteLine("Accounts initialized.", "INFO");
 #endif
+        }
+
+        private void ClearAccounts()
+        {
+            accounts.Clear();
         }
 
         private string[] ListAccountsUTCFiles(string path)

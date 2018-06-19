@@ -100,6 +100,12 @@ namespace Hoard
             return true;
         }
 
+        public void Shutdown()
+        {
+            currentCookies.Clear();
+            csrfToken = "";
+        }
+
         private void UpdateCookies(IList<RestResponseCookie> cookies)
         {
             currentCookies = cookies;

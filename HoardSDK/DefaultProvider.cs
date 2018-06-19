@@ -10,6 +10,8 @@ namespace Hoard
     {
         virtual public bool Init() { return false; }
 
+        virtual public void Shutdown() { }
+
         virtual public bool IsSignedIn(PlayerID id) { return true; }
 
         virtual public bool SignIn(PlayerID id) { return true; }
@@ -81,6 +83,20 @@ namespace Hoard
                 ));
 #endif
             return true;
+        }
+
+        override public void Shutdown()
+        {
+            if (GameExchangeService != null)
+                GameExchangeService.Shutdown();
+
+            if (client != null)
+                client.Shutdown();
+
+            client = null;
+            GameExchangeService = null;
+            bcComm = null;
+            GameBackendDesc = null;
         }
 
         public async Task<bool> GetGameAssets()

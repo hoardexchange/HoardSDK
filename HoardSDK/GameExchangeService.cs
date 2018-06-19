@@ -51,6 +51,11 @@ namespace Hoard
             GameExchangeContract = bcComm.GetContract<BC.Contracts.GameExchangeContract>(gameContract.GameExchangeContractAsync().Result);
         }
 
+        public void Shutdown()
+        {
+            GameExchangeContract = null;
+        }
+
         public override async Task<Order[]> ListOrders(GameAsset gaGet, GameAsset gaGive)
         {
             var jsonStr = await client.GetJson(
