@@ -51,19 +51,16 @@ namespace Hoard
             return prop.value;
         }
 
-        public void Set(string propertyName, object propertyValue)
+        public void Set(string propertyName, object propertyValue, PropertyType type = PropertyType.Unknown)
         {
             Prop prop;
             if (Properties.TryGetValue(propertyName, out prop) == false)
-            {
-                Properties[propertyName] = new Prop();
-                Properties[propertyName].value = propertyValue;
-            }
+                Register(propertyName, propertyValue, type);
             else
                 prop.value = propertyValue;
         }
 
-        public void Register(string propertyName, object propertyValue, PropertyType type)
+        protected void Register(string propertyName, object propertyValue, PropertyType type)
         {
             Properties[propertyName] = new Prop();
             Properties[propertyName].value = propertyValue;

@@ -175,7 +175,7 @@ namespace Hoard
 
                 if (kitty.image_url != null)
                 {
-                    kittyInstance.Properties.Set(property_image_url, kitty.image_url);
+                    kittyInstance.Properties.Set(property_image_url, kitty.image_url, PropertyType.String);
                 }
             }
 
@@ -313,7 +313,7 @@ namespace Hoard
                         var result2 = task2.Result;
                         BigInteger genes = result2.genes;
 
-                        entry.Value.Properties.Set(property_genotype, genes.ToString());
+                        entry.Value.Properties.Set(property_genotype, genes.ToString(), PropertyType.String);
                     }
                     else
                         new Result("invalid tokenId");
