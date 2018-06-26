@@ -60,8 +60,9 @@ namespace Hoard
         private RestClient cryptoKittiesClient;
 
         private const string property_genotype = "genotype";
+        private const string property_image_url = "image_url";
         private const string property_image = "image";
-        private string[] properties = new string[2] { property_genotype, property_image };
+        private string[] properties = new string[3] { property_genotype, property_image_url, property_image };
 
         private Web3 web3 = null;
         private Contract contract = null;
@@ -174,12 +175,9 @@ namespace Hoard
 
                 if (kitty.image_url != null)
                 {
-                    byte[] image = getImage(kitty.image_url);
-                    kittyInstance.Properties.Set(property_image, image);
+                    kittyInstance.Properties.Set(property_image_url, kitty.image_url);
                 }
             }
-
-            getProperties(item);
 
             return new Result();
         }
@@ -216,8 +214,6 @@ namespace Hoard
                     }
                 }
             }
-
-            getProperties(item);
 
             return new Result();
         }
@@ -269,18 +265,42 @@ namespace Hoard
                 }
             }
 
-            getProperties(item);
-
             return new Result();
         }
 
         override public Result getProperties(GameAsset item)
         {
+            getPropertiesFromExternalSources(item);
+
             return getPropertiesFromBC(item);
+        }
+
+        private void getPropertiesFromExternalSources(GameAsset item)
+        {
+            // download image if we had image_url
+
+            if (item.AssetType == "cryptokitty")
+            {
+                foreach (KeyValuePair<string, Instance> entry in item.Instances)
+                {
+                    object image_url_prop = entry.Value.Properties.Get(property_image_url);
+                    if (image_url_prop != null)
+                    {
+                        string image_url = image_url_prop as string;
+                        if (image_url != null)
+                        {
+                            byte[] image = getImage(image_url);
+                            entry.Value.Properties.Set(property_image, image);
+                        }
+                    }
+                }
+            }
         }
 
         private Result getPropertiesFromBC(GameAsset item)
         {
+            // get kitty genes from blockchain
+
             if (item.AssetType == "cryptokitty")
             {
                 foreach (KeyValuePair<string, Instance> entry in item.Instances)
