@@ -5,6 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Nethereum.Web3;
 using Nethereum.Contracts;
+using System.Diagnostics;
+using Org.BouncyCastle.Math;
+using Nethereum.Hex.HexTypes;
 
 namespace Hoard.BC.Contracts
 {
@@ -21,6 +24,82 @@ namespace Hoard.BC.Contracts
         {
             this.web3 = web3;
             this.contract = web3.Eth.GetContract(abi, address);
+
+            // TODO: remove this test code
+            //string abi2 = "[{ 'constant':false,'inputs':[{'name':'_a','type':'uint256'},{'name':'_b','type':'uint256'}],'name':'multiply','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':false,'inputs':[{'name':'_a','type':'uint256'},{'name':'_b','type':'uint256'}],'name':'arithmetics','outputs':[{'name':'o_sum','type':'uint256'},{'name':'o_product','type':'uint256'}],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':true,'inputs':[],'name':'prop_b','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[],'name':'prop_a','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'view','type':'function'}]";
+            //this.contract = web3.Eth.GetContract(abi2, address);
+            //FillProperties(null);
+            //
+        }
+
+        public void FillProperties(GameAsset asset)
+        {
+            for (int i = 0; i < contract.ContractBuilder.ContractABI.Functions.Length; i++)
+            {
+                Nethereum.ABI.Model.FunctionABI fabi = contract.ContractBuilder.ContractABI.Functions[i];
+                if (fabi.Name.Contains("prop_"))
+                {
+                    Prop prop;
+                    if (asset.Properties.Properties.TryGetValue(fabi.Name, out prop) == false)
+                        continue;
+                    Function fun = contract.GetFunction(fabi.Name);
+                    switch (prop.type)
+                    {
+                        case PropertyType.String:
+                        case PropertyType.Address:
+                            var retString = fun.CallAsync<string>();
+                            asset.Properties.Set(fabi.Name, retString.Result);
+                            break;
+                        case PropertyType.Bool:
+                            var retBool = fun.CallAsync<bool>();
+                            asset.Properties.Set(fabi.Name, retBool.Result);
+                            break;
+                        case PropertyType.Int16:
+                            var retInt16 = fun.CallAsync<short>();
+                            asset.Properties.Set(fabi.Name, retInt16.Result);
+                            break;
+                        case PropertyType.Int32:
+                            var retInt32 = fun.CallAsync<int>();
+                            asset.Properties.Set(fabi.Name, retInt32.Result);
+                            break;
+                        case PropertyType.Int64:
+                            var retInt64 = fun.CallAsync<long>();
+                            asset.Properties.Set(fabi.Name, retInt64.Result);
+                            break;
+                        case PropertyType.Uint16:
+                            var retUint16 = fun.CallAsync<ushort>();
+                            asset.Properties.Set(fabi.Name, retUint16.Result);
+                            break;
+                        case PropertyType.Uint32:
+                            var retUint32 = fun.CallAsync<uint>();
+                            asset.Properties.Set(fabi.Name, retUint32.Result);
+                            break;
+                        case PropertyType.Uint64:
+                            var retUint64 = fun.CallAsync<ulong>();
+                            asset.Properties.Set(fabi.Name, retUint64.Result);
+                            break;
+                        case PropertyType.BigInt:
+                            var retBigInteger = fun.CallAsync<BigInteger>();
+                            asset.Properties.Set(fabi.Name, retBigInteger.Result);
+                            break;
+                        default:
+                            Debug.Assert(false, "Unknown property type!");
+                            break;
+                    }
+                }
+            }
+        }
+
+        public async Task<bool> SavePropertyToBC(BCComm comm, GameAsset asset, string propertyName)
+        {
+            Prop prop;
+            if (asset.Properties.Properties.TryGetValue(propertyName, out prop) == false)
+                return await Task.FromResult<bool>(false);
+            Function function = contract.GetFunction("set" + propertyName);
+            return await comm.EvaluateOnBC((address) =>
+            {
+                return function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), prop.value);
+            });
         }
 
         private Function GetFunctionBalanceOf()

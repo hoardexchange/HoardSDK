@@ -7,6 +7,21 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
+    public enum PropertyType
+    {
+        Unknown = 0,
+        String,
+        Address,
+        Bool,
+        Int16,
+        Int32,
+        Int64,
+        Uint16,
+        Uint32,
+        Uint64,
+        BigInt,
+    }
+
     public struct ItemCRC
     {
         public ulong crc;
@@ -18,21 +33,33 @@ namespace Hoard
         public ItemCRC DataCRC;
     }
 
+    public class Prop
+    {
+        public PropertyType type = PropertyType.Unknown;
+        public object value;
+    }
+
     // Props holds set of values identified individually by string, it can by anything like single values, custom objects or binary data
     public class Props
     {
-        public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, Prop> Properties { get; set; } = new Dictionary<string, Prop>();
 
         public object Get(string propertyName)
         {
-            object prop;
+            Prop prop;
             Properties.TryGetValue(propertyName, out prop);
-            return prop;
+            return prop.value;
         }
 
         public void Set(string propertyName, object propertyValue)
         {
-            Properties[propertyName] = propertyValue;
+            Properties[propertyName].value = propertyValue;
+        }
+
+        public void Register(string propertyName, object propertyValue, PropertyType type)
+        {
+            Properties[propertyName].value = propertyValue;
+            Properties[propertyName].type = type;
         }
     }
 
@@ -67,6 +94,9 @@ namespace Hoard
             TotalSuplly = totalSuplly;
             AssetId = assetId;
             AssetType = assetType;
+
+            if (Contract != null)
+                Contract.FillProperties(this);
         }
     }
 
