@@ -53,11 +53,19 @@ namespace Hoard
 
         public void Set(string propertyName, object propertyValue)
         {
-            Properties[propertyName].value = propertyValue;
+            Prop prop;
+            if (Properties.TryGetValue(propertyName, out prop) == false)
+            {
+                Properties[propertyName] = new Prop();
+                Properties[propertyName].value = propertyValue;
+            }
+            else
+                prop.value = propertyValue;
         }
 
         public void Register(string propertyName, object propertyValue, PropertyType type)
         {
+            Properties[propertyName] = new Prop();
             Properties[propertyName].value = propertyValue;
             Properties[propertyName].type = type;
         }
