@@ -74,7 +74,7 @@ namespace Hoard
             return await DefaultProvider.GetGameAssetBalanceOf(id.ID, asset.ContractAddress);
         }
 
-        public async Task<bool> RefreshGameAssets()
+        public bool RefreshGameAssetsSync()
         {
             GameAssetSymbolDict.Clear();
             GameAssetAddressDict.Clear();
@@ -99,6 +99,11 @@ namespace Hoard
                 }
 
             return true;
+        }
+
+        public async Task<bool> RefreshGameAssets()
+        {
+            return await Task.Run(() => RefreshGameAssetsSync());
         }
 
         public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset, ulong amount)
@@ -153,12 +158,12 @@ namespace Hoard
             }
         }
 
-        public Result RequestProperties(GameAsset item)
+        public Result RequestPropertiesSync(GameAsset item)
         {
             List<Provider> providers = null;
             if (Providers.TryGetValue(item.AssetType, out providers))
             {
-                foreach(var provider in providers)
+                foreach (var provider in providers)
                 {
                     return provider.getProperties(item);
                 }
@@ -167,7 +172,12 @@ namespace Hoard
             return new Result();
         }
 
-        public Result RequestProperties(GameAsset item, string name)
+        public async Task<Result> RequestProperties(GameAsset item)
+        {
+            return await Task.Run(() => RequestPropertiesSync(item));
+        }
+
+        public Result RequestPropertiesSync(GameAsset item, string name)
         {
             List<Provider> providers = null;
             if (Providers.TryGetValue(item.AssetType, out providers))
@@ -180,6 +190,11 @@ namespace Hoard
             }
 
             return new Result();
+        }
+
+        public async Task<Result> RequestProperties(GameAsset item, string name)
+        {
+            return await Task.Run(() => RequestPropertiesSync(item, name));
         }
 
         // PRIVATE SECTION
