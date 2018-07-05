@@ -96,17 +96,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BouncyCastle">
-      <Version>1.8.1</Version>
-    </PackageReference>
     <PackageReference Include="Hoard.NethereumCore">
       <Version>1.0.6757.29461</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>10.0.3</Version>
+      <Version>11.0.2</Version>
     </PackageReference>
     <PackageReference Include="Portable.BouncyCastle">
-      <Version>1.8.1.3</Version>
+      <Version>1.8.1.4</Version>
     </PackageReference>
     <PackageReference Include="RestSharp">
       <Version>105.2.3</Version>
