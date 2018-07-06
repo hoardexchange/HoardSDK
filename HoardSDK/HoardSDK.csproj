@@ -100,7 +100,7 @@
       <Version>1.8.1</Version>
     </PackageReference>
     <PackageReference Include="Hoard.NethereumCore">
-      <Version>1.0.6757.29461</Version>
+      <Version>1.0.6761.17447</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>10.0.3</Version>
