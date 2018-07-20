@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HashLib", "HashLib\HashLib.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardData", "..\HoardData\HoardData.csproj", "{A884D778-782F-4242-BFB4-C31222F309E5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardIPC", "..\HoardIPC\HoardIPC.csproj", "{4F852332-CD81-4D8A-B29E-7251F81E5821}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{A884D778-782F-4242-BFB4-C31222F309E5}.Release|x64.Build.0 = Release|Any CPU
 		{A884D778-782F-4242-BFB4-C31222F309E5}.Release|x86.ActiveCfg = Release|Any CPU
 		{A884D778-782F-4242-BFB4-C31222F309E5}.Release|x86.Build.0 = Release|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Debug|x64.Build.0 = Debug|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Debug|x86.Build.0 = Debug|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Release|x64.ActiveCfg = Release|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Release|x64.Build.0 = Release|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Release|x86.ActiveCfg = Release|Any CPU
+		{4F852332-CD81-4D8A-B29E-7251F81E5821}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
