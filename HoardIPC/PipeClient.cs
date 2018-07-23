@@ -14,13 +14,11 @@ namespace HoardIPC
 
         public int Initialize()
         {
-            NamedPipeClient = new NamedPipeClientStream(".", "HoardPipe", PipeDirection.InOut);
             return 0;
         }
 
         public void Shutdown()
         {
-            NamedPipeClient.Dispose();
         }
 
         public void ReceiveMessage()
@@ -41,12 +39,16 @@ namespace HoardIPC
 
         public void SendMessage(PipeMessage msg)
         {
-            Debug.Assert(NamedPipeClient != null);
+            NamedPipeClient = new NamedPipeClientStream(".", "HoardPipe", PipeDirection.InOut);
             NamedPipeClient.Connect();
+            Debug.Assert(NamedPipeClient != null);
             string serialised = JsonConvert.SerializeObject(msg);
             byte[] messageBytes = Encoding.UTF8.GetBytes(serialised);
             NamedPipeClient.Write(messageBytes, 0, messageBytes.Length);
+            NamedPipeClient.Flush();
             NamedPipeClient.Close();
+            NamedPipeClient.Dispose();
+            NamedPipeClient = null;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
@@ -48,30 +49,31 @@ namespace HoardIPC
             {
                 byte[] messageBuffer = new byte[PipeMessage.MessageChunkSize];
                 StringBuilder messageBuilder = new StringBuilder();
-                pipeServer.namedPipeServer.BeginWaitForConnection(new AsyncCallback(pipeServer.WaitForConnectionCallBack), pipeServer.namedPipeServer);
+                //pipeServer.namedPipeServer.BeginWaitForConnection(new AsyncCallback(pipeServer.WaitForConnectionCallBack), pipeServer.namedPipeServer);
                 while (pipeServer.IsRunning)
                 {
                     System.Threading.Thread.Sleep(0);
-                    //pipeServer.namedPipeServer.WaitForConnection();
-                    if (!pipeServer.namedPipeServer.IsConnected)
-                        continue;
-                    string messageChunk = string.Empty;
-                    messageBuilder.Clear();
-                    messageBuffer = Enumerable.Repeat((byte)0, messageBuffer.Length).ToArray();
-                    do
+                    try
                     {
-                        int readBytes = pipeServer.namedPipeServer.Read(messageBuffer, 0, messageBuffer.Length);
-                        messageChunk = Encoding.UTF8.GetString(messageBuffer);
-                        messageBuilder.Append(messageChunk);
+                        pipeServer.namedPipeServer.WaitForConnection();
+                        string messageChunk = string.Empty;
+                        messageBuilder.Clear();
+                        messageBuffer = Enumerable.Repeat((byte)0, messageBuffer.Length).ToArray();
+                        do
+                        {
+                            int readBytes = pipeServer.namedPipeServer.Read(messageBuffer, 0, messageBuffer.Length);
+                            messageChunk = Encoding.UTF8.GetString(messageBuffer);
+                            messageBuilder.Append(messageChunk);
+                        }
+                        while (!pipeServer.namedPipeServer.IsMessageComplete);
+                        PipeMessage msg = JsonConvert.DeserializeObject<PipeMessage>(messageBuilder.ToString());
+                        //Console.WriteLine("Customer {0} has ordered {1} {2} with delivery address {3}", order.CustomerName, order.Quantity, order.ProductName, order.Address);
                     }
-                    while (!pipeServer.namedPipeServer.IsMessageComplete);
-                    PipeMessage msg = JsonConvert.DeserializeObject<PipeMessage>(messageBuilder.ToString());
-                    //Console.WriteLine("Customer {0} has ordered {1} {2} with delivery address {3}", order.CustomerName, order.Quantity, order.ProductName, order.Address);
+                    catch (IOException e)
+                    {
+
+                    }
                 }
-                if (pipeServer.namedPipeServer.IsConnected)
-                    pipeServer.namedPipeServer.Disconnect();
-                pipeServer.namedPipeServer.Close();
-                pipeServer.namedPipeServer.Dispose();
                 pipeServer.IsCLosed = true;
             }
         }
@@ -94,10 +96,14 @@ namespace HoardIPC
         public void Shutdown()
         {
             IsRunning = false;
+            namedPipeServer.Close();
             while (!IsCLosed)
             {
                 System.Threading.Thread.Sleep(1);
             }
+            if (namedPipeServer.IsConnected)
+                namedPipeServer.Disconnect();
+            namedPipeServer.Dispose();
             ServerThread = null;
         }
     }
