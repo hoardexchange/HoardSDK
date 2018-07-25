@@ -12,14 +12,14 @@ using Nethereum.RPC.Eth.DTOs;
 
 namespace Hoard.BC.Contracts
 {
-    public class GameAssetContract
+    public class GameItemContract
     {
         protected readonly Web3 web3;
         protected Contract contract;
 
         public string Address { get { return contract.Address; } }
 
-        public GameAssetContract(Web3 web3, string address, string abi)
+        public GameItemContract(Web3 web3, string address, string abi)
         {
             this.web3 = web3;
             this.contract = web3.Eth.GetContract(abi, address);
@@ -131,9 +131,9 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("transfer");
         }
 
-        private Function GetFunctionPropertiesAddress()
+        private Function GetFunctionChecksum()
         {
-            return contract.GetFunction("propertiesAddress");
+            return contract.GetFunction("checksum");
         }
 
         public Task<ulong> BalanceOf(string address)
@@ -166,9 +166,9 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
-        public Task<ulong> PropertiesAddress()
+        public Task<ulong> Checksum()
         {
-            var function = GetFunctionPropertiesAddress();
+            var function = GetFunctionChecksum();
             return function.CallAsync<ulong>();
         }
 
@@ -182,28 +182,28 @@ namespace Hoard.BC.Contracts
         }
     }
 
-    public class ERC223GameAssetContract : GameAssetContract
+    public class ERC223GameItemContract : GameItemContract
     {
         public static string ABI = @"[ { 'constant': true, 'inputs': [], 'name': 'name', 'outputs': [ { 'name': '_name', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'totalSupply', 'outputs': [ { 'name': '_totalSupply', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'tokenType', 'outputs': [ { 'name': '', 'type': 'bytes32' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'decimals', 'outputs': [ { 'name': '_decimals', 'type': 'uint8' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '_owner', 'type': 'address' } ], 'name': 'balanceOf', 'outputs': [ { 'name': 'balance', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'symbol', 'outputs': [ { 'name': '_symbol', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_data', 'type': 'bytes' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_data', 'type': 'bytes' }, { 'name': '_custom_fallback', 'type': 'string' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'anonymous': false, 'inputs': [ { 'indexed': true, 'name': 'from', 'type': 'address' }, { 'indexed': true, 'name': 'to', 'type': 'address' }, { 'indexed': false, 'name': 'value', 'type': 'uint256' }, { 'indexed': false, 'name': 'data', 'type': 'bytes' } ], 'name': 'Transfer', 'type': 'event' } ]";
 
-        public ERC223GameAssetContract(Web3 web3, string address) : base(web3, address, ABI) { }
+        public ERC223GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
     }
 
-    public class ERC721GameAssetContract : GameAssetContract
+    public class ERC721GameItemContract : GameItemContract
     {
         // FIXME: add abi and extend hoarditem/721 contract
         public static string ABI = "";
 
-        public ERC721GameAssetContract(Web3 web3, string address) : base(web3, address, ABI) { }
+        public ERC721GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
 
         private Function GetFunctionGetItems()
         {
             return contract.GetFunction("getItems");
         }
 
-        private Function GetFunctionGetItemPropertyAddress()
+        private Function GetFunctionGetItemChecksum()
         {
-            return contract.GetFunction("getItemPropertyAddress");
+            return contract.GetFunction("getItemChecksum");
         }
 
         public Task<ulong[]> GetItems(string owner, ulong startIndex, ulong numItems)
@@ -212,9 +212,9 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<ulong[]>(owner, startIndex, numItems);
         }
 
-        public Task<ulong> GetItemPropertyAddress(ulong itemID)
+        public Task<ulong> GetItemChecksum(ulong itemID)
         {
-            Function function = GetFunctionGetItemPropertyAddress();
+            Function function = GetFunctionGetItemChecksum();
             return function.CallAsync<ulong>(itemID);
         }
     }

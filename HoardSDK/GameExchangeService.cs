@@ -7,12 +7,12 @@ namespace Hoard
 {
     public class ExchangeService
     {
-        public virtual Task<bool> Deposit(GameAsset asset, ulong amount)
+        public virtual Task<bool> Deposit(GameItem asset, ulong amount)
         {
             throw new NotImplementedException();
         }
 
-        public virtual Task<Order[]> ListOrders(GameAsset gaGet, GameAsset gaGive)
+        public virtual Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
         {
             throw new NotImplementedException();
         }
@@ -22,7 +22,7 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        public virtual Task<bool> Withdraw(GameAsset asset, ulong amount)
+        public virtual Task<bool> Withdraw(GameItem asset, ulong amount)
         {
             throw new NotImplementedException();
         }
@@ -53,7 +53,7 @@ namespace Hoard
         }
 
         // FIXME
-        public override async Task<Order[]> ListOrders(GameAsset gaGet, GameAsset gaGive)
+        public override async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
         {
             var jsonStr = await client.GetJson(
                 String.Format("exchange/orders/{0},{1}",
@@ -91,13 +91,13 @@ namespace Hoard
                 hoard.Accounts[0].Address);
         }
 
-        public override async Task<bool> Deposit(GameAsset asset, ulong amount)
+        public override async Task<bool> Deposit(GameItem asset, ulong amount)
         {
             //return await asset.Contract.Transfer(GameExchangeContract.Address, amount, hoard.Accounts[0].Address);
             throw new NotImplementedException();
         }
 
-        public override async Task<bool> Withdraw(GameAsset asset, ulong amount)
+        public override async Task<bool> Withdraw(GameItem asset, ulong amount)
         {
             //return await GameExchangeContract.Withdraw(asset.ContractAddress, amount, hoard.Accounts[0].Address);
             throw new NotImplementedException();
@@ -136,8 +136,8 @@ namespace Hoard
         // [JsonConverter(typeof(BigIntegerConverter))]
         public string user { get; private set; }
 
-        public GameAsset gameAssetGet { get; private set; } = null;
-        public GameAsset gameAssetGive { get; private set; } = null;
+        public GameItem gameAssetGet { get; private set; } = null;
+        public GameItem gameAssetGive { get; private set; } = null;
 
         public Order(string tokenGet, ulong amountGet, string tokenGive, ulong amountGive, ulong expires, ulong nonce, ulong amount, string user)
         {
@@ -151,7 +151,7 @@ namespace Hoard
             this.user = user;
         }
 
-        public void UpdateGameAssetsObjs(GameAsset gaGet, GameAsset gaGive)
+        public void UpdateGameAssetsObjs(GameItem gaGet, GameItem gaGive)
         {
             gameAssetGet = gaGet;
             gameAssetGive = gaGive;

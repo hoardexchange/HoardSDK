@@ -31,27 +31,27 @@ namespace Hoard
         public ItemCRC DataCRC;
     }
 
-    public class Prop
+    public class ItemProp
     {
         public PropertyType type = PropertyType.Unknown;
         public object value;
     }
 
     // Props holds set of values identified individually by string, it can by anything like single values, custom objects or binary data
-    public class Props
+    public class ItemProps
     {
-        public Dictionary<string, Prop> Properties { get; set; } = new Dictionary<string, Prop>();
+        public Dictionary<string, ItemProp> Properties { get; set; } = new Dictionary<string, ItemProp>();
 
         public object Get(string propertyName)
         {
-            Prop prop;
+            ItemProp prop;
             Properties.TryGetValue(propertyName, out prop);
             return prop.value;
         }
 
         public void Set(string propertyName, object propertyValue, PropertyType type = PropertyType.Unknown)
         {
-            Prop prop;
+            ItemProp prop;
             if (Properties.TryGetValue(propertyName, out prop) == false)
             {
                 Register(propertyName, propertyValue, type);
@@ -64,13 +64,13 @@ namespace Hoard
 
         protected void Register(string propertyName, object propertyValue, PropertyType type)
         {
-            Properties[propertyName] = new Prop();
+            Properties[propertyName] = new ItemProp();
             Properties[propertyName].value = propertyValue;
             Properties[propertyName].type = type;
         }
     }
 
-    public class PropsConverter : JsonConverter
+    public class ItemPropsConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
@@ -88,13 +88,14 @@ namespace Hoard
         }
     }
 
-    public interface IGameAssetMetadata
+    public interface IGameItemMetadata
     {
         TResult Get<TResult>(string name);
+
         void Set<TResult>(string name, TResult value);
     }
 
-    public abstract class BaseGameAssetMetadata : IGameAssetMetadata
+    public abstract class BaseGameItemMetadata : IGameItemMetadata
     {
         public TResult Get<TResult>(string name)
         {
@@ -107,16 +108,13 @@ namespace Hoard
         }
     }
 
-    public class GameAsset
+    public class GameItem
     {
-        public string AssetSymbol { get; private set; }
-        public Props Properties { get; set; } = new Props();
-        public IGameAssetMetadata Metadata { get; set; } = null;
+        public IGameItemMetadata Metadata { get; set; } = null;
+        public ItemProps Properties { get; set; } = new ItemProps();
 
-        public GameAsset(string assetSymbol, Props properties, IGameAssetMetadata metadata = null)
+        public GameItem(IGameItemMetadata metadata)
         {
-            AssetSymbol = assetSymbol;
-            Properties = properties;
             Metadata = metadata;
         }
     }

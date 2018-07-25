@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 using Org.BouncyCastle.Math;
-using Hoard.GameAssets;
+using Hoard.GameItems;
 
 #if DEBUG
 using System.Diagnostics;
@@ -47,7 +47,7 @@ namespace Hoard
         /// <summary>
         /// A list of providers for given asset type. Providers are registered using RegisterProvider.
         /// </summary>
-        private Dictionary<string, List<Provider>> Providers = new Dictionary<string, List<Provider>>();
+        private Dictionary<string, List<IProvider>> Providers = new Dictionary<string, List<IProvider>>();
 
         /// <summary>
         /// Dafault provider with signin, game backend and exchange support.
@@ -117,12 +117,12 @@ namespace Hoard
         /// <summary>
         /// Request balance of particular game asset for given playerId.
         /// </summary>
-        /// <param name="gameAssetSymbol">Game asset symbol to be requested for the balance.</param>
+        /// <param name="gameItemSymbol">Game asset symbol to be requested for the balance.</param>
         /// <param name="playerId">PlayerId for which we are requesting the balance.</param>
         /// <returns>Async task that retrives balance for given game asset belonging to the player.</returns>
-        public async Task<ulong> RequestGameAssetBalanceOf(string gameAssetSymbol, PlayerID playerId)
+        public async Task<ulong> RequestGameItemBalanceOf(string gameItemSymbol, PlayerID playerId)
         {
-            return await DefaultProvider.GetGameAssetBalanceOf(playerId.ID, gameAssetSymbol);
+            return await DefaultProvider.GetGameItemBalanceOf(playerId.ID, gameItemSymbol);
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace Hoard
         /// Use RefreshGameAssets for async processing.
         /// </summary>
         /// <returns>True if operations succeeded.</returns>
-        public bool RefreshGameAssetsSync()
+        public bool RefreshGameItemsSync()
         {
             //GameAssetSymbolDict.Clear();
             //GameAssetAddressDict.Clear();
@@ -155,9 +155,9 @@ namespace Hoard
         /// Retrives game assets using registered Providers.
         /// </summary>
         /// <returns>Async task that retives game assets.</returns>
-        public async Task<bool> RefreshGameAssets()
+        public async Task<bool> RefreshGameItems()
         {
-            return await Task.Run(() => RefreshGameAssetsSync());
+            return await Task.Run(() => RefreshGameItemsSync());
         }
 
         ///// <summary>
@@ -174,24 +174,24 @@ namespace Hoard
         /// <summary>
         /// Request asset transfer to game contract.
         /// </summary>
-        /// <param name="gameAsset">Game asset to be transfered.</param>
+        /// <param name="gameItem">Game asset to be transfered.</param>
         /// <param name="amount">Amount to transfer.</param>
         /// <returns>Async task that transfer game asset to game contract.</returns>
-        public async Task<bool> RequestAssetTransferToGameContract(GameAsset gameAsset)
+        public async Task<bool> RequestGameItemTransferToGameContract(GameItem gameItem)
         {
-            return await DefaultProvider.RequestAssetTransferToGameContract(gameAsset);
+            return await DefaultProvider.RequestGameItemTransferToGameContract(gameItem);
         }
 
         /// <summary>
         /// Request asset transfer.
         /// </summary>
         /// <param name="to">Transfer address.</param>
-        /// <param name="gameAsset">Game asset to be transfered.</param>
+        /// <param name="gameItem">Game asset to be transfered.</param>
         /// <param name="amount">Amount to transfer.</param>
         /// <returns>Async task that transfer given amount of game asset to the adress.</returns>
-        public async Task<bool> RequestAssetTransfer(string to, GameAsset gameAsset, ulong amount)
+        public async Task<bool> RequestGameItemTransfer(string to, GameItem gameItem, ulong amount)
         {
-            return await DefaultProvider.RequestAssetTransfer(to, gameAsset);
+            return await DefaultProvider.RequestGameItemTransfer(to, gameItem);
         }
 
         /// <summary>
@@ -226,12 +226,12 @@ namespace Hoard
         /// </summary>
         /// <param name="assetType">Asset type for which this provider will be registered.</param>
         /// <param name="provider">Provider to be registered.</param>
-        public void RegisterProvider(string assetType, Provider provider)
+        public void RegisterProvider(string assetType, IProvider provider)
         {
-            List<Provider> providers = null;
+            List<IProvider> providers = null;
             if (!Providers.TryGetValue(assetType, out providers))
             {
-                providers = new List<Provider>();
+                providers = new List<IProvider>();
                 Providers[assetType] = providers;
             }
 
@@ -327,7 +327,7 @@ namespace Hoard
             if (!DefaultProvider.Init())
                 return false;
 
-            RefreshGameAssets().Wait();
+            RefreshGameItems().Wait();
 
             return true;
         }

@@ -17,7 +17,7 @@ namespace Hoard
         public Dictionary<ulong, AssetFile> assets = new Dictionary<ulong, AssetFile>(); // assetId to cached AssetFile
     }
 
-    public class DataProvider : Provider
+    public class DataProvider : IProvider
     {
         private string propertyName = "file";
 
@@ -144,9 +144,14 @@ namespace Hoard
         //    return new string[1] { propertyName };
         //}
 
-        override public async Task<List<GameAsset>> GetItems(string ownerAddress, uint page, uint pageSize)
+        public GameItem[] GetGameItems(PlayerID player)
         {
             throw new NotSupportedException();
+        }
+
+        public ItemProps GetGameItemProperties(GameItem item)
+        {
+            throw new NotImplementedException();
         }
 
         //FIXME: not needed?
