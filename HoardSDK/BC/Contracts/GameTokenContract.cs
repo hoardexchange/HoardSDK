@@ -8,19 +8,18 @@ using Nethereum.Contracts;
 using System.Diagnostics;
 using Org.BouncyCastle.Math;
 using Nethereum.Hex.HexTypes;
+using Nethereum.RPC.Eth.DTOs;
 
 namespace Hoard.BC.Contracts
 {
     public class GameAssetContract
     {
-        private readonly Web3 web3;
-        private Contract contract;
-
-        private static string abi = @"[ { 'constant': true, 'inputs': [], 'name': 'name', 'outputs': [ { 'name': '_name', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'totalSupply', 'outputs': [ { 'name': '_totalSupply', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'tokenType', 'outputs': [ { 'name': '', 'type': 'bytes32' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'decimals', 'outputs': [ { 'name': '_decimals', 'type': 'uint8' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '_owner', 'type': 'address' } ], 'name': 'balanceOf', 'outputs': [ { 'name': 'balance', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'symbol', 'outputs': [ { 'name': '_symbol', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_data', 'type': 'bytes' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_data', 'type': 'bytes' }, { 'name': '_custom_fallback', 'type': 'string' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'anonymous': false, 'inputs': [ { 'indexed': true, 'name': 'from', 'type': 'address' }, { 'indexed': true, 'name': 'to', 'type': 'address' }, { 'indexed': false, 'name': 'value', 'type': 'uint256' }, { 'indexed': false, 'name': 'data', 'type': 'bytes' } ], 'name': 'Transfer', 'type': 'event' } ]";
+        protected readonly Web3 web3;
+        protected Contract contract;
 
         public string Address { get { return contract.Address; } }
 
-        public GameAssetContract(Web3 web3, string address)
+        public GameAssetContract(Web3 web3, string address, string abi)
         {
             this.web3 = web3;
             this.contract = web3.Eth.GetContract(abi, address);
@@ -32,75 +31,75 @@ namespace Hoard.BC.Contracts
             //
         }
 
-        public void FillProperties(GameAsset asset)
-        {
-            for (int i = 0; i < contract.ContractBuilder.ContractABI.Functions.Length; i++)
-            {
-                Nethereum.ABI.Model.FunctionABI fabi = contract.ContractBuilder.ContractABI.Functions[i];
-                if (fabi.Name.Contains("prop_"))
-                {
-                    Prop prop;
-                    if (asset.Properties.Properties.TryGetValue(fabi.Name, out prop) == false)
-                        continue;
-                    Function fun = contract.GetFunction(fabi.Name);
-                    switch (prop.type)
-                    {
-                        case PropertyType.String:
-                        case PropertyType.Address:
-                            var retString = fun.CallAsync<string>();
-                            asset.Properties.Set(fabi.Name, retString.Result);
-                            break;
-                        case PropertyType.Bool:
-                            var retBool = fun.CallAsync<bool>();
-                            asset.Properties.Set(fabi.Name, retBool.Result);
-                            break;
-                        case PropertyType.Int16:
-                            var retInt16 = fun.CallAsync<short>();
-                            asset.Properties.Set(fabi.Name, retInt16.Result);
-                            break;
-                        case PropertyType.Int32:
-                            var retInt32 = fun.CallAsync<int>();
-                            asset.Properties.Set(fabi.Name, retInt32.Result);
-                            break;
-                        case PropertyType.Int64:
-                            var retInt64 = fun.CallAsync<long>();
-                            asset.Properties.Set(fabi.Name, retInt64.Result);
-                            break;
-                        case PropertyType.Uint16:
-                            var retUint16 = fun.CallAsync<ushort>();
-                            asset.Properties.Set(fabi.Name, retUint16.Result);
-                            break;
-                        case PropertyType.Uint32:
-                            var retUint32 = fun.CallAsync<uint>();
-                            asset.Properties.Set(fabi.Name, retUint32.Result);
-                            break;
-                        case PropertyType.Uint64:
-                            var retUint64 = fun.CallAsync<ulong>();
-                            asset.Properties.Set(fabi.Name, retUint64.Result);
-                            break;
-                        case PropertyType.BigInt:
-                            var retBigInteger = fun.CallAsync<BigInteger>();
-                            asset.Properties.Set(fabi.Name, retBigInteger.Result);
-                            break;
-                        default:
-                            Debug.Assert(false, "Unknown property type!");
-                            break;
-                    }
-                }
-            }
-        }
+        //public void FillProperties(GameAsset asset)
+        //{
+        //    for (int i = 0; i < contract.ContractBuilder.ContractABI.Functions.Length; i++)
+        //    {
+        //        Nethereum.ABI.Model.FunctionABI fabi = contract.ContractBuilder.ContractABI.Functions[i];
+        //        if (fabi.Name.Contains("prop_"))
+        //        {
+        //            Prop prop;
+        //            if (asset.Properties.Properties.TryGetValue(fabi.Name, out prop) == false)
+        //                continue;
+        //            Function fun = contract.GetFunction(fabi.Name);
+        //            switch (prop.type)
+        //            {
+        //                case PropertyType.String:
+        //                case PropertyType.Address:
+        //                    var retString = fun.CallAsync<string>();
+        //                    asset.Properties.Set(fabi.Name, retString.Result);
+        //                    break;
+        //                case PropertyType.Bool:
+        //                    var retBool = fun.CallAsync<bool>();
+        //                    asset.Properties.Set(fabi.Name, retBool.Result);
+        //                    break;
+        //                case PropertyType.Int16:
+        //                    var retInt16 = fun.CallAsync<short>();
+        //                    asset.Properties.Set(fabi.Name, retInt16.Result);
+        //                    break;
+        //                case PropertyType.Int32:
+        //                    var retInt32 = fun.CallAsync<int>();
+        //                    asset.Properties.Set(fabi.Name, retInt32.Result);
+        //                    break;
+        //                case PropertyType.Int64:
+        //                    var retInt64 = fun.CallAsync<long>();
+        //                    asset.Properties.Set(fabi.Name, retInt64.Result);
+        //                    break;
+        //                case PropertyType.Uint16:
+        //                    var retUint16 = fun.CallAsync<ushort>();
+        //                    asset.Properties.Set(fabi.Name, retUint16.Result);
+        //                    break;
+        //                case PropertyType.Uint32:
+        //                    var retUint32 = fun.CallAsync<uint>();
+        //                    asset.Properties.Set(fabi.Name, retUint32.Result);
+        //                    break;
+        //                case PropertyType.Uint64:
+        //                    var retUint64 = fun.CallAsync<ulong>();
+        //                    asset.Properties.Set(fabi.Name, retUint64.Result);
+        //                    break;
+        //                case PropertyType.BigInt:
+        //                    var retBigInteger = fun.CallAsync<BigInteger>();
+        //                    asset.Properties.Set(fabi.Name, retBigInteger.Result);
+        //                    break;
+        //                default:
+        //                    Debug.Assert(false, "Unknown property type!");
+        //                    break;
+        //            }
+        //        }
+        //    }
+        //}
 
-        public async Task<bool> SavePropertyToBC(BCComm comm, GameAsset asset, string propertyName)
-        {
-            Prop prop;
-            if (asset.Properties.Properties.TryGetValue(propertyName, out prop) == false)
-                return await Task.FromResult<bool>(false);
-            Function function = contract.GetFunction("set" + propertyName);
-            return await comm.EvaluateOnBC((address) =>
-            {
-                return function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), prop.value);
-            });
-        }
+        //public async Task<bool> SavePropertyToBC(BCComm comm, GameAsset asset, string propertyName)
+        //{
+        //    Prop prop;
+        //    if (asset.Properties.Properties.TryGetValue(propertyName, out prop) == false)
+        //        return await Task.FromResult<bool>(false);
+        //    Function function = contract.GetFunction("set" + propertyName);
+        //    return await comm.EvaluateOnBC((address) =>
+        //    {
+        //        return function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), prop.value);
+        //    });
+        //}
 
         private Function GetFunctionBalanceOf()
         {
@@ -130,6 +129,11 @@ namespace Hoard.BC.Contracts
         private Function GetFunctionTransfer()
         {
             return contract.GetFunction("transfer");
+        }
+
+        private Function GetFunctionPropertiesAddress()
+        {
+            return contract.GetFunction("propertiesAddress");
         }
 
         public Task<ulong> BalanceOf(string address)
@@ -162,13 +166,56 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
-        public async Task<bool> Transfer(string addressTo, ulong value, string from)
+        public Task<ulong> PropertiesAddress()
+        {
+            var function = GetFunctionPropertiesAddress();
+            return function.CallAsync<ulong>();
+        }
+
+        public async Task<bool> Transfer(string from, params object[] functionInput)
         {
             var function = GetFunctionTransfer();
-            var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), addressTo, value);
+            var gas = await function.EstimateGasAsync(function.CreateTransactionInput(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), functionInput));
             gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, addressTo, value);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(function.CreateTransactionInput(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, functionInput));
             return receipt.Status.Value == 1;
+        }
+    }
+
+    public class ERC223GameAssetContract : GameAssetContract
+    {
+        public static string ABI = @"[ { 'constant': true, 'inputs': [], 'name': 'name', 'outputs': [ { 'name': '_name', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'totalSupply', 'outputs': [ { 'name': '_totalSupply', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'tokenType', 'outputs': [ { 'name': '', 'type': 'bytes32' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'decimals', 'outputs': [ { 'name': '_decimals', 'type': 'uint8' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '_owner', 'type': 'address' } ], 'name': 'balanceOf', 'outputs': [ { 'name': 'balance', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'symbol', 'outputs': [ { 'name': '_symbol', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_data', 'type': 'bytes' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_data', 'type': 'bytes' }, { 'name': '_custom_fallback', 'type': 'string' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'anonymous': false, 'inputs': [ { 'indexed': true, 'name': 'from', 'type': 'address' }, { 'indexed': true, 'name': 'to', 'type': 'address' }, { 'indexed': false, 'name': 'value', 'type': 'uint256' }, { 'indexed': false, 'name': 'data', 'type': 'bytes' } ], 'name': 'Transfer', 'type': 'event' } ]";
+
+        public ERC223GameAssetContract(Web3 web3, string address) : base(web3, address, ABI) { }
+    }
+
+    public class ERC721GameAssetContract : GameAssetContract
+    {
+        // FIXME: add abi and extend hoarditem/721 contract
+        public static string ABI = "";
+
+        public ERC721GameAssetContract(Web3 web3, string address) : base(web3, address, ABI) { }
+
+        private Function GetFunctionGetItems()
+        {
+            return contract.GetFunction("getItems");
+        }
+
+        private Function GetFunctionGetItemPropertyAddress()
+        {
+            return contract.GetFunction("getItemPropertyAddress");
+        }
+
+        public Task<ulong[]> GetItems(string owner, ulong startIndex, ulong numItems)
+        {
+            Function function = GetFunctionGetItems();
+            return function.CallAsync<ulong[]>(owner, startIndex, numItems);
+        }
+
+        public Task<ulong> GetItemPropertyAddress(ulong itemID)
+        {
+            Function function = GetFunctionGetItemPropertyAddress();
+            return function.CallAsync<ulong>(itemID);
         }
     }
 }

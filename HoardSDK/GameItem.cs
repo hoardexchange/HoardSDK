@@ -1,9 +1,7 @@
-﻿using Org.BouncyCastle.Math;
+using Hoard.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Hoard
 {
@@ -55,9 +53,13 @@ namespace Hoard
         {
             Prop prop;
             if (Properties.TryGetValue(propertyName, out prop) == false)
+            {
                 Register(propertyName, propertyValue, type);
+            }
             else
+            {
                 prop.value = propertyValue;
+            }
         }
 
         protected void Register(string propertyName, object propertyValue, PropertyType type)
@@ -68,53 +70,54 @@ namespace Hoard
         }
     }
 
-    public class Instance
+    public class PropsConverter : JsonConverter
     {
-        public Props Properties { get; set; } = new Props();
+        public override bool CanConvert(Type objectType)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public interface IGameAssetMetadata
+    {
+        TResult Get<TResult>(string name);
+        void Set<TResult>(string name, TResult value);
+    }
+
+    public abstract class BaseGameAssetMetadata : IGameAssetMetadata
+    {
+        public TResult Get<TResult>(string name)
+        {
+            return this.GetPropertyValue<TResult>(name);
+        }
+
+        public void Set<TResult>(string name, TResult value)
+        {
+            this.SetPropertyValue<TResult>(name, value);
+        }
     }
 
     public class GameAsset
     {
-        public string Symbol { get; private set; } = null;
-        public string Name { get; private set; } = null;
-        public string ContractAddress { get; private set; } = null;
-        public ulong TotalSuplly { get; private set; }
-        public ulong AssetId { get; private set; }
-        public string AssetType { get; private set; }
-
-        public BC.Contracts.GameAssetContract Contract { get; private set; } = null;
-
-        // GameAsset's properties
+        public string AssetSymbol { get; private set; }
         public Props Properties { get; set; } = new Props();
+        public IGameAssetMetadata Metadata { get; set; } = null;
 
-        // GameAsset's Instances contains properties of particular item identified by tokenId (see ERC721), used for NFT tokens
-        public Dictionary<string, Instance> Instances { get; set; } = null;
-
-        public GameAsset(string symbol, string name, BC.Contracts.GameAssetContract contract, ulong totalSuplly, ulong assetId, string assetType)
+        public GameAsset(string assetSymbol, Props properties, IGameAssetMetadata metadata = null)
         {
-            Name = name;
-            Symbol = symbol;
-            Contract = contract;
-            ContractAddress = (contract != null) ? contract.Address : null;
-            TotalSuplly = totalSuplly;
-            AssetId = assetId;
-            AssetType = assetType;
-
-            if (Contract != null)
-                Contract.FillProperties(this);
+            AssetSymbol = assetSymbol;
+            Properties = properties;
+            Metadata = metadata;
         }
     }
-
-    public struct GameAssetBalance
-    {
-        public GameAsset GameAsset;
-        public readonly ulong Balance;
-
-        public GameAssetBalance(GameAsset ga, ulong balance)
-        {
-            GameAsset = ga;
-            Balance = balance;
-        }
-    }   
-
 }

@@ -1,11 +1,7 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Org.BouncyCastle.Math;
-using Newtonsoft.Json.Linq;
 
 namespace Hoard
 {
@@ -56,25 +52,29 @@ namespace Hoard
             GameExchangeContract = null;
         }
 
+        // FIXME
         public override async Task<Order[]> ListOrders(GameAsset gaGet, GameAsset gaGive)
         {
             var jsonStr = await client.GetJson(
                 String.Format("exchange/orders/{0},{1}",
-                gaGet != null ? gaGet.ContractAddress : "",
-                gaGive != null ? gaGive.ContractAddress : ""), null);
+                /*gaGet != null ? gaGet.ContractAddress :*/ "",
+                /*gaGive != null ? gaGive.ContractAddress :*/ ""), null);
 
-            var list = JsonConvert.DeserializeObject<Order[]>(jsonStr);
-
-            foreach (var l in list)
+            if (jsonStr != null)
             {
-                l.UpdateGameAssetsObjs(
-                    this.hoard.GameAssetAddressDict[l.tokenGet.ToLower()],
-                    this.hoard.GameAssetAddressDict[l.tokenGive.ToLower()]
-                    );
-            }
-                
+                var list = JsonConvert.DeserializeObject<Order[]>(jsonStr);
 
-            return list.ToList().FindAll(e => e.amount < e.amountGet).ToArray();
+                foreach (var l in list)
+                {
+                    //l.UpdateGameAssetsObjs(
+                    //    this.hoard.GameAssetAddressDict[l.tokenGet.ToLower()],
+                    //    this.hoard.GameAssetAddressDict[l.tokenGive.ToLower()]
+                    //    );
+                }
+                return list.ToList().FindAll(e => e.amount < e.amountGet).ToArray();
+            }
+
+            return new Order[0];
         }
 
         public override async Task<bool> Trade(Order order, ulong amount)
@@ -93,12 +93,14 @@ namespace Hoard
 
         public override async Task<bool> Deposit(GameAsset asset, ulong amount)
         {
-            return await asset.Contract.Transfer(GameExchangeContract.Address, amount, hoard.Accounts[0].Address);
+            //return await asset.Contract.Transfer(GameExchangeContract.Address, amount, hoard.Accounts[0].Address);
+            throw new NotImplementedException();
         }
 
         public override async Task<bool> Withdraw(GameAsset asset, ulong amount)
         {
-            return await GameExchangeContract.Withdraw(asset.ContractAddress, amount, hoard.Accounts[0].Address);
+            //return await GameExchangeContract.Withdraw(asset.ContractAddress, amount, hoard.Accounts[0].Address);
+            throw new NotImplementedException();
         }
     }
 

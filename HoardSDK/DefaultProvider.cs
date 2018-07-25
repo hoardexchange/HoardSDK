@@ -1,7 +1,10 @@
-
+using Hoard.BC.Contracts;
+using Hoard.GameAssets;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -24,22 +27,23 @@ namespace Hoard
 
         virtual public ExchangeService GetExchangeService() { return null; }
 
-        virtual public Task<ulong> GetGameAssetBalanceOf(string address, string tokenContractAddress)
+        virtual public Task<ulong> GetGameAssetBalanceOf(string address, string gameAssetSymbol)
         {
             throw new NotImplementedException();
         }
 
-        virtual public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset, ulong amount)
+        //FIXME?
+        //virtual public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        virtual public async Task<bool> RequestAssetTransferToGameContract(GameAsset gameAsset)
         {
             throw new NotImplementedException();
         }
 
-        virtual public async Task<bool> RequestAssetTransferToGameContract(GameAsset gameAsset, ulong amount)
-        {
-            throw new NotImplementedException();
-        }
-
-        virtual public async Task<bool> RequestAssetTransfer(string to, GameAsset gameAsset, ulong amount)
+        virtual public async Task<bool> RequestAssetTransfer(string to, GameAsset gameAsset)
         {
             throw new NotImplementedException();
         }
@@ -49,15 +53,14 @@ namespace Hoard
     {
         private HoardService hoard;
         private HoardServiceOptions options;
+        private BC.BCComm bcComm = null;
+        private Dictionary<string, IGameAssetProvider> gameAssetProviders = new Dictionary<string, IGameAssetProvider>();
 
         public GBDesc GameBackendDesc { get; private set; }
-        private BC.BCComm bcComm = null;
-        public GBClient client { get; private set; } = null;
-
-        public Dictionary<string, GameAsset> GameAssetSymbolDict { get; private set; } = new Dictionary<string, GameAsset>();
+        public GBClient Client { get; private set; } = null;
 
         public GameExchangeService GameExchangeService { get; private set; }
-
+        
         public DefaultHoardProvider(HoardService _hoard, HoardServiceOptions _options)
         {
             hoard = _hoard;
@@ -90,86 +93,62 @@ namespace Hoard
             if (GameExchangeService != null)
                 GameExchangeService.Shutdown();
 
-            if (client != null)
-                client.Shutdown();
+            if (Client != null)
+                Client.Shutdown();
 
-            client = null;
+            Client = null;
             GameExchangeService = null;
             bcComm = null;
             GameBackendDesc = null;
         }
-
-        public async Task<bool> GetGameAssets()
+        
+        private GameAssetContract[] GetGameAssetContracts()
         {
-            var gaContracts = await GetGameAssetContracts();
-
-            GameAssetSymbolDict.Clear();
-
-            ulong i = 0;
-            foreach (var gac in gaContracts)
-                await RegisterGameAssetContract(gac, i++);
-
-            return true;
+            var contracts = new List<GameAssetContract>();
+            foreach(var gap in gameAssetProviders)
+            {
+                contracts.Add(gap.Value.Contract);
+            }
+            return contracts.ToArray();
         }
 
-        private async Task<object> RegisterGameAssetContract(BC.Contracts.GameAssetContract gameAssetContract, ulong assetId)
+        // FIXME: not needed?
+        //public override string[] GetPropertyNames()
+        //{
+        //    return null;
+        //}
+
+        public override async Task<List<GameAsset>> GetItems(string ownerAddress, uint page, uint pageSize)
         {
-            var symbol = await gameAssetContract.Symbol();
-
-            if (!GameAssetSymbolDict.ContainsKey(symbol))
+            // try to get cached data from game backend server
+            var jsonStr = await Client.GetJson(String.Format("items/{0}?page={1}&pageSize={2}", ownerAddress, page, pageSize), null);
+            if (jsonStr != null)
             {
-                var ga = new GameAsset(
-                    symbol,
-                    await gameAssetContract.Name(),
-                    gameAssetContract,
-                    await gameAssetContract.TotalSupply(),
-                    assetId,
-                    await gameAssetContract.AssetType());
-
-                GameAssetSymbolDict.Add(symbol, ga);
-            }
-            else
-            {
-                throw new Exception("Truing to register same key twice");
+                return JsonConvert.DeserializeObject<GameAsset[]>(jsonStr).ToList();
             }
 
-            return null;
-        }
-
-        private async Task<BC.Contracts.GameAssetContract[]> GetGameAssetContracts()
-        {
-            return await bcComm.GetGameAssetContacts(GameBackendDesc.GameContract);
-        }
-
-        public override string[] getPropertyNames()
-        {
-            return null;
-        }
-
-        public override Result getItems(out List<GameAsset> items)
-        {
-            items = new List<GameAsset>();
-
-            GetGameAssets().Wait();
-
-            foreach (var ga in GameAssetSymbolDict)
+            // TODO: needs optimization, e.g. handle pagination
+            // if server is down fetch data directly from blockchain
+            List<GameAsset> gameAssets = new List<GameAsset>();
+            foreach (var gap in gameAssetProviders.Values)
             {
-                items.Add(ga.Value);
+                gameAssets.AddRange(await gap.GetItems(bcComm, ownerAddress));
             }
 
-            return new Result();
+            return gameAssets;
         }
 
-        public override Result getProperties(GameAsset item)
-        {
-            return new Result();
-        }
+        // FIXME: not needed?
+        //public override Result GetProperties(GameAsset item)
+        //{
+        //    return new Result();
+        //}
 
         override public bool IsSignedIn(PlayerID id)
         {
-            if (client != null)
-                return client.signedPlayerID.Equals(id)
-                    && client.IsSessionValid();
+            if (Client != null)
+                return Client.signedPlayerID.Equals(id)
+                    && Client.IsSessionValid();
             else
                 return false;
         }
@@ -179,13 +158,13 @@ namespace Hoard
             if (IsSignedIn(id))
                 return true;
             //create hoard client
-            client = new GBClient(GameBackendDesc);
+            Client = new GBClient(GameBackendDesc);
 
-            GameExchangeService = new GameExchangeService(client, bcComm, hoard);
+            GameExchangeService = new GameExchangeService(Client, bcComm, hoard);
             GameExchangeService.Init(bcComm.GetContract<BC.Contracts.GameContract>(GameBackendDesc.GameContract));
 
             //connect to backend
-            return client.Connect(hoard.GetAccount(id));
+            return Client.Connect(hoard.GetAccount(id));
         }
 
         override public bool SupportsExchangeService()
@@ -201,7 +180,7 @@ namespace Hoard
 
         override public GBClient GetGameBackendClient()
         {
-            return client;
+            return Client;
         }
 
         override public ExchangeService GetExchangeService()
@@ -209,37 +188,39 @@ namespace Hoard
             return GameExchangeService;
         }
 
-        override public Task<ulong> GetGameAssetBalanceOf(string address, string tokenContractAddress)
+        override public async Task<ulong> GetGameAssetBalanceOf(string address, string gameAssetSymbol)
         {
-            return bcComm.GetGameAssetBalanceOf(address, tokenContractAddress);
+            return await gameAssetProviders[gameAssetSymbol].GetBalanceOf(address);
         }
 
-        override public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset, ulong amount)
+        // FIXME: do we need this?
+        //override public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset, ulong amount)
+        //{
+        //    return await bcComm.RequestPayoutPlayerReward(
+        //        gameAsset.ContractAddress,
+        //        amount,
+        //        GameBackendDesc.GameContract,
+        //        hoard.Accounts[0].Address);
+        //}
+
+        override public async Task<bool> RequestAssetTransfer(string to, GameAsset gameAsset)
         {
-            return await bcComm.RequestPayoutPlayerReward(
-                gameAsset.ContractAddress,
-                amount,
-                GameBackendDesc.GameContract,
-                hoard.Accounts[0].Address);
+            return await gameAssetProviders[gameAsset.AssetSymbol].Transfer(bcComm, gameAsset, hoard.Accounts[0].Address, to);
         }
 
-        override public async Task<bool> RequestAssetTransferToGameContract(GameAsset gameAsset, ulong amount)
+        override public async Task<bool> RequestAssetTransferToGameContract(GameAsset gameAsset)
         {
-            return await bcComm.RequestAssetTransfer(
-                GameBackendDesc.GameContract,
-                gameAsset.ContractAddress,
-                amount,
-                hoard.Accounts[0].Address);
+            return await RequestAssetTransfer(GameBackendDesc.GameContract, gameAsset);
         }
 
-        override public async Task<bool> RequestAssetTransfer(string to, GameAsset gameAsset, ulong amount)
+        public void RegisterGameAssetProvider(IGameAssetProvider assetProvider)
         {
-            return await bcComm.RequestAssetTransfer(
-                to,
-                gameAsset.ContractAddress,
-                amount,
-                hoard.Accounts[0].Address);
+            gameAssetProviders.Add(assetProvider.AssetSymbol, assetProvider);
         }
 
+        public bool UnregisterGameAssetProvider(string assetSymbol)
+        {
+            return gameAssetProviders.Remove(assetSymbol);
+        }
     }
 }

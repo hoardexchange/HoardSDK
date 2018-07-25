@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
@@ -59,60 +59,34 @@ namespace Hoard.BC
             return null;
         }
 
-        public Task<ulong> GetGameAssetBalanceOf(string address, string tokenContractAddress)
-        {
-            GameAssetContract gameAsset = new GameAssetContract(web, tokenContractAddress);
-
-            return gameAsset.BalanceOf(address);
-        }
-
-        public Task<ulong> GetAssetBalanceOf(string gameContract, PlayerID pid, ulong itemID)
-        {
-            GameContract game = new GameContract(web, gameContract);
-            return game.GetAssetBalance(pid.ID, itemID);
-        }
-
         public Task<ulong> GetGameAssetCount(string gameContract)
         {
             GameContract game = new GameContract(web, gameContract);
             return game.GetNextAssetIdAsync();
         }
 
-        public async Task<GameAssetContract[]> GetGameAssetContacts(string gameContract)
-        {
-            GameContract game = new GameContract(web, gameContract);
-            ulong length = await game.GetNextAssetIdAsync();
+        // FIXME: Do we need this? How can we distinguish correct abi ERC20/ERC721/others?
+        //public async Task<GameAssetContract[]> GetGameAssetContacts(string gameContract)
+        //{
+        //    GameContract game = new GameContract(web, gameContract);
+        //    ulong length = await game.GetNextAssetIdAsync();
 
-            GameAssetContract[] ret = new GameAssetContract[length];
+        //    GameAssetContract[] ret = new GameAssetContract[length];
 
-            for (ulong i = 0; i < length; ++i)
-            {
-                var address = await game.GetGameAssetContractAsync(i);
-                ret[i] = new GameAssetContract(web, address);
-            }
+        //    for (ulong i = 0; i < length; ++i)
+        //    {
+        //        var address = await game.GetGameAssetContractAsync(i);
+        //        ret[i] = new GameAssetContract(web, address);
+        //    }
 
-            return ret;
-        }
+        //    return ret;
+        //}
 
         public async Task<GameExchangeContract> GetGameExchangeContract(string gameContract)
         {
             GameContract game = new GameContract(web, gameContract);
 
             return new GameExchangeContract(web, await game.GameExchangeContractAsync());
-        }
-
-        public Task<bool> RequestPayoutPlayerReward(string gameAssetContractAddress, ulong amount, string gameContract, string from)
-        {
-            GameContract game = new GameContract(web, gameContract);
-
-            return game.PayoutPlayerReward(gameAssetContractAddress, amount, from);
-        }
-
-        public Task<bool> RequestAssetTransfer(string to, string gameAssetContractAddress, ulong amount, string from)
-        {
-            GameAssetContract assetContract = new GameAssetContract(web, gameAssetContractAddress);
-
-            return assetContract.Transfer(to, amount, from);
         }
 
         // TEST METHODS BELOW.

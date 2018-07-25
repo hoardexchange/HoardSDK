@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Hoard
 {
@@ -137,28 +138,29 @@ namespace Hoard
 
         /* Provider interface implementation */
 
-        override public string[] getPropertyNames()
+        // FIXME: not needed?
+        //override public string[] GetPropertyNames()
+        //{
+        //    return new string[1] { propertyName };
+        //}
+
+        override public async Task<List<GameAsset>> GetItems(string ownerAddress, uint page, uint pageSize)
         {
-            return new string[1] { propertyName };
+            throw new NotSupportedException();
         }
 
-        override public Result getItems(out List<GameAsset> items)
-        {
-            items = null;
-            return new Result("Not supported");
-        }
+        //FIXME: not needed?
+        //override public Result GetProperties(GameAsset item)
+        //{
+        //    byte[] data = null;
 
-        override public Result getProperties(GameAsset item)
-        {
-            byte[] data = null;
+        //    Result result = Load(item.AssetId, out data);
+        //    if (!result.Success)
+        //        return result;
 
-            Result result = Load(item.AssetId, out data);
-            if (!result.Success)
-                return result;
+        //    item.Properties.Set(propertyName, data);
 
-            item.Properties.Set(propertyName, data);
-
-            return result;
-        }
+        //    return result;
+        //}
     }
 }

@@ -1,4 +1,4 @@
-﻿using Nethereum.Contracts;
+using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
@@ -31,11 +31,6 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("nextAssetId");
         }
 
-        private Function GetFunctionBalanceOf()
-        {
-            return contract.GetFunction("balanceOf");
-        }
-
         private Function GetFunctionGameSrvURL()
         {
             return contract.GetFunction("gameSrvURL");
@@ -44,11 +39,6 @@ namespace Hoard.BC.Contracts
         private Function GetFunctionSetGameSrvURL()
         {
             return contract.GetFunction("setGameSrvURL");
-        }
-
-        private Function GetFunctionGameAssetContacts()
-        {
-            return contract.GetFunction("gameAssetContacts");
         }
 
         private Function GetFunctionAssetTokens()
@@ -61,10 +51,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("gameExchange");
         }
 
-        private Function GetFunctionPayoutPlayerReward()
-        {
-            return contract.GetFunction("payoutPlayerReward");
-        }
+        //FIXME?
+        //private Function GetFunctionPayoutPlayerReward()
+        //{
+        //    return contract.GetFunction("payoutPlayerReward");
+        //}
 
         private Function GetFunctionName()
         {
@@ -75,12 +66,6 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionNextAssetId();
             return function.CallAsync<ulong>();
-        }
-
-        public Task<ulong> GetAssetBalance(string address, ulong itemID)
-        {
-            var function = GetFunctionBalanceOf();
-            return function.CallAsync<ulong>(address, itemID);
         }
 
         public Task<string> GetGameServerURLAsync()
@@ -111,14 +96,15 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
-        public async Task<bool> PayoutPlayerReward(string assetTokenAddress, ulong amount, string from)
-        {
-            var function = GetFunctionPayoutPlayerReward();
-            var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), assetTokenAddress, amount);
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, assetTokenAddress, amount);
-            return receipt.Status.Value == 1;
-        }
+        //FIXME?
+        //public async Task<bool> PayoutPlayerReward(string assetTokenAddress, ulong amount, string from)
+        //{
+        //    var function = GetFunctionPayoutPlayerReward();
+        //    var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), assetTokenAddress, amount);
+        //    gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+        //    var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, assetTokenAddress, amount);
+        //    return receipt.Status.Value == 1;
+        //}
 
         public Task<string> Name()
         {
