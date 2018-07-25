@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HashLib", "HashLib\HashLib.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardData", "..\HoardData\HoardData.csproj", "{A884D778-782F-4242-BFB4-C31222F309E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardIPC", "..\HoardIPC\HoardIPC.csproj", "{4F852332-CD81-4D8A-B29E-7251F81E5821}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HoardIPC", "..\HoardIPC\HoardIPC.csproj", "{4F852332-CD81-4D8A-B29E-7251F81E5821}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
