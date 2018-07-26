@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -63,7 +62,7 @@ namespace HoardIPC
                         }
                         //
                     }
-                    catch (IOException e)
+                    catch (IOException)
                     {
                     }
                 }

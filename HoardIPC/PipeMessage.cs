@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace HoardIPC
 {
@@ -11,7 +10,6 @@ namespace HoardIPC
         MSG_UNREGISTER_GAME,
     }
 
-    [Serializable]
     public class PipeHeader
     {
         public uint headerId = 0x88888887;
@@ -49,7 +47,6 @@ namespace HoardIPC
         }
     }
 
-    [Serializable]
     public class PipeMessage
     {
         virtual public byte[] Serialize()
@@ -62,7 +59,6 @@ namespace HoardIPC
         }
     }
 
-    [Serializable]
     public class RegisterGame : PipeMessage
     {
         public uint gameId;
@@ -91,7 +87,6 @@ namespace HoardIPC
         }
     }
 
-    [Serializable]
     public class UnregisterGame : PipeMessage
     {
         public uint gameId;

@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
@@ -38,7 +37,7 @@ namespace HoardIPC
                 MessageBuilder.Append(messageChunk);
             }
             while (!NamedPipeClient.IsMessageComplete);
-            PipeMessage msg = JsonConvert.DeserializeObject<PipeMessage>(MessageBuilder.ToString());
+            //PipeMessage msg = JsonConvert.DeserializeObject<PipeMessage>(MessageBuilder.ToString());
             //Console.WriteLine("Customer {0} has ordered {1} {2} with delivery address {3}", order.CustomerName, order.Quantity, order.ProductName, order.Address);
         }
 
