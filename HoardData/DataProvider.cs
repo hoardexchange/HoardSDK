@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hoard.GameItems;
 
 namespace Hoard
 {
@@ -136,14 +137,8 @@ namespace Hoard
             return data;
         }
 
-        /* Provider interface implementation */
-
-        // FIXME: not needed?
-        //override public string[] GetPropertyNames()
-        //{
-        //    return new string[1] { propertyName };
-        //}
-
+        /* IProvider */
+        
         public GameItem[] GetGameItems(PlayerID player)
         {
             throw new NotSupportedException();
@@ -154,18 +149,9 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        //FIXME: not needed?
-        //override public Result GetProperties(GameAsset item)
-        //{
-        //    byte[] data = null;
-
-        //    Result result = Load(item.AssetId, out data);
-        //    if (!result.Success)
-        //        return result;
-
-        //    item.Properties.Set(propertyName, data);
-
-        //    return result;
-        //}
+        public IGameItemProvider GetGameItemProvider(GameItem item)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

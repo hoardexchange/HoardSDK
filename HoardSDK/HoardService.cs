@@ -47,7 +47,7 @@ namespace Hoard
         /// <summary>
         /// A list of providers for given asset type. Providers are registered using RegisterProvider.
         /// </summary>
-        private Dictionary<string, List<IProvider>> Providers = new Dictionary<string, List<IProvider>>();
+        private Dictionary<string, IProvider> Providers = new Dictionary<string, IProvider>();
 
         /// <summary>
         /// Dafault provider with signin, game backend and exchange support.
@@ -64,67 +64,7 @@ namespace Hoard
         /// </summary>
         public HoardService()
         {}
-
-        ///// <summary>
-        ///// Return game asset by unique symbol from game assets currently cached in HoardService.
-        ///// </summary>
-        ///// <param name="symbol">Unique symbol assigned to GameAsset.</param>
-        ///// <returns>GameAsset by symbol.</returns>
-        //public GameAsset GetGameAsset(string symbol)
-        //{
-        //    if (GameAssetSymbolDict.ContainsKey(symbol))
-        //        return GameAssetSymbolDict[symbol];
-        //    else
-        //        return null;
-        //}
-
-        ///// <summary>
-        ///// Return all game assets currently cached in HoardService. 
-        ///// </summary>
-        ///// <returns>Array of all game assets.</returns>
-        //public GameAsset[] GameAssets()
-        //{
-        //    return GameAssetSymbolDict.Values.ToArray();
-        //}
-
-        ///// <summary>
-        ///// Request balance of all game assets for given playerId.
-        ///// </summary>
-        ///// <param name="playerId">PlayerId for which we are requesting the balance.</param>
-        ///// <returns>Async task that retrives balance for all game assets belonging to the player.</returns>
-        //public async Task<GameAssetBalance[]> RequestGameAssetsBalanceOf(PlayerID playerId)
-        //{
-        //    //iterate for all items and get balance
-        //    List<GameAssetBalance> assetBalancesList = new List<GameAssetBalance>();
-
-        //    foreach (var ga in GameAssets())
-        //    {
-        //        if (ga.Instances!=null)
-        //        {
-        //            var balance = ga.Instances.Count;
-        //            assetBalancesList.Add(new GameAssetBalance(ga, (ulong)ga.Instances.Count));
-        //        }
-        //        else
-        //        {
-        //            var balance = await DefaultProvider.GetGameAssetBalanceOf(playerId.ID, ga.ContractAddress);
-        //            assetBalancesList.Add(new GameAssetBalance(ga, balance));
-        //        }
-        //    }
-
-        //    return assetBalancesList.ToArray();
-        //}
-
-        /// <summary>
-        /// Request balance of particular game asset for given playerId.
-        /// </summary>
-        /// <param name="gameItemSymbol">Game asset symbol to be requested for the balance.</param>
-        /// <param name="playerId">PlayerId for which we are requesting the balance.</param>
-        /// <returns>Async task that retrives balance for given game asset belonging to the player.</returns>
-        public async Task<ulong> RequestGameItemBalanceOf(string gameItemSymbol, PlayerID playerId)
-        {
-            return await DefaultProvider.GetGameItemBalanceOf(playerId.ID, gameItemSymbol);
-        }
-
+        
         /// <summary>
         /// Retrives game assets using registered Providers. Beware this function is blocking and may take a long time to finish.
         /// Use RefreshGameAssets for async processing.
@@ -159,39 +99,22 @@ namespace Hoard
         {
             return await Task.Run(() => RefreshGameItemsSync());
         }
-
-        ///// <summary>
-        ///// Gives a game asset to the player.
-        ///// </summary>
-        ///// <param name="gameAsset">Game asset to be rewarded.</param>
-        ///// <param name="amount">Reward amount.</param>
-        ///// <returns>Async task that makes player reward.</returns>
-        //public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset)
-        //{
-        //    return await DefaultProvider.RequestPayoutPlayerReward(gameAsset);
-        //}
-
+       
         /// <summary>
-        /// Request asset transfer to game contract.
+        /// Request game item transfer to player.
         /// </summary>
-        /// <param name="gameItem">Game asset to be transfered.</param>
-        /// <param name="amount">Amount to transfer.</param>
-        /// <returns>Async task that transfer game asset to game contract.</returns>
-        public async Task<bool> RequestGameItemTransferToGameContract(GameItem gameItem)
+        /// <param name="recipient">Transfer address.</param>
+        /// <param name="item">Game item to be transfered.</param>
+        /// <returns>Async task that transfer game item to the other player.</returns>
+        public async Task<bool> RequestGameItemTransfer(PlayerID recipient, GameItem item)
         {
-            return await DefaultProvider.RequestGameItemTransferToGameContract(gameItem);
-        }
+            IGameItemProvider gameItemProvider = GetGameItemProvider(item);
+            if (gameItemProvider != null)
+            {
+                return await gameItemProvider.Transfer(recipient.ID, item);
+            }
 
-        /// <summary>
-        /// Request asset transfer.
-        /// </summary>
-        /// <param name="to">Transfer address.</param>
-        /// <param name="gameItem">Game asset to be transfered.</param>
-        /// <param name="amount">Amount to transfer.</param>
-        /// <returns>Async task that transfer given amount of game asset to the adress.</returns>
-        public async Task<bool> RequestGameItemTransfer(string to, GameItem gameItem, ulong amount)
-        {
-            return await DefaultProvider.RequestGameItemTransfer(to, gameItem);
+            return false;
         }
 
         /// <summary>
@@ -228,16 +151,9 @@ namespace Hoard
         /// <param name="provider">Provider to be registered.</param>
         public void RegisterProvider(string assetType, IProvider provider)
         {
-            List<IProvider> providers = null;
-            if (!Providers.TryGetValue(assetType, out providers))
+            if (!Providers.ContainsKey(assetType))
             {
-                providers = new List<IProvider>();
-                Providers[assetType] = providers;
-            }
-
-            if (!providers.Contains(provider))
-            {
-                Providers[assetType].Add(provider);
+                Providers[assetType] = provider;
             }
 
             if (provider is HoardProvider)
@@ -429,6 +345,26 @@ namespace Hoard
         private string[] ListAccountsUTCFiles(string path)
         {
             return Directory.GetFiles(path, "UTC--*");
+        }
+
+        /// <summary>
+        /// Returns provider for given game item.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        private IGameItemProvider GetGameItemProvider(GameItem item)
+        {
+            IGameItemProvider gameItemProvider = null;
+            foreach (var provider in Providers.Values)
+            {
+                gameItemProvider = provider.GetGameItemProvider(item);
+                if (gameItemProvider != null)
+                {
+                    break;
+                }
+            }
+
+            return gameItemProvider;
         }
     }
 }

@@ -32,27 +32,13 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        //FIXME not needed?
-        //virtual public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        virtual public async Task<bool> RequestGameItemTransferToGameContract(GameItem gameItem)
-        {
-            throw new NotImplementedException();
-        }
-
-        virtual public async Task<bool> RequestGameItemTransfer(string to, GameItem gameItem)
-        {
-            throw new NotImplementedException();
-        }
-
         /* IProvider */
 
         public abstract GameItem[] GetGameItems(PlayerID playerID);
 
         public abstract ItemProps GetGameItemProperties(GameItem item);
+
+        public abstract IGameItemProvider GetGameItemProvider(GameItem item);
     }
 
     public class DefaultHoardProvider : HoardProvider
@@ -66,7 +52,7 @@ namespace Hoard
         public GBClient Client { get; private set; } = null;
 
         public GameExchangeService GameExchangeService { get; private set; }
-        
+
         public DefaultHoardProvider(HoardService _hoard, HoardServiceOptions _options)
         {
             hoard = _hoard;
@@ -107,11 +93,11 @@ namespace Hoard
             bcComm = null;
             GameBackendDesc = null;
         }
-        
+
         private GameItemContract[] GetGameItemContracts()
         {
             var contracts = new List<GameItemContract>();
-            foreach(var gip in gameItemProviders)
+            foreach (var gip in gameItemProviders)
             {
                 contracts.Add(gip.Value.Contract);
             }
@@ -167,26 +153,6 @@ namespace Hoard
             return await gameItemProviders[gameItemSymbol].GetBalanceOf(address);
         }
 
-        // FIXME: do we need this?
-        //override public async Task<bool> RequestPayoutPlayerReward(GameAsset gameAsset, ulong amount)
-        //{
-        //    return await bcComm.RequestPayoutPlayerReward(
-        //        gameAsset.ContractAddress,
-        //        amount,
-        //        GameBackendDesc.GameContract,
-        //        hoard.Accounts[0].Address);
-        //}
-
-        override public async Task<bool> RequestGameItemTransfer(string to, GameItem gameItem)
-        {
-            return await gameItemProviders[gameItem.Metadata.Get<string>("Symbol")].Transfer(bcComm, gameItem, hoard.Accounts[0].Address, to);
-        }
-
-        override public async Task<bool> RequestGameItemTransferToGameContract(GameItem gameItem)
-        {
-            return await RequestGameItemTransfer(GameBackendDesc.GameContract, gameItem);
-        }
-
         public void RegisterGameItemProvider(IGameItemProvider assetProvider)
         {
             gameItemProviders.Add(assetProvider.Symbol, assetProvider);
@@ -224,15 +190,20 @@ namespace Hoard
 
         public override ItemProps GetGameItemProperties(GameItem item)
         {
-            IGameItemProvider itemProvider;
-            gameItemProviders.TryGetValue(item.Metadata.Get<string>("Symbol"), out itemProvider);
-
-            if(itemProvider != null)
+            IGameItemProvider itemProvider = GetGameItemProvider(item);
+            if (itemProvider != null)
             {
                 return itemProvider.GetGameItemProperties(item);
             }
 
             return null;
+        }
+
+        public override IGameItemProvider GetGameItemProvider(GameItem item)
+        {
+            IGameItemProvider itemProvider = null;
+            gameItemProviders.TryGetValue(item.Symbol, out itemProvider);
+            return itemProvider;
         }
     }
 }

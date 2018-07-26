@@ -1,7 +1,10 @@
+using Hoard.GameItems;
+using System.Collections.Generic;
+
 namespace Hoard
 {
     /// <summary>
-    /// Interface for game providers.
+    /// Game provider interface.
     /// </summary>
     public interface IProvider
     {
@@ -23,5 +26,11 @@ namespace Hoard
         /// <param name="item"></param>
         /// <returns></returns>
         ItemProps GetGameItemProperties(GameItem item);
+
+        /// <summary>
+        /// Returns provider for given game item.
+        /// </summary>
+        /// <returns></returns>
+        IGameItemProvider GetGameItemProvider(GameItem item);
     }
 }

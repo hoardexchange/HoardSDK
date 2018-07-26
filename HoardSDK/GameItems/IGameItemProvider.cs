@@ -1,5 +1,4 @@
-﻿using Hoard.BC;
-using Hoard.BC.Contracts;
+﻿using Hoard.BC.Contracts;
 using System.Threading.Tasks;
 
 namespace Hoard.GameItems
@@ -10,7 +9,7 @@ namespace Hoard.GameItems
     public interface IGameItemProvider
     {
         /// <summary>
-        /// 
+        /// Unique identificator of game items.
         /// </summary>
         string Symbol { get; }
 
@@ -19,22 +18,20 @@ namespace Hoard.GameItems
         /// </summary>
         GameItemContract Contract { get; }
 
-        //FIXME: Is BCComm useful here?
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="bcComm"></param>
-        /// <param name="gameItem"></param>
-        /// <param name="address"></param>
+        /// <param name="recipient"></param>
+        /// <param name="item"></param>
         /// <returns></returns>
-        Task<bool> Transfer(BCComm bcComm, GameItem gameItem, string senderAddress, string recipientAddress);
+        Task<bool> Transfer(PlayerID recipient, GameItem item);
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="ownerAddress"></param>
+        /// <param name="player"></param>
         /// <returns></returns>
-        Task<ulong> GetBalanceOf(string ownerAddress);
+        Task<ulong> GetBalanceOf(PlayerID player);
 
         /// <summary>
         /// Returns game items owned by the player. Synchronous function.
@@ -45,10 +42,9 @@ namespace Hoard.GameItems
         GameItem[] GetGameItems(PlayerID player);
 
         /// <summary>
-        /// Returns game item properties. Synchronous function.
+        /// Returns game item properties and updates game item. Synchronous function.
         /// Warning: might take long time to execute.
         /// </summary>
-        /// <param name="item"></param>
         /// <returns></returns>
         ItemProps GetGameItemProperties(GameItem item);
     }

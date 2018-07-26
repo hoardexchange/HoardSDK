@@ -110,11 +110,13 @@ namespace Hoard
 
     public class GameItem
     {
+        public string Symbol { get; private set; }
         public IGameItemMetadata Metadata { get; set; } = null;
         public ItemProps Properties { get; set; } = new ItemProps();
 
-        public GameItem(IGameItemMetadata metadata)
+        public GameItem(string symbol, IGameItemMetadata metadata)
         {
+            Symbol = symbol;
             Metadata = metadata;
         }
     }

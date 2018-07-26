@@ -1,5 +1,4 @@
-﻿using Hoard.BC;
-using Hoard.BC.Contracts;
+﻿using Hoard.BC.Contracts;
 using Hoard.DistributedStorage;
 using Newtonsoft.Json;
 using System.Text;
@@ -11,19 +10,15 @@ namespace Hoard.GameItems
     {
         public class Metadata : BaseGameItemMetadata
         {
-            public string Symbol { get; set; }
             public ulong Checksum { get; set; }
             public string OwnerAddress { get; set; }
             public ulong Balance { get; set; }
-            public ulong TransferAmount { get; set; }
 
-            public Metadata(string symbol, ulong checksum, string ownerAddress, ulong balance)
+            public Metadata(ulong checksum, string ownerAddress, ulong balance)
             {
-                Symbol = symbol;
                 Checksum = checksum;
                 OwnerAddress = ownerAddress;
                 Balance = balance;
-                TransferAmount = 0;
             }
         }
 
@@ -41,20 +36,20 @@ namespace Hoard.GameItems
             this.storageClient = storageClient;
         }
 
-        public async Task<bool> Transfer(BCComm bcComm, GameItem gameItem, string from, string to)
+        public async Task<bool> Transfer(PlayerID recipient, GameItem item)
         {
-            Metadata metadata = gameItem.Metadata as Metadata;
+            Metadata metadata = item.Metadata as Metadata;
             if (metadata != null)
             {
-                return await contract.Transfer(from, to, metadata.TransferAmount);
+                return await contract.Transfer(recipient.ID, metadata.Balance);
             }
 
             return false;
         }
 
-        public async Task<ulong> GetBalanceOf(string ownerAddress)
+        public async Task<ulong> GetBalanceOf(PlayerID player)
         {
-            return await contract.BalanceOf(ownerAddress);
+            return await contract.BalanceOf(player.ID);
         }
 
         public GameItem[] GetGameItems(PlayerID player)
@@ -63,9 +58,9 @@ namespace Hoard.GameItems
             if (balance > 0)
             {
                 ulong globalChecksum = contract.Checksum().Result;
-                Metadata metadata = new Metadata(symbol, globalChecksum, player.ID, balance);
+                Metadata metadata = new Metadata(globalChecksum, player.ID, balance);
 
-                return new GameItem[] { new GameItem(metadata) };
+                return new GameItem[] { new GameItem(symbol, metadata) };
             }
             return new GameItem[] { };
         }
@@ -79,7 +74,9 @@ namespace Hoard.GameItems
             byte[] globalData = storageClient.DownloadBytesAsync(globalChecksum).Result;
             string globalJson = Encoding.UTF8.GetString(globalData);
 
-            return JsonConvert.DeserializeObject<ItemProps>(globalJson, new ItemPropsConverter());
+            item.Properties = JsonConvert.DeserializeObject<ItemProps>(globalJson, new ItemPropsConverter());
+
+            return item.Properties;
         }
     }
 }

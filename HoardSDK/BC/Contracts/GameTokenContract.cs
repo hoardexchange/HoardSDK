@@ -136,6 +136,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("checksum");
         }
 
+        private Function GetFunctionPropertyType()
+        {
+            return contract.GetFunction("propertyType");
+        }
+
         public Task<ulong> BalanceOf(string address)
         {
             var function = GetFunctionBalanceOf();
@@ -169,6 +174,12 @@ namespace Hoard.BC.Contracts
         public Task<ulong> Checksum()
         {
             var function = GetFunctionChecksum();
+            return function.CallAsync<ulong>();
+        }
+
+        public Task<ulong> PropertyType()
+        {
+            var function = GetFunctionPropertyType();
             return function.CallAsync<ulong>();
         }
 
