@@ -8,6 +8,7 @@ namespace HoardIPC
         MSG_UNKNOWN = 0,
         MSG_REGISTER_GAME,
         MSG_UNREGISTER_GAME,
+        MSG_HEARTBEAT,
     }
 
     public class PipeHeader
@@ -59,7 +60,7 @@ namespace HoardIPC
         }
     }
 
-    public class RegisterGame : PipeMessage
+    public class MsgRegisterGame : PipeMessage
     {
         public uint gameId;
 
@@ -87,31 +88,11 @@ namespace HoardIPC
         }
     }
 
-    public class UnregisterGame : PipeMessage
+    public class MsgUnregisterGame : MsgRegisterGame
     {
-        public uint gameId;
+    }
 
-        override public byte[] Serialize()
-        {
-            using (MemoryStream m = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(m))
-                {
-                    writer.Write(gameId);
-                }
-                return m.ToArray();
-            }
-        }
-        override public void Desserialize(byte[] data)
-        {
-            using (MemoryStream m = new MemoryStream(data))
-            {
-                using (BinaryReader reader = new BinaryReader(m))
-                {
-                    gameId = reader.ReadUInt32();
-                }
-            }
-        }
-
+    public class MsgHeartbeat : MsgRegisterGame
+    {
     }
 }

@@ -46,13 +46,13 @@ namespace HoardIPC
                             {
                                 case Messages.MSG_REGISTER_GAME:
                                     {
-                                        RegisterGame msg = new RegisterGame();
+                                        MsgRegisterGame msg = new MsgRegisterGame();
                                         msg.Desserialize(messageBuffer);
                                     }
                                     break;
                                 case Messages.MSG_UNREGISTER_GAME:
                                     {
-                                        UnregisterGame msg = new UnregisterGame();
+                                        MsgUnregisterGame msg = new MsgUnregisterGame();
                                         msg.Desserialize(messageBuffer);
                                     }
                                     break;
