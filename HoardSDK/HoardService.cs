@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
-using Org.BouncyCastle.Math;
 
 #if DEBUG
 using System.Diagnostics;
@@ -13,6 +12,171 @@ using Nethereum.Web3.Accounts;
 
 namespace Hoard
 {
+    public interface IProvider
+    {
+        GameItem[] GetPlayerItems(string type);
+        bool Supports(string typeName);
+        void GetItemProperties(GameItem item);
+    }
+
+    public interface IBackendConnector
+    {
+        string[] GetItemTypes();
+        GameItem[] GetPlayerItems(string type);
+    }
+
+    public class BlockChainConnector : IBackendConnector
+    {
+        public string[] GetItemTypes()
+        {
+            throw new NotImplementedException();
+        }
+
+        public GameItem[] GetPlayerItems(string type)
+        {
+            //1. contract -> Get contract based on type
+            Contract contract = getContractByType(type);//???
+            contract.getItemsOf(playerId);
+            //If it is ERC20
+            {
+                GameItem gi = new GameItem();
+                gi.TypeName = type;
+                gi.Contract = contract;
+                gi.Count = contract.balanceOf(playerID);
+            }
+            //else if it is ERC721
+            {
+                int ownedCount = contract.balanceOf(playerID);
+                for(int i=0;i<ownedCount;++i)
+                {
+                    GameItem gi = new GameItem();
+                    gi.TypeName = type;
+                    gi.Contract = contract;
+                    gi.Id = contract.tokenOfOwnerByIndex(i);
+                }
+            }
+        }
+    }
+
+    public class HoardGameServerConnector : IBackendConnector
+    {
+        public string[] GetItemTypes()
+        {
+            throw new NotImplementedException();
+        }
+
+        public GameItem[] GetPlayerItems(string type)
+        {
+            //1. ask game server for items directly
+            string jsonResponse = server.GetPlayerItems(type, playerID);
+            //2. Convert json to GameItems
+            return convertJSONToGameItems(jsonResponse);
+        }
+
+        private GameItem[] convertJSONToGameItems(string jsonResponse)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class DefaultHoardProvider2 : IProvider
+    {
+        private List<string> types = new List<string>();
+        IBackendConnector connector = null;
+        IPFSClient iPFSClient = new IPFSClient();
+
+        public void GetItemProperties(GameItem item)
+        {
+            //We know that each item contains CheckSum which is IPFS hash
+            //Or we can deduce it from item MetaData.ChecksumType
+
+            // FIXME: encode address to base58
+            byte[] data = iPFSClient.DownloadBytesAsync(item.CheckSum);
+            //we know it to be JSON so parse it
+            ParseJSONBytes2Properties(data,item);
+        }
+
+        private void ParseJSONBytes2Properties(byte[] data, GameItem item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public GameItem[] GetPlayerItems(string type)
+        {
+            if (Supports(type))
+            {
+                return connector.GetPlayerItems(type);
+            }
+            return null;
+        }
+
+        public bool Supports(string typeName)
+        {
+            if (types.Count == 0)
+            {
+                types.AddRange(connector.GetItemTypes());
+            }
+            return types.Contains(typeName);
+        }
+    }
+
+    public class GameItemProperty
+    {
+        public string key;
+        public string value;
+    }
+
+    public class GameItem
+    {
+        public string TypeName = "";
+        public GameItemProperty[] Properties = null;
+        public string CheckSum = "0x0";
+    }
+
+    public class HoardService2
+    {
+        List<IProvider> providers = new List<IProvider>();
+
+        public bool Initialize()
+        {
+            return RegisterProvider(new DefaultHoardProvider2());
+        }
+
+        public bool RegisterProvider(IProvider p)
+        {
+            if (providers.Contains(p))
+                return false;
+            providers.Add(p);
+            return true;
+        }
+
+        public GameItem[] GetPlayerItems()
+        {
+            List<GameItem> items = new List<GameItem>();
+            foreach(IProvider p in providers)
+            {
+                items.AddRange(p.GetPlayerItems());
+            }
+            return items.ToArray();
+        }
+
+        public void GetItemProperties(GameItem item)
+        {
+            //1. first find compatible provider
+            IProvider p = GetItemProvider(item);
+            p.GetItemProperties(item);
+        }
+
+        private IProvider GetItemProvider(GameItem item)
+        {
+            foreach (IProvider p in providers)
+            {
+                if (p.Supports(item.TypeName))
+                    return p;
+            }
+            return null;
+        }
+    }
     /// <summary>
     /// Hoard Service entry point.
     /// </summary>

@@ -57,6 +57,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HoardServiceTests.cs" />
     <Compile Include="IPCTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -70,6 +71,10 @@
     <ProjectReference Include="..\..\HoardIPC\HoardIPC.csproj">
       <Project>{fe24a95c-3bdc-4046-bfa8-e72ef0b6fd24}</Project>
       <Name>HoardIPC</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\HoardSDK.csproj">
+      <Project>{c9517a0e-ec39-4e8b-951a-6cfc4a7c76e3}</Project>
+      <Name>HoardSDK</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
