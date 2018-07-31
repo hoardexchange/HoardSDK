@@ -144,7 +144,7 @@ namespace Hoard
             throw new NotSupportedException();
         }
 
-        public ItemProps GetGameItemProperties(GameItem item)
+        public void UpdateGameItemProperties(GameItem item)
         {
             throw new NotImplementedException();
         }

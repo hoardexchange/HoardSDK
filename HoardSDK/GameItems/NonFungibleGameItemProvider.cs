@@ -72,7 +72,7 @@ namespace Hoard.GameItems
             return gameItems.ToArray();
         }
         
-        public ItemProps GetGameItemProperties(GameItem item)
+        public void UpdateGameItemProperties(GameItem item)
         {
             // FIXME: handle unsuccessful data download
             // FIXME: add properties hardcoded into contract?
@@ -80,7 +80,7 @@ namespace Hoard.GameItems
             ulong globalChecksum = contract.Checksum().Result;
             byte[] globalData = storageClient.DownloadBytesAsync(globalChecksum).Result;
             string globalJson = Encoding.UTF8.GetString(globalData);
-            item.Properties = JsonConvert.DeserializeObject<ItemProps>(globalJson, new ItemPropsConverter());
+            item.Properties = JsonConvert.DeserializeObject<ItemProperties>(globalJson);
 
             Metadata metadata = item.Metadata as Metadata;
             if (metadata != null)
@@ -89,10 +89,8 @@ namespace Hoard.GameItems
                 string localJson = Encoding.UTF8.GetString(localData);
 
                 // TODO: join global and local properties
-                item.Properties = JsonConvert.DeserializeObject<ItemProps>(localJson, new ItemPropsConverter());
+                item.Properties = JsonConvert.DeserializeObject<ItemProperties>(localJson);
             }
-
-            return item.Properties;
         }
     }
 }

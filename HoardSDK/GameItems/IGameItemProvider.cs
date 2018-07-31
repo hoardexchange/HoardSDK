@@ -42,10 +42,9 @@ namespace Hoard.GameItems
         GameItem[] GetGameItems(PlayerID player);
 
         /// <summary>
-        /// Returns game item properties and updates game item. Synchronous function.
+        /// Updates game item properties and updates game item. Synchronous function.
         /// Warning: might take long time to execute.
         /// </summary>
-        /// <returns></returns>
-        ItemProps GetGameItemProperties(GameItem item);
+        void UpdateGameItemProperties(GameItem item);
     }
 }

@@ -65,7 +65,7 @@ namespace Hoard.GameItems
             return new GameItem[] { };
         }
 
-        public ItemProps GetGameItemProperties(GameItem item)
+        public void UpdateGameItemProperties(GameItem item)
         {
             // FIXME: handle unsuccessful data download
             // FIXME: add properties hardcoded into contract?
@@ -74,9 +74,7 @@ namespace Hoard.GameItems
             byte[] globalData = storageClient.DownloadBytesAsync(globalChecksum).Result;
             string globalJson = Encoding.UTF8.GetString(globalData);
 
-            item.Properties = JsonConvert.DeserializeObject<ItemProps>(globalJson, new ItemPropsConverter());
-
-            return item.Properties;
+            item.Properties = JsonConvert.DeserializeObject<ItemProperties>(globalJson);
         }
     }
 }

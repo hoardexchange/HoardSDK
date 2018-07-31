@@ -36,7 +36,7 @@ namespace Hoard
 
         public abstract GameItem[] GetGameItems(PlayerID playerID);
 
-        public abstract ItemProps GetGameItemProperties(GameItem item);
+        public abstract void UpdateGameItemProperties(GameItem item);
 
         public abstract IGameItemProvider GetGameItemProvider(GameItem item);
     }
@@ -188,15 +188,13 @@ namespace Hoard
             return JsonConvert.DeserializeObject<GameItem[]>(jsonStr);
         }
 
-        public override ItemProps GetGameItemProperties(GameItem item)
+        public override void UpdateGameItemProperties(GameItem item)
         {
             IGameItemProvider itemProvider = GetGameItemProvider(item);
             if (itemProvider != null)
             {
-                return itemProvider.GetGameItemProperties(item);
+                itemProvider.UpdateGameItemProperties(item);
             }
-
-            return null;
         }
 
         public override IGameItemProvider GetGameItemProvider(GameItem item)

@@ -1,91 +1,64 @@
 using Hoard.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
 namespace Hoard
 {
-    public enum PropertyType
+    public class ItemProperty
     {
-        Unknown = 0,
-        String,
-        Address,
-        Bool,
-        Int16,
-        Int32,
-        Int64,
-        Uint16,
-        Uint32,
-        Uint64,
-        BigInt,
-    }
+        public object Value;
+        public string Type;
 
-    public struct ItemCRC
-    {
-        public ulong crc;
-    }
-
-    public class ItemData
-    {
-        public byte[] BinaryData;
-        public ItemCRC DataCRC;
-    }
-
-    public class ItemProp
-    {
-        public PropertyType type = PropertyType.Unknown;
-        public object value;
-    }
-
-    // Props holds set of values identified individually by string, it can by anything like single values, custom objects or binary data
-    public class ItemProps
-    {
-        public Dictionary<string, ItemProp> Properties { get; set; } = new Dictionary<string, ItemProp>();
-
-        public object Get(string propertyName)
+        public ItemProperty(object value, string type)
         {
-            ItemProp prop;
-            Properties.TryGetValue(propertyName, out prop);
-            return prop.value;
+            Value = value;
+            Type = type;
         }
 
-        public void Set(string propertyName, object propertyValue, PropertyType type = PropertyType.Unknown)
+        public Type GetType()
         {
-            ItemProp prop;
-            if (Properties.TryGetValue(propertyName, out prop) == false)
+            if(Type.Equals("int16"))
+                return System.Type.GetType("System.Int16");
+            else if(Type.Equals("int32"))
+                return System.Type.GetType("System.Int32");
+            else if (Type.Equals("int64"))
+                return System.Type.GetType("System.Int64");
+            else if (Type.Equals("uint16"))
+                return System.Type.GetType("System.UInt16");
+            else if (Type.Equals("uint32"))
+                return System.Type.GetType("System.UInt32");
+            else if (Type.Equals("uint64"))
+                return System.Type.GetType("System.UInt64");
+            else if (Type.Equals("string"))
+                return System.Type.GetType("System.String");
+            else if (Type.Equals("bool"))
+                return System.Type.GetType("System.Boolean");
+            else if (Type.Equals("float"))
+                return System.Type.GetType("System.Single");
+            else if (Type.Equals("double"))
+                return System.Type.GetType("System.Double");
+            return System.Type.GetType("System.String");
+        }
+    }
+
+    public class ItemProperties : Dictionary<string, ItemProperty>
+    {
+
+        public ItemProperty GetItemProperty(string name)
+        {
+            if(ContainsKey(name))
             {
-                Register(propertyName, propertyValue, type);
+                return this[name];
             }
-            else
-            {
-                prop.value = propertyValue;
-            }
+            return null;
         }
 
-        protected void Register(string propertyName, object propertyValue, PropertyType type)
+        public void Add(string name, object value, string type)
         {
-            Properties[propertyName] = new ItemProp();
-            Properties[propertyName].value = propertyValue;
-            Properties[propertyName].type = type;
-        }
-    }
-
-    public class ItemPropsConverter : JsonConverter
-    {
-        public override bool CanConvert(Type objectType)
-        {
-            throw new NotImplementedException();
+            this[name] = new ItemProperty(value, type);
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
+       
     }
 
     public interface IGameItemMetadata
@@ -112,7 +85,7 @@ namespace Hoard
     {
         public string Symbol { get; private set; }
         public IGameItemMetadata Metadata { get; set; } = null;
-        public ItemProps Properties { get; set; } = new ItemProps();
+        public ItemProperties Properties { get; set; } = new ItemProperties();
 
         public GameItem(string symbol, IGameItemMetadata metadata)
         {
