@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
@@ -36,40 +36,48 @@ namespace Hoard.BC
             return (TContract)Activator.CreateInstance(typeof(TContract), web, contractAddress);
         }
 
-        public async Task<GBDesc> GetGBDesc(ulong gameID)
+        public async Task<GameID> GetGameID(string gameID)
         {
             bool exist = await gameCenter.GetGameExistsAsync(gameID);
             if (exist)
             {
-                GBDesc desc = new GBDesc();
-                desc.GameContract = await gameCenter.GetGameContractAsync(gameID);
-
+                GameID game = new GameID(gameID);
                 {
-                    GameContract game = new GameContract(web, desc.GameContract);
+                    //gameID is the address of contract
+                    GameContract gameContract = new GameContract(web, gameID);
 
-                    string url = await game.GetGameServerURLAsync();
+                    string url = await gameContract.GetGameServerURLAsync();
 
-                    desc.GameID = gameID;
-                    desc.Name = await game.Name();
-                    desc.Url = !url.StartsWith("http") ? "http://" + url : url;
+                    game.Name = await gameContract.Name();
+                    game.Url = !url.StartsWith("http") ? "http://" + url : url;
                 }
 
-                return desc;
+                return game;
             }
             return null;
         }
 
-        public Task<ulong> GetGameAssetBalanceOf(string address, string tokenContractAddress)
+        public async Task<GameID[]> GetHoardGames()
         {
-            GameAssetContract gameAsset = new GameAssetContract(web, tokenContractAddress);
+            ulong count = await gameCenter.GetGameCount();
+            GameID[] games = new GameID[count];
+            for(ulong i=0;i<count;++i)
+            {
+                string gameID = await gameCenter.GetGameContractAsync(i);
+                GameID game = new GameID(gameID);                
+                {
+                    //gameID is the address of contract
+                    GameContract gameContract = new GameContract(web, gameID);
 
-            return gameAsset.BalanceOf(address);
-        }
+                    string url = await gameContract.GetGameServerURLAsync();
 
-        public Task<ulong> GetAssetBalanceOf(string gameContract, PlayerID pid, ulong itemID)
-        {
-            GameContract game = new GameContract(web, gameContract);
-            return game.GetAssetBalance(pid.ID, itemID);
+                    game.Name = await gameContract.Name();
+                    game.Url = !url.StartsWith("http") ? "http://" + url : url;
+                }
+
+                games[i] = game;
+            }
+            return games;
         }
 
         public Task<ulong> GetGameAssetCount(string gameContract)
@@ -78,41 +86,28 @@ namespace Hoard.BC
             return game.GetNextAssetIdAsync();
         }
 
-        public async Task<GameAssetContract[]> GetGameAssetContacts(string gameContract)
-        {
-            GameContract game = new GameContract(web, gameContract);
-            ulong length = await game.GetNextAssetIdAsync();
+        // FIXME: Do we need this? How can we distinguish correct abi ERC20/ERC721/others?
+        //public async Task<GameAssetContract[]> GetGameAssetContacts(string gameContract)
+        //{
+        //    GameContract game = new GameContract(web, gameContract);
+        //    ulong length = await game.GetNextAssetIdAsync();
 
-            GameAssetContract[] ret = new GameAssetContract[length];
+        //    GameAssetContract[] ret = new GameAssetContract[length];
 
-            for (ulong i = 0; i < length; ++i)
-            {
-                var address = await game.GetGameAssetContractAsync(i);
-                ret[i] = new GameAssetContract(web, address);
-            }
+        //    for (ulong i = 0; i < length; ++i)
+        //    {
+        //        var address = await game.GetGameAssetContractAsync(i);
+        //        ret[i] = new GameAssetContract(web, address);
+        //    }
 
-            return ret;
-        }
+        //    return ret;
+        //}
 
         public async Task<GameExchangeContract> GetGameExchangeContract(string gameContract)
         {
             GameContract game = new GameContract(web, gameContract);
 
             return new GameExchangeContract(web, await game.GameExchangeContractAsync());
-        }
-
-        public Task<bool> RequestPayoutPlayerReward(string gameAssetContractAddress, ulong amount, string gameContract, string from)
-        {
-            GameContract game = new GameContract(web, gameContract);
-
-            return game.PayoutPlayerReward(gameAssetContractAddress, amount, from);
-        }
-
-        public Task<bool> RequestAssetTransfer(string to, string gameAssetContractAddress, ulong amount, string from)
-        {
-            GameAssetContract assetContract = new GameAssetContract(web, gameAssetContractAddress);
-
-            return assetContract.Transfer(to, amount, from);
         }
 
         // TEST METHODS BELOW.

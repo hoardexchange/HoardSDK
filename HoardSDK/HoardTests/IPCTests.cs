@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Xunit;
 using HoardIPC;
 
-namespace HoardXTests
+namespace HoardTests
 {
     public class IPCTests
     {

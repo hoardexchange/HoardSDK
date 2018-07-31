@@ -8,7 +8,8 @@ namespace Hoard
 {
     public class HoardServiceOptions
     {
-        public ulong GameID { get; set; }
+        public const string kInvalidGameID = "0x0";
+        public string GameID { get; set; } = kInvalidGameID;
         public string GameBackendUrl { get; set; } = "";
         public Nethereum.JsonRpc.Client.IClient RpcClient { get; set; } = null;
         public string AccountsDir { get; set; } = "";

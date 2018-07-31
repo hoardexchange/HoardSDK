@@ -8,11 +8,11 @@ namespace Hoard
 {
     abstract public class DataStorageBackend
     {
-        protected GBDesc GBDesc = null;
+        protected GameID GameID = null;
 
-        public void Init(GBDesc GBDesc)
+        public void Init(GameID gameID)
         {
-            this.GBDesc = GBDesc;
+            this.GameID = gameID;
         }
 
         protected string ComputeHash(byte[] data)
@@ -57,13 +57,13 @@ namespace Hoard
 
         public override Result LoadDataFromServer(ulong assetId, out byte[] data)
         {
-            data = DataStorageUtils.LoadFromDisk(StorageBasePath + "/" + GBDesc.GameID + "/" + assetId);
+            data = DataStorageUtils.LoadFromDisk(StorageBasePath + "/" + GameID.ID + "/" + assetId);
             return new Result();
         }
 
         public override Result UploadDataToServer(ulong assetId, byte[] data)
         {
-            DataStorageUtils.SaveToDisk(StorageBasePath + "/" + GBDesc.GameID + "/" + assetId, data);
+            DataStorageUtils.SaveToDisk(StorageBasePath + "/" + GameID.ID + "/" + assetId, data);
             return new Result();
         }
     }
@@ -84,7 +84,7 @@ namespace Hoard
 
         public override Result LoadHashFromServer(ulong assetId, out string hash)
         {
-            var task = Client.Get("/res/?game_id=" + GBDesc.GameID + "&asset_id=" + assetId);
+            var task = Client.Get("/res/?game_id=" + GameID.ID + "&asset_id=" + assetId);
             task.Wait();
             var task_result = task.Result;
 
@@ -108,7 +108,7 @@ namespace Hoard
 
         public override Result LoadDataFromServer(ulong assetId, out byte[] data)
         {
-            var task = Client.Get("/res_download/" + GBDesc.GameID + "/" + assetId + "/");
+            var task = Client.Get("/res_download/" + GameID.ID + "/" + assetId + "/");
             task.Wait();
             var task_result = task.Result;
 
@@ -126,14 +126,14 @@ namespace Hoard
         public override Result UploadDataToServer(ulong assetId, byte[] data)
         {
             // delete old resource
-            var delete_task = Client.Delete("/res_delete/" + GBDesc.GameID + "/" + assetId + "/");
+            var delete_task = Client.Delete("/res_delete/" + GameID.ID + "/" + assetId + "/");
             delete_task.Wait();
             var delete_task_result = delete_task.Result;
 
             // create new one
             Parameter gameId_Param = new Parameter();
             gameId_Param.Name = "game_id";
-            gameId_Param.Value = GBDesc.GameID;
+            gameId_Param.Value = GameID.ID;
             gameId_Param.Type = ParameterType.GetOrPost;
 
             Parameter assetId_Param = new Parameter();

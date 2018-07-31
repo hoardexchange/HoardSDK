@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Hoard.GameItems;
 
 namespace Hoard
 {
@@ -16,20 +18,18 @@ namespace Hoard
         public Dictionary<ulong, AssetFile> assets = new Dictionary<ulong, AssetFile>(); // assetId to cached AssetFile
     }
 
-    public class DataProvider : Provider
+    public class DataProvider// : IProvider
     {
-        private string propertyName = "file";
-
         private const int DataStorageService_Ver = 0; // cache version
 
-        private GBDesc GBDesc = null;
+        private GameID GameID = null;
         private string CacheBasePath = null;
         private GameDataInfo GameDataInfo = null;
         private DataStorageBackend DataStorageBackend = null;
 
         public DataProvider(HoardService hoard)
         {
-            this.GBDesc = hoard.GameBackendDesc;
+            this.GameID = hoard.DefaultGameID;
 
             CacheBasePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "files_cache");
 
@@ -49,12 +49,12 @@ namespace Hoard
 
             //DataStorageBackend = new DataStorageBackendLocal("e:/hoard/DSS/server/"); // local test (storege on local disk)
             DataStorageBackend = new DataStorageBackendHoard(hoard.GameBackendClient);
-            DataStorageBackend.Init(hoard.GameBackendDesc);
+            DataStorageBackend.Init(hoard.DefaultGameID);
         }
 
         private string GetGameCachePath()
         {
-            return CacheBasePath + "/" + GBDesc.GameID;
+            return CacheBasePath + "/" + GameID.ID;
         }
 
         private string GetGameDataPath()
@@ -135,30 +135,21 @@ namespace Hoard
             return data;
         }
 
-        /* Provider interface implementation */
-
-        override public string[] getPropertyNames()
+        /* IProvider */
+        
+        public GameItem[] GetGameItems(PlayerID player)
         {
-            return new string[1] { propertyName };
+            throw new NotSupportedException();
         }
 
-        override public Result getItems(out List<GameAsset> items)
+        public ItemProps GetGameItemProperties(GameItem item)
         {
-            items = null;
-            return new Result("Not supported");
+            throw new NotImplementedException();
         }
 
-        override public Result getProperties(GameAsset item)
+        public IGameItemProvider GetGameItemProvider(GameItem item)
         {
-            byte[] data = null;
-
-            Result result = Load(item.AssetId, out data);
-            if (!result.Success)
-                return result;
-
-            item.Properties.Set(propertyName, data);
-
-            return result;
+            throw new NotImplementedException();
         }
     }
 }
