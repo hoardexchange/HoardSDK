@@ -88,7 +88,7 @@ namespace Hoard
                 order.nonce,
                 order.user,
                 amount,
-                hoard.Accounts[0].Address);
+                hoard.DefaultPlayer.ID);
         }
 
         public override async Task<bool> Deposit(GameItem asset, ulong amount)

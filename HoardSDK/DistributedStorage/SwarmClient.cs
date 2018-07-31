@@ -17,14 +17,14 @@ namespace Hoard.DistributedStorage
         public async Task<byte[]> DownloadBytesAsync(string address)
         {
             RestRequest downloadRequest = new RestRequest("/bzz:/" + address + "/file", Method.GET);
-            return client.DownloadData(downloadRequest);
+            return (await client.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
         }
 
         public async Task<string> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/bzz:/", Method.POST);
             request.AddFile("file", data, "file", "application/octet-stream");
-            IRestResponse response = client.Execute(request);
+            IRestResponse response = await client.ExecutePostTaskAsync(request);
 
             if (response.ErrorException != null)
             {

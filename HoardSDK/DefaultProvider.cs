@@ -9,38 +9,7 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
-    abstract public class HoardProvider : IProvider
-    {
-        virtual public bool Init() { return false; }
-
-        virtual public void Shutdown() { }
-
-        virtual public bool IsSignedIn(PlayerID id) { return true; }
-
-        virtual public bool SignIn(PlayerID id) { return true; }
-
-        virtual public bool SupportsExchangeService() { return false; }
-
-        virtual public GBDesc GetGameBackendDesc() { return null; }
-
-        virtual public GBClient GetGameBackendClient() { return null; }
-
-        virtual public ExchangeService GetExchangeService() { return null; }
-
-        virtual public Task<ulong> GetGameItemBalanceOf(string address, string gameItemSymbol)
-        {
-            throw new NotImplementedException();
-        }
-
-        /* IProvider */
-
-        public abstract GameItem[] GetGameItems(PlayerID playerID);
-
-        public abstract void UpdateGameItemProperties(GameItem item);
-
-        public abstract IGameItemProvider GetGameItemProvider(GameItem item);
-    }
-
+#if notdefined
     public class DefaultHoardProvider : HoardProvider
     {
         private HoardService hoard;
@@ -48,7 +17,7 @@ namespace Hoard
         private BC.BCComm bcComm = null;
         private Dictionary<string, IGameItemProvider> gameItemProviders = new Dictionary<string, IGameItemProvider>();
 
-        public GBDesc GameBackendDesc { get; private set; }
+        public GameID DefaultGameID { get; private set; }
         public GBClient Client { get; private set; } = null;
 
         public GameExchangeService GameExchangeService { get; private set; }
@@ -66,15 +35,12 @@ namespace Hoard
 #endif
             bcComm = new BC.BCComm(options.RpcClient, hoard.Accounts[0]);
 
-            GBDesc gbDesc = bcComm.GetGBDesc(options.GameID).Result;
-
-            GameBackendDesc = gbDesc;
+            DefaultGameID = bcComm.GetGameID(options.GameID).Result;
 #if DEBUG
-            Debug.WriteLine(String.Format("GB descriptor initialized.\n {0} \n {1} \n {2} \n {3}",
-                gbDesc.GameContract,
-                gbDesc.GameID,
-                gbDesc.Name,
-                gbDesc.Url
+            Debug.WriteLine(String.Format("GameID initialized.\n {0} \n {1} \n {2}",
+                DefaultGameID.ID,
+                DefaultGameID.Name,
+                DefaultGameID.Url
                 ));
 #endif
             return true;
@@ -91,10 +57,10 @@ namespace Hoard
             Client = null;
             GameExchangeService = null;
             bcComm = null;
-            GameBackendDesc = null;
+            DefaultGameID = null;
         }
 
-        private GameItemContract[] GetGameItemContracts()
+        /*private GameItemContract[] GetGameItemContracts()
         {
             var contracts = new List<GameItemContract>();
             foreach (var gip in gameItemProviders)
@@ -102,7 +68,7 @@ namespace Hoard
                 contracts.Add(gip.Value.Contract);
             }
             return contracts.ToArray();
-        }
+        }*/
 
         override public bool IsSignedIn(PlayerID id)
         {
@@ -118,10 +84,10 @@ namespace Hoard
             if (IsSignedIn(id))
                 return true;
             //create hoard client
-            Client = new GBClient(GameBackendDesc);
+            Client = new GBClient(DefaultGameID);
 
             GameExchangeService = new GameExchangeService(Client, bcComm, hoard);
-            GameExchangeService.Init(bcComm.GetContract<BC.Contracts.GameContract>(GameBackendDesc.GameContract));
+            GameExchangeService.Init(bcComm.GetContract<BC.Contracts.GameContract>(DefaultGameID.ID));
 
             //connect to backend
             return Client.Connect(hoard.GetAccount(id));
@@ -133,9 +99,9 @@ namespace Hoard
 
         }
 
-        override public GBDesc GetGameBackendDesc()
+        override public GameID GetGameID()
         {
-            return GameBackendDesc;
+            return DefaultGameID;
         }
 
         override public GBClient GetGameBackendClient()
@@ -148,15 +114,15 @@ namespace Hoard
             return GameExchangeService;
         }
 
-        override public async Task<ulong> GetGameItemBalanceOf(string address, string gameItemSymbol)
+        /*override public async Task<ulong> GetGameItemBalanceOf(string address, string gameItemSymbol)
         {
             return await gameItemProviders[gameItemSymbol].GetBalanceOf(address);
-        }
+        }*/
 
-        public void RegisterGameItemProvider(IGameItemProvider assetProvider)
+        /*public void RegisterGameItemProvider(IGameItemProvider assetProvider)
         {
             gameItemProviders.Add(assetProvider.Symbol, assetProvider);
-        }
+        }*/
 
         public bool UnregisterGameItemProvider(string assetSymbol)
         {
@@ -204,4 +170,5 @@ namespace Hoard
             return itemProvider;
         }
     }
+#endif
 }

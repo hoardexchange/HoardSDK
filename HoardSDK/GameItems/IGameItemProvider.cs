@@ -11,12 +11,7 @@ namespace Hoard.GameItems
         /// <summary>
         /// Unique identificator of game items.
         /// </summary>
-        string Symbol { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        GameItemContract Contract { get; }
+        bool Supports(string symbol);
 
         /// <summary>
         /// 
@@ -31,7 +26,7 @@ namespace Hoard.GameItems
         /// </summary>
         /// <param name="player"></param>
         /// <returns></returns>
-        Task<ulong> GetBalanceOf(PlayerID player);
+        //Task<ulong> GetBalanceOf(PlayerID player);
 
         /// <summary>
         /// Returns game items owned by the player. Synchronous function.
@@ -39,7 +34,7 @@ namespace Hoard.GameItems
         /// </summary>
         /// <param name="player"></param>
         /// <returns></returns>
-        GameItem[] GetGameItems(PlayerID player);
+        GameItem[] GetGameItems(PlayerID player, GameID game);
 
         /// <summary>
         /// Updates game item properties and updates game item. Synchronous function.

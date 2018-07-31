@@ -15,7 +15,7 @@ namespace Hoard
             Type = type;
         }
 
-        public Type GetType()
+        public new Type GetType()
         {
             if(Type.Equals("int16"))
                 return System.Type.GetType("System.Int16");
@@ -84,6 +84,7 @@ namespace Hoard
     public class GameItem
     {
         public string Symbol { get; private set; }
+        public string Checksum { get; set; } = "0x0";
         public IGameItemMetadata Metadata { get; set; } = null;
         public ItemProperties Properties { get; set; } = new ItemProperties();
 

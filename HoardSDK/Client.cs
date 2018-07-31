@@ -23,7 +23,7 @@ namespace Hoard
             public ulong amount { get; set; }
             public string user_address { get; set; }
         };
-        public GBDesc Description { get; private set; }
+        public GameID GameID { get; private set; }
         public bool IsBusy
         {
             get { return RequestHandle != null; }
@@ -40,14 +40,14 @@ namespace Hoard
         private CancellationTokenSource RequestHandle = null;
         private object locker = new object();
 
-        public GBClient(GBDesc desc)
+        public GBClient(GameID id)
         {
-            Description = desc;
+            GameID = id;
         }
 
         public bool Connect(Account account)
         {
-            Client = new RestClient(Description.Url);
+            Client = new RestClient(GameID.Url);
             //Client = new RestClient("http://localhost:8000");
             // GBClient = new RestClient(@"http://172.16.81.128:8000"); // Local test purpose
 

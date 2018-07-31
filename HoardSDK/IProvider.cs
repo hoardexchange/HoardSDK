@@ -6,7 +6,7 @@ namespace Hoard
     /// <summary>
     /// Game provider interface.
     /// </summary>
-    public interface IProvider
+    /*public interface IProvider
     {
         // TODO: add method that enables pagination/filtering of items
 
@@ -20,10 +20,11 @@ namespace Hoard
         GameItem[] GetGameItems(PlayerID player);
 
         /// <summary>
-        /// Updates the game item properties. Synchronous function.
+        /// Returns the game item properties. Synchronous function.
         /// Warning: might take long time to execute.
         /// </summary>
         /// <param name="item"></param>
+        /// <returns></returns>
         void UpdateGameItemProperties(GameItem item);
 
         /// <summary>
@@ -31,5 +32,5 @@ namespace Hoard
         /// </summary>
         /// <returns></returns>
         IGameItemProvider GetGameItemProvider(GameItem item);
-    }
+    }*/
 }

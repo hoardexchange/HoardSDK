@@ -18,20 +18,18 @@ namespace Hoard
         public Dictionary<ulong, AssetFile> assets = new Dictionary<ulong, AssetFile>(); // assetId to cached AssetFile
     }
 
-    public class DataProvider : IProvider
+    public class DataProvider// : IProvider
     {
-        private string propertyName = "file";
-
         private const int DataStorageService_Ver = 0; // cache version
 
-        private GBDesc GBDesc = null;
+        private GameID GameID = null;
         private string CacheBasePath = null;
         private GameDataInfo GameDataInfo = null;
         private DataStorageBackend DataStorageBackend = null;
 
         public DataProvider(HoardService hoard)
         {
-            this.GBDesc = hoard.GameBackendDesc;
+            this.GameID = hoard.DefaultGameID;
 
             CacheBasePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "files_cache");
 
@@ -51,12 +49,12 @@ namespace Hoard
 
             //DataStorageBackend = new DataStorageBackendLocal("e:/hoard/DSS/server/"); // local test (storege on local disk)
             DataStorageBackend = new DataStorageBackendHoard(hoard.GameBackendClient);
-            DataStorageBackend.Init(hoard.GameBackendDesc);
+            DataStorageBackend.Init(hoard.DefaultGameID);
         }
 
         private string GetGameCachePath()
         {
-            return CacheBasePath + "/" + GBDesc.GameID;
+            return CacheBasePath + "/" + GameID.ID;
         }
 
         private string GetGameDataPath()

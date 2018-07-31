@@ -55,10 +55,26 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("addGame");
         }
 
+        /// <summary>
+        /// Returns game contract address by index
+        /// </summary>
+        /// <param name="gameID"></param>
+        /// <returns></returns>
         public Task<string> GetGameContractAsync(ulong gameID)
         {
             var function = GetFunctionGetGameContract();
             return function.CallAsync<string>(gameID);
+        }
+
+        /// <summary>
+        /// Returns total number of registered games on Hoard Platform
+        /// </summary>
+        /// <returns></returns>
+        public Task<ulong> GetGameCount()
+        {
+            //TODO: implement this!
+            Function function = null;// GetFunctionGetGameContract();
+            return function.CallAsync<ulong>();
         }
 
         public Task<string> NameAsync(ulong gameID)
@@ -67,7 +83,7 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
-        public Task<bool> GetGameExistsAsync(ulong gameID)
+        public Task<bool> GetGameExistsAsync(string gameID)
         {
             var function = GetFunctionGameExists();
             return function.CallAsync<bool>(gameID);

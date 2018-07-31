@@ -22,7 +22,8 @@ namespace Hoard.DistributedStorage
         private byte fnCode;
         private byte digestSize;
 
-        public IPFSClient(string uploadClientUrl, string downloadClientUrl, byte fnCode = 18, byte digestSize = 32)
+        public IPFSClient(string uploadClientUrl = "http://localhost:5001", string downloadClientUrl = "http://localhost:8080", 
+                            byte fnCode = 18, byte digestSize = 32)
         {
             uploadClient = new RestClient(uploadClientUrl);
             downloadClient = new RestClient(downloadClientUrl);
@@ -40,6 +41,7 @@ namespace Hoard.DistributedStorage
 
             string hash = Base58CheckEncoding.EncodePlain(bytes);
             RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
+//            return (await downloadClient.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
             return downloadClient.DownloadData(downloadRequest);
         }
 
@@ -48,6 +50,8 @@ namespace Hoard.DistributedStorage
             RestRequest request = new RestRequest("/api/v0/add", Method.POST);
             request.AddFile("file", data, "file", "application/octet-stream");
 
+            //TODO: Make this async
+//            IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);
             IRestResponse response = uploadClient.Execute(request);
             if (response.ErrorException != null)
             {

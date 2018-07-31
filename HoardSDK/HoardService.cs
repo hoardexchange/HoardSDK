@@ -1,10 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
-using Org.BouncyCastle.Math;
 using Hoard.GameItems;
+using Hoard.DistributedStorage;
+using Hoard.BC.Contracts;
+using Hoard.BC;
+using Hoard.BackendConnectors;
 
 #if DEBUG
 using System.Diagnostics;
@@ -14,28 +17,51 @@ using Nethereum.Web3.Accounts;
 
 namespace Hoard
 {
+    public class HoardGameServerConnector : IBackendConnector
+    {
+        public string[] GetItemTypes(GameID game)
+        {
+            throw new NotImplementedException();
+        }
+
+        public GameItem[] GetPlayerItems(PlayerID playerID, string type)
+        {
+            //1. ask game server for items directly
+            //string jsonResponse = server.GetPlayerItems(playerID, type);
+            //2. Convert json to GameItems
+            //return convertJSONToGameItems(jsonResponse);
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> Transfer(PlayerID recipient, GameItem item)
+        {
+            throw new NotImplementedException();
+        }
+
+        private GameItem[] convertJSONToGameItems(string jsonResponse)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     /// <summary>
-    /// Hoard Service entry point.
+    /// Main service for all Hoard Platform operations.
     /// </summary>
     public class HoardService
     {
-        ///// <summary>
-        ///// GameAsset by symbol dictionary.
-        ///// </summary>
-        //public Dictionary<string, GameAsset> GameAssetSymbolDict { get; private set; } = new Dictionary<string, GameAsset>();
-
-        ///// <summary>
-        ///// GameAsset by contract address dictionary.
-        ///// </summary>
-        //public Dictionary<string, GameAsset> GameAssetAddressDict { get; private set; } = new Dictionary<string, GameAsset>();
+        /// <summary>
+        /// Game ID with backend connection informations.
+        /// </summary>
+        public GameID DefaultGameID { get; private set; } = GameID.kInvalidID;
 
         /// <summary>
-        /// Game backend description with backend connection informations.
+        /// Default player.
         /// </summary>
-        public GBDesc GameBackendDesc { get; private set; } = new GBDesc();
+        public PlayerID DefaultPlayer { get; private set; } = PlayerID.kInvalidID;
 
         /// <summary>
         /// Game backend connection.
+        /// TODO: move this to HoardGameItemProvider?
         /// </summary>
         public GBClient GameBackendClient { get; private set; } = null;
 
@@ -44,20 +70,29 @@ namespace Hoard
         /// </summary>
         public ExchangeService GameExchangeService { get; private set; } = null;
 
+        public BCConnector BCConnector { get; private set; } = null;
+
         /// <summary>
-        /// A list of providers for given asset type. Providers are registered using RegisterProvider.
+        /// List of registered GameItemProviders
         /// </summary>
-        private Dictionary<string, IProvider> Providers = new Dictionary<string, IProvider>();
+        private List<IGameItemProvider> GameItemProviders = new List<IGameItemProvider>();
+
+        /// <summary>
+        /// TODO: hide it in BCConnector?
+        /// </summary>
+        private BC.BCComm bcComm = null;
 
         /// <summary>
         /// Dafault provider with signin, game backend and exchange support.
         /// </summary>
-        private HoardProvider DefaultProvider = null;
+        //private HoardProvider DefaultProvider = null;
 
         /// <summary>
         /// Accounts per PlayerID
         /// </summary>
         private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
+
+        private List<IBackendConnector> Connectors = new List<IBackendConnector>();
 
         /// <summary>
         /// Hoard service constructor. All initilization is done in Init function.
@@ -124,7 +159,8 @@ namespace Hoard
         /// <returns>True if given player is signed in.</returns>
         public bool IsSignedIn(PlayerID id)
         {
-            return DefaultProvider.IsSignedIn(id);
+            throw new NotImplementedException();
+            //return DefaultProvider.IsSignedIn(id);
         }
 
         /// <summary>
@@ -134,14 +170,15 @@ namespace Hoard
         /// <returns>True if given player has been successfully signed in.</returns>
         public bool SignIn(PlayerID id)
         {
-            if (!DefaultProvider.SignIn(id))
+            throw new NotImplementedException();
+            /*if (!DefaultProvider.SignIn(id))
                 return false;
 
-            GameBackendDesc = DefaultProvider.GetGameBackendDesc();
+            //GameBackendD = DefaultProvider.GetGameBackendDesc();
             GameBackendClient = DefaultProvider.GetGameBackendClient();
             GameExchangeService = DefaultProvider.GetExchangeService();
 
-            return true;
+            return true;*/
         }
 
         /// <summary>
@@ -149,17 +186,22 @@ namespace Hoard
         /// </summary>
         /// <param name="assetType">Asset type for which this provider will be registered.</param>
         /// <param name="provider">Provider to be registered.</param>
-        public void RegisterProvider(string assetType, IProvider provider)
+        public bool RegisterGameItemProvider(IGameItemProvider provider)
         {
-            if (!Providers.ContainsKey(assetType))
+            if (!GameItemProviders.Contains(provider))
             {
-                Providers[assetType] = provider;
+                GameItemProviders.Add(provider);
+                return true;
             }
+            return false;
+        }
 
-            if (provider is HoardProvider)
-            {
-                DefaultProvider = provider as HoardProvider;
-            }
+        public bool RegisterConnector(IBackendConnector c)
+        {
+            if (Connectors.Contains(c))
+                return false;
+            Connectors.Add(c);
+            return true;
         }
 
         // FIXME: not needed?
@@ -233,47 +275,50 @@ namespace Hoard
         /// </summary>
         /// <param name="options">Hoard service options.</param>
         /// <returns>True if initialization succeeds.</returns>
-        public bool Init(HoardServiceOptions options)
+        public bool Initialize(HoardServiceOptions options)
         {
             InitAccounts(options.AccountsDir, options.DefaultAccountPass);
 
-            if (DefaultProvider == null)
-                return false;
+            bcComm = new BC.BCComm(options.RpcClient, GetAccount(DefaultPlayer)); //access point to block chain - a must have
 
-            if (!DefaultProvider.Init())
-                return false;
+            BCConnector = new BCConnector(bcComm);
 
-            RefreshGameItems().Wait();
+            //our default GameItemProvider
+            if (!RegisterGameItemProvider(new HoardGameItemProvider(new IPFSClient(null, null))))//TODO: create proper IPFS client from options?
+                return false;
 
             return true;
+
+            //RefreshGameItems().Wait();
+
+            //return true;
         }
 
         /// <summary>
         /// Shutdown hoard service.
         /// </summary>
-        public void Shutdown()
+        public bool Shutdown()
         {
             //GameAssetSymbolDict.Clear();
             //GameAssetAddressDict.Clear();
 
-            Providers.Clear();
-
-            if (DefaultProvider != null)
-                DefaultProvider.Shutdown();
+            GameItemProviders.Clear();
 
             ClearAccounts();
 
-            GameBackendDesc = null;
+            DefaultGameID = GameID.kInvalidID;
             GameBackendClient = null;
             GameExchangeService = null;
+
+            return true;
         }
 
         /// <summary>
         /// List of player accounts.
         /// </summary>
-        public List<Account> Accounts
+        public List<PlayerID> Players
         {
-            get { return accounts.Values.ToList(); }
+            get { return accounts.Keys.ToList(); }
         }
 
         /// <summary>
@@ -324,6 +369,9 @@ namespace Hoard
                 this.accounts.Add(account.Address, account);
             }
 
+            if (accounts.Count > 0)
+                DefaultPlayer = accounts.Keys.First();
+
 #if DEBUG
             Debug.WriteLine("Accounts initialized.", "INFO");
 #endif
@@ -354,17 +402,39 @@ namespace Hoard
         /// <returns></returns>
         private IGameItemProvider GetGameItemProvider(GameItem item)
         {
-            IGameItemProvider gameItemProvider = null;
-            foreach (var provider in Providers.Values)
+            foreach (IGameItemProvider p in GameItemProviders)
             {
-                gameItemProvider = provider.GetGameItemProvider(item);
-                if (gameItemProvider != null)
-                {
-                    break;
-                }
+                if (p.Supports(item.Symbol))
+                    return p;
             }
+            return null;
+        }
 
-            return gameItemProvider;
+        public GameID[] GetHoardGames()
+        {
+            return bcComm.GetHoardGames().Result;
+        }
+
+        public GameItem[] GetPlayerItems(PlayerID playerID)
+        {
+            return GetPlayerItems(playerID, DefaultGameID);
+        }
+
+        public GameItem[] GetPlayerItems(PlayerID playerID, GameID gameID)
+        {
+            List<GameItem> items = new List<GameItem>();
+            foreach (IGameItemProvider p in GameItemProviders)
+            {
+                items.AddRange(p.GetGameItems(playerID, gameID));
+            }
+            return items.ToArray();
+        }
+
+        public void UpdateItemProperties(GameItem item)
+        {
+            //find compatible provider
+            IGameItemProvider p = GetGameItemProvider(item);
+            p.UpdateGameItemProperties(item);
         }
     }
 }

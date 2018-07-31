@@ -12,7 +12,7 @@ using Nethereum.RPC.Eth.DTOs;
 
 namespace Hoard.BC.Contracts
 {
-    public class GameItemContract
+    public abstract class GameItemContract
     {
         protected readonly Web3 web3;
         protected Contract contract;
@@ -183,25 +183,68 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<ulong>();
         }
 
-        public async Task<bool> Transfer(string from, params object[] functionInput)
+        protected abstract object[] GetTransferInput(GameItem item);
+
+        public async Task<bool> Transfer(string from, GameItem item)
         {
+            object[] functionInput = GetTransferInput(item);
             var function = GetFunctionTransfer();
             var gas = await function.EstimateGasAsync(function.CreateTransactionInput(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), functionInput));
             gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
             var receipt = await function.SendTransactionAndWaitForReceiptAsync(function.CreateTransactionInput(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, functionInput));
             return receipt.Status.Value == 1;
         }
+
+        public abstract Task<GameItem[]> GetGameItems(PlayerID playerID);
     }
 
     public class ERC223GameItemContract : GameItemContract
     {
+        public class Metadata : BaseGameItemMetadata
+        {
+            public string Checksum { get; set; }
+            public string OwnerAddress { get; set; }
+            public ulong Balance { get; set; }
+
+            public Metadata(string checksum, string ownerAddress, ulong balance)
+            {
+                Checksum = checksum;
+                OwnerAddress = ownerAddress;
+                Balance = balance;
+            }
+        }
+
         public static string ABI = @"[ { 'constant': true, 'inputs': [], 'name': 'name', 'outputs': [ { 'name': '_name', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'totalSupply', 'outputs': [ { 'name': '_totalSupply', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'tokenType', 'outputs': [ { 'name': '', 'type': 'bytes32' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'decimals', 'outputs': [ { 'name': '_decimals', 'type': 'uint8' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '_owner', 'type': 'address' } ], 'name': 'balanceOf', 'outputs': [ { 'name': 'balance', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'symbol', 'outputs': [ { 'name': '_symbol', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_data', 'type': 'bytes' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_data', 'type': 'bytes' }, { 'name': '_custom_fallback', 'type': 'string' } ], 'name': 'transfer', 'outputs': [ { 'name': 'success', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'anonymous': false, 'inputs': [ { 'indexed': true, 'name': 'from', 'type': 'address' }, { 'indexed': true, 'name': 'to', 'type': 'address' }, { 'indexed': false, 'name': 'value', 'type': 'uint256' }, { 'indexed': false, 'name': 'data', 'type': 'bytes' } ], 'name': 'Transfer', 'type': 'event' } ]";
 
         public ERC223GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
+
+        public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
+        {
+            Metadata meta = new Metadata(await Checksum(), Address, await BalanceOf(playerID.ID));
+            GameItem gi = new GameItem(await Symbol(), meta);
+            return new GameItem[] { gi };
+        }
+
+        protected override object[] GetTransferInput(GameItem item)
+        {
+            return new object[] { (item.Metadata as Metadata).Balance };
+        }
     }
 
     public class ERC721GameItemContract : GameItemContract
     {
+        public class Metadata : BaseGameItemMetadata
+        {            
+            public string OwnerAddress { get; set; }
+            public ulong ItemId { get; set; }
+
+            public Metadata(string ownerAddress, ulong itemID)
+            {
+                OwnerAddress = ownerAddress;
+                ItemId = itemID;
+            }
+        }
+
         // FIXME: add abi and extend hoarditem/721 contract
         public static string ABI = "";
 
@@ -227,6 +270,27 @@ namespace Hoard.BC.Contracts
         {
             Function function = GetFunctionGetItemChecksum();
             return function.CallAsync<string>(itemID);
+        }
+
+        protected override object[] GetTransferInput(GameItem item)
+        {
+            return new object[] { (item.Metadata as Metadata).ItemId };
+        }
+
+        public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
+        {
+            ulong[] ids = await GetItems(playerID.ID, 0, await BalanceOf(playerID.ID));
+            string symbol = await Symbol();
+
+            GameItem[] items = new GameItem[ids.Length];
+
+            foreach (ulong id in ids)
+            {
+                Metadata meta = new Metadata(Address, id);
+                GameItem gi = new GameItem(symbol, meta);
+                gi.Checksum = await GetItemChecksum(id);
+            }
+            return items;
         }
     }
 }

@@ -35,7 +35,7 @@ namespace HoardXTests.Fixtures
 
             Directory.SetCurrentDirectory(EnvironmentCurrentDirectory);
 
-            Client = new IPFSClient("http://localhost:5001", "http://localhost:8080");
+            Client = new IPFSClient();
         }
 
         public void Dispose()

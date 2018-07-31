@@ -36,27 +36,48 @@ namespace Hoard.BC
             return (TContract)Activator.CreateInstance(typeof(TContract), web, contractAddress);
         }
 
-        public async Task<GBDesc> GetGBDesc(ulong gameID)
+        public async Task<GameID> GetGameID(string gameID)
         {
             bool exist = await gameCenter.GetGameExistsAsync(gameID);
             if (exist)
             {
-                GBDesc desc = new GBDesc();
-                desc.GameContract = await gameCenter.GetGameContractAsync(gameID);
-
+                GameID game = new GameID(gameID);
                 {
-                    GameContract game = new GameContract(web, desc.GameContract);
+                    //gameID is the address of contract
+                    GameContract gameContract = new GameContract(web, gameID);
 
-                    string url = await game.GetGameServerURLAsync();
+                    string url = await gameContract.GetGameServerURLAsync();
 
-                    desc.GameID = gameID;
-                    desc.Name = await game.Name();
-                    desc.Url = !url.StartsWith("http") ? "http://" + url : url;
+                    game.Name = await gameContract.Name();
+                    game.Url = !url.StartsWith("http") ? "http://" + url : url;
                 }
 
-                return desc;
+                return game;
             }
             return null;
+        }
+
+        public async Task<GameID[]> GetHoardGames()
+        {
+            ulong count = await gameCenter.GetGameCount();
+            GameID[] games = new GameID[count];
+            for(ulong i=0;i<count;++i)
+            {
+                string gameID = await gameCenter.GetGameContractAsync(i);
+                GameID game = new GameID(gameID);                
+                {
+                    //gameID is the address of contract
+                    GameContract gameContract = new GameContract(web, gameID);
+
+                    string url = await gameContract.GetGameServerURLAsync();
+
+                    game.Name = await gameContract.Name();
+                    game.Url = !url.StartsWith("http") ? "http://" + url : url;
+                }
+
+                games[i] = game;
+            }
+            return games;
         }
 
         public Task<ulong> GetGameAssetCount(string gameContract)
