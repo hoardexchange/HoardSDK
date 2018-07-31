@@ -31,7 +31,7 @@ namespace Hoard.DistributedStorage
             // FIXME: encode address to base58
             string hash = "";
             RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
-            return downloadClient.DownloadData(downloadRequest);
+            return (await downloadClient.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
         }
 
         public async Task<string> UploadAsync(byte[] data)
@@ -40,7 +40,7 @@ namespace Hoard.DistributedStorage
             request.AddFile("file", data, "file", "application/octet-stream");
 
             //TODO: Make this async
-            IRestResponse response = uploadClient.Execute(request);
+            IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);
             if (response.ErrorException != null)
             {
                 // TODO: throw some kind of custom exception on unsuccessful upload

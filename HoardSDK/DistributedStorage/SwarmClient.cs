@@ -19,14 +19,14 @@ namespace Hoard.DistributedStorage
             // FIXME: encode address to base58
             string hash = "";
             RestRequest downloadRequest = new RestRequest("/bzz:/" + hash + "/file", Method.GET);
-            return client.DownloadData(downloadRequest);
+            return (await client.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
         }
 
         public async Task<string> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/bzz:/", Method.POST);
             request.AddFile("file", data, "file", "application/octet-stream");
-            IRestResponse response = client.Execute(request);
+            IRestResponse response = await client.ExecutePostTaskAsync(request);
 
             if (response.ErrorException != null)
             {
