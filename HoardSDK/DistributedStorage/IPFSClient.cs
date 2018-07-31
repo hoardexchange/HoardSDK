@@ -1,6 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Hoard.Utils.Base58Check;
+using Newtonsoft.Json;
 using RestSharp;
 using System;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Hoard.DistributedStorage
@@ -16,21 +19,31 @@ namespace Hoard.DistributedStorage
         private RestClient uploadClient = null;
         private RestClient downloadClient = null;
 
-        IPFSClient(string uploadClientUrl, string downloadClientUrl)
+        private byte fnCode;
+        private byte digestSize;
+
+        public IPFSClient(string uploadClientUrl, string downloadClientUrl, byte fnCode = 18, byte digestSize = 32)
         {
             uploadClient = new RestClient(uploadClientUrl);
             downloadClient = new RestClient(downloadClientUrl);
-        }
 
-        public async Task<byte[]> DownloadBytesAsync(ulong address)
+            this.fnCode = fnCode;
+            this.digestSize = digestSize;
+        }
+        
+        public async Task<byte[]> DownloadBytesAsync(string address)
         {
-            // FIXME: encode address to base58
-            string hash = "";
+            byte[] bytes = new byte[digestSize + 2];
+            bytes[0] = fnCode;
+            bytes[1] = digestSize;
+            Encoding.Unicode.GetBytes(address, 0, address.Length, bytes, 2);
+
+            string hash = Base58CheckEncoding.EncodePlain(bytes);
             RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
             return downloadClient.DownloadData(downloadRequest);
         }
 
-        public async Task<ulong> UploadAsync(byte[] data)
+        public async Task<string> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/api/v0/add", Method.POST);
             request.AddFile("file", data, "file", "application/octet-stream");
@@ -43,11 +56,8 @@ namespace Hoard.DistributedStorage
             }
 
             string hash = JsonConvert.DeserializeObject<UploadResponse>(response.Content).Hash;
-
-            //FIXME: return hash encoded as base58
-            ulong address = 0;
-
-            return address;
+            byte[] address = Base58CheckEncoding.DecodePlain(hash).Skip(2).ToArray();
+            return Encoding.Unicode.GetString(address);
         }
     }
 }

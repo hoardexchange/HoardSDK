@@ -10,11 +10,11 @@ namespace Hoard.GameItems
     {
         public class Metadata : BaseGameItemMetadata
         {
-            public ulong Checksum { get; set; }
+            public string Checksum { get; set; }
             public string OwnerAddress { get; set; }
             public ulong Balance { get; set; }
 
-            public Metadata(ulong checksum, string ownerAddress, ulong balance)
+            public Metadata(string checksum, string ownerAddress, ulong balance)
             {
                 Checksum = checksum;
                 OwnerAddress = ownerAddress;
@@ -57,7 +57,7 @@ namespace Hoard.GameItems
             ulong balance = contract.BalanceOf(player.ID).Result;
             if (balance > 0)
             {
-                ulong globalChecksum = contract.Checksum().Result;
+                string globalChecksum = contract.Checksum().Result;
                 Metadata metadata = new Metadata(globalChecksum, player.ID, balance);
 
                 return new GameItem[] { new GameItem(symbol, metadata) };
@@ -70,7 +70,7 @@ namespace Hoard.GameItems
             // FIXME: handle unsuccessful data download
             // FIXME: add properties hardcoded into contract?
 
-            ulong globalChecksum = contract.Checksum().Result;
+            string globalChecksum = contract.Checksum().Result;
             byte[] globalData = storageClient.DownloadBytesAsync(globalChecksum).Result;
             string globalJson = Encoding.UTF8.GetString(globalData);
 

@@ -171,10 +171,10 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
-        public Task<ulong> Checksum()
+        public Task<string> Checksum()
         {
             var function = GetFunctionChecksum();
-            return function.CallAsync<ulong>();
+            return function.CallAsync<string>();
         }
 
         public Task<ulong> PropertyType()
@@ -223,10 +223,10 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<ulong[]>(owner, startIndex, numItems);
         }
 
-        public Task<ulong> GetItemChecksum(ulong itemID)
+        public Task<string> GetItemChecksum(ulong itemID)
         {
             Function function = GetFunctionGetItemChecksum();
-            return function.CallAsync<ulong>(itemID);
+            return function.CallAsync<string>(itemID);
         }
     }
 }
