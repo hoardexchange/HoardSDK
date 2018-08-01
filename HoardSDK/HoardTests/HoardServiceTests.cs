@@ -45,13 +45,14 @@ namespace HoardTests
             foreach (GameID game in games)
             {
                 //initialize BC support for each game
-                hoard.BCConnector.RegisterAllGameContracts(game);
+                hoard.RegisterHoardGameItems(game);
 
                 GameItem[] items = hoard.GetPlayerItems(hoard.DefaultPlayer, game);
 
                 foreach (GameItem gi in items)
                 {
                     //assume we need to populate properties
+                    //TODO: if properties is not null we would need to compare checksum with some cached data and if there is mismatch update too
                     if (gi.Properties == null)
                         hoard.UpdateItemProperties(gi);
                 }

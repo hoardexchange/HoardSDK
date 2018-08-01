@@ -220,9 +220,16 @@ namespace Hoard.BC.Contracts
 
         public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
         {
-            Metadata meta = new Metadata(await Checksum(), Address, await BalanceOf(playerID.ID));
-            GameItem gi = new GameItem(await Symbol(), meta);
-            return new GameItem[] { gi };
+            ulong itemBalance = await BalanceOf(playerID.ID);
+            if (itemBalance > 0)
+            {
+                //TODO: implement checksum!
+                Metadata meta = new Metadata(""/*await Checksum()*/, Address, itemBalance);
+                GameItem gi = new GameItem(await Symbol(), meta);
+                return new GameItem[] { gi };
+            }
+            else
+                return new GameItem[0];
         }
 
         protected override object[] GetTransferInput(GameItem item)

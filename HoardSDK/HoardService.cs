@@ -72,6 +72,8 @@ namespace Hoard
 
         public BCConnector BCConnector { get; private set; } = null;
 
+        private HoardGameItemProvider DefaultProvider = null;
+
         /// <summary>
         /// List of registered GameItemProviders
         /// </summary>
@@ -80,7 +82,7 @@ namespace Hoard
         /// <summary>
         /// TODO: hide it in BCConnector?
         /// </summary>
-        private BC.BCComm bcComm = null;
+        private BC.BCComm BcComm = null;
 
         /// <summary>
         /// Dafault provider with signin, game backend and exchange support.
@@ -93,6 +95,14 @@ namespace Hoard
         private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
 
         private List<IBackendConnector> Connectors = new List<IBackendConnector>();
+
+        /// <summary>
+        /// List of player accounts.
+        /// </summary>
+        public List<PlayerID> Players
+        {
+            get { return accounts.Keys.ToList(); }
+        }
 
         /// <summary>
         /// Hoard service constructor. All initilization is done in Init function.
@@ -279,12 +289,13 @@ namespace Hoard
         {
             InitAccounts(options.AccountsDir, options.DefaultAccountPass);
 
-            bcComm = new BC.BCComm(options.RpcClient, GetAccount(DefaultPlayer)); //access point to block chain - a must have
+            BcComm = new BC.BCComm(options.RpcClient, GetAccount(DefaultPlayer)); //access point to block chain - a must have
 
-            BCConnector = new BCConnector(bcComm);
+            BCConnector = new BCConnector(BcComm);
 
             //our default GameItemProvider
-            if (!RegisterGameItemProvider(new HoardGameItemProvider(new IPFSClient())))//TODO: create proper IPFS client from options?
+            DefaultProvider = new HoardGameItemProvider(new IPFSClient(), BCConnector);
+            if (!RegisterGameItemProvider(DefaultProvider))//TODO: create proper IPFS client from options?
                 return false;
 
             return true;
@@ -313,12 +324,14 @@ namespace Hoard
             return true;
         }
 
-        /// <summary>
-        /// List of player accounts.
-        /// </summary>
-        public List<PlayerID> Players
+        public void RegisterHoardGameItems(GameID game)
         {
-            get { return accounts.Keys.ToList(); }
+            //TODO: should we always get it from BC? or maybe there should be a cached data taken from elsewhere?
+
+            BCConnector.RegisterHoardGameContracts(game);
+            string[] itemTypes = BCConnector.GetItemTypes(game);
+            foreach (string type in itemTypes)
+                DefaultProvider.RegisterGameItemType(game, type);
         }
 
         /// <summary>
@@ -412,7 +425,8 @@ namespace Hoard
 
         public GameID[] GetHoardGames()
         {
-            return bcComm.GetHoardGames().Result;
+            //Should we ask BC directly or ask connector? (connector might ask hoard cache servers in first place and fallback to BC in worst case)
+            return BcComm.GetHoardGames().Result;
         }
 
         public GameItem[] GetPlayerItems(PlayerID playerID)

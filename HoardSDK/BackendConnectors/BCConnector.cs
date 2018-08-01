@@ -11,6 +11,7 @@ namespace Hoard.BackendConnectors
     public class BCConnector : IBackendConnector
     {
         private BCComm bcComm = null;
+        //TODO: should this be per game?
         private Dictionary<string, GameItemContract> itemContracts = new Dictionary<string, GameItemContract>();
 
         public BCConnector(BCComm comm)
@@ -35,7 +36,7 @@ namespace Hoard.BackendConnectors
         /// Helper function to automatically register all contracts for given game
         /// </summary>
         /// <param name="game"></param>
-        public void RegisterAllGameContracts(GameID game)
+        public void RegisterHoardGameContracts(GameID game)
         {
             //TODO: either this is stored in GameContract
             //or GameContract keeps only an IPFS hash of the whole list
@@ -63,9 +64,8 @@ namespace Hoard.BackendConnectors
         {
             //1. contract -> Get contract based on type
             GameItemContract contract = getContractByType(symbol);
-            Task<GameItem[]> t = contract.GetGameItems(playerID);
-            t.Wait();
-            return t.Result;
+            GameItem[] items = contract.GetGameItems(playerID).Result;
+            return items;
         }
 
         private GameItemContract getContractByType(string symbol)

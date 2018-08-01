@@ -18,9 +18,11 @@ namespace Hoard.GameItems
         private IBackendConnector connector = null;
         private IDistributedStorageClient storageClient;
 
-        public HoardGameItemProvider(IDistributedStorageClient storageClient)
+        //TODO: should we pass connector explicitly, or should provider query HoardService for available connectors?
+        public HoardGameItemProvider(IDistributedStorageClient storageClient, IBackendConnector connector)
         {
             this.storageClient = storageClient;
+            this.connector = connector;
         }
 
         public bool Supports(string typeName)
@@ -63,9 +65,12 @@ namespace Hoard.GameItems
             return await connector.Transfer(recipient.ID, item);
         }
 
-        //public async Task<ulong> GetBalanceOf(PlayerID player)
-        //{
-        //    return await connector.(player.ID);
-        //}
+        public void RegisterGameItemType(GameID game, string type)
+        {
+            if (!itemTypes.ContainsKey(game))
+                itemTypes.Add(game, new List<string>());
+            System.Diagnostics.Debug.Assert(!itemTypes[game].Contains(type), string.Format("Type [{0}] already registered!",type));
+            itemTypes[game].Add(type);
+        }
     }
 }
