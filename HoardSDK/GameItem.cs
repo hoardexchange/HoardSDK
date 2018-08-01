@@ -15,7 +15,7 @@ namespace Hoard
             Type = type;
         }
 
-        public Type GetType()
+        public new Type GetType()
         {
             if(Type.Equals("int16"))
                 return System.Type.GetType("System.Int16");

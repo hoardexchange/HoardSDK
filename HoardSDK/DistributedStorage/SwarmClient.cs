@@ -9,16 +9,14 @@ namespace Hoard.DistributedStorage
     {
         private RestClient client = null;
 
-        SwarmClient(string baseUrl)
+        public SwarmClient(string baseUrl)
         {
             client = new RestClient(baseUrl);
         }
 
         public async Task<byte[]> DownloadBytesAsync(string address)
         {
-            // FIXME: encode address to base58
-            string hash = "";
-            RestRequest downloadRequest = new RestRequest("/bzz:/" + hash + "/file", Method.GET);
+            RestRequest downloadRequest = new RestRequest("/bzz:/" + address + "/file", Method.GET);
             return (await client.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
         }
 
@@ -34,10 +32,7 @@ namespace Hoard.DistributedStorage
                 throw new ApplicationException();
             }
 
-            string hash = response.Content;
-            //FIXME: return hash encoded as base58
-            ulong address = 0;
-            return address.ToString();
+            return response.Content;
         }
     }
 }

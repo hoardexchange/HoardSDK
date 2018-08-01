@@ -72,6 +72,8 @@
     <Compile Include="IProvider.cs" />
     <Compile Include="Result.cs" />
     <Compile Include="Utils.cs" />
+    <Compile Include="Utils\Base58Check\ArrayHelpers.cs" />
+    <Compile Include="Utils\Base58Check\Base58CheckEncoding.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

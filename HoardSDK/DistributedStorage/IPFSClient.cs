@@ -1,6 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Hoard.Utils.Base58Check;
+using Newtonsoft.Json;
 using RestSharp;
 using System;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Hoard.DistributedStorage
@@ -16,22 +19,30 @@ namespace Hoard.DistributedStorage
         private RestClient uploadClient = null;
         private RestClient downloadClient = null;
 
-        public IPFSClient(string uploadClientUrl, string downloadClientUrl)
+        private byte fnCode;
+        private byte digestSize;
+
+        public IPFSClient(string uploadClientUrl = "http://localhost:5001", string downloadClientUrl = "http://localhost:8080", 
+                            byte fnCode = 18, byte digestSize = 32)
         {
-            if (string.IsNullOrEmpty(uploadClientUrl))
-                uploadClientUrl = "http://localhost:5001";
-            if (string.IsNullOrEmpty(downloadClientUrl))
-                downloadClientUrl = "http://localhost:5001";
             uploadClient = new RestClient(uploadClientUrl);
             downloadClient = new RestClient(downloadClientUrl);
-        }
 
+            this.fnCode = fnCode;
+            this.digestSize = digestSize;
+        }
+        
         public async Task<byte[]> DownloadBytesAsync(string address)
         {
-            // FIXME: encode address to base58
-            string hash = "";
+            byte[] bytes = new byte[digestSize + 2];
+            bytes[0] = fnCode;
+            bytes[1] = digestSize;
+            Encoding.Unicode.GetBytes(address, 0, address.Length, bytes, 2);
+
+            string hash = Base58CheckEncoding.EncodePlain(bytes);
             RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
-            return (await downloadClient.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
+//            return (await downloadClient.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
+            return downloadClient.DownloadData(downloadRequest);
         }
 
         public async Task<string> UploadAsync(byte[] data)
@@ -40,7 +51,8 @@ namespace Hoard.DistributedStorage
             request.AddFile("file", data, "file", "application/octet-stream");
 
             //TODO: Make this async
-            IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);
+//            IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);
+            IRestResponse response = uploadClient.Execute(request);
             if (response.ErrorException != null)
             {
                 // TODO: throw some kind of custom exception on unsuccessful upload
@@ -48,11 +60,8 @@ namespace Hoard.DistributedStorage
             }
 
             string hash = JsonConvert.DeserializeObject<UploadResponse>(response.Content).Hash;
-
-            //FIXME: return hash encoded as base58
-            ulong address = 0;
-
-            return address.ToString();
+            byte[] address = Base58CheckEncoding.DecodePlain(hash).Skip(2).ToArray();
+            return Encoding.Unicode.GetString(address);
         }
     }
 }

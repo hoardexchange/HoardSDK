@@ -171,10 +171,10 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
-        public Task<ulong> Checksum()
+        public Task<string> Checksum()
         {
             var function = GetFunctionChecksum();
-            return function.CallAsync<ulong>();
+            return function.CallAsync<string>();
         }
 
         public Task<ulong> PropertyType()
@@ -202,11 +202,11 @@ namespace Hoard.BC.Contracts
     {
         public class Metadata : BaseGameItemMetadata
         {
-            public ulong Checksum { get; set; }
+            public string Checksum { get; set; }
             public string OwnerAddress { get; set; }
             public ulong Balance { get; set; }
 
-            public Metadata(ulong checksum, string ownerAddress, ulong balance)
+            public Metadata(string checksum, string ownerAddress, ulong balance)
             {
                 Checksum = checksum;
                 OwnerAddress = ownerAddress;
