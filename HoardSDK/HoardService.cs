@@ -284,7 +284,7 @@ namespace Hoard
             BCConnector = new BCConnector(bcComm);
 
             //our default GameItemProvider
-            if (!RegisterGameItemProvider(new HoardGameItemProvider(new IPFSClient(null, null))))//TODO: create proper IPFS client from options?
+            if (!RegisterGameItemProvider(new HoardGameItemProvider(new IPFSClient())))//TODO: create proper IPFS client from options?
                 return false;
 
             return true;

@@ -46,6 +46,7 @@ namespace HoardTests
             {
                 //initialize BC support for each game
                 hoard.BCConnector.RegisterAllGameContracts(game);
+
                 GameItem[] items = hoard.GetPlayerItems(hoard.DefaultPlayer, game);
 
                 foreach (GameItem gi in items)

@@ -57,6 +57,21 @@ namespace Hoard.BC
             return null;
         }
 
+        public async Task<string[]> GetGameItemContracts(GameID game)
+        {
+            GameContract gameContract = new GameContract(web, game.ID);
+
+            ulong count = await gameContract.GetGameItemContractCountAsync();            
+
+            string[] contracts = new string[count];
+            for (ulong i = 0; i < count; ++i)
+            {
+                contracts[i] = await gameContract.GetGameItemContractAsync(i);
+            }
+
+            return contracts;
+        }
+
         public async Task<GameID[]> GetHoardGames()
         {
             ulong count = await gameCenter.GetGameCount();
@@ -80,12 +95,6 @@ namespace Hoard.BC
             return games;
         }
 
-        public Task<ulong> GetGameAssetCount(string gameContract)
-        {
-            GameContract game = new GameContract(web, gameContract);
-            return game.GetNextAssetIdAsync();
-        }
-
         // FIXME: Do we need this? How can we distinguish correct abi ERC20/ERC721/others?
         //public async Task<GameAssetContract[]> GetGameAssetContacts(string gameContract)
         //{
@@ -96,7 +105,7 @@ namespace Hoard.BC
 
         //    for (ulong i = 0; i < length; ++i)
         //    {
-        //        var address = await game.GetGameAssetContractAsync(i);
+        //        var address = await game.GetGameItemContractAsync(i);
         //        ret[i] = new GameAssetContract(web, address);
         //    }
 

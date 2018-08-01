@@ -41,13 +41,12 @@ namespace Hoard.BackendConnectors
             //or GameContract keeps only an IPFS hash of the whole list
             //or we take this information from a file
 
-            //string[] contracts = bcComm.GetGameContracts(game);
-            //foreach(string c in contracts)
-            //{
-            //how should we know whether to use ERC223 or ERC721
-            //RegisterItemContract(bcComm.GetContract<ERC223GameItemContract>(c));
-            //}
-            throw new NotImplementedException();
+            string[] contracts = bcComm.GetGameItemContracts(game).Result;
+            foreach(string c in contracts)
+            {
+                //TODO: how should we know whether to use ERC223 or ERC721
+                RegisterItemContract(bcComm.GetContract<ERC223GameItemContract>(c));
+            }
         }
 
         public bool RegisterItemContract(GameItemContract contract)

@@ -62,12 +62,6 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("name");
         }
 
-        public Task<ulong> GetNextAssetIdAsync()
-        {
-            var function = GetFunctionNextAssetId();
-            return function.CallAsync<ulong>();
-        }
-
         public Task<string> GetGameServerURLAsync()
         {
             var function = GetFunctionGameSrvURL();
@@ -84,7 +78,13 @@ namespace Hoard.BC.Contracts
             });
         }
 
-        public Task<string> GetGameAssetContractAsync(ulong assetId)
+        public Task<ulong> GetGameItemContractCountAsync()
+        {
+            var function = GetFunctionNextAssetId();
+            return function.CallAsync<ulong>();
+        }
+
+        public Task<string> GetGameItemContractAsync(ulong assetId)
         {
             var function = GetFunctionAssetTokens();
             return function.CallAsync<string>(assetId);

@@ -16,8 +16,7 @@ namespace Hoard.GameItems
     {
         private Dictionary<GameID, List<string>> itemTypes = new Dictionary<GameID, List<string>>();
         private IBackendConnector connector = null;
-
-        protected IDistributedStorageClient storageClient;
+        private IDistributedStorageClient storageClient;
 
         public HoardGameItemProvider(IDistributedStorageClient storageClient)
         {
@@ -37,10 +36,13 @@ namespace Hoard.GameItems
         public GameItem[] GetGameItems(PlayerID player, GameID game)
         {
             List<GameItem> items = new List<GameItem>();
-            var types = itemTypes[game];
-            foreach (string type in types)
+            if (itemTypes.ContainsKey(game))
             {
-                items.AddRange(connector.GetPlayerItems(player, type));
+                var types = itemTypes[game];
+                foreach (string type in types)
+                {
+                    items.AddRange(connector.GetPlayerItems(player, type));
+                }
             }
             return items.ToArray();
         }

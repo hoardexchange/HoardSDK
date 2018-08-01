@@ -72,8 +72,7 @@ namespace Hoard.BC.Contracts
         /// <returns></returns>
         public Task<ulong> GetGameCount()
         {
-            //TODO: implement this!
-            Function function = null;// GetFunctionGetGameContract();
+            Function function = contract.GetFunction("nextGameId");
             return function.CallAsync<ulong>();
         }
 
