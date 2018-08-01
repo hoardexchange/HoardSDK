@@ -41,8 +41,15 @@ namespace Hoard.DistributedStorage
 
             string hash = Base58CheckEncoding.EncodePlain(bytes);
             RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
-//            return (await downloadClient.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
-            return downloadClient.DownloadData(downloadRequest);
+
+            IRestResponse response = await downloadClient.ExecuteGetTaskAsync(downloadRequest);
+            if (response.ErrorException != null)
+            {
+                // TODO: throw some kind of custom exception on unsuccessful upload
+                throw new ApplicationException();
+            }
+
+            return response.RawBytes;
         }
 
         public async Task<string> UploadAsync(byte[] data)
@@ -50,9 +57,7 @@ namespace Hoard.DistributedStorage
             RestRequest request = new RestRequest("/api/v0/add", Method.POST);
             request.AddFile("file", data, "file", "application/octet-stream");
 
-            //TODO: Make this async
-//            IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);
-            IRestResponse response = uploadClient.Execute(request);
+            IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);
             if (response.ErrorException != null)
             {
                 // TODO: throw some kind of custom exception on unsuccessful upload
