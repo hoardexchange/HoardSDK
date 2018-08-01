@@ -18,6 +18,7 @@ namespace HoardXTests.Fixtures
             Clean();
 
             Directory.SetCurrentDirectory(IPFSDirectory);
+
             cmd.StartInfo = new ProcessStartInfo
             {
                 FileName = IPFSDirectory + "init.bat",
@@ -27,11 +28,19 @@ namespace HoardXTests.Fixtures
             };
             cmd.Start();
             cmd.WaitForExit();
+
             cmd.StartInfo.FileName = IPFSDirectory + "run.bat";
             cmd.Start();
 
-            //FIXME
-            System.Threading.Thread.Sleep(10000);
+            // FIXME: handle errors?
+            while (!cmd.StandardOutput.EndOfStream)
+            {
+                string line = cmd.StandardOutput.ReadLine();
+                if(line.Equals("Daemon is ready"))
+                {
+                    break;
+                }
+            }
 
             Directory.SetCurrentDirectory(EnvironmentCurrentDirectory);
 
@@ -48,6 +57,7 @@ namespace HoardXTests.Fixtures
         private void Clean()
         {
             Directory.SetCurrentDirectory(IPFSDirectory);
+
             cmd.StartInfo = new ProcessStartInfo
             {
                 FileName = IPFSDirectory + "stop.bat",
@@ -57,9 +67,11 @@ namespace HoardXTests.Fixtures
             };
             cmd.Start();
             cmd.WaitForExit();
+
             cmd.StartInfo.FileName = IPFSDirectory + "delete.bat";
             cmd.Start();
             cmd.WaitForExit();
+
             Directory.SetCurrentDirectory(EnvironmentCurrentDirectory);
         }
     }
