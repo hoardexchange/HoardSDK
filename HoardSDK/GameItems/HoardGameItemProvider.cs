@@ -53,7 +53,7 @@ namespace Hoard.GameItems
             byte[] globalData = storageClient.DownloadBytesAsync(item.Checksum).Result;
             string globalJson = Encoding.UTF8.GetString(globalData);
 
-            item.Properties = JsonConvert.DeserializeObject<ItemProps>(globalJson, new ItemPropsConverter());
+            item.Properties = JsonConvert.DeserializeObject<ItemProperties>(globalJson);
         }
 
         public async Task<bool> Transfer(PlayerID recipient, GameItem item)
