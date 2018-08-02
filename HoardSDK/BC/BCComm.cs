@@ -31,6 +31,11 @@ namespace Hoard.BC
             return await ver.SendRequestAsync();
         }
 
+        public GameItemContract GetGameItemContract(string contractAddress, Type contractType)
+        {
+            return (GameItemContract)Activator.CreateInstance(contractType, web, contractAddress);
+        }
+
         public TContract GetContract<TContract>(string contractAddress)
         {
             return (TContract)Activator.CreateInstance(typeof(TContract), web, contractAddress);
