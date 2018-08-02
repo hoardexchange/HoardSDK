@@ -13,11 +13,14 @@ using System.Threading.Tasks;
 namespace Hoard.GameItemProviders
 {
     /// <summary>
-    /// Default Hoard Platform GameItem Provider supports all GameItems complying to Hoard standards
+    /// Default Hoard Platform GameItem Provider supports all GameItems complying to Hoard standards.
     /// </summary>
     public class HoardGameItemProvider : IGameItemProvider
     {
         public GameID Game { get; private set; }
+        /// <summary>
+        /// Fallback in case server is down. Should be set to sth more reliable like BCGameItemProvider.
+        /// </summary>
         public IGameItemProvider FallbackConnector { get; set; } = null;
 
         private RestClient Client = null;

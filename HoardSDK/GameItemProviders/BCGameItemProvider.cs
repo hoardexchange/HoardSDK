@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Hoard.GameItemProviders
 {
+    /// <summary>
+    /// Basic provider of Game Items that communicates directly with blockchain (Ethereum)
+    /// </summary>
     public class BCGameItemProvider : IGameItemProvider
     {
         private GameID Game = null;

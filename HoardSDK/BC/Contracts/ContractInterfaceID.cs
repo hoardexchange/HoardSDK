@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
 {
-    public class ContractInterfaceID
+    /// <summary>
+    /// Contract determining what other interfaces are supported by this contract.
+    /// All Hoard Game Item contracts must support it.
+    /// </summary>
+    internal class ContractInterfaceID
     {
         /// <summary>
         /// InterfaceID stored in 4 bytes

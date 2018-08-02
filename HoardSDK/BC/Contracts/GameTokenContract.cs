@@ -42,6 +42,9 @@ namespace Hoard.BC.Contracts
         }
     }
 
+    /// <summary>
+    /// Base Hoard Game Item contract
+    /// </summary>
     public abstract class GameItemContract
     {
         protected readonly Web3 web3;
@@ -143,6 +146,9 @@ namespace Hoard.BC.Contracts
         public abstract Task<GameItem[]> GetGameItems(PlayerID playerID);
     }
 
+    /// <summary>
+    /// ERC223 Game Item contract.
+    /// </summary>
     public class ERC223GameItemContract : GameItemContract
     {
         public class Metadata : BaseGameItemMetadata
@@ -194,6 +200,9 @@ namespace Hoard.BC.Contracts
         }
     }
 
+    /// <summary>
+    /// ERC721 Game Item contract
+    /// </summary>
     public class ERC721GameItemContract : GameItemContract
     {
         public class Metadata : BaseGameItemMetadata

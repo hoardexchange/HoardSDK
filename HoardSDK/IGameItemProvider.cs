@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
+    /// <summary>
+    /// Provider for Game Items interface.
+    /// </summary>
     public interface IGameItemProvider
     {
         /// <summary>

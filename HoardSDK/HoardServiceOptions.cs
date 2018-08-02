@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
+    /// <summary>
+    /// Initialization options for HoardService
+    /// </summary>
     public class HoardServiceOptions
     {
         public GameID Game { get; set; } = GameID.kInvalidID;

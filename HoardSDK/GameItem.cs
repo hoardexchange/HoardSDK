@@ -81,6 +81,9 @@ namespace Hoard
         }
     }
 
+    /// <summary>
+    /// Representation of Game Item description retrieved from Hoard Platform
+    /// </summary>
     public class GameItem
     {
         public string Symbol { get; private set; }

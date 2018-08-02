@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Hoard
 {
     /// <summary>
-    /// 
+    /// Provider for Item Properties interface.
     /// </summary>
     public interface IItemPropertyProvider
     {
