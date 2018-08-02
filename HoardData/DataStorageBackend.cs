@@ -1,8 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using Hoard.GameItems;
+using Newtonsoft.Json;
 using RestSharp;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace Hoard
 {
@@ -70,11 +73,12 @@ namespace Hoard
 
     public class DataStorageBackendHoard : DataStorageBackend
     {
-        private GBClient Client = null;
+        private RestClient Client = null;
 
-        public DataStorageBackendHoard(GBClient Client)
+        public DataStorageBackendHoard(RestClient Client)
         {
             this.Client = Client;
+            System.Diagnostics.Debug.Assert(Client.CookieContainer != null,"[ERROR] RestClient does not have any cookies. All requests won't be authenticated!");
         }
 
         public class AssetHash
@@ -84,7 +88,7 @@ namespace Hoard
 
         public override Result LoadHashFromServer(ulong assetId, out string hash)
         {
-            var task = Client.Get("/res/?game_id=" + GameID.ID + "&asset_id=" + assetId);
+            var task = Get("/res/?game_id=" + GameID.ID + "&asset_id=" + assetId);
             task.Wait();
             var task_result = task.Result;
 
@@ -108,7 +112,7 @@ namespace Hoard
 
         public override Result LoadDataFromServer(ulong assetId, out byte[] data)
         {
-            var task = Client.Get("/res_download/" + GameID.ID + "/" + assetId + "/");
+            var task = Get("/res_download/" + GameID.ID + "/" + assetId + "/");
             task.Wait();
             var task_result = task.Result;
 
@@ -126,7 +130,7 @@ namespace Hoard
         public override Result UploadDataToServer(ulong assetId, byte[] data)
         {
             // delete old resource
-            var delete_task = Client.Delete("/res_delete/" + GameID.ID + "/" + assetId + "/");
+            var delete_task = Delete("/res_delete/" + GameID.ID + "/" + assetId + "/");
             delete_task.Wait();
             var delete_task_result = delete_task.Result;
 
@@ -147,7 +151,7 @@ namespace Hoard
             hash_Param.Type = ParameterType.GetOrPost;
 
             Parameter[] parameters = { gameId_Param, assetId_Param, hash_Param };
-            var create_task = Client.PostWithFile("/res/", parameters, data);
+            var create_task = PostWithFile("/res/", parameters, data);
             create_task.Wait();
             var create_task_response = create_task.Result;
 
@@ -156,5 +160,51 @@ namespace Hoard
             else
                 return new Result();
         }
+
+#region private methods
+
+        private void PrepareRequest(RestRequest req)
+        {
+            //TODO: check this:
+            //req.AddHeader("X-CSRFToken", csrfToken);
+        }
+
+        private async Task<IRestResponse> Get(string url)
+        {
+            var request = new RestRequest(url, Method.GET);
+
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
+            return response;
+        }
+
+        private async Task<string> Delete(string url)
+        {
+            var request = new RestRequest(url, Method.DELETE);
+
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
+
+            return response.Content;
+        }
+
+
+        private async Task<IRestResponse> PostWithFile(string url, Parameter[] parameters, byte[] file)
+        {
+            var request = new RestRequest(url, Method.POST);
+
+            foreach (Parameter p in parameters)
+                request.AddParameter(p);
+            request.AddFile("file", file, "file");
+
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
+
+            return response;
+        }
+        #endregion
     }
 }

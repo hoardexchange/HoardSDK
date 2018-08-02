@@ -18,18 +18,18 @@ namespace Hoard
         public Dictionary<ulong, AssetFile> assets = new Dictionary<ulong, AssetFile>(); // assetId to cached AssetFile
     }
 
-    public class DataProvider// : IProvider
+    public class DataProvider
     {
         private const int DataStorageService_Ver = 0; // cache version
 
-        private GameID GameID = null;
-        private string CacheBasePath = null;
+        private GameID Game = null;
+        private readonly string CacheBasePath = null;
         private GameDataInfo GameDataInfo = null;
         private DataStorageBackend DataStorageBackend = null;
 
         public DataProvider(HoardService hoard)
         {
-            this.GameID = hoard.DefaultGameID;
+            Game = hoard.DefaultGame;
 
             CacheBasePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "files_cache");
 
@@ -47,14 +47,15 @@ namespace Hoard
                 GameDataInfo = new GameDataInfo();
             }
 
-            //DataStorageBackend = new DataStorageBackendLocal("e:/hoard/DSS/server/"); // local test (storege on local disk)
-            DataStorageBackend = new DataStorageBackendHoard(hoard.GameBackendClient);
-            DataStorageBackend.Init(hoard.DefaultGameID);
+            DataStorageBackend = new DataStorageBackendLocal("e:/hoard/DSS/server/"); // local test (storege on local disk)
+            //TODO: which client to use?
+            //DataStorageBackend = new DataStorageBackendHoard(hoard.);
+            DataStorageBackend.Init(hoard.DefaultGame);
         }
 
         private string GetGameCachePath()
         {
-            return CacheBasePath + "/" + GameID.ID;
+            return CacheBasePath + "/" + Game.ID;
         }
 
         private string GetGameDataPath()
@@ -133,23 +134,6 @@ namespace Hoard
         {
             //TODO
             return data;
-        }
-
-        /* IProvider */
-        
-        public GameItem[] GetGameItems(PlayerID player)
-        {
-            throw new NotSupportedException();
-        }
-
-        public void UpdateGameItemProperties(GameItem item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IGameItemProvider GetGameItemProvider(GameItem item)
-        {
-            throw new NotImplementedException();
         }
     }
 }

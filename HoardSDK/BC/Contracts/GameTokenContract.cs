@@ -224,7 +224,7 @@ namespace Hoard.BC.Contracts
             if (itemBalance > 0)
             {
                 //TODO: implement checksum!
-                Metadata meta = new Metadata(""/*await Checksum()*/, Address, itemBalance);
+                Metadata meta = new Metadata(""/*await State()*/, Address, itemBalance);
                 GameItem gi = new GameItem(await Symbol(), meta);
                 return new GameItem[] { gi };
             }
@@ -295,7 +295,7 @@ namespace Hoard.BC.Contracts
             {
                 Metadata meta = new Metadata(Address, id);
                 GameItem gi = new GameItem(symbol, meta);
-                gi.Checksum = await GetItemChecksum(id);
+                gi.State = await GetItemChecksum(id);
             }
             return items;
         }

@@ -8,17 +8,14 @@ namespace Hoard
 {
     public class PlayerID
     {
-        public static PlayerID kInvalidID { get; private set; } = new PlayerID("");
-        public string ID = null;
+        public static PlayerID kInvalidID { get; private set; } = new PlayerID("0x0","0x0");
+        public string ID { get; private set; } = null;
+        public string PrivateKey { get; private set; }
 
-        public PlayerID(string id)
+        public PlayerID(string id, string key)
         {
             ID = id.ToLower();
-        }
-
-        public static implicit operator PlayerID(string d)
-        {
-            return new PlayerID(d);
+            PrivateKey = key;
         }
 
         public override int GetHashCode() 
@@ -33,7 +30,7 @@ namespace Hoard
 
         public bool Equals(PlayerID obj)
         {
-            return obj != null && obj.ID.ToLower() == ID;
+            return obj != null && obj.ID.ToLower() == ID && obj.PrivateKey == PrivateKey;
         }
 
     }
@@ -49,11 +46,6 @@ namespace Hoard
         public GameID(string id)
         {
             ID = id;
-        }
-
-        public static implicit operator GameID(string d)
-        {
-            return new GameID(d);
         }
 
         public override int GetHashCode()

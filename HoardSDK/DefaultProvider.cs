@@ -1,5 +1,4 @@
 using Hoard.BC.Contracts;
-using Hoard.GameItems;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

@@ -1,3 +1,4 @@
+using Hoard.GameItemProviders;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -31,11 +32,12 @@ namespace Hoard
     public class GameExchangeService : ExchangeService
     {
         private BC.BCComm bcComm = null;
-        private GBClient client = null;
+        //TODO: should it really use HoardGameItemProvider? Is this the same backend? I doubt that.
+        private HoardGameItemProvider client = null;
         private BC.Contracts.GameExchangeContract GameExchangeContract = null;
         private HoardService hoard = null;
 
-        public GameExchangeService(GBClient client, BC.BCComm bcComm, HoardService hoard)
+        public GameExchangeService(HoardGameItemProvider client, BC.BCComm bcComm, HoardService hoard)
         {
             this.client = client;
             this.bcComm = bcComm;
@@ -55,10 +57,9 @@ namespace Hoard
         // FIXME
         public override async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
         {
-            var jsonStr = await client.GetJson(
-                String.Format("exchange/orders/{0},{1}",
-                /*gaGet != null ? gaGet.ContractAddress :*/ "",
-                /*gaGive != null ? gaGive.ContractAddress :*/ ""), null);
+            //TODO:
+            var jsonStr = "";/* await client.GetJson(
+                String.Format("exchange/orders/{0},{1}","",""), null);*/
 
             if (jsonStr != null)
             {
