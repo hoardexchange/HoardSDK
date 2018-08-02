@@ -194,7 +194,7 @@ namespace Hoard
         {
             InitAccounts(options.AccountsDir, options.DefaultAccountPass);
 
-            BcComm = new BC.BCComm(options.RpcClient, GetAccount(DefaultPlayer)); //access point to block chain - a must have
+            BcComm = new BC.BCComm(options.RpcClient, DefaultPlayer, options.GameCenterContract); //access point to block chain - a must have
 
             DefaultGame = options.Game;
 
@@ -259,16 +259,6 @@ namespace Hoard
                 }
             }
             return false;
-        }
-
-        /// <summary>
-        /// Return account for given player id.
-        /// </summary>
-        /// <param name="id">Player id for .</param>
-        /// <returns>Player account.</returns>
-        public Account GetAccount(PlayerID id)
-        {
-           return accounts[id];
         }
 
         #region PRIVATE SECTION

@@ -15,14 +15,12 @@ namespace Hoard.BC
     {
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
-        
-        private const string GameInfoAddress = "0x672e3249f4e3674d52f446f7191e76b1294fcd33";
 
-        public BCComm(Nethereum.JsonRpc.Client.IClient client, Account account)
+        public BCComm(Nethereum.JsonRpc.Client.IClient client, PlayerID account, string gameCenterContract)
         {
-            web = new Web3(account, client);
+            web = new Web3(new Account(account.PrivateKey), client);
 
-            gameCenter = GetContract<GameCenterContract>(GameInfoAddress);
+            gameCenter = GetContract<GameCenterContract>(gameCenterContract);
         }
 
         public async Task<string> Connect()
