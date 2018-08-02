@@ -12,192 +12,6 @@ using Nethereum.RPC.Eth.DTOs;
 
 namespace Hoard.BC.Contracts
 {
-    public abstract class GameItemContract
-    {
-        protected readonly Web3 web3;
-        protected Contract contract;
-
-        public string Address { get { return contract.Address; } }
-
-        public GameItemContract(Web3 web3, string address, string abi)
-        {
-            this.web3 = web3;
-            this.contract = web3.Eth.GetContract(abi, address);
-
-            // TODO: remove this test code
-            //string abi2 = "[{ 'constant':false,'inputs':[{'name':'_a','type':'uint256'},{'name':'_b','type':'uint256'}],'name':'multiply','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':false,'inputs':[{'name':'_a','type':'uint256'},{'name':'_b','type':'uint256'}],'name':'arithmetics','outputs':[{'name':'o_sum','type':'uint256'},{'name':'o_product','type':'uint256'}],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':true,'inputs':[],'name':'prop_b','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[],'name':'prop_a','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'view','type':'function'}]";
-            //this.contract = web3.Eth.GetContract(abi2, address);
-            //FillProperties(null);
-            //
-        }
-
-        //public void FillProperties(GameAsset asset)
-        //{
-        //    for (int i = 0; i < contract.ContractBuilder.ContractABI.Functions.Length; i++)
-        //    {
-        //        Nethereum.ABI.Model.FunctionABI fabi = contract.ContractBuilder.ContractABI.Functions[i];
-        //        if (fabi.Name.Contains("prop_"))
-        //        {
-        //            Prop prop;
-        //            if (asset.Properties.Properties.TryGetValue(fabi.Name, out prop) == false)
-        //                continue;
-        //            Function fun = contract.GetFunction(fabi.Name);
-        //            switch (prop.type)
-        //            {
-        //                case PropertyType.String:
-        //                case PropertyType.Address:
-        //                    var retString = fun.CallAsync<string>();
-        //                    asset.Properties.Set(fabi.Name, retString.Result);
-        //                    break;
-        //                case PropertyType.Bool:
-        //                    var retBool = fun.CallAsync<bool>();
-        //                    asset.Properties.Set(fabi.Name, retBool.Result);
-        //                    break;
-        //                case PropertyType.Int16:
-        //                    var retInt16 = fun.CallAsync<short>();
-        //                    asset.Properties.Set(fabi.Name, retInt16.Result);
-        //                    break;
-        //                case PropertyType.Int32:
-        //                    var retInt32 = fun.CallAsync<int>();
-        //                    asset.Properties.Set(fabi.Name, retInt32.Result);
-        //                    break;
-        //                case PropertyType.Int64:
-        //                    var retInt64 = fun.CallAsync<long>();
-        //                    asset.Properties.Set(fabi.Name, retInt64.Result);
-        //                    break;
-        //                case PropertyType.Uint16:
-        //                    var retUint16 = fun.CallAsync<ushort>();
-        //                    asset.Properties.Set(fabi.Name, retUint16.Result);
-        //                    break;
-        //                case PropertyType.Uint32:
-        //                    var retUint32 = fun.CallAsync<uint>();
-        //                    asset.Properties.Set(fabi.Name, retUint32.Result);
-        //                    break;
-        //                case PropertyType.Uint64:
-        //                    var retUint64 = fun.CallAsync<ulong>();
-        //                    asset.Properties.Set(fabi.Name, retUint64.Result);
-        //                    break;
-        //                case PropertyType.BigInt:
-        //                    var retBigInteger = fun.CallAsync<BigInteger>();
-        //                    asset.Properties.Set(fabi.Name, retBigInteger.Result);
-        //                    break;
-        //                default:
-        //                    Debug.Assert(false, "Unknown property type!");
-        //                    break;
-        //            }
-        //        }
-        //    }
-        //}
-
-        //public async Task<bool> SavePropertyToBC(BCComm comm, GameAsset asset, string propertyName)
-        //{
-        //    Prop prop;
-        //    if (asset.Properties.Properties.TryGetValue(propertyName, out prop) == false)
-        //        return await Task.FromResult<bool>(false);
-        //    Function function = contract.GetFunction("set" + propertyName);
-        //    return await comm.EvaluateOnBC((address) =>
-        //    {
-        //        return function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), prop.value);
-        //    });
-        //}
-
-        private Function GetFunctionBalanceOf()
-        {
-            return contract.GetFunction("balanceOf");
-        }
-
-        private Function GetFunctionSymbol()
-        {
-            return contract.GetFunction("symbol");
-        }
-
-        private Function GetFunctionName()
-        {
-            return contract.GetFunction("name");
-        }
-
-        private Function GetFunctionTotalSupply()
-        {
-            return contract.GetFunction("totalSupply");
-        }
-
-        private Function GetFunctionAssetType()
-        {
-            return contract.GetFunction("tokenType");
-        }
-
-        private Function GetFunctionTransfer()
-        {
-            return contract.GetFunction("transfer");
-        }
-
-        private Function GetFunctionState()
-        {
-            return contract.GetFunction("state");
-        }
-
-        private Function GetFunctionPropertyType()
-        {
-            return contract.GetFunction("propertyType");
-        }
-
-        public Task<ulong> BalanceOf(string address)
-        {
-            var function = GetFunctionBalanceOf();
-            return function.CallAsync<ulong>(address);
-        }
-
-        public Task<string> Symbol()
-        {
-            var function = GetFunctionSymbol();
-            return function.CallAsync<string>();
-        }
-
-        public Task<string> Name()
-        {
-            var function = GetFunctionName();
-            return function.CallAsync<string>();
-        }
-
-        public Task<ulong> TotalSupply()
-        {
-            var function = GetFunctionTotalSupply();
-            return function.CallAsync<ulong>();
-        }
-
-        public Task<string> AssetType()
-        {
-            var function = GetFunctionAssetType();
-            return function.CallAsync<string>();
-        }
-
-        public Task<string> State()
-        {
-            var function = GetFunctionState();
-            return function.CallAsync<string>();
-        }
-
-        public Task<ulong> PropertyType()
-        {
-            var function = GetFunctionPropertyType();
-            return function.CallAsync<ulong>();
-        }
-
-        protected abstract object[] GetTransferInput(GameItem item);
-
-        public async Task<bool> Transfer(string from, GameItem item)
-        {
-            object[] functionInput = GetTransferInput(item);
-            var function = GetFunctionTransfer();
-            var gas = await function.EstimateGasAsync(function.CreateTransactionInput(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), functionInput));
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(function.CreateTransactionInput(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, functionInput));
-            return receipt.Status.Value == 1;
-        }
-
-        public abstract Task<GameItem[]> GetGameItems(PlayerID playerID);
-    }
-
     /// <summary>
     /// ERC165
     /// </summary>
@@ -228,7 +42,108 @@ namespace Hoard.BC.Contracts
         }
     }
 
-        public class ERC223GameItemContract : GameItemContract
+    public abstract class GameItemContract
+    {
+        protected readonly Web3 web3;
+        protected Contract contract;
+
+        public string Address { get { return contract.Address; } }
+
+        public GameItemContract(Web3 web3, string address, string abi)
+        {
+            this.web3 = web3;
+            this.contract = web3.Eth.GetContract(abi, address);
+        }
+        
+        private Function GetFunctionBalanceOf()
+        {
+            return contract.GetFunction("balanceOf");
+        }
+
+        private Function GetFunctionSymbol()
+        {
+            return contract.GetFunction("symbol");
+        }
+
+        private Function GetFunctionName()
+        {
+            return contract.GetFunction("name");
+        }
+
+        private Function GetFunctionTotalSupply()
+        {
+            return contract.GetFunction("totalSupply");
+        }
+
+        private Function GetFunctionAssetType()
+        {
+            return contract.GetFunction("tokenType");
+        }
+
+        private Function GetFunctionTransfer()
+        {
+            return contract.GetFunction("transfer");
+        }
+
+        private Function GetFunctionTokenStateType()
+        {
+            return contract.GetFunction("tokenStateType");
+        }
+
+        // FIXME: should be BigInteger
+        public Task<ulong> BalanceOf(string address)
+        {
+            var function = GetFunctionBalanceOf();
+            return function.CallAsync<ulong>(address);
+        }
+
+        public Task<string> Symbol()
+        {
+            var function = GetFunctionSymbol();
+            return function.CallAsync<string>();
+        }
+
+        public Task<string> Name()
+        {
+            var function = GetFunctionName();
+            return function.CallAsync<string>();
+        }
+
+        // FIXME: should be BigInteger
+        public Task<ulong> TotalSupply()
+        {
+            var function = GetFunctionTotalSupply();
+            return function.CallAsync<ulong>();
+        }
+
+        public Task<string> AssetType()
+        {
+            var function = GetFunctionAssetType();
+            return function.CallAsync<string>();
+        }
+
+        public Task<byte[]> TokenStateType()
+        {
+            var function = GetFunctionTokenStateType();
+            return function.CallAsync<byte[]>();
+        }
+
+        protected abstract object[] GetTransferInput(GameItem item);
+
+        public async Task<bool> Transfer(string from, GameItem item)
+        {
+            object[] functionInput = GetTransferInput(item);
+            var function = GetFunctionTransfer();
+            var gas = await function.EstimateGasAsync(function.CreateTransactionInput(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), functionInput));
+            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(function.CreateTransactionInput(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, functionInput));
+            return receipt.Status.Value == 1;
+        }
+
+        public abstract Task<GameItem[]> GetGameItems(PlayerID playerID);
+    }
+
+    public class ERC223GameItemContract : GameItemContract
     {
         public class Metadata : BaseGameItemMetadata
         {
@@ -248,13 +163,24 @@ namespace Hoard.BC.Contracts
 
         public ERC223GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
 
+        private Function GetFunctionTokenState()
+        {
+            return contract.GetFunction("tokenState");
+        }
+
+        public Task<byte[]> TokenState()
+        {
+            var function = GetFunctionTokenState();
+            return function.CallAsync<byte[]>();
+        }
+
         public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
         {
             ulong itemBalance = await BalanceOf(playerID.ID);
             if (itemBalance > 0)
             {
-                //TODO: implement state!
-                Metadata meta = new Metadata(""/*await State()*/, Address, itemBalance);
+                string state = BitConverter.ToString(await TokenState());
+                Metadata meta = new Metadata(state, Address, itemBalance);
                 GameItem gi = new GameItem(await Symbol(), meta);
                 return new GameItem[] { gi };
             }
@@ -274,11 +200,13 @@ namespace Hoard.BC.Contracts
         {            
             public string OwnerAddress { get; set; }
             public ulong ItemId { get; set; }
+            public string TokenStateType { get; set; }
 
-            public Metadata(string ownerAddress, ulong itemID)
+            public Metadata(string ownerAddress, ulong itemID, string tokenStateType)
             {
                 OwnerAddress = ownerAddress;
                 ItemId = itemID;
+                TokenStateType = tokenStateType;
             }
         }
 
@@ -286,26 +214,51 @@ namespace Hoard.BC.Contracts
 
         public ERC721GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
 
+        // FIXME: not exists in erc721 contract
         private Function GetFunctionGetItems()
         {
             return contract.GetFunction("getItems");
         }
 
-        private Function GetFunctionGetItemState()
+        private Function GetFunctionTokenState()
         {
-            return contract.GetFunction("getItemState");
+            return contract.GetFunction("tokenState");
         }
 
+        private Function GetFunctionTokenOfOwnerByIndex()
+        {
+            return contract.GetFunction("tokenOfOwnerByIndex");
+        }
+
+        private Function GetFunctionExists()
+        {
+            return contract.GetFunction("exists");
+        }
+
+        // FIXME: not exists in erc721 contract
         public Task<ulong[]> GetItems(string owner, ulong startIndex, ulong numItems)
         {
             Function function = GetFunctionGetItems();
             return function.CallAsync<ulong[]>(owner, startIndex, numItems);
         }
 
-        public Task<string> GetItemState(ulong itemID)
+        // FIXME: itemID should be BigInteger
+        public Task<byte[]> TokenState(ulong itemID)
         {
-            Function function = GetFunctionGetItemState();
-            return function.CallAsync<string>(itemID);
+            Function function = GetFunctionTokenState();
+            return function.CallAsync<byte[]>(itemID);
+        }
+
+        public Task<bool> TokenState(BigInteger itemID)
+        {
+            Function function = GetFunctionExists();
+            return function.CallAsync<bool>(itemID);
+        }
+
+        public Task<BigInteger> TokenOfOwnerByIndex(string owner, BigInteger index)
+        {
+            Function function = GetFunctionTokenOfOwnerByIndex();
+            return function.CallAsync<BigInteger>(owner, index);
         }
 
         protected override object[] GetTransferInput(GameItem item)
@@ -317,14 +270,15 @@ namespace Hoard.BC.Contracts
         {
             ulong[] ids = await GetItems(playerID.ID, 0, await BalanceOf(playerID.ID));
             string symbol = await Symbol();
+            string tokenStateType = Encoding.ASCII.GetString(await TokenStateType());
 
             GameItem[] items = new GameItem[ids.Length];
 
             foreach (ulong id in ids)
             {
-                Metadata meta = new Metadata(Address, id);
+                Metadata meta = new Metadata(Address, id, tokenStateType);
                 GameItem gi = new GameItem(symbol, meta);
-                gi.State = await GetItemState(id);
+                gi.State = BitConverter.ToString(await TokenState(id));
             }
             return items;
         }
