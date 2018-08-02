@@ -54,7 +54,7 @@ namespace Hoard.GameItems
             // FIXME: handle unsuccessful data download
             // FIXME: add properties hardcoded into contract?
 
-            byte[] globalData = storageClient.DownloadBytesAsync(item.Checksum).Result;
+            byte[] globalData = storageClient.DownloadBytesAsync(item.State).Result;
             string globalJson = Encoding.UTF8.GetString(globalData);
 
             item.Properties = JsonConvert.DeserializeObject<ItemProperties>(globalJson);

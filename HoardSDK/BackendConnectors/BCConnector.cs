@@ -8,15 +8,50 @@ using System.Threading.Tasks;
 
 namespace Hoard.BackendConnectors
 {
+    public class ContractInterfaceID
+    {
+        /// <summary>
+        /// InterfaceID stored in 4 bytes
+        /// </summary>
+        public byte[] InterfaceID { get; }
+
+        /// <summary>
+        /// Contract type connected with interface ID
+        /// </summary>
+        public Type ContractType { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="interfaceID">interfaceID 4 bytes represented in hex</param>
+        public ContractInterfaceID(string interfaceID, Type contractType)
+        {
+            InterfaceID = BitConverter.GetBytes(Convert.ToUInt32(interfaceID, 16));
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(InterfaceID);
+            }
+
+            ContractType = contractType;
+        }
+    }
+
     public class BCConnector : IBackendConnector
     {
         private BCComm bcComm = null;
         //TODO: should this be per game?
         private Dictionary<string, GameItemContract> itemContracts = new Dictionary<string, GameItemContract>();
 
+        private ContractInterfaceID supportsInterfaceWithLookup = new ContractInterfaceID("0x01ffc9a7", typeof(SupportsInterfaceWithLookupContract));
+        private List<ContractInterfaceID> interfaceIDs = new List<ContractInterfaceID>();
+
         public BCConnector(BCComm comm)
         {
             bcComm = comm;
+
+            RegisterContractInterfaceID("0x5713b3c1", typeof(ERC223GameItemContract));
+            RegisterContractInterfaceID("0x80ac58cd", typeof(ERC721GameItemContract));
         }
 
         public string[] GetItemTypes(GameID game)
@@ -45,8 +80,15 @@ namespace Hoard.BackendConnectors
             string[] contracts = bcComm.GetGameItemContracts(game).Result;
             foreach(string c in contracts)
             {
-                //TODO: how should we know whether to use ERC223 or ERC721
-                RegisterItemContract(bcComm.GetContract<ERC223GameItemContract>(c));
+                GameItemContract gameItemContract = GetGameItemContract(c);
+                if(gameItemContract != null)
+                {
+                    RegisterItemContract(gameItemContract);
+                }
+                else
+                {
+                    // TODO: handle contracts that does not implement ERC165?
+                }
             }
         }
 
@@ -76,6 +118,29 @@ namespace Hoard.BackendConnectors
         public Task<bool> Transfer(PlayerID recipient, GameItem item)
         {
             throw new NotImplementedException();
+        }
+
+        public void RegisterContractInterfaceID(string interfaceID, Type contractType)
+        {
+            interfaceIDs.Add(new ContractInterfaceID(interfaceID, contractType));
+        }
+
+        private GameItemContract GetGameItemContract(string contractAddress)
+        {
+            SupportsInterfaceWithLookupContract interfaceContract = bcComm.GetContract<SupportsInterfaceWithLookupContract>(contractAddress);
+
+            if (interfaceContract.SupportsInterface(supportsInterfaceWithLookup.InterfaceID).Result)
+            {
+                foreach (ContractInterfaceID interfaceId in interfaceIDs)
+                {
+                    if (interfaceContract.SupportsInterface(interfaceId.InterfaceID).Result)
+                    {
+                        return bcComm.GetGameItemContract(contractAddress, interfaceId.ContractType);
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

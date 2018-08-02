@@ -52,7 +52,7 @@ namespace HoardTests
                 foreach (GameItem gi in items)
                 {
                     //assume we need to populate properties
-                    //TODO: if properties is not null we would need to compare checksum with some cached data and if there is mismatch update too
+                    //TODO: if properties is not null we would need to compare state with some cached data and if there is mismatch update too
                     if (gi.Properties == null)
                         hoard.UpdateItemProperties(gi);
                 }

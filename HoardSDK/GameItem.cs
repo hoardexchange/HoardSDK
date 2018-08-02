@@ -84,7 +84,7 @@ namespace Hoard
     public class GameItem
     {
         public string Symbol { get; private set; }
-        public string Checksum { get; set; } = "0x0";
+        public string State { get; set; } = "0x0";
         public IGameItemMetadata Metadata { get; set; } = null;
         public ItemProperties Properties { get; set; } = null;
 
