@@ -221,12 +221,6 @@ namespace Hoard.BC.Contracts
 
         public ERC721GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
 
-        // FIXME: not exists in erc721 contract
-        private Function GetFunctionGetItems()
-        {
-            return contract.GetFunction("getItems");
-        }
-
         private Function GetFunctionTokenState()
         {
             return contract.GetFunction("tokenState");
@@ -242,13 +236,6 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("exists");
         }
 
-        // FIXME: not exists in erc721 contract
-        public Task<ulong[]> GetItems(string owner, ulong startIndex, ulong numItems)
-        {
-            Function function = GetFunctionGetItems();
-            return function.CallAsync<ulong[]>(owner, startIndex, numItems);
-        }
-
         // FIXME: itemID should be BigInteger
         public Task<byte[]> TokenState(ulong itemID)
         {
@@ -262,10 +249,11 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<bool>(itemID);
         }
 
-        public Task<BigInteger> TokenOfOwnerByIndex(string owner, BigInteger index)
+        // FIXME: should be BigInteger
+        public Task<ulong> TokenOfOwnerByIndex(string owner, ulong index)
         {
             Function function = GetFunctionTokenOfOwnerByIndex();
-            return function.CallAsync<BigInteger>(owner, index);
+            return function.CallAsync<ulong>(owner, index);
         }
 
         public Task<BigInteger> OwnerOf(BigInteger index)
@@ -281,17 +269,20 @@ namespace Hoard.BC.Contracts
 
         public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
         {
-            ulong[] ids = await GetItems(playerID.ID, 0, await BalanceOf(playerID.ID));
+            ulong itemBalance = await BalanceOf(playerID.ID);
             string symbol = await Symbol();
 
-            GameItem[] items = new GameItem[ids.Length];
+            GameItem[] items = new GameItem[itemBalance];
 
-            foreach (ulong id in ids)
+            for (ulong i = 0; i < itemBalance; ++i)
             {
+                ulong id = await TokenOfOwnerByIndex(playerID.ID, i);
                 Metadata meta = new Metadata(Address, id);
-                GameItem gi = new GameItem(symbol, meta);
-                gi.State = BitConverter.ToString(await TokenState(id));
+
+                items[i] = new GameItem(symbol, meta);
+                items[i].State = BitConverter.ToString(await TokenState(id));
             }
+
             return items;
         }
     }
