@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Hoard</RootNamespace>
     <AssemblyName>HoardSDK</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -99,12 +99,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\HashLib\HashLib.csproj">
-      <Project>{31880fb6-5b86-42b8-ab92-864045b5d7a2}</Project>
-      <Name>HashLib</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Hoard.NethereumCore">
       <Version>1.0.6761.17447</Version>
     </PackageReference>
@@ -115,10 +109,9 @@
       <Version>1.8.1.4</Version>
     </PackageReference>
     <PackageReference Include="RestSharp">
-      <Version>105.2.3</Version>
+      <Version>106.3.1</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

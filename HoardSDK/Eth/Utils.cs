@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nethereum.Util;
-using HashLib;
+using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Math;
 
 namespace Hoard.Eth
@@ -15,7 +15,7 @@ namespace Hoard.Eth
         {
             Byte[] b = new Byte[8];
 
-            IHash sha3 = HashFactory.Crypto.SHA3.CreateKeccak512();
+            var sha3 = new KeccakDigest(512);
 
             var rnd = new Random();
             rnd.NextBytes(b);
@@ -26,8 +26,10 @@ namespace Hoard.Eth
 
             while (true)
             {
-                var hash = sha3.ComputeBytes(challengeBI.ToByteArrayUnsigned().Concat(nonce.ToByteArrayUnsigned()).ToArray());
-                var hashb = hash.GetBytes();
+                byte[] hashb = new byte[sha3.GetDigestSize()];
+                byte[] value = challengeBI.ToByteArrayUnsigned().Concat(nonce.ToByteArrayUnsigned()).ToArray();
+                sha3.BlockUpdate(value, 0, value.Length);
+                sha3.DoFinal(hashb, 0);
                 var v = new BigInteger(1, hashb.ToArray());
                 if (v.CompareTo(difficulty) < 0)
                     break;
