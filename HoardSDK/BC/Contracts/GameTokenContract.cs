@@ -270,6 +270,12 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<BigInteger>(owner, index);
         }
 
+        public Task<BigInteger> OwnerOf(BigInteger index)
+        {
+            Function function = contract.GetFunction("ownerOf");
+            return function.CallAsync<BigInteger>(index);
+        }
+
         protected override object[] GetTransferInput(GameItem item)
         {
             return new object[] { (item.Metadata as Metadata).ItemId };

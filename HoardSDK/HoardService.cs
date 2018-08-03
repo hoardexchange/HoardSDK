@@ -41,9 +41,9 @@ namespace Hoard
         private List<IItemPropertyProvider> ItemPropertyProviders = new List<IItemPropertyProvider>();
 
         /// <summary>
-        /// TODO: hide it in BCConnector?
+        /// Communication channel with block chain.
         /// </summary>
-        private BC.BCComm BcComm = null;
+        public BC.BCComm BCComm { get; private set; } = null;
 
         /// <summary>
         /// Accounts per PlayerID
@@ -70,41 +70,6 @@ namespace Hoard
         /// </summary>
         private HoardService()
         {
-        }
-        
-        /// <summary>
-        /// Retrives game assets using registered Providers. Beware this function is blocking and may take a long time to finish.
-        /// Use RefreshGameAssets for async processing.
-        /// </summary>
-        /// <returns>True if operations succeeded.</returns>
-        public bool RefreshGameItemsSync()
-        {
-            //GameAssetSymbolDict.Clear();
-            //GameAssetAddressDict.Clear();
-
-            //foreach (var providers in Providers)
-            //    foreach (var provider in providers.Value)
-            //    {
-            //        List<IGameAssetProvider> assetProviders = provider.GetGameAssetProviders();
-
-            //        foreach (var ap in assetProviders)
-            //        {
-            //            GameAssetSymbolDict.Add(ap.AssetSymbol, ap);
-            //            if (ga.ContractAddress != null)
-            //                GameAssetAddressDict.Add(ga.ContractAddress, ga);
-            //        }
-            //    }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Retrives game assets using registered Providers.
-        /// </summary>
-        /// <returns>Async task that retives game assets.</returns>
-        public async Task<bool> RefreshGameItems()
-        {
-            return await Task.Run(() => RefreshGameItemsSync());
         }
        
         /// <summary>
@@ -149,6 +114,7 @@ namespace Hoard
         /// <returns>True if given player is signed in.</returns>
         public bool IsSignedIn(PlayerID id)
         {
+            //TODO: this seems deprecated as each provider connects on its own
             throw new NotImplementedException();
             //return DefaultProvider.IsSignedIn(id);
         }
@@ -160,6 +126,7 @@ namespace Hoard
         /// <returns>True if given player has been successfully signed in.</returns>
         public bool SignIn(PlayerID id)
         {
+            //TODO: this seems deprecated as each provider connects on its own
             throw new NotImplementedException();
             /*if (!DefaultProvider.SignIn(id))
                 return false;
@@ -172,20 +139,6 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Register provider of resolving item state and filling properties.
-        /// </summary>
-        /// <param name="provider">Provider to be registered.</param>
-        public bool RegisterItemPropertyProvider(IItemPropertyProvider provider)
-        {
-            if (!ItemPropertyProviders.Contains(provider))
-            {
-                ItemPropertyProviders.Add(provider);
-                return true;
-            }
-            return false;
-        }
-
-        /// <summary>
         /// Connects to BC and fills missing options.
         /// </summary>
         /// <param name="options">Hoard service options.</param>
@@ -194,7 +147,7 @@ namespace Hoard
         {
             InitAccounts(options.AccountsDir, options.DefaultAccountPass);
 
-            BcComm = new BC.BCComm(options.RpcClient, DefaultPlayer, options.GameCenterContract); //access point to block chain - a must have
+            BCComm = new BC.BCComm(options.RpcClient, options.GameCenterContract); //access point to block chain - a must have
 
             DefaultGame = options.Game;
 
@@ -202,7 +155,6 @@ namespace Hoard
             if (DefaultGame != GameID.kInvalidID)
             {
                 RegisterHoardGame(DefaultGame);
-                //RefreshGameItems().Wait();
             }
 
             return true;
@@ -217,7 +169,7 @@ namespace Hoard
             DefaultPlayer = PlayerID.kInvalidID;
             GameExchangeService = null;
             ItemPropertyProviders.Clear();
-            BcComm = null;
+            BCComm = null;
             ClearAccounts();
             Providers.Clear();
 
@@ -233,7 +185,7 @@ namespace Hoard
             //assumig this is a hoard game we can use a hoardconnector
             HoardGameItemProvider provider = new HoardGameItemProvider(game);//this will create REST client to communicate with backend
             //but in case server is down we will pass a fallback
-            provider.FallbackConnector = new BCGameItemProvider(game,BcComm);
+            provider.FallbackConnector = new BCGameItemProvider(game,BCComm);
                         
             RegisterGame(game, provider);
         }
@@ -257,6 +209,20 @@ namespace Hoard
                     Providers[game].Add(provider);
                     return true;
                 }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Register provider of resolving item state and filling properties.
+        /// </summary>
+        /// <param name="provider">Provider to be registered.</param>
+        public bool RegisterItemPropertyProvider(IItemPropertyProvider provider)
+        {
+            if (!ItemPropertyProviders.Contains(provider))
+            {
+                ItemPropertyProviders.Add(provider);
+                return true;
             }
             return false;
         }
@@ -351,14 +317,25 @@ namespace Hoard
         public async Task<GameID[]> QueryHoardGames()
         {
             //for now we only support asking BC directly, but in future we might have some Hoard servers with caching
-            return await BcComm.GetHoardGames();
+            return await BCComm.GetHoardGames();
         }
 
+        /// <summary>
+        /// Returns all Game Items owned by player in default game (one passed in options to Initialize method).
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <returns></returns>
         public GameItem[] GetPlayerItems(PlayerID playerID)
         {
             return GetPlayerItems(playerID, DefaultGame);
         }
 
+        /// <summary>
+        /// Returns all Game Items owned by player in particular game
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <param name="gameID"></param>
+        /// <returns></returns>
         public GameItem[] GetPlayerItems(PlayerID playerID, GameID gameID)
         {
             List<GameItem> items = new List<GameItem>();
@@ -373,6 +350,11 @@ namespace Hoard
             return items.ToArray();
         }
 
+        /// <summary>
+        /// Fills properties for given Game Item.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public bool UpdateItemProperties(GameItem item)
         {
             //find compatible provider

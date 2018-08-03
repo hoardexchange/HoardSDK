@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Hoard</RootNamespace>
     <AssemblyName>HoardSDK</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -56,7 +56,6 @@
     <Compile Include="BC\Contracts\GameExchangeContract.cs" />
     <Compile Include="BC\Contracts\GameTokenContract.cs" />
     <Compile Include="Commons.cs" />
-    <Compile Include="DefaultProvider.cs" />
     <Compile Include="DistributedStorage\IDistributedStorageClient.cs" />
     <Compile Include="DistributedStorage\IPFSClient.cs" />
     <Compile Include="DistributedStorage\SwarmClient.cs" />
@@ -100,7 +99,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="HashLib\HashLib.csproj">
+    <ProjectReference Include="..\HashLib\HashLib.csproj">
       <Project>{31880fb6-5b86-42b8-ab92-864045b5d7a2}</Project>
       <Name>HashLib</Name>
     </ProjectReference>

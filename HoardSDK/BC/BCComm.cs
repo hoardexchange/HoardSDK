@@ -8,7 +8,7 @@ using System.Threading;
 namespace Hoard.BC
 {
     /// <summary>
-    /// Internal class for Blockchain communication.
+    /// Utility class for Blockchain communication.
     /// Uses Nethereum library.
     /// </summary>
     public class BCComm
@@ -16,9 +16,9 @@ namespace Hoard.BC
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
 
-        public BCComm(Nethereum.JsonRpc.Client.IClient client, PlayerID account, string gameCenterContract)
+        public BCComm(Nethereum.JsonRpc.Client.IClient client, string gameCenterContract)
         {
-            web = new Web3(new Account(account.PrivateKey), client);
+            web = new Web3(client);
 
             gameCenter = GetContract<GameCenterContract>(gameCenterContract);
         }

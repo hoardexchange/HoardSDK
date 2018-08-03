@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
+    /// <summary>
+    /// Player identifier. Holds only ID information.
+    /// </summary>
     public class PlayerID
     {
         public static PlayerID kInvalidID { get; private set; } = new PlayerID("0x0","0x0");
@@ -35,6 +38,9 @@ namespace Hoard
 
     }
 
+    /// <summary>
+    /// Game identifier.
+    /// </summary>
     public class GameID
     {
         public string ID;

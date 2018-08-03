@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace Hoard
 {
+    /// <summary>
+    /// Genric property of a Game Item.
+    /// </summary>
     public class ItemProperty
     {
         public object Value;
@@ -61,6 +64,9 @@ namespace Hoard
        
     }
 
+    /// <summary>
+    /// Metadata interface
+    /// </summary>
     public interface IGameItemMetadata
     {
         TResult Get<TResult>(string name);
