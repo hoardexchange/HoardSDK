@@ -16,7 +16,7 @@ namespace Hoard
         public Nethereum.JsonRpc.Client.IClient RpcClient { get; set; } = null;
         public string AccountsDir { get; set; } = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "acounts");
         public string DefaultAccountPass { get; set; } = "dev";
-        public string GameCenterContract { get; set; }  = "0x672e3249f4e3674d52f446f7191e76b1294fcd33";
+        public string GameCenterContract { get; set; }  = "0x9d4acb1e424d5eb00dac674ff5f59df7a9fac2b9";
         public bool PrivateNetwork { get; set; } = true;
     }
 }
