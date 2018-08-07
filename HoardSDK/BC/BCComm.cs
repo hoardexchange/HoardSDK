@@ -39,27 +39,6 @@ namespace Hoard.BC
             return (TContract)Activator.CreateInstance(typeof(TContract), web, contractAddress);
         }
 
-        public async Task<GameID> GetGameID(string gameID)
-        {
-            bool exist = await gameCenter.GetGameExistsAsync(gameID);
-            if (exist)
-            {
-                GameID game = new GameID(gameID);
-                {
-                    //gameID is the address of contract
-                    GameContract gameContract = new GameContract(web, gameID);
-
-                    string url = await gameContract.GetGameServerURLAsync();
-
-                    game.Name = await gameContract.Name();
-                    game.Url = !url.StartsWith("http") ? "http://" + url : url;
-                }
-
-                return game;
-            }
-            return null;
-        }
-
         public async Task<string[]> GetGameItemContracts(GameID game)
         {
             GameContract gameContract = new GameContract(web, game.ID);
@@ -89,7 +68,7 @@ namespace Hoard.BC
 
                     string url = await gameContract.GetGameServerURLAsync();
 
-                    game.Name = await gameContract.Name();
+                    game.Name = await gameContract.GetName();
                     game.Url = !url.StartsWith("http") ? "http://" + url : url;
                 }
 
@@ -97,23 +76,6 @@ namespace Hoard.BC
             }
             return games;
         }
-
-        // FIXME: Do we need this? How can we distinguish correct abi ERC20/ERC721/others?
-        //public async Task<GameAssetContract[]> GetGameAssetContacts(string gameContract)
-        //{
-        //    GameContract game = new GameContract(web, gameContract);
-        //    ulong length = await game.GetNextAssetIdAsync();
-
-        //    GameAssetContract[] ret = new GameAssetContract[length];
-
-        //    for (ulong i = 0; i < length; ++i)
-        //    {
-        //        var address = await game.GetGameItemContractAsync(i);
-        //        ret[i] = new GameAssetContract(web, address);
-        //    }
-
-        //    return ret;
-        //}
 
         public async Task<GameExchangeContract> GetGameExchangeContract(string gameContract)
         {
@@ -123,8 +85,6 @@ namespace Hoard.BC
         }
 
         // TEST METHODS BELOW.
-
-
 
 
 

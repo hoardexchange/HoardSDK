@@ -89,7 +89,7 @@ namespace Hoard.GameItemProviders
 
         public void RegisterGameItemContract(GameItemContract contract)
         {    
-            string symbol = contract.Symbol().Result;
+            string symbol = contract.GetSymbol().Result;
             itemContracts.Add(symbol, contract);
         }
 

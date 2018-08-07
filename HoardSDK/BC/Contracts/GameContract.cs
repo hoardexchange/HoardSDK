@@ -109,7 +109,7 @@ namespace Hoard.BC.Contracts
         //    return receipt.Status.Value == 1;
         //}
 
-        public Task<string> Name()
+        public Task<string> GetName()
         {
             var function = GetFunctionName();
             return function.CallAsync<string>();
