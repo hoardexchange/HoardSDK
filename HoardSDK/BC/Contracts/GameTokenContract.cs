@@ -93,39 +93,38 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("tokenStateType");
         }
 
-        // FIXME: should be BigInteger
-        public Task<ulong> BalanceOf(string address)
+        public Task<BigInteger> GetBalanceOf(string address)
         {
             var function = GetFunctionBalanceOf();
-            return function.CallAsync<ulong>(address);
+            return function.CallAsync<BigInteger>(address);
         }
 
-        public Task<string> Symbol()
+        public Task<string> GetSymbol()
         {
             var function = GetFunctionSymbol();
             return function.CallAsync<string>();
         }
 
-        public Task<string> Name()
+        public Task<string> GetName()
         {
             var function = GetFunctionName();
             return function.CallAsync<string>();
         }
 
         // FIXME: should be BigInteger
-        public Task<ulong> TotalSupply()
+        public Task<ulong> GetTotalSupply()
         {
             var function = GetFunctionTotalSupply();
             return function.CallAsync<ulong>();
         }
 
-        public Task<string> AssetType()
+        public Task<string> GetAssetType()
         {
             var function = GetFunctionAssetType();
             return function.CallAsync<string>();
         }
 
-        public Task<byte[]> TokenStateType()
+        public Task<byte[]> GetTokenStateType()
         {
             var function = GetFunctionTokenStateType();
             return function.CallAsync<byte[]>();
@@ -155,9 +154,9 @@ namespace Hoard.BC.Contracts
         {
             public string State { get; set; }
             public string OwnerAddress { get; set; }
-            public ulong Balance { get; set; }
+            public BigInteger Balance { get; set; }
 
-            public Metadata(string state, string ownerAddress, ulong balance)
+            public Metadata(string state, string ownerAddress, BigInteger balance)
             {
                 State = state;
                 OwnerAddress = ownerAddress;
@@ -174,7 +173,7 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("tokenState");
         }
 
-        public Task<byte[]> TokenState()
+        public Task<byte[]> GetTokenState()
         {
             var function = GetFunctionTokenState();
             return function.CallAsync<byte[]>();
@@ -182,12 +181,12 @@ namespace Hoard.BC.Contracts
 
         public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
         {
-            ulong itemBalance = await BalanceOf(playerID.ID);
-            if (itemBalance > 0)
+            BigInteger itemBalance = await GetBalanceOf(playerID.ID);
+            if (BigInteger.Zero.CompareTo(itemBalance)<0)
             {
-                string state = BitConverter.ToString(await TokenState());
+                string state = BitConverter.ToString(await GetTokenState());
                 Metadata meta = new Metadata(state, Address, itemBalance);
-                GameItem gi = new GameItem(await Symbol(), meta);
+                GameItem gi = new GameItem(await GetSymbol(), meta);
                 return new GameItem[] { gi };
             }
             else
@@ -208,9 +207,9 @@ namespace Hoard.BC.Contracts
         public class Metadata : BaseGameItemMetadata
         {            
             public string OwnerAddress { get; set; }
-            public ulong ItemId { get; set; }
+            public BigInteger ItemId { get; set; }
 
-            public Metadata(string ownerAddress, ulong itemID)
+            public Metadata(string ownerAddress, BigInteger itemID)
             {
                 OwnerAddress = ownerAddress;
                 ItemId = itemID;
@@ -237,23 +236,23 @@ namespace Hoard.BC.Contracts
         }
 
         // FIXME: itemID should be BigInteger
-        public Task<byte[]> TokenState(ulong itemID)
+        public Task<byte[]> GetTokenState(BigInteger itemID)
         {
             Function function = GetFunctionTokenState();
             return function.CallAsync<byte[]>(itemID);
         }
 
-        public Task<bool> TokenState(BigInteger itemID)
+        public Task<bool> Exists(BigInteger itemID)
         {
             Function function = GetFunctionExists();
             return function.CallAsync<bool>(itemID);
         }
 
         // FIXME: should be BigInteger
-        public Task<ulong> TokenOfOwnerByIndex(string owner, ulong index)
+        public Task<BigInteger> TokenOfOwnerByIndex(string owner, ulong index)
         {
             Function function = GetFunctionTokenOfOwnerByIndex();
-            return function.CallAsync<ulong>(owner, index);
+            return function.CallAsync<BigInteger>(owner, index);
         }
 
         public Task<BigInteger> OwnerOf(BigInteger index)
@@ -269,18 +268,20 @@ namespace Hoard.BC.Contracts
 
         public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
         {
-            ulong itemBalance = await BalanceOf(playerID.ID);
-            string symbol = await Symbol();
+            BigInteger itemBalance = await GetBalanceOf(playerID.ID);
+            string symbol = await GetSymbol();
 
-            GameItem[] items = new GameItem[itemBalance];
+            ulong count = (ulong)itemBalance.LongValue;
 
-            for (ulong i = 0; i < itemBalance; ++i)
+            GameItem[] items = new GameItem[count];
+
+            for (ulong i = 0; i < count; ++i)
             {
-                ulong id = await TokenOfOwnerByIndex(playerID.ID, i);
+                BigInteger id = await TokenOfOwnerByIndex(playerID.ID, i);
                 Metadata meta = new Metadata(Address, id);
 
                 items[i] = new GameItem(symbol, meta);
-                items[i].State = BitConverter.ToString(await TokenState(id));
+                items[i].State = BitConverter.ToString(await GetTokenState(id));
             }
 
             return items;
