@@ -38,7 +38,7 @@ namespace Hoard.GameItemProviders
         private bool Connect(PlayerID player)
         {
             Client = new RestClient(Game.Url);
-            //setup a cookie container for automatic cooki handling
+            //setup a cookie container for automatic cookies handling
             Client.CookieContainer = new System.Net.CookieContainer();
 
             //handshake
@@ -101,8 +101,15 @@ namespace Hoard.GameItemProviders
         {
             if (Client != null)
             {
-                //TODO: implement this
-                //throw new NotImplementedException();
+                //TODO: change url to "item_types" only
+                var request = new RestRequest("item_types/0x123", Method.GET);
+                var response = Client.Execute(request);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var types = JsonConvert.DeserializeObject<string[]>(response.Content);
+                    return types;
+                }
             }
             if (FallbackConnector != null)
             {
@@ -111,12 +118,39 @@ namespace Hoard.GameItemProviders
             return null;
         }
 
+        private class responseGameItem
+        {
+            public string player_address;
+            public string symbol;
+            public string state;
+            public string asset_id;
+            public string amount;
+        }
+
+        private class responseDict
+        {
+            public List<Dictionary<string,string>> items;
+        }
+
         public GameItem[] GetPlayerItems(PlayerID playerID)
         {
             if (Client != null)
             {
-                //TODO: implement this
-                //throw new NotImplementedException();
+                var request = new RestRequest(string.Format("player_items/{0}", playerID.ID), Method.GET);
+                var response = Client.Execute(request);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {         
+                    var responseItems = JsonConvert.DeserializeObject<responseDict>(response.Content);
+                    GameItem[] items = new GameItem[responseItems.items.Count];
+                    for (int i=0;i<responseItems.items.Count;++i)
+                    {
+                        //TODO: fill metadata
+                        items[i] = new GameItem(responseItems.items[i]["symbol"],null);
+                        items[i].State = responseItems.items[i]["state"];
+                    }
+                    return items;
+                }
             }
             if (FallbackConnector != null)
             {
