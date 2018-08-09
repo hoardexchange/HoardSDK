@@ -25,8 +25,8 @@ namespace Hoard.GameItemProviders
             Game = game;
             BCComm = comm;
 
-            RegisterContractInterfaceID("0x5713b3c1", typeof(ERC223GameItemContract));
-            RegisterContractInterfaceID("0x80ac58cd", typeof(ERC721GameItemContract));
+            RegisterContractInterfaceID(ERC223GameItemContract.InterfaceID, typeof(ERC223GameItemContract));
+            RegisterContractInterfaceID(ERC721GameItemContract.InterfaceID, typeof(ERC721GameItemContract));
         }
 
         #region IGameItemProvider interface implementation

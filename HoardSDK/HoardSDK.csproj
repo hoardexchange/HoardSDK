@@ -54,7 +54,7 @@
     <Compile Include="BC\Contracts\GameCenterContract.cs" />
     <Compile Include="BC\Contracts\GameContract.cs" />
     <Compile Include="BC\Contracts\GameExchangeContract.cs" />
-    <Compile Include="BC\Contracts\GameTokenContract.cs" />
+    <Compile Include="BC\Contracts\GameItemContract.cs" />
     <Compile Include="Commons.cs" />
     <Compile Include="DistributedStorage\IDistributedStorageClient.cs" />
     <Compile Include="DistributedStorage\IPFSClient.cs" />
