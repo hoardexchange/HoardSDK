@@ -28,6 +28,9 @@ namespace Hoard.DistributedStorage
             uploadClient = new RestClient(uploadClientUrl);
             downloadClient = new RestClient(downloadClientUrl);
 
+            uploadClient.AutomaticDecompression = false;
+            downloadClient.AutomaticDecompression = false;
+
             this.fnCode = fnCode;
             this.digestSize = digestSize;
         }
@@ -41,6 +44,7 @@ namespace Hoard.DistributedStorage
 
             string hash = Base58CheckEncoding.EncodePlain(bytes);
             RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
+            downloadRequest.AddDecompressionMethod(System.Net.DecompressionMethods.None);
 
             IRestResponse response = await downloadClient.ExecuteGetTaskAsync(downloadRequest);
             if (response.ErrorException != null)
@@ -55,6 +59,7 @@ namespace Hoard.DistributedStorage
         public async Task<string> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/api/v0/add", Method.POST);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             request.AddFile("file", data, "file", "application/octet-stream");
 
             IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);

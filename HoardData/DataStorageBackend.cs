@@ -171,6 +171,7 @@ namespace Hoard
         private async Task<IRestResponse> Get(string url)
         {
             var request = new RestRequest(url, Method.GET);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
 
             PrepareRequest(request);
 
@@ -181,6 +182,7 @@ namespace Hoard
         private async Task<string> Delete(string url)
         {
             var request = new RestRequest(url, Method.DELETE);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
 
             PrepareRequest(request);
 
@@ -193,6 +195,7 @@ namespace Hoard
         private async Task<IRestResponse> PostWithFile(string url, Parameter[] parameters, byte[] file)
         {
             var request = new RestRequest(url, Method.POST);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
 
             foreach (Parameter p in parameters)
                 request.AddParameter(p);

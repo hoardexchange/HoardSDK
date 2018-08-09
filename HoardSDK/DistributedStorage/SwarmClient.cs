@@ -12,17 +12,20 @@ namespace Hoard.DistributedStorage
         public SwarmClient(string baseUrl)
         {
             client = new RestClient(baseUrl);
+            client.AutomaticDecompression = false;
         }
 
         public async Task<byte[]> DownloadBytesAsync(string address)
         {
             RestRequest downloadRequest = new RestRequest("/bzz:/" + address + "/file", Method.GET);
+            downloadRequest.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             return (await client.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
         }
 
         public async Task<string> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/bzz:/", Method.POST);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             request.AddFile("file", data, "file", "application/octet-stream");
             IRestResponse response = await client.ExecutePostTaskAsync(request);
 

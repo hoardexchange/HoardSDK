@@ -38,6 +38,8 @@ namespace Hoard.GameItemProviders
         private bool Connect(PlayerID player)
         {
             Client = new RestClient(Game.Url);
+            Client.AutomaticDecompression = false;
+
             //setup a cookie container for automatic cooki handling
             Client.CookieContainer = new System.Net.CookieContainer();
 
@@ -45,6 +47,7 @@ namespace Hoard.GameItemProviders
 
             //1. GET challenge token
             var request = new RestRequest("login/", Method.GET);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             var response = Client.Execute(request);
 
             if (response.ErrorException != null)
@@ -86,6 +89,7 @@ namespace Hoard.GameItemProviders
         private async Task<IRestResponse> PostJson(string url, object data)
         {
             var request = new RestRequest(url, Method.POST);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             request.AddJsonBody(data);
 
             PrepareRequest(request);
