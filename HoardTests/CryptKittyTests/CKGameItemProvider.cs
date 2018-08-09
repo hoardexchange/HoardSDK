@@ -44,6 +44,8 @@ namespace HoardTests.CryptKittyTests
         public bool Connect()
         {
             Client = new RestClient("https://api.cryptokitties.co");
+            Client.AutomaticDecompression = false;
+
             return true;
         }
 
@@ -57,6 +59,7 @@ namespace HoardTests.CryptKittyTests
             List<GameItem> items = new List<GameItem>();
 
             var request = new RestRequest("kitties?owner_wallet_address=" + playerID.ID + "&limit=10&offset=0", Method.GET);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             var response = Client.Execute(request);
 
             if (response.StatusCode != HttpStatusCode.OK)
