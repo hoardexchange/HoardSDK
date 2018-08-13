@@ -1,13 +1,8 @@
-﻿using Hoard.BC.Contracts;
-using Hoard.DistributedStorage;
-using Nethereum.Web3.Accounts;
-using Newtonsoft.Json;
-using Org.BouncyCastle.Math;
+﻿using Newtonsoft.Json;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Hoard.GameItemProviders
@@ -59,8 +54,8 @@ namespace Hoard.GameItemProviders
             challengeToken = challengeToken.Substring(2);
 
 
-            var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger("1").ShiftLeft(496));
-            var nonceHex = nonce.ToString(16);
+            var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
+            var nonceHex = nonce.ToString("x");
 
             var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, player.PrivateKey);
 

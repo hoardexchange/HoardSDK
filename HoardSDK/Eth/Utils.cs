@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Org.BouncyCastle.Crypto.Digests;
+using System;
+using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
-using Nethereum.Util;
-using Org.BouncyCastle.Crypto.Digests;
-using Org.BouncyCastle.Math;
 
 namespace Hoard.Eth
 {
@@ -13,27 +11,41 @@ namespace Hoard.Eth
     {
         static public BigInteger Mine(string challenge, BigInteger difficulty)
         {
-            Byte[] b = new Byte[8];
+            Byte[] b = new Byte[9];
 
             var sha3 = new KeccakDigest(512);
 
             var rnd = new Random();
             rnd.NextBytes(b);
+            b[8] = 0x0;
 
-            var nonce = new BigInteger(1, b);
+            var nonce = new BigInteger(b);
 
-            var challengeBI = new BigInteger(challenge, 16);
+            if (challenge.StartsWith("0x"))
+            {
+                challenge.Insert(2, "0");
+            }
+            else
+            {
+                challenge.Insert(0, "0");
+            }
+            var challengeBI = BigInteger.Parse(challenge, NumberStyles.AllowHexSpecifier);
 
             while (true)
             {
                 byte[] hashb = new byte[sha3.GetDigestSize()];
-                byte[] value = challengeBI.ToByteArrayUnsigned().Concat(nonce.ToByteArrayUnsigned()).ToArray();
+                byte[] value = challengeBI.ToByteArray().Concat(nonce.ToByteArray()).ToArray();
                 sha3.BlockUpdate(value, 0, value.Length);
                 sha3.DoFinal(hashb, 0);
-                var v = new BigInteger(1, hashb.ToArray());
+
+                byte[] hashb2 = new byte[hashb.Length + 1];
+                hashb.CopyTo(hashb2, 0);
+                hashb2[hashb.Length] = 0x00;
+                var v = new BigInteger(hashb2);
                 if (v.CompareTo(difficulty) < 0)
                     break;
-                nonce = nonce.Add(BigInteger.One).Mod(BigInteger.Two.ShiftLeft(64));
+
+                nonce = (BigInteger.Add(nonce, BigInteger.One)) % ((new BigInteger(2)) << 64);
             }
 
             return nonce;
