@@ -151,7 +151,7 @@ namespace Hoard.GameItemProviders
                     {
                         //TODO: fill metadata
                         items[i] = new GameItem(responseItems.items[i]["symbol"],null);
-                        items[i].State = responseItems.items[i]["state"];
+                        //items[i].State = responseItems.items[i]["state"]; //FIXME decode string to bytes
                     }
                     return items;
                 }

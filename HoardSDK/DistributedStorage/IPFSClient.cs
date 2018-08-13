@@ -35,12 +35,13 @@ namespace Hoard.DistributedStorage
             this.digestSize = digestSize;
         }
         
-        public async Task<byte[]> DownloadBytesAsync(string address)
+        public async Task<byte[]> DownloadBytesAsync(byte[] address)
         {
             byte[] bytes = new byte[digestSize + 2];
             bytes[0] = fnCode;
             bytes[1] = digestSize;
-            Encoding.Unicode.GetBytes(address, 0, address.Length, bytes, 2);
+            address.CopyTo(bytes, 2);
+            //Encoding.Unicode.GetBytes(address, 0, address.Length, bytes, 2);
 
             string hash = Base58CheckEncoding.EncodePlain(bytes);
             RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
@@ -56,7 +57,7 @@ namespace Hoard.DistributedStorage
             return response.RawBytes;
         }
 
-        public async Task<string> UploadAsync(byte[] data)
+        public async Task<byte[]> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/api/v0/add", Method.POST);
             request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
@@ -70,8 +71,8 @@ namespace Hoard.DistributedStorage
             }
 
             string hash = JsonConvert.DeserializeObject<UploadResponse>(response.Content).Hash;
-            byte[] address = Base58CheckEncoding.DecodePlain(hash).Skip(2).ToArray();
-            return Encoding.Unicode.GetString(address);
+            return Base58CheckEncoding.DecodePlain(hash).Skip(2).ToArray();
+           
         }
     }
 }

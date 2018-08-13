@@ -1,12 +1,11 @@
 ﻿using Hoard;
 using Hoard.BC.Contracts;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Math;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -81,7 +80,7 @@ namespace HoardTests.CryptKittyTests
                 if (validateOwnerOnBC(playerID, kitty.id))
                 {
                     GameItem gi = new GameItem("CK", new Metadata(playerID.ID, ulong.Parse(kitty.id), "CK_DNA"));
-                    gi.State = kitty.image_url;//this should be dna!
+                    gi.State = Encoding.Unicode.GetBytes(kitty.image_url);//this should be dna!
                 }
             }
 
@@ -91,7 +90,7 @@ namespace HoardTests.CryptKittyTests
 
         private bool validateOwnerOnBC(PlayerID player, string tokenId)
         {
-            BigInteger tokenBigInt = new BigInteger(tokenId);
+            BigInteger tokenBigInt = new BigInteger(Encoding.Unicode.GetBytes(tokenId));
 
             ERC721GameItemContract contract =  HoardService.Instance.BCComm.GetContract<ERC721GameItemContract>("0x06012c8cf97BEaD5deAe237070F9587f8E7A266d");
 

@@ -15,14 +15,14 @@ namespace Hoard.DistributedStorage
             client.AutomaticDecompression = false;
         }
 
-        public async Task<byte[]> DownloadBytesAsync(string address)
+        public async Task<byte[]> DownloadBytesAsync(byte[] address)
         {
             RestRequest downloadRequest = new RestRequest("/bzz:/" + address + "/file", Method.GET);
             downloadRequest.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             return (await client.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
         }
 
-        public async Task<string> UploadAsync(byte[] data)
+        public async Task<byte[]> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/bzz:/", Method.POST);
             request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
@@ -35,7 +35,7 @@ namespace Hoard.DistributedStorage
                 throw new ApplicationException();
             }
 
-            return response.Content;
+            return response.RawBytes;
         }
     }
 }

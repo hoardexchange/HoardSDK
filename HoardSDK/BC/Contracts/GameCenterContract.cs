@@ -3,9 +3,9 @@ using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
-using Org.BouncyCastle.Math;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Numerics;
 
 namespace Hoard.BC.Contracts
 {

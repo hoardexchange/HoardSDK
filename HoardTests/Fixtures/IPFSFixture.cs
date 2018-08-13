@@ -3,12 +3,12 @@ using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace HoardXTests.Fixtures
+namespace HoardTests.Fixtures
 {
     public class IPFSFixture : IDisposable
     {
         static string EnvironmentCurrentDirectory = Environment.CurrentDirectory;
-        static string IPFSDirectory = EnvironmentCurrentDirectory + "\\..\\..\\..\\..\\..\\HoardTestnet\\ipfs\\";
+        static string IPFSDirectory = EnvironmentCurrentDirectory + "\\..\\..\\..\\..\\HoardTestnet\\ipfs\\";
         private Process cmd = new Process();
 
         public IPFSClient Client { get; private set; }

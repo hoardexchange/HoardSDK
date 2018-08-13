@@ -49,6 +49,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -73,7 +74,10 @@
     <Compile Include="CryptKittyTests\CKGameItemProvider.cs" />
     <Compile Include="CryptKittyTests\CryptoKittyTest.cs" />
     <Compile Include="DistributedStorageTests\IPFSClientTests.cs" />
+    <Compile Include="Fixtures\GameItemFixture.cs" />
+    <Compile Include="Fixtures\HoardServiceFixture.cs" />
     <Compile Include="Fixtures\IPFSFixture.cs" />
+    <Compile Include="GameItemTests.cs" />
     <Compile Include="HoardServiceTests.cs" />
     <Compile Include="IPCTests.cs" />
     <Compile Include="NethereumRpcClient.cs" />

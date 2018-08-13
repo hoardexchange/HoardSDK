@@ -46,7 +46,6 @@ namespace Hoard
 
     public class ItemProperties : Dictionary<string, ItemProperty>
     {
-
         public ItemProperty GetItemProperty(string name)
         {
             if(ContainsKey(name))
@@ -59,9 +58,7 @@ namespace Hoard
         public void Add(string name, object value, string type)
         {
             this[name] = new ItemProperty(value, type);
-        }
-
-       
+        }    
     }
 
     /// <summary>
@@ -93,7 +90,7 @@ namespace Hoard
     public class GameItem
     {
         public string Symbol { get; private set; }
-        public string State { get; set; } = "0x0";
+        public byte[] State { get; set; }
         public IGameItemMetadata Metadata { get; set; } = null;
         public ItemProperties Properties { get; set; } = null;
 

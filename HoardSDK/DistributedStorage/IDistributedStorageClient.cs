@@ -5,8 +5,8 @@ namespace Hoard.DistributedStorage
 {
     public interface IDistributedStorageClient
     {
-        Task<byte[]> DownloadBytesAsync(string address);
+        Task<byte[]> DownloadBytesAsync(byte[] address);
 
-        Task<string> UploadAsync(byte[] data);
+        Task<byte[]> UploadAsync(byte[] data);
     }
 }
