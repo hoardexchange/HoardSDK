@@ -4,7 +4,7 @@ using System;
 using System.Text;
 using Xunit;
 
-namespace HoardXTests.DistributedStorageTests
+namespace HoardTests.DistributedStorageTests
 {
     public class IPFSClientTests : IClassFixture<IPFSFixture>
     {

@@ -74,7 +74,6 @@
     <Compile Include="CryptKittyTests\CKGameItemProvider.cs" />
     <Compile Include="CryptKittyTests\CryptoKittyTest.cs" />
     <Compile Include="DistributedStorageTests\IPFSClientTests.cs" />
-    <Compile Include="Fixtures\GameItemFixture.cs" />
     <Compile Include="Fixtures\HoardServiceFixture.cs" />
     <Compile Include="Fixtures\IPFSFixture.cs" />
     <Compile Include="GameItemTests.cs" />
