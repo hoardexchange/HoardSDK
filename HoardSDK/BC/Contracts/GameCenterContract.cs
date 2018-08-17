@@ -24,8 +24,8 @@ namespace Hoard.BC.Contracts
     /// Main Hoard contract with a list of all games registered on platform. Central point from which we can get all neccessery data.
     /// </summary>
     internal class GameCenterContract
-    {        
-        public static string ABI = @"[ { 'constant': true, 'inputs': [ { 'name': 'gameId', 'type': 'uint64' } ], 'name': 'getGameInfo', 'outputs': [ { 'name': 'id', 'type': 'uint64' }, { 'name': 'name', 'type': 'bytes32' } ], 'payable': false, 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'gameId', 'type': 'uint64' } ], 'name': 'removeGame', 'outputs': [], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'gameIdsMap', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'gameInfoMap', 'outputs': [ { 'name': 'gameId', 'type': 'uint64' }, { 'name': 'name', 'type': 'bytes32' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'gameId', 'type': 'uint64' } ], 'name': 'getGameContact', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'owner', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'nextGameId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'name', 'type': 'bytes32' }, { 'name': 'gameOwner', 'type': 'address' } ], 'name': 'addGame', 'outputs': [], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'gameOwnersMap', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'gameId', 'type': 'uint64' } ], 'name': 'gameExists', 'outputs': [ { 'name': '', 'type': 'bool' } ], 'payable': false, 'type': 'function' }, { 'inputs': [], 'payable': false, 'type': 'constructor' }, { 'anonymous': false, 'inputs': [ { 'indexed': false, 'name': 'gameOwner', 'type': 'address' }, { 'indexed': false, 'name': 'gameId', 'type': 'uint64' } ], 'name': 'GameAdded', 'type': 'event' }, { 'anonymous': false, 'inputs': [ { 'indexed': false, 'name': 'gameOwner', 'type': 'address' }, { 'indexed': false, 'name': 'gameId', 'type': 'uint64' } ], 'name': 'GameRemoved', 'type': 'event' } ]";
+    {
+        public const string ABI = HoardABIConfig.GameCenterABI;
 
         private readonly Web3 web3;
         private Contract contract;
@@ -75,7 +75,7 @@ namespace Hoard.BC.Contracts
         /// <returns></returns>
         public Task<ulong> GetGameCount()
         {
-            Function function = contract.GetFunction("nextGameId");
+            Function function = contract.GetFunction("nextGameIndex");
             return function.CallAsync<ulong>();
         }
 

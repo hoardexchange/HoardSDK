@@ -16,7 +16,7 @@ namespace Hoard.BC.Contracts
     /// </summary>
     public class GameContract
     {
-        public static string ABI = @"[ { 'constant': true, 'inputs': [ { 'name': '', 'type': 'uint64' } ], 'name': 'assetTokens', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'name', 'outputs': [ { 'name': '', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' } ,{ 'constant': false, 'inputs': [ { 'name': 'constactAddress', 'type': 'address' } ], 'name': 'addGameAssetContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': '', 'type': 'address' } ], 'name': 'authPlayers', 'outputs': [ { 'name': '', 'type': 'bool' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'adr', 'type': 'address' }, { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'balanceOf', 'outputs': [ { 'name': 'balance', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_gameSrvURL', 'type': 'string' } ], 'name': 'setGameSrvURL', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'nextAssetId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'playerAddress', 'type': 'address' } ], 'name': 'addAuthPlayer', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'constactAddress', 'type': 'address' }, { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'setGameAssetContract', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'to', 'type': 'address' }, { 'name': 'assetTokenAddress', 'type': 'address' }, { 'name': 'amount', 'type': 'uint256' } ], 'name': 'transfer', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '', 'type': 'address' }, { 'name': '', 'type': 'uint256' }, { 'name': '', 'type': 'bytes' } ], 'name': 'tokenFallback', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'assetTokenAddress', 'type': 'address' }, { 'name': 'amount', 'type': 'uint256' } ], 'name': 'payoutPlayerReward', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [ { 'name': 'assetId', 'type': 'uint64' } ], 'name': 'totalBalanceOf', 'outputs': [ { 'name': '', 'type': 'uint256' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': 'assetTokenAddress', 'type': 'address' }, { 'name': 'amount', 'type': 'uint256' } ], 'name': 'withdrawFromExchange', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameSrvURL', 'outputs': [ { 'name': '', 'type': 'string' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [ { 'name': '_gameExchange', 'type': 'address' } ], 'name': 'setGameExchange', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameId', 'outputs': [ { 'name': '', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameExchange', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'gameOwner', 'outputs': [ { 'name': '', 'type': 'address' } ], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'inputs': [ { 'name': '_gameOwner', 'type': 'address' }, { 'name': '_gameId', 'type': 'uint64' } ], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'constructor' } ]";
+        public const string ABI = HoardABIConfig.GameABI;
 
         private readonly Web3 web3;
         private Contract contract;
@@ -29,9 +29,9 @@ namespace Hoard.BC.Contracts
             this.contract = web3.Eth.GetContract(ABI, address);
         }
 
-        private Function GetFunctionNextAssetId()
+        private Function GetFunctionNextItemIndex()
         {
-            return contract.GetFunction("nextAssetId");
+            return contract.GetFunction("nextItemIndex");
         }
 
         private Function GetFunctionGameSrvURL()
@@ -44,9 +44,9 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("setGameSrvURL");
         }
 
-        private Function GetFunctionAssetTokens()
+        private Function GetFunctionItemTokens()
         {
-            return contract.GetFunction("assetTokens");
+            return contract.GetFunction("itemTokens");
         }
 
         private Function GetFunctionGameExchange()
@@ -83,14 +83,14 @@ namespace Hoard.BC.Contracts
 
         public Task<ulong> GetGameItemContractCountAsync()
         {
-            var function = GetFunctionNextAssetId();
+            var function = GetFunctionNextItemIndex();
             return function.CallAsync<ulong>();
         }
 
-        public Task<string> GetGameItemContractAsync(ulong assetId)
+        public Task<string> GetGameItemContractAsync(ulong itemId)
         {
-            var function = GetFunctionAssetTokens();
-            return function.CallAsync<string>(assetId);
+            var function = GetFunctionItemTokens();
+            return function.CallAsync<string>(itemId);
         }
 
         public Task<string> GameExchangeContractAsync()
@@ -100,12 +100,12 @@ namespace Hoard.BC.Contracts
         }
 
         //FIXME?
-        //public async Task<bool> PayoutPlayerReward(string assetTokenAddress, ulong amount, string from)
+        //public async Task<bool> PayoutPlayerReward(string tokenAddress, ulong amount, string from)
         //{
         //    var function = GetFunctionPayoutPlayerReward();
-        //    var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), assetTokenAddress, amount);
+        //    var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), tokenAddress, amount);
         //    gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-        //    var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, assetTokenAddress, amount);
+        //    var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, tokenAddress, amount);
         //    return receipt.Status.Value == 1;
         //}
 

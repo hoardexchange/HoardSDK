@@ -8,7 +8,7 @@ namespace Hoard
 {
     public class ExchangeService
     {
-        public virtual Task<bool> Deposit(GameItem asset, ulong amount)
+        public virtual Task<bool> Deposit(GameItem item, ulong amount)
         {
             throw new NotImplementedException();
         }
@@ -23,7 +23,7 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        public virtual Task<bool> Withdraw(GameItem asset, ulong amount)
+        public virtual Task<bool> Withdraw(GameItem item, ulong amount)
         {
             throw new NotImplementedException();
         }
@@ -92,13 +92,13 @@ namespace Hoard
                 hoard.DefaultPlayer.ID);
         }
 
-        public override async Task<bool> Deposit(GameItem asset, ulong amount)
+        public override async Task<bool> Deposit(GameItem item, ulong amount)
         {
             //return await asset.Contract.Transfer(GameExchangeContract.Address, amount, hoard.Accounts[0].Address);
             throw new NotImplementedException();
         }
 
-        public override async Task<bool> Withdraw(GameItem asset, ulong amount)
+        public override async Task<bool> Withdraw(GameItem item, ulong amount)
         {
             //return await GameExchangeContract.Withdraw(asset.ContractAddress, amount, hoard.Accounts[0].Address);
             throw new NotImplementedException();
@@ -137,8 +137,8 @@ namespace Hoard
         // [JsonConverter(typeof(BigIntegerConverter))]
         public string user { get; private set; }
 
-        public GameItem gameAssetGet { get; private set; } = null;
-        public GameItem gameAssetGive { get; private set; } = null;
+        public GameItem gameItemGet { get; private set; } = null;
+        public GameItem gameItemGive { get; private set; } = null;
 
         public Order(string tokenGet, ulong amountGet, string tokenGive, ulong amountGive, ulong expires, ulong nonce, ulong amount, string user)
         {
@@ -152,10 +152,10 @@ namespace Hoard
             this.user = user;
         }
 
-        public void UpdateGameAssetsObjs(GameItem gaGet, GameItem gaGive)
+        public void UpdateGameItemObjs(GameItem gaGet, GameItem gaGive)
         {
-            gameAssetGet = gaGet;
-            gameAssetGive = gaGive;
+            gameItemGet = gaGet;
+            gameItemGive = gaGive;
         }
     }
 

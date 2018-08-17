@@ -122,7 +122,7 @@ namespace Hoard.GameItemProviders
             public string player_address;
             public string symbol;
             public string state;
-            public string asset_id;
+            public string item_id;
             public string amount;
         }
 
