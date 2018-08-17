@@ -16,8 +16,11 @@ namespace HoardTests
         {
             HoardService hoard = HoardService.Instance;
 
-            HoardServiceOptions options = new HoardServiceOptions();
-            options.RpcClient = new Nethereum.JsonRpc.Client.RpcClient(new Uri(@"http://acedkewlxuu2nfnaexb4eraa.devel.hoard.exchange:8545"));
+            string cfgString = System.IO.File.ReadAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "hoardConfig.json"));
+
+            HoardServiceConfig config = Newtonsoft.Json.JsonConvert.DeserializeObject<HoardServiceConfig>(cfgString);
+
+            HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
 
             Debug.WriteLine("Initalizing HOARD...");
             Stopwatch sw = Stopwatch.StartNew();

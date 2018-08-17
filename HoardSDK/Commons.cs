@@ -41,13 +41,13 @@ namespace Hoard
     /// <summary>
     /// Game identifier.
     /// </summary>
-    public class GameID
+    public class GameID : IEquatable<GameID>
     {
         public string ID;
         public string Name;
         public string Url;
 
-        public static GameID kInvalidID { get; private set; } = new GameID("");
+        public static GameID kInvalidID { get; private set; } = new GameID(null);
 
         public GameID(string id)
         {
@@ -59,15 +59,43 @@ namespace Hoard
             return ID.GetHashCode();
         }
 
-        public override bool Equals(object obj)
+        public bool Equals(GameID other)
         {
-            return Equals(obj as GameID);
+            if (other == null)
+                return false;
+
+            if (ID == other.ID)
+                return true;
+            else
+                return false;
         }
 
-        public bool Equals(GameID obj)
+        public override bool Equals(Object obj)
         {
-            return obj != null && obj.ID == ID;
+            if (obj == null)
+                return false;
+
+            GameID gameObj = obj as GameID;
+            if (gameObj == null)
+                return false;
+            else
+                return Equals(gameObj);
         }
 
+        public static bool operator ==(GameID game1, GameID game2)
+        {
+            if (((object)game1) == null || ((object)game2) == null)
+                return Object.Equals(game1, game2);
+
+            return game1.Equals(game2);
+        }
+
+        public static bool operator !=(GameID game1, GameID game2)
+        {
+            if (((object)game1) == null || ((object)game2) == null)
+                return !Object.Equals(game1, game2);
+
+            return !(game1.Equals(game2));
+        }
     }
 }

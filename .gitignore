@@ -1,0 +1,17 @@
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+HoardSDK/HoardSDK/packages/
+build/
+bin/
+node_modules/
+.eth_data/
+GameServer/db.sqlite3
+*.pyc
+.idea/
+Contracts/migrations/*.txt
+GameServer/ABIs/*.txt
+GameServer/ABIs/*.json
+
+my-hoard-wallet-app/public/css/Style.css.map
+my-hoard-wallet-app/public/scss/Style.css.map

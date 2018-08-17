@@ -18,7 +18,6 @@ namespace HoardTests.CryptKittyTests
 
             HoardServiceOptions options = new HoardServiceOptions();
             options.RpcClient = new Nethereum.JsonRpc.Client.RpcClient(new Uri(@"http://acedkewlxuu2nfnaexb4eraa.devel.hoard.exchange:8545"));
-            options.GameBackendUrl = "";//no override, use URL from hoard.GameBackendDesc
             options.AccountsDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "acounts");
             
             Debug.WriteLine("Initalizing HOARD...");
