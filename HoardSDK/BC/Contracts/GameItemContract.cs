@@ -16,7 +16,7 @@ namespace Hoard.BC.Contracts
 
         public string Address { get { return contract.Address; } }
 
-        public const string ABI = HoardABIConfig.SupportsInterfaceABI;
+        public const string ABI = HoardABIConfig.SupportsInterfaceWithLookupABI;
 
         public SupportsInterfaceWithLookupContract(Web3 web3, string address)
         {
@@ -160,7 +160,7 @@ namespace Hoard.BC.Contracts
 
         public const string InterfaceID = "0x5713b3c1";
 
-        public const string ABI = HoardABIConfig.ERC223GameItemABI;
+        public const string ABI = HoardABIConfig.ERC223TokenABI;
 
         public ERC223GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
         public ERC223GameItemContract(Web3 web3, string address, string abi) : base(web3, address, abi) { }
@@ -215,7 +215,7 @@ namespace Hoard.BC.Contracts
 
         public const string InterfaceID = "0x80ac58cd";
 
-        public const string ABI = HoardABIConfig.ERC721GameItemABI;
+        public const string ABI = HoardABIConfig.ERC721TokenABI;
 
         public ERC721GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
         public ERC721GameItemContract(Web3 web3, string address, string abi) : base(web3, address, abi) { }

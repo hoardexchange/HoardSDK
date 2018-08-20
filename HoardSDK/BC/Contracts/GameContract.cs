@@ -16,7 +16,7 @@ namespace Hoard.BC.Contracts
     /// </summary>
     public class GameContract
     {
-        public const string ABI = HoardABIConfig.GameABI;
+        public const string ABI = HoardABIConfig.GameContractABI;
 
         private readonly Web3 web3;
         private Contract contract;
