@@ -15,10 +15,8 @@ namespace HoardTests
         public void TestHoardGames()
         {
             HoardService hoard = HoardService.Instance;
-
-            string cfgString = System.IO.File.ReadAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "hoardConfig.json"));
-
-            HoardServiceConfig config = Newtonsoft.Json.JsonConvert.DeserializeObject<HoardServiceConfig>(cfgString);
+                        
+            HoardServiceConfig config = HoardServiceConfig.Load();
 
             HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
 

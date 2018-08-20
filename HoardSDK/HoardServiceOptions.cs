@@ -16,6 +16,27 @@ namespace Hoard
         public string ClientUrl { get; set; } = "";
         public string AccountsDir { get; set; } = null;
         public string GameCenterContract { get; set; } = "0x9d4acb1e424d5eb00dac674ff5f59df7a9fac2b9";
+
+        public static HoardServiceConfig Load(string path = null)
+        {
+            string defaultPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "hoardConfig.json");
+            string cfgString = null;
+            if (!string.IsNullOrEmpty(path))
+            {
+                cfgString = System.IO.File.ReadAllText(path);
+            }
+            else if (System.IO.File.Exists("hoardConfig.json"))
+            {
+                cfgString = System.IO.File.ReadAllText("hoardConfig.json");
+            }
+            else if (System.IO.File.Exists(defaultPath))
+            {
+                cfgString = System.IO.File.ReadAllText(defaultPath);
+            }
+
+            HoardServiceConfig config = Newtonsoft.Json.JsonConvert.DeserializeObject<HoardServiceConfig>(cfgString);
+            return config;
+        }
     }
     /// <summary>
     /// Initialization options for HoardService
