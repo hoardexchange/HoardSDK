@@ -1,19 +1,17 @@
 ﻿using Hoard;
+using Hoard.BC;
 using Hoard.BC.Contracts;
-using Hoard.DistributedStorage;
+using Hoard.GameItemProviders;
 using HoardTests.Fixtures;
 using Nethereum.Contracts;
+using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using Newtonsoft.Json;
-using System.Collections.Generic;
+using System;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
-using System.Numerics;
-using System;
-using Nethereum.RPC.Eth.DTOs;
-using Nethereum.JsonRpc.Client;
-using Nethereum.Hex.HexTypes;
 
 namespace HoardTests
 {
@@ -59,24 +57,56 @@ namespace HoardTests
             hashCode = hashCode * -1521134295 + Dexterity.GetHashCode();
             return hashCode;
         }
+
     }
 
-    public class TestGameERC721TokenContract : ERC721GameItemContract
+    public class ERC721GameItemMockContract : ERC721GameItemContract
     {
-        public static new string ABI = "";
+        public new const string InterfaceID = "0x90ac58cd";
 
-        public TestGameERC721TokenContract(Web3 web3, string address) : base(web3, address, ABI) { }
+        public static new string ABI = @"[{'constant':true,'inputs':[{'name':'_interfaceId','type':'bytes4'}],'name':'supportsInterface','outputs':[{'name':'','type':'bool'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[],'name':'name','outputs':[{'name':'','type':'string'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[{'name':'_tokenId','type':'uint256'}],'name':'getApproved','outputs':[{'name':'','type':'address'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':false,'inputs':[{'name':'_to','type':'address'},{'name':'_tokenId','type':'uint256'}],'name':'approve','outputs':[],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':true,'inputs':[],'name':'totalSupply','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[],'name':'InterfaceId_ERC165','outputs':[{'name':'','type':'bytes4'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':false,'inputs':[{'name':'_from','type':'address'},{'name':'_to','type':'address'},{'name':'_tokenId','type':'uint256'}],'name':'transferFrom','outputs':[],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':true,'inputs':[{'name':'_owner','type':'address'},{'name':'_index','type':'uint256'}],'name':'tokenOfOwnerByIndex','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':false,'inputs':[{'name':'_from','type':'address'},{'name':'_to','type':'address'},{'name':'_tokenId','type':'uint256'}],'name':'safeTransferFrom','outputs':[],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':true,'inputs':[{'name':'_tokenId','type':'uint256'}],'name':'exists','outputs':[{'name':'','type':'bool'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[{'name':'_index','type':'uint256'}],'name':'tokenByIndex','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[{'name':'_tokenId','type':'uint256'}],'name':'ownerOf','outputs':[{'name':'','type':'address'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[{'name':'_owner','type':'address'}],'name':'balanceOf','outputs':[{'name':'','type':'uint256'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[],'name':'symbol','outputs':[{'name':'','type':'string'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[{'name':'_tokenId','type':'uint256'}],'name':'tokenState','outputs':[{'name':'','type':'bytes32'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':false,'inputs':[{'name':'_to','type':'address'},{'name':'_approved','type':'bool'}],'name':'setApprovalForAll','outputs':[],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':true,'inputs':[],'name':'tokenStateType','outputs':[{'name':'','type':'bytes32'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':false,'inputs':[{'name':'_from','type':'address'},{'name':'_to','type':'address'},{'name':'_tokenId','type':'uint256'},{'name':'_data','type':'bytes'}],'name':'safeTransferFrom','outputs':[],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':true,'inputs':[],'name':'gameContract','outputs':[{'name':'','type':'address'}],'payable':false,'stateMutability':'view','type':'function'},{'constant':true,'inputs':[{'name':'_owner','type':'address'},{'name':'_operator','type':'address'}],'name':'isApprovedForAll','outputs':[{'name':'','type':'bool'}],'payable':false,'stateMutability':'view','type':'function'},{'inputs':[{'name':'_gameContract','type':'address'}],'payable':false,'stateMutability':'nonpayable','type':'constructor'},{'anonymous':false,'inputs':[{'indexed':true,'name':'_from','type':'address'},{'indexed':true,'name':'_to','type':'address'},{'indexed':true,'name':'_tokenId','type':'uint256'}],'name':'Transfer','type':'event'},{'anonymous':false,'inputs':[{'indexed':true,'name':'_owner','type':'address'},{'indexed':true,'name':'_approved','type':'address'},{'indexed':true,'name':'_tokenId','type':'uint256'}],'name':'Approval','type':'event'},{'anonymous':false,'inputs':[{'indexed':true,'name':'_owner','type':'address'},{'indexed':true,'name':'_operator','type':'address'},{'indexed':false,'name':'_approved','type':'bool'}],'name':'ApprovalForAll','type':'event'},{'constant':false,'inputs':[{'name':'_to','type':'address'},{'name':'_tokenId','type':'uint256'},{'name':'_tokenState','type':'bytes32'}],'name':'mintToken','outputs':[],'payable':false,'stateMutability':'nonpayable','type':'function'},{'constant':false,'inputs':[{'name':'_tokenId','type':'uint256'},{'name':'_state','type':'bytes32'}],'name':'setTokenState','outputs':[],'payable':false,'stateMutability':'nonpayable','type':'function'}]";
+
+        public ERC721GameItemMockContract(Web3 web3, string address) : base(web3, address, ABI) { }
         
         private Function GetFunctionMintToken()
         {
             return contract.GetFunction("mintToken");
         }
 
-        public Task<TransactionReceipt> MintToken(string ownerAddress, BigInteger tokenID, byte[] tokenState)
+        private Function GetFunctionSetTokenState()
+        {
+            return contract.GetFunction("setTokenState");
+        }
+
+        public async Task<TransactionReceipt> MintToken(string ownerAddress, BigInteger tokenID, byte[] tokenState, PlayerID account = null)
         {
             Function function = GetFunctionMintToken();
-            HexBigInteger gas = function.EstimateGasAsync(ownerAddress, new HexBigInteger(300000), new HexBigInteger(0), ownerAddress, tokenID, tokenState).Result;
-            return function.SendTransactionAndWaitForReceiptAsync(ownerAddress, gas, new HexBigInteger(0), null, ownerAddress, tokenID, tokenState);
+            return await HoardService.Instance.BCComm.EvaluateOnBC(account, function, ownerAddress, tokenID, tokenState);
+        }
+
+        public async Task<TransactionReceipt> SetTokenState(BigInteger tokenID, byte[] tokenState, PlayerID account = null)
+        {
+            Function function = GetFunctionSetTokenState();
+            return await HoardService.Instance.BCComm.EvaluateOnBC(account, function, tokenID, tokenState);
+        }
+    }
+
+    public class BCGameItemMockProvider : BCGameItemProvider
+    {
+        public BCGameItemMockProvider(GameID game, BCComm comm) : base(game, comm)
+        {
+            RegisterContractInterfaceID(ERC721GameItemMockContract.InterfaceID, typeof(ERC721GameItemMockContract));
+        }
+
+        public bool UpdateItemState(GameItem gameItem)
+        {
+            ERC721GameItemMockContract contract = BCComm.GetContract<ERC721GameItemMockContract>(itemContracts[gameItem.Symbol].Address);
+            if (contract != null)
+            {
+                contract.SetTokenState(((ERC721GameItemContract.Metadata)gameItem.Metadata).ItemId, gameItem.State).Wait();
+                return true;
+            }
+            return false;
         }
     }
 
@@ -85,47 +115,48 @@ namespace HoardTests
         HoardServiceFixture hoardFixture;
         IPFSFixture ipfsFixture;
 
-        HoardService hoardService;
-        IPFSClient client;
-
-        TestGameERC721TokenContract erc721Contract;
+        BCGameItemMockProvider gameItemProvider = null;
 
         public GameItemTests(HoardServiceFixture hoardFixture, IPFSFixture ipfsFixture)
         {
             this.hoardFixture = hoardFixture;
             this.ipfsFixture = ipfsFixture;
 
-            this.hoardService = hoardFixture.HoardService;
-            this.client = ipfsFixture.Client;
+            this.hoardFixture.Initialize(new string[] { "GameContract.test.js" });
 
-            TestGameERC721TokenContract.ABI = hoardFixture.DeployedABIs["TestGameERC721Token"];
-            erc721Contract = hoardService.BCComm.GetContract<TestGameERC721TokenContract>(hoardFixture.DeployedAddresses["TestGameERC721Token"]);
+            GameID[] games = hoardFixture.HoardService.QueryHoardGames().Result;
+            Assert.NotEmpty(games);
+            HoardGameItemProvider hoardItemProvider = new HoardGameItemProvider(games[0]);
+            gameItemProvider = new BCGameItemMockProvider(games[0], hoardFixture.HoardService.BCComm);
+            hoardItemProvider.FallbackConnector = gameItemProvider;
+            hoardFixture.HoardService.RegisterGame(games[0], hoardItemProvider);
         }
 
         [Fact]
         public void UploadDownloadState()
         {
-            SwordProperties props = new SwordProperties(10, 5, 20);
-            string ownerAddress = hoardFixture.Accounts[3];
-            BigInteger tokenID = new BigInteger(12345);
+            GameItem swordItem = new GameItem("TM721", null);
+            swordItem.Properties = new SwordProperties(10, 5, 20);
 
-            string propsJson = JsonConvert.SerializeObject(props);
-            byte[] ipfsAddress = client.UploadAsync(Encoding.ASCII.GetBytes(propsJson)).Result;
+            GameItem[] items = gameItemProvider.GetPlayerItems(hoardFixture.PlayerUser, swordItem.Symbol);
+            Assert.Equal(2, items.Length);
 
-            Assert.Equal(erc721Contract.GetBalanceOf(ownerAddress).Result, new BigInteger(0));
+            string propsJson = JsonConvert.SerializeObject(swordItem.Properties);
+            swordItem.State = ipfsFixture.Client.UploadAsync(Encoding.ASCII.GetBytes(propsJson)).Result;
+            swordItem.Metadata = items[0].Metadata;
 
-            TransactionReceipt receipt = erc721Contract.MintToken(ownerAddress, tokenID, ipfsAddress).Result;
+            gameItemProvider.UpdateItemState(swordItem);
 
-            Assert.Equal(erc721Contract.GetBalanceOf(ownerAddress).Result, new BigInteger(1));
+            items = gameItemProvider.GetPlayerItems(hoardFixture.PlayerUser, swordItem.Symbol);
+            GameItem downloadedSwordItem = items[0];
+            hoardFixture.HoardService.UpdateItemProperties(downloadedSwordItem);
 
-            byte[] tokenState = erc721Contract.GetTokenState(tokenID).Result;
+            Assert.Equal(swordItem.State, downloadedSwordItem.State);
 
-            Assert.Equal(tokenState, ipfsAddress);
-
-            string downloadedPropsJson = Encoding.ASCII.GetString(client.DownloadBytesAsync(ipfsAddress).Result);
+            string downloadedPropsJson = Encoding.ASCII.GetString(ipfsFixture.Client.DownloadBytesAsync(downloadedSwordItem.State).Result);
             SwordProperties downloadedProps = JsonConvert.DeserializeObject<SwordProperties>(downloadedPropsJson);
 
-            Assert.Equal(props, downloadedProps);
+            Assert.Equal((SwordProperties)swordItem.Properties, downloadedProps);
         }
     }
 }

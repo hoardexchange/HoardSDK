@@ -13,12 +13,21 @@ namespace Hoard
         /// </summary>
         /// <returns></returns>
         string[] GetItemTypes();
+
         /// <summary>
         /// Returns all items belonging to a particular player
         /// </summary>
         /// <param name="playerID"></param>
         /// <returns></returns>
         GameItem[] GetPlayerItems(PlayerID playerID);
+        /// <summary>
+        /// Returns all items belonging to a particular player with given type
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <param name="itemType"></param>
+        /// <returns></returns>
+        GameItem[] GetPlayerItems(PlayerID playerID, string itemType);
+
         /// <summary>
         /// Changes ownership of an item, sending it to new owner
         /// </summary>

@@ -1,9 +1,13 @@
-using System;
-using System.Threading.Tasks;
-using Nethereum.Web3;
-using Nethereum.Web3.Accounts;
 using Hoard.BC.Contracts;
-using System.Threading;
+using Nethereum.Contracts;
+using Nethereum.Hex.HexTypes;
+using Nethereum.RPC.Eth.DTOs;
+using Nethereum.Web3;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Hoard.BC
 {
@@ -15,6 +19,7 @@ namespace Hoard.BC
     {
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
+        private Dictionary<GameID, GameContract> gameContracts = new Dictionary<GameID, GameContract>();
 
         public BCComm(Nethereum.JsonRpc.Client.IClient client, string gameCenterContract)
         {
@@ -41,7 +46,7 @@ namespace Hoard.BC
 
         public async Task<string[]> GetGameItemContracts(GameID game)
         {
-            GameContract gameContract = new GameContract(web, game.ID);
+            GameContract gameContract = new GameContract(web, gameContracts[game].Address);
 
             ulong count = await gameContract.GetGameItemContractCountAsync();            
 
@@ -56,20 +61,24 @@ namespace Hoard.BC
 
         public async Task<GameID[]> GetHoardGames()
         {
+            gameContracts.Clear();
+
             ulong count = await gameCenter.GetGameCount();
             GameID[] games = new GameID[count];
-            for(ulong i=0;i<count;++i)
+            for(ulong i =0;i<count;++i)
             {
-                string gameID = await gameCenter.GetGameContractAsync(i);
-                GameID game = new GameID(gameID);                
+                BigInteger gameID = await gameCenter.GetGameIdByIndexAsync(i);
+                string gameAddress = await gameCenter.GetGameContractAsync(gameID);
+                GameID game = new GameID(gameID.ToString("x"));                
                 {
-                    //gameID is the address of contract
-                    GameContract gameContract = new GameContract(web, gameID);
+                    GameContract gameContract = new GameContract(web, gameAddress);
 
                     string url = await gameContract.GetGameServerURLAsync();
 
                     game.Name = await gameContract.GetName();
                     game.Url = !url.StartsWith("http") ? "http://" + url : url;
+
+                    gameContracts.Add(game, gameContract);
                 }
 
                 games[i] = game;
@@ -97,25 +106,23 @@ namespace Hoard.BC
         /// temporary function to call functions on blockchain
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> EvaluateOnBC(Func<string, Task<string>> job)
+        public async Task<TransactionReceipt> EvaluateOnBC(PlayerID account, Function function, params object[] functionInput)
         {
-            string pw = "dev";
-            string address = "0xa0464599df2154ec933497d712643429e81d4628";// Nethereum.Signer.EthECKey.GetPublicAddress(privateKey); //could do checksum
-            var accountUnlockTime = 120;
-            var unlockResult = await web.Personal.UnlockAccount.SendRequestAsync(address, pw, accountUnlockTime);
-
-            Task<string> ts = job(address);// function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), id, name, owner);
-
-            var txHash = await ts;
-
-            var receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txHash);
-            while (receipt == null)
+            if (account == null)
             {
-                Thread.Sleep(1000);
-                receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txHash);
+                // use default user
+                account = HoardService.Instance.DefaultPlayer;
             }
 
-            return ulong.Parse(receipt.Status.ToString()) == 1;
+            int unlockTime = 120;
+            bool success = web.Personal.UnlockAccount.SendRequestAsync(account.ID, account.Password, unlockTime).Result;
+            if (success)
+            {
+                HexBigInteger gas = function.EstimateGasAsync(account.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput).Result;
+                return await function.SendTransactionAndWaitForReceiptAsync(account.ID, gas, new HexBigInteger(0), null, functionInput);
+            }
+
+            return null;
         }
     }
 }

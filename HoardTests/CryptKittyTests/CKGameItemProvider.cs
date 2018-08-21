@@ -88,6 +88,11 @@ namespace HoardTests.CryptKittyTests
 
         }
 
+        public GameItem[] GetPlayerItems(PlayerID playerID, string itemType)
+        {
+            return null;
+        }
+
         private bool validateOwnerOnBC(PlayerID player, string tokenId)
         {
             BigInteger tokenBigInt = new BigInteger(Encoding.Unicode.GetBytes(tokenId));

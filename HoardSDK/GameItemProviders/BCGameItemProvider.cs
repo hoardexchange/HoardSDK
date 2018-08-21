@@ -14,8 +14,8 @@ namespace Hoard.GameItemProviders
     public class BCGameItemProvider : IGameItemProvider
     {
         private GameID Game = null;
-        private BCComm BCComm = null;
-        private Dictionary<string, GameItemContract> itemContracts = new Dictionary<string, GameItemContract>();
+        protected BCComm BCComm = null;
+        protected Dictionary<string, GameItemContract> itemContracts = new Dictionary<string, GameItemContract>();
         private ContractInterfaceID supportsInterfaceWithLookup = new ContractInterfaceID("0x01ffc9a7", typeof(SupportsInterfaceWithLookupContract));
         private List<ContractInterfaceID> interfaceIDs = new List<ContractInterfaceID>();
 
@@ -41,6 +41,16 @@ namespace Hoard.GameItemProviders
             return items.ToArray();
         }
 
+        public GameItem[] GetPlayerItems(PlayerID playerID, string itemType)
+        {
+            List<GameItem> items = new List<GameItem>();
+            if (itemContracts.ContainsKey(itemType))
+            {
+                items.AddRange(itemContracts[itemType].GetGameItems(playerID).Result);
+            }
+            return items.ToArray();
+        }
+
         public string[] GetItemTypes()
         {
             return itemContracts.Keys.ToArray();
@@ -57,7 +67,6 @@ namespace Hoard.GameItemProviders
             RegisterHoardGameContracts();
             return true;
         }
-
         #endregion
 
         /// <summary>
@@ -97,15 +106,22 @@ namespace Hoard.GameItemProviders
         {
             SupportsInterfaceWithLookupContract interfaceContract = BCComm.GetContract<SupportsInterfaceWithLookupContract>(contractAddress);
 
+            ContractInterfaceID currentInterfaceId = null;
+
             if (interfaceContract.SupportsInterface(supportsInterfaceWithLookup.InterfaceID).Result)
             {
                 foreach (ContractInterfaceID interfaceId in interfaceIDs)
                 {
                     if (interfaceContract.SupportsInterface(interfaceId.InterfaceID).Result)
                     {
-                        return BCComm.GetGameItemContract(contractAddress, interfaceId.ContractType);
+                        currentInterfaceId = interfaceId;
                     }
                 }
+            }
+
+            if(currentInterfaceId != null)
+            {
+                return BCComm.GetGameItemContract(contractAddress, currentInterfaceId.ContractType);
             }
 
             return null;
