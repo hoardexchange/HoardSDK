@@ -12,6 +12,7 @@ namespace HoardTests
     public class HoardServiceTests
     {
         [Fact]
+        [Trait("Category", "Unit")]
         public void TestHoardGames()
         {
             HoardService hoard = HoardService.Instance;

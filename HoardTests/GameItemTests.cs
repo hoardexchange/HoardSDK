@@ -50,11 +50,20 @@ namespace HoardTests
                 this.Strength.Equals(other.Strength) &&
                 this.Dexterity.Equals(other.Dexterity);
         }
+
+        public override int GetHashCode()
+        {
+            var hashCode = -1621467;
+            hashCode = hashCode * -1521134295 + Endurance.GetHashCode();
+            hashCode = hashCode * -1521134295 + Strength.GetHashCode();
+            hashCode = hashCode * -1521134295 + Dexterity.GetHashCode();
+            return hashCode;
+        }
     }
 
     public class TestGameERC721TokenContract : ERC721GameItemContract
     {
-        public static string ABI = "";
+        public static new string ABI = "";
 
         public TestGameERC721TokenContract(Web3 web3, string address) : base(web3, address, ABI) { }
         

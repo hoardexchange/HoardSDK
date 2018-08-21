@@ -119,16 +119,16 @@ namespace Hoard.GameItemProviders
 
         private class responseGameItem
         {
-            public string player_address;
-            public string symbol;
-            public string state;
-            public string item_id;
-            public string amount;
+            public string player_address = null;
+            public string symbol = null;
+            public string state = null;
+            public string item_id = null;
+            public string amount = null;
         }
 
         private class responseDict
         {
-            public List<Dictionary<string,string>> items;
+            public List<Dictionary<string,string>> items = null;
         }
 
         public GameItem[] GetPlayerItems(PlayerID playerID)

@@ -29,13 +29,13 @@ namespace HoardTests.CryptKittyTests
 
         private class KittyAPIResult
         {
-            public string id;
-            public string image_url;
+            public string id = null;
+            public string image_url = null;
         }
 
         private class UserKittiesAPIResult
         {
-            public List<KittyAPIResult> kitties;
+            public List<KittyAPIResult> kitties = null;
         }
 
         RestClient Client = null;
