@@ -158,6 +158,16 @@ namespace Hoard.GameItemProviders
             return null;
         }
 
+        public GameItem[] GetPlayerItems(PlayerID playerID, string itemType)
+        {
+            //TODO
+            if (FallbackConnector != null)
+            {
+                return FallbackConnector.GetPlayerItems(playerID, itemType);
+            }
+            return null;
+        }
+
         public Task<bool> Transfer(PlayerID recipient, GameItem item)
         {
             if (Client != null)

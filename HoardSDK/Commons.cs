@@ -9,16 +9,19 @@ namespace Hoard
     /// <summary>
     /// Player identifier. Holds only ID information.
     /// </summary>
-    public class PlayerID
+    public class PlayerID // FIXME: should be renamed to UserAccount?
     {
-        public static PlayerID kInvalidID { get; private set; } = new PlayerID("0x0","0x0");
+        public static PlayerID kInvalidID { get; private set; } = new PlayerID("0x0","0x0","");
         public string ID { get; private set; } = null;
+        // FIXME: probably we shouldn't store private key or password here
         public string PrivateKey { get; private set; }
+        public string Password { get; private set; }
 
-        public PlayerID(string id, string key)
+        public PlayerID(string id, string privateKey, string password)
         {
             ID = id.ToLower();
-            PrivateKey = key;
+            PrivateKey = privateKey;
+            Password = password;
         }
 
         public override int GetHashCode() 
@@ -33,7 +36,7 @@ namespace Hoard
 
         public bool Equals(PlayerID obj)
         {
-            return obj != null && obj.ID.ToLower() == ID && obj.PrivateKey == PrivateKey;
+            return obj != null && obj.ID.ToLower() == ID && obj.PrivateKey == PrivateKey && obj.Password == Password;
         }
 
     }

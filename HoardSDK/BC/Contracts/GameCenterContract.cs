@@ -45,7 +45,12 @@ namespace Hoard.BC.Contracts
 
         public Function GetFunctionGetGameContract()
         {
-            return contract.GetFunction("getGameContact");
+            return contract.GetFunction("getGameContract");
+        }
+
+        public Function GetFunctionGetGameIdByIndex()
+        {
+            return contract.GetFunction("getGameIdByIndex");
         }
 
         public Function GetFunctionGameExists()
@@ -58,15 +63,36 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("addGame");
         }
 
+        public Function GetFunctionAddAdmin()
+        {
+            return contract.GetFunction("addAdmin");
+        }
+
+        public Function GetFunctionRemoveAdmin()
+        {
+            return contract.GetFunction("removeAdmin");
+        }
+
         /// <summary>
-        /// Returns game contract address by index
+        /// Returns game contract address by id
         /// </summary>
         /// <param name="gameID"></param>
         /// <returns></returns>
-        public Task<string> GetGameContractAsync(ulong gameID)
+        public Task<string> GetGameContractAsync(BigInteger gameID)
         {
             var function = GetFunctionGetGameContract();
             return function.CallAsync<string>(gameID);
+        }
+
+        /// <summary>
+        /// Returns game id address by index
+        /// </summary>
+        /// <param name="gameID"></param>
+        /// <returns></returns>
+        public Task<BigInteger> GetGameIdByIndexAsync(ulong index)
+        {
+            var function = GetFunctionGetGameIdByIndex();
+            return function.CallAsync<BigInteger>(index);
         }
 
         /// <summary>
@@ -91,14 +117,22 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<bool>(gameID);
         }
 
-        public async Task<bool> AddGameAsync(BCComm comm, ulong id, string name, string owner)
+        public async Task<TransactionReceipt> AddGameAsync(BCComm comm, string gameAddr, PlayerID account = null)
         {
             var function = GetFunctionAddGame();
+            return await comm.EvaluateOnBC(account, function, gameAddr);
+        }
 
-            return await comm.EvaluateOnBC((address) =>
-            {
-                return function.SendTransactionAsync(address, new HexBigInteger(4700000), new HexBigInteger(0), id, name, owner);
-            });
+        public async Task<TransactionReceipt> AddAdminAsync(BCComm comm, string adminAddr, PlayerID account = null)
+        {
+            var function = GetFunctionAddAdmin();
+            return await comm.EvaluateOnBC(account, function, adminAddr);
+        }
+
+        public async Task<TransactionReceipt> RemoveAdminAsync(BCComm comm, string adminAddr, PlayerID account = null)
+        {
+            var function = GetFunctionRemoveAdmin();
+            return await comm.EvaluateOnBC(account, function, adminAddr);
         }
     }
 }

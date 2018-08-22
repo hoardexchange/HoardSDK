@@ -28,7 +28,7 @@ namespace Hoard
         /// <summary>
         /// Default player.
         /// </summary>
-        public PlayerID DefaultPlayer { get; private set; } = PlayerID.kInvalidID;
+        public PlayerID DefaultPlayer { get; set; } = PlayerID.kInvalidID;
 
         /// <summary>
         /// Game exchange service.
@@ -262,9 +262,10 @@ namespace Hoard
                 Debug.WriteLine(String.Format("Loading account {0}", fileName), "INFO");
 #endif
                 var json = File.ReadAllText(System.IO.Path.Combine(path, fileName));
-
+                
                 var account = Account.LoadFromKeyStore(json, password);
-                this.accounts.Add(new PlayerID(account.Address, account.PrivateKey), account);
+                //this.accounts.Add(new PlayerID(account.Address, account.PrivateKey), account);
+                this.accounts.Add(new PlayerID(account.Address, account.PrivateKey, password), account);
             }
 
             if (accounts.Count > 0)
