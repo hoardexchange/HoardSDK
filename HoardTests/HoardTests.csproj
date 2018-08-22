@@ -100,7 +100,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="xUnitTests">
-    <xunit IncludeTraits="Category=Unit"
-           Assemblies="$(OutputPath)\$(AssemblyName).dll"/>
-</Target>
+    <xunit IncludeTraits="Category=Unit" Assemblies="$(OutputPath)\$(AssemblyName).dll" />
+  </Target>
+  <PropertyGroup>
+    <PostBuildEvent>IF NOT EXIST "$(TargetDir)hoardConfig.json" copy "$(SolutionDir)config\hoardConfig.json.template" "$(TargetDir)hoardConfig.json"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

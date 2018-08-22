@@ -1,11 +1,5 @@
-import sys
+import argparse
 import os
-
-def showHelp():
-    print("makeHoardConfig script usage:")
-    print("\t makeHoardConfig [file_with_hoard_game_address] clientUrl clientPort [output_file]")
-    print("example:")
-    print("\t makeHoardConfig config\HoardGamesAddress.txt acedkewlxuu2nfnaexb4eraa.devel.hoard.exchange 8545 hoardConfig.cfg")
 
 def loadAddress(fileName):
 	file = open(fileName)
@@ -22,7 +16,15 @@ def makeConfig(addr, url, port, outFileName):
     outFile.write("}\n")
     outFile.close()
 
-if len(sys.argv) == 5:
-    makeConfig(loadAddress(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4])
+parser = argparse.ArgumentParser(description="Make json configuration file for HoardSDK")
+parser.add_argument("--addr", dest="addr", action="store", default="0x0", help="deployed hoard game center contract address in hex format (0x1234abc)")
+parser.add_argument("--addr_file", dest="addr_file", action="store", help="file with deployed hoard game center contract address")
+parser.add_argument("--client-url", dest="client_url", default="localhost", action="store", help="url of a geth client (default: localhost)")
+parser.add_argument("--client-port", dest="client_port", action="store", default="8545", help="port of a geth client (default: 8545)")
+parser.add_argument("--out", dest="output_file", action="store", default="hoardConfig.json", help="output json configuration file (default: hoardConfig.json)")
+args = parser.parse_args()
+
+if args.addr_file:
+	makeConfig(loadAddress(args.addr), args.client_url, args.client_port, args.output_file)
 else:
-    showHelp()
+	makeConfig(args.addr, args.client_url, args.client_port, args.output_file)
