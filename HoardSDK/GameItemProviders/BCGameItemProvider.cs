@@ -97,9 +97,13 @@ namespace Hoard.GameItemProviders
         }
 
         public void RegisterGameItemContract(GameItemContract contract)
-        {    
+        {
+            //FIXME: handle adding game item contracts with the same symbol
             string symbol = contract.GetSymbol().Result;
-            itemContracts.Add(symbol, contract);
+            if (!itemContracts.ContainsKey(symbol))
+            {
+                itemContracts.Add(symbol, contract);
+            }
         }
 
         private GameItemContract GetGameItemContractByInterface(string contractAddress)
