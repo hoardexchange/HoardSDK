@@ -89,13 +89,15 @@ namespace Hoard
     /// </summary>
     public class GameItem
     {
+        public GameID Game { get; private set; }
         public string Symbol { get; private set; }
         public byte[] State { get; set; }
         public IGameItemMetadata Metadata { get; set; } = null;
         public ItemProperties Properties { get; set; } = null;
 
-        public GameItem(string symbol, IGameItemMetadata metadata)
+        public GameItem(GameID game, string symbol, IGameItemMetadata metadata)
         {
+            Game = game;
             Symbol = symbol;
             Metadata = metadata;
         }

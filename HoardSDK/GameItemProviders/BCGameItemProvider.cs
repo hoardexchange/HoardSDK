@@ -13,12 +13,12 @@ namespace Hoard.GameItemProviders
     /// </summary>
     public class BCGameItemProvider : IGameItemProvider
     {
-        private GameID Game = null;
         protected BCComm BCComm = null;
         protected Dictionary<string, GameItemContract> itemContracts = new Dictionary<string, GameItemContract>();
         private ContractInterfaceID supportsInterfaceWithLookup = new ContractInterfaceID("0x01ffc9a7", typeof(SupportsInterfaceWithLookupContract));
         private List<ContractInterfaceID> interfaceIDs = new List<ContractInterfaceID>();
 
+        public GameID Game { get; private set; }
 
         public BCGameItemProvider(GameID game, BCComm comm)
         {
@@ -34,9 +34,9 @@ namespace Hoard.GameItemProviders
         public GameItem[] GetPlayerItems(PlayerID playerID)
         {
             List<GameItem> items = new List<GameItem>();
-            foreach (var contract in itemContracts)
+            foreach (var contract in itemContracts.Values)
             {
-                items.AddRange(contract.Value.GetGameItems(playerID).Result);
+                items.AddRange(contract.GetGameItems(playerID).Result);
             }
             return items.ToArray();
         }
@@ -98,12 +98,10 @@ namespace Hoard.GameItemProviders
 
         public void RegisterGameItemContract(GameItemContract contract)
         {
-            //FIXME: handle adding game item contracts with the same symbol
             string symbol = contract.GetSymbol().Result;
-            if (!itemContracts.ContainsKey(symbol))
-            {
-                itemContracts.Add(symbol, contract);
-            }
+            System.Diagnostics.Debug.Assert(!itemContracts.ContainsKey(symbol),
+                string.Format("ERROR: contract with this symbol has been already regisered for Game: '{0}' with ID {1}",Game.Name,Game.ID));
+            itemContracts.Add(symbol, contract);
         }
 
         private GameItemContract GetGameItemContractByInterface(string contractAddress)
@@ -125,7 +123,7 @@ namespace Hoard.GameItemProviders
 
             if(currentInterfaceId != null)
             {
-                return BCComm.GetGameItemContract(contractAddress, currentInterfaceId.ContractType);
+                return BCComm.GetGameItemContract(Game, contractAddress, currentInterfaceId.ContractType);
             }
 
             return null;

@@ -38,7 +38,14 @@ namespace HoardTests.CryptKittyTests
             public List<KittyAPIResult> kitties = null;
         }
 
-        RestClient Client = null;
+        public GameID Game { get; private set; }
+
+        private RestClient Client = null;
+
+        public CKGameItemProvider(GameID game)
+        {
+            Game = game;
+        }
 
         public bool Connect()
         {
@@ -79,7 +86,7 @@ namespace HoardTests.CryptKittyTests
             {
                 if (validateOwnerOnBC(playerID, kitty.id))
                 {
-                    GameItem gi = new GameItem("CK", new Metadata(playerID.ID, ulong.Parse(kitty.id), "CK_DNA"));
+                    GameItem gi = new GameItem(Game, "CK", new Metadata(playerID.ID, ulong.Parse(kitty.id), "CK_DNA"));
                     gi.State = Encoding.Unicode.GetBytes(kitty.image_url);//this should be dna!
                 }
             }

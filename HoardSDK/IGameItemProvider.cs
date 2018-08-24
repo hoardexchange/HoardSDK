@@ -9,6 +9,11 @@ namespace Hoard
     public interface IGameItemProvider
     {
         /// <summary>
+        /// Game this provider supports
+        /// </summary>
+        GameID Game { get; }
+
+        /// <summary>
         /// Returns all types supported by this provider
         /// </summary>
         /// <returns></returns>

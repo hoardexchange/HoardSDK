@@ -96,13 +96,10 @@ namespace Hoard
         /// <returns></returns>
         public IGameItemProvider GetGameItemProvider(GameItem item)
         {
-            foreach (var list in Providers.Values)
+            foreach (var p in Providers[item.Game])
             {
-                foreach (var p in list)
-                {
-                    if (p.GetItemTypes().Contains(item.Symbol))
-                        return p;
-                }
+                if (p.GetItemTypes().Contains(item.Symbol))
+                    return p;
             }
             return null;
         }

@@ -38,7 +38,7 @@ namespace HoardTests.CryptKittyTests
 
             GameID myGame = new GameID("mygame");
 
-            hoard.RegisterGame(myGame, new CKGameItemProvider());
+            hoard.RegisterGame(myGame, new CKGameItemProvider(myGame));
 
             GameItem[] items = hoard.GetPlayerItems(HoardService.Instance.DefaultPlayer, myGame);
             

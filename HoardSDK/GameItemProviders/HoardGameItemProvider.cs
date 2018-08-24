@@ -32,47 +32,52 @@ namespace Hoard.GameItemProviders
 
         private bool Connect(PlayerID player)
         {
-            Client = new RestClient(Game.Url);
-            Client.AutomaticDecompression = false;
+            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            {                
+                Client = new RestClient(Game.Url);
+                Client.AutomaticDecompression = false;
 
-            //setup a cookie container for automatic cookies handling
-            Client.CookieContainer = new System.Net.CookieContainer();
+                //setup a cookie container for automatic cookies handling
+                Client.CookieContainer = new System.Net.CookieContainer();
 
-            //handshake
+                //handshake
 
-            //1. GET challenge token
-            var request = new RestRequest("login/", Method.GET);
-            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-            var response = Client.Execute(request);
+                //1. GET challenge token
+                var request = new RestRequest("login/", Method.GET);
+                request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
+                var response = Client.Execute(request);
 
-            if (response.ErrorException != null)
-                return false;
+                if (response.ErrorException != null)
+                    return false;
 
-            //UpdateCookies(response.Cookies);
+                //UpdateCookies(response.Cookies);
 
-            string challengeToken = response.Content;
-            challengeToken = challengeToken.Substring(2);
+                string challengeToken = response.Content;
+                challengeToken = challengeToken.Substring(2);
 
 
-            var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
-            var nonceHex = nonce.ToString("x");
+                var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
+                var nonceHex = nonce.ToString("x");
 
-            var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, player.PrivateKey);
+                var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, player.PrivateKey);
 
-            var responseLogin = PostJson("login/", new
-            {
-                token = response.Content,
-                nonce = "0x" + nonceHex,
-                address = player.ID,
-                signature = sig
-            }).Result;
+                var responseLogin = PostJson("login/", new
+                {
+                    token = response.Content,
+                    nonce = "0x" + nonceHex,
+                    address = player.ID,
+                    signature = sig
+                }).Result;
 
-            if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
-                return false;
+                if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
+                    return false;
 
-            SessionKey = response.Content;
+                SessionKey = response.Content;
 
-            return true;
+                return true;
+            }
+
+            return false;            
         }
 
         private void PrepareRequest(RestRequest req)
@@ -145,7 +150,7 @@ namespace Hoard.GameItemProviders
                     for (int i=0;i<responseItems.items.Count;++i)
                     {
                         //TODO: fill metadata
-                        items[i] = new GameItem(responseItems.items[i]["symbol"],null);
+                        items[i] = new GameItem(Game, responseItems.items[i]["symbol"],null);
                         //items[i].State = responseItems.items[i]["state"]; //FIXME decode string to bytes
                     }
                     return items;

@@ -41,15 +41,17 @@ namespace Hoard.BC.Contracts
     /// </summary>
     public abstract class GameItemContract
     {
+        protected GameID Game { get; private set; }
         protected readonly Web3 web3;
         protected Contract contract;
 
         public string Address { get { return contract.Address; } }
 
-        public GameItemContract(Web3 web3, string address, string abi)
+        public GameItemContract(GameID game, Web3 web3, string address, string abi)
         {
             this.web3 = web3;
             this.contract = web3.Eth.GetContract(abi, address);
+            Game = game;
         }
         
         private Function GetFunctionBalanceOf()
@@ -162,8 +164,8 @@ namespace Hoard.BC.Contracts
 
         public const string ABI = HoardABIConfig.ERC223TokenABI;
 
-        public ERC223GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
-        public ERC223GameItemContract(Web3 web3, string address, string abi) : base(web3, address, abi) { }
+        public ERC223GameItemContract(GameID game, Web3 web3, string address) : base(game, web3, address, ABI) { }
+        public ERC223GameItemContract(GameID game, Web3 web3, string address, string abi) : base(game, web3, address, abi) { }
 
         private Function GetFunctionTokenState()
         {
@@ -183,7 +185,7 @@ namespace Hoard.BC.Contracts
             {
                 string state = BitConverter.ToString(await GetTokenState());
                 Metadata meta = new Metadata(state, Address, itemBalance);
-                GameItem gi = new GameItem(await GetSymbol(), meta);
+                GameItem gi = new GameItem(Game, await GetSymbol(), meta);
                 return new GameItem[] { gi };
             }
             else
@@ -217,8 +219,8 @@ namespace Hoard.BC.Contracts
 
         public const string ABI = HoardABIConfig.ERC721TokenABI;
 
-        public ERC721GameItemContract(Web3 web3, string address) : base(web3, address, ABI) { }
-        public ERC721GameItemContract(Web3 web3, string address, string abi) : base(web3, address, abi) { }
+        public ERC721GameItemContract(GameID game, Web3 web3, string address) : base(game, web3, address, ABI) { }
+        public ERC721GameItemContract(GameID game, Web3 web3, string address, string abi) : base(game, web3, address, abi) { }
 
         private Function GetFunctionTokenState()
         {
@@ -280,7 +282,7 @@ namespace Hoard.BC.Contracts
                 BigInteger id = await TokenOfOwnerByIndex(playerID.ID, i);
                 Metadata meta = new Metadata(Address, id);
 
-                items[i] = new GameItem(symbol, meta);
+                items[i] = new GameItem(Game, symbol, meta);
                 items[i].State = await GetTokenState(id);
             }
 
