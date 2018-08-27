@@ -5,7 +5,6 @@ using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Numerics;
 using System.Threading.Tasks;
 
@@ -53,7 +52,8 @@ namespace Hoard.BC
             string[] contracts = new string[count];
             for (ulong i = 0; i < count; ++i)
             {
-                contracts[i] = await gameContract.GetGameItemContractAsync(i);
+                BigInteger gameId = await gameContract.GetGameItemIdByIndexAsync(i);
+                contracts[i] = await gameContract.GetGameItemContractAsync(gameId);
             }
 
             return contracts;

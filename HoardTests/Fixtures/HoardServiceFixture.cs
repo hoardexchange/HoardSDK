@@ -89,16 +89,21 @@ namespace HoardTests.Fixtures
             HoardServiceOptions options = new HoardServiceOptions();
 
             // FIXME: handle errors?
+
+            string pattern = @"\w* deployed at: (0x[a-fA-F0-9]{40})";
             while (!cmd.StandardOutput.EndOfStream)
             {
                 string line = cmd.StandardOutput.ReadLine();
-                if (line.StartsWith("HoardGames deployed at:"))
+                Match match = Regex.Match(line, pattern, RegexOptions.None);
+                if (match.Success && options.GameCenterContract.Length == 0)
                 {
-                    options.GameCenterContract = line.Substring(24);
+                    options.GameCenterContract = match.Groups[1].Value;
                 }
             }
 
             cmd.WaitForExit();
+
+            Assert.NotEmpty(options.GameCenterContract);
 
             Directory.SetCurrentDirectory(EnvironmentCurrentDirectory);
 

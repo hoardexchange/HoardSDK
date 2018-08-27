@@ -1,12 +1,7 @@
 using Nethereum.Contracts;
-using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
@@ -44,11 +39,16 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("setGameSrvURL");
         }
 
-        private Function GetFunctionItemTokens()
+        private Function GetFunctionGetItemIdByIndex()
         {
-            return contract.GetFunction("itemTokens");
+            return contract.GetFunction("itemIdsMap");
         }
 
+        private Function GetFunctionGetItemContract()
+        {
+            return contract.GetFunction("itemContractMap");
+        }
+        
         private Function GetFunctionGameExchange()
         {
             return contract.GetFunction("gameExchange");
@@ -83,11 +83,17 @@ namespace Hoard.BC.Contracts
             var function = GetFunctionNextItemIndex();
             return function.CallAsync<ulong>();
         }
-
-        public Task<string> GetGameItemContractAsync(ulong itemId)
+        
+        public Task<BigInteger> GetGameItemIdByIndexAsync(ulong gameIdx)
         {
-            var function = GetFunctionItemTokens();
-            return function.CallAsync<string>(itemId);
+            var function = GetFunctionGetItemIdByIndex();
+            return function.CallAsync<BigInteger>(gameIdx);
+        }
+
+        public Task<string> GetGameItemContractAsync(BigInteger gameId)
+        {
+            var function = GetFunctionGetItemContract();
+            return function.CallAsync<string>(gameId);
         }
 
         public Task<string> GameExchangeContractAsync()
