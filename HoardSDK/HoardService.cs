@@ -262,7 +262,11 @@ namespace Hoard
                 
                 var account = Account.LoadFromKeyStore(json, password);
                 //this.accounts.Add(new PlayerID(account.Address, account.PrivateKey), account);
-                this.accounts.Add(new PlayerID(account.Address, account.PrivateKey, password), account);
+                PlayerID player = new PlayerID(account.Address, account.PrivateKey, password);
+                if (!accounts.ContainsKey(player))
+                {
+                    this.accounts.Add(player, account);
+                }
             }
 
             if (accounts.Count > 0)
