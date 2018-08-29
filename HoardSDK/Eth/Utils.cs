@@ -11,37 +11,27 @@ namespace Hoard.Eth
     {
         static public BigInteger Mine(string challenge, BigInteger difficulty)
         {
-            Byte[] b = new Byte[9];
+            Byte[] b = new Byte[8];
 
             var sha3 = new KeccakDigest(512);
 
-            var rnd = new Random();
+            var rnd = new Random(0);
             rnd.NextBytes(b);
-            b[8] = 0x0;
+            b = b.Reverse().Concat(new byte[] { 0x0 }).ToArray();
 
             var nonce = new BigInteger(b);
 
-            if (challenge.StartsWith("0x"))
-            {
-                challenge.Insert(2, "0");
-            }
-            else
-            {
-                challenge.Insert(0, "0");
-            }
             var challengeBI = BigInteger.Parse(challenge, NumberStyles.AllowHexSpecifier);
 
             while (true)
             {
                 byte[] hashb = new byte[sha3.GetDigestSize()];
-                byte[] value = challengeBI.ToByteArray().Concat(nonce.ToByteArray()).ToArray();
+                byte[] value = challengeBI.ToByteArray().Reverse().Concat(nonce.ToByteArray().Reverse()).ToArray();
                 sha3.BlockUpdate(value, 0, value.Length);
                 sha3.DoFinal(hashb, 0);
 
-                byte[] hashb2 = new byte[hashb.Length + 1];
-                hashb.CopyTo(hashb2, 0);
-                hashb2[hashb.Length] = 0x00;
-                var v = new BigInteger(hashb2);
+                hashb = hashb.Reverse().Concat(new byte[] { 0x0 }).ToArray();
+                var v = new BigInteger(hashb);
                 if (v.CompareTo(difficulty) < 0)
                     break;
 
