@@ -101,6 +101,11 @@ namespace Hoard.GameItemProviders
 
         #region IGameItemProvider interface implementation
 
+        private class itemTypesResponse
+        {
+            public List<string> types = null;
+        }
+
         public string[] GetItemTypes()
         {
             if (Client != null)
@@ -111,8 +116,8 @@ namespace Hoard.GameItemProviders
                 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
-                    var types = JsonConvert.DeserializeObject<string[]>(response.Content);
-                    return types;
+                    var responseDeserialized = JsonConvert.DeserializeObject<itemTypesResponse>(response.Content);
+                    return responseDeserialized.types.ToArray();
                 }
             }
             if (FallbackConnector != null)
