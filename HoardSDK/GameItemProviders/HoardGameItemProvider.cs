@@ -1,8 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿using Hoard.BC.Contracts;
+using Newtonsoft.Json;
 using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Hoard.GameItemProviders
@@ -127,13 +129,16 @@ namespace Hoard.GameItemProviders
             return null;
         }
 
-        private class responseGameItem
+        private static byte[] ToByteArray(string value)
         {
-            public string player_address = null;
-            public string symbol = null;
-            public string state = null;
-            public string item_id = null;
-            public string amount = null;
+            char[] charArr = value.ToCharArray();
+            byte[] bytes = new byte[charArr.Length];
+            for (int i = 0; i < charArr.Length; i++)
+            {
+                byte current = Convert.ToByte(charArr[i]);
+                bytes[i] = current;
+            }
+            return bytes;
         }
 
         private class responseDict
@@ -154,9 +159,25 @@ namespace Hoard.GameItemProviders
                     GameItem[] items = new GameItem[responseItems.items.Count];
                     for (int i=0;i<responseItems.items.Count;++i)
                     {
-                        //TODO: fill metadata
-                        items[i] = new GameItem(Game, responseItems.items[i]["symbol"],null);
-                        //items[i].State = responseItems.items[i]["state"]; //FIXME decode string to bytes
+                        string player_address = responseItems.items[i]["player_address"];
+                        string symbol = responseItems.items[i]["symbol"];
+                        byte[] stateBytes = ToByteArray(responseItems.items[i]["state"]);
+                        string stateStr = BitConverter.ToString(stateBytes);
+
+                        BaseGameItemMetadata meta = null;
+                        if (responseItems.items[i]["metadata"] == "ERC223")
+                        {
+                            BigInteger balance = BigInteger.Parse(responseItems.items[i]["amount"]);
+                            meta = new ERC223GameItemContract.Metadata(stateStr, player_address, balance);
+                            items[i] = new GameItem(Game, symbol, meta);
+                        }
+                        else if (responseItems.items[i]["metadata"] == "ERC721")
+                        {
+                            BigInteger asset_id = BigInteger.Parse(responseItems.items[i]["asset_id"]);
+                            meta = new ERC721GameItemContract.Metadata(player_address, asset_id);
+                            items[i] = new GameItem(Game, symbol, meta);
+                            items[i].State = stateBytes;
+                        }
                     }
                     return items;
                 }
