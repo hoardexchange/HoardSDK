@@ -151,7 +151,7 @@ namespace HoardTests
 
             items = gameItemProvider.GetPlayerItems(hoardFixture.PlayerUser, swordItem.Symbol);
             GameItem downloadedSwordItem = items[0];
-            hoardFixture.HoardService.UpdateItemProperties(downloadedSwordItem);
+            hoardFixture.HoardService.FetchItemProperties(downloadedSwordItem);
 
             Assert.Equal(swordItem.State, downloadedSwordItem.State);
 

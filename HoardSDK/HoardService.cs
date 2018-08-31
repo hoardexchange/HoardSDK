@@ -177,14 +177,14 @@ namespace Hoard
         /// Register default HoardBackend connector with BC fallback.
         /// </summary>
         /// <param name="game"></param>
-        public void RegisterHoardGame(GameID game)
+        public bool RegisterHoardGame(GameID game)
         {
             //assumig this is a hoard game we can use a hoardconnector
             HoardGameItemProvider provider = new HoardGameItemProvider(game);//this will create REST client to communicate with backend
             //but in case server is down we will pass a fallback
             provider.FallbackConnector = new BCGameItemProvider(game,BCComm);
                         
-            RegisterGame(game, provider);
+            return RegisterGame(game, provider);
         }
 
         /// <summary>
@@ -357,13 +357,13 @@ namespace Hoard
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        public bool UpdateItemProperties(GameItem item)
+        public bool FetchItemProperties(GameItem item)
         {
             //find compatible provider
             IItemPropertyProvider pp = GetItemPropertyProvider(item);
             if (pp != null)
             {
-                return pp.UpdateGameItemProperties(item);
+                return pp.FetchGameItemProperties(item);
             }
             return false;
         }

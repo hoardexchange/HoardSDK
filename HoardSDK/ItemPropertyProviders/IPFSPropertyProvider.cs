@@ -17,7 +17,7 @@ namespace Hoard.ItemPropertyProviders
             throw new NotImplementedException();
         }
 
-        public bool UpdateGameItemProperties(GameItem item)
+        public bool FetchGameItemProperties(GameItem item)
         {
             // FIXME: handle unsuccessful data download
 
