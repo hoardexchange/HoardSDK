@@ -168,7 +168,8 @@ namespace Hoard.GameItemProviders
                         if (responseItems.items[i]["metadata"] == "ERC223")
                         {
                             BigInteger balance = BigInteger.Parse(responseItems.items[i]["amount"]);
-                            meta = new ERC223GameItemContract.Metadata(stateStr, player_address, balance);
+                            string asset_id = responseItems.items[i]["asset_id"];
+                            meta = new ERC223GameItemContract.Metadata(stateStr, asset_id, balance);
                             items[i] = new GameItem(Game, symbol, meta);
                         }
                         else if (responseItems.items[i]["metadata"] == "ERC721")
