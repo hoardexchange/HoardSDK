@@ -34,7 +34,7 @@ namespace HoardTests.Fixtures
             cmd.Close();
         }
 
-        public void InitializeFromConfig(string configPath)
+        public void InitializeFromConfig(string configPath = null)
         {
             HoardServiceConfig config = HoardServiceConfig.Load(configPath);
             HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
@@ -43,6 +43,7 @@ namespace HoardTests.Fixtures
 
             Assert.True(HoardService.Initialize(options), "ERROR: Could not initialize HOARD!");
 
+            UserIDs.AddRange(HoardService.Players);
             HoardService.DefaultPlayer = UserIDs[0];
         }
 
