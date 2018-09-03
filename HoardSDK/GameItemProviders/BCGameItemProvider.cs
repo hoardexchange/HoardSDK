@@ -64,31 +64,34 @@ namespace Hoard.GameItemProviders
         public bool Connect()
         {
             itemContracts.Clear();
-            RegisterHoardGameContracts();
-            return true;
+            return RegisterHoardGameContracts();
         }
         #endregion
 
         /// <summary>
         /// Helper function to automatically register all contracts for given game
         /// </summary>
-        /// <param name="game"></param>
-        public void RegisterHoardGameContracts()
+        public bool RegisterHoardGameContracts()
         {
             string[] contracts = BCComm.GetGameItemContracts(Game).Result;
-            foreach(string c in contracts)
+            if (contracts != null)
             {
-                GameItemContract gameItemContract = GetGameItemContractByInterface(c);
-                if (gameItemContract != null)
+                foreach (string c in contracts)
                 {
-                    RegisterGameItemContract(gameItemContract);
+                    GameItemContract gameItemContract = GetGameItemContractByInterface(c);
+                    if (gameItemContract != null)
+                    {
+                        RegisterGameItemContract(gameItemContract);
+                    }
+                    else
+                    {
+                        // TODO: handle contracts that does not implement ERC165?
+                        throw new NotImplementedException();
+                    }
                 }
-                else
-                {
-                    // TODO: handle contracts that does not implement ERC165?
-                    throw new NotImplementedException();
-                }
+                return true;
             }
+            return false;
         }
 
         public void RegisterContractInterfaceID(string interfaceID, Type contractType)

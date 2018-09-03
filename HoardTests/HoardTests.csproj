@@ -73,6 +73,9 @@
     <PackageReference Include="Hoard.NethereumCore">
       <Version>1.0.6761.17447</Version>
     </PackageReference>
+    <PackageReference Include="ini-parser">
+      <Version>2.5.2</Version>
+    </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>11.0.2</Version>
     </PackageReference>
@@ -104,5 +107,9 @@
   </Target>
   <PropertyGroup>
     <PostBuildEvent>IF NOT EXIST "$(TargetDir)hoardConfig.json" copy "$(SolutionDir)config\hoardConfig.json.template" "$(TargetDir)hoardConfig.json"</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
 </Project>

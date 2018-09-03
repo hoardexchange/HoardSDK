@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
-using Hoard.DistributedStorage;
 using Hoard.GameItemProviders;
 
 #if DEBUG
@@ -194,16 +193,19 @@ namespace Hoard
         /// <param name="conn"></param>
         public bool RegisterGame(GameID game, IGameItemProvider provider)
         {
-            if (!Providers.ContainsKey(game))
-                Providers.Add(game, new List<IGameItemProvider>());
-
-            if (!Providers[game].Contains(provider))
+            if (!Providers.ContainsKey(game) || !Providers[game].Contains(provider))
             {
                 //connect to server and grab all important data (like supported item types)
                 if (provider.Connect())
                 {
                     //add to pool
+                    if (!Providers.ContainsKey(game))
+                    {
+                        Providers.Add(game, new List<IGameItemProvider>());
+                    }
+
                     Providers[game].Add(provider);
+
                     return true;
                 }
             }
