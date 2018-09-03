@@ -9,65 +9,81 @@ using Xunit;
 
 namespace HoardTests
 {
-    public class HoardServiceTests
+    public class HoardServiceInitializationFixture : IDisposable
+    {
+        public HoardServiceInitializationFixture()
+        {
+            HoardService hoard = HoardService.Instance;
+
+            HoardServiceConfig config = HoardServiceConfig.Load();
+            HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
+
+            options.Game = GameID.kInvalidID;
+
+            Assert.True(hoard.Initialize(options), "ERROR: Could not initialize HOARD!");
+        }
+
+        public void Dispose()
+        {
+            Assert.True(HoardService.Instance.Shutdown());
+        }
+    }
+
+    public class HoardServiceTests : IClassFixture<HoardServiceInitializationFixture>
     {
         [Fact]
         [Trait("Category", "Unit")]
-        public void TestHoardGames()
+        public void CheckDefaultPlayerExists()
         {
             HoardService hoard = HoardService.Instance;
-                        
-            HoardServiceConfig config = HoardServiceConfig.Load();
 
-            HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
-
-            Debug.WriteLine("Initalizing HOARD...");
-            Stopwatch sw = Stopwatch.StartNew();
-            Assert.True(hoard.Initialize(options), "ERROR: Could not initialize HOARD!");
-            sw.Stop();
-            Debug.WriteLine(string.Format("HOARD connected [{0}ms]!", sw.ElapsedMilliseconds));
-            if (hoard.DefaultGame != GameID.kInvalidID)
-            {
-                Debug.WriteLine("\tName: " + hoard.DefaultGame.Name);
-                Debug.WriteLine("\tBackend Url: " + hoard.DefaultGame.Url);
-                Debug.WriteLine("\tGameID: " + hoard.DefaultGame.ID);
-            }
-
-            Hoard.PlayerID myId = hoard.DefaultPlayer;
+            PlayerID myId = hoard.DefaultPlayer;
             Assert.True(myId != PlayerID.kInvalidID, "ERROR: Invalid player ID!");
-            Debug.WriteLine(string.Format("Current player is: {0}",myId.ID));
+        }
 
-            Debug.WriteLine("Getting Hoard games...");
+        [Fact]
+        //[Trait("Category", "Unit")] //TODO: this is not true in default setup
+        public void QueryHoardGames_NonEmpty()
+        {
+            HoardService hoard = HoardService.Instance;
 
-            sw = Stopwatch.StartNew();
             GameID[] games = hoard.QueryHoardGames().Result;
-            sw.Stop();
 
-            Debug.WriteLine(string.Format("Found {0} Hoard games. [{0}ms]!", games.Length, sw.ElapsedMilliseconds));
+            Assert.True(games.Length > 0, "ERROR: No games registered!");
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public void RegisterHoardGamesAndGetPlayerItems()
+        {
+            HoardService hoard = HoardService.Instance;
+
+            PlayerID myId = hoard.DefaultPlayer;
+            Assert.True(myId != PlayerID.kInvalidID, "ERROR: Invalid player ID!");
+
+            GameID[] games = hoard.QueryHoardGames().Result;
 
             foreach (GameID game in games)
             {
-                //Register hoard provider for this gam
-                Debug.WriteLine(String.Format("Registering Hoard game {0}",game.Name));
-                hoard.RegisterHoardGame(game);
+                //Register hoard provider for this game
+                bool ret = hoard.RegisterHoardGame(game);
+                Assert.True(ret,"ERROR: Could not register game "+game.Name);
 
-                Debug.WriteLine(String.Format("Getting player items for game {0}", game.Name));
                 GameItem[] items = hoard.GetPlayerItems(hoard.DefaultPlayer, game);
 
-                Debug.WriteLine(String.Format("Found {0} items.", items.Length));
                 foreach (GameItem gi in items)
                 {
                     //assume we need to populate properties
                     //TODO: if properties is not null we would need to compare state with some cached data and if there is mismatch update too
-                    Debug.WriteLine(String.Format("Getting properties for item {0}:{1}...", gi.Symbol, gi.State));
+                    Debug.WriteLine(string.Format("Getting properties for item {0}:{1}...", gi.Symbol, gi.State));
                     if (gi.Properties == null)
-                        hoard.UpdateItemProperties(gi);
+                    {
+                        ret = hoard.FetchItemProperties(gi);
+                        Assert.True(ret, string.Format("ERROR: could not get propeties for item {0}:{1}...", gi.Symbol, gi.State));
+                    }
                     //TODO: enumerate properties...
                 }
             }
-
-            Debug.WriteLine("Shutting down HOARD...");
-            Assert.True(hoard.Shutdown());
         }
     }
 }

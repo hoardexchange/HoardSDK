@@ -45,7 +45,7 @@ namespace Hoard
     {
         public GameID Game { get; set; } = GameID.kInvalidID;
         public Nethereum.JsonRpc.Client.IClient RpcClient { get; set; } = null;
-        public string AccountsDir { get; set; } = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "acounts");
+        public string AccountsDir { get; set; } = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Hoard", "accounts");
         public string GameCenterContract { get; set; } = "";
         //TODO: remove this! this is for development purposes
         public string DefaultAccountPass { get; set; } = "dev";
