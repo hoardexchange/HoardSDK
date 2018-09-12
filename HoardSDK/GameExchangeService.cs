@@ -152,7 +152,10 @@ namespace Hoard
 
         public override async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
         {
-            var jsonStr = await GetJson(String.Format("exchange/orders/{0},{1}","",""), null);
+            var jsonStr = await GetJson(
+                String.Format("exchange/orders/{0},{1}",
+                gaGet != null ? gaGet.Metadata.Get<string>("OwnerAddress") : "",
+                gaGive != null ? gaGive.Metadata.Get<string>("OwnerAddress") : ""), null);
 
             if (jsonStr != null)
             {
