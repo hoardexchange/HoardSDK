@@ -94,11 +94,11 @@ namespace Hoard.BC
             return games;
         }
 
-        public async Task<GameExchangeContract> GetGameExchangeContract(string gameContract)
+        public async Task<GameExchangeContract> GetGameExchangeContract(GameID game)
         {
-            GameContract game = new GameContract(web, gameContract);
-
-            return new GameExchangeContract(web, await game.GameExchangeContractAsync());
+            GameContract gameContract = null;
+            gameContracts.TryGetValue(game, out gameContract);
+            return new GameExchangeContract(web, await gameContract.GameExchangeContractAsync());
         }
 
         // TEST METHODS BELOW.

@@ -79,11 +79,6 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("tokenType");
         }
 
-        private Function GetFunctionTransfer()
-        {
-            return contract.GetFunction("transfer");
-        }
-
         private Function GetFunctionTokenStateType()
         {
             return contract.GetFunction("tokenStateType");
@@ -126,19 +121,11 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<byte[]>();
         }
 
-        protected abstract object[] GetTransferInput(GameItem item);
-
-        public async Task<bool> Transfer(string from, GameItem item)
-        {
-            object[] functionInput = GetTransferInput(item);
-            var function = GetFunctionTransfer();
-            var gas = await function.EstimateGasAsync(function.CreateTransactionInput(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), functionInput));
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(function.CreateTransactionInput(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, functionInput));
-            return receipt.Status.Value == 1;
-        }
+        public abstract Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount);
 
         public abstract Task<GameItem[]> GetGameItems(PlayerID playerID);
+
+        public abstract Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams);
     }
 
     /// <summary>
@@ -167,6 +154,11 @@ namespace Hoard.BC.Contracts
         public ERC223GameItemContract(GameID game, Web3 web3, string address) : base(game, web3, address, ABI) { }
         public ERC223GameItemContract(GameID game, Web3 web3, string address, string abi) : base(game, web3, address, abi) { }
 
+        private Function GetFunctionTransfer()
+        {
+            return contract.GetFunction("transfer");
+        }
+
         private Function GetFunctionTokenState()
         {
             return contract.GetFunction("tokenState");
@@ -176,6 +168,15 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionTokenState();
             return function.CallAsync<byte[]>();
+        }
+
+        public override async Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
+        {
+            var function = GetFunctionTransfer();
+            var gas = await function.EstimateGasAsync(addressFrom, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), addressTo, amount);
+            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(addressFrom, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, addressTo, amount);
+            return receipt.Status.Value == 1;
         }
 
         public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
@@ -192,9 +193,13 @@ namespace Hoard.BC.Contracts
                 return new GameItem[0];
         }
 
-        protected override object[] GetTransferInput(GameItem item)
+        public override async Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams)
         {
-            return new object[] { (item.Metadata as Metadata).Balance };
+            BigInteger itemBalance = await GetBalanceOf(gameItemsParams.PlayerID.ID);
+            string state = BitConverter.ToString(await GetTokenState());
+            Metadata meta = new Metadata(state, Address, itemBalance);
+            GameItem gi = new GameItem(Game, await GetSymbol(), meta);
+            return new GameItem[] { gi };
         }
     }
 
@@ -204,7 +209,7 @@ namespace Hoard.BC.Contracts
     public class ERC721GameItemContract : GameItemContract
     {
         public class Metadata : BaseGameItemMetadata
-        {            
+        {
             public string OwnerAddress { get; set; }
             public BigInteger ItemId { get; set; }
 
@@ -221,6 +226,11 @@ namespace Hoard.BC.Contracts
 
         public ERC721GameItemContract(GameID game, Web3 web3, string address) : base(game, web3, address, ABI) { }
         public ERC721GameItemContract(GameID game, Web3 web3, string address, string abi) : base(game, web3, address, abi) { }
+
+        private Function GetFunctionTransfer()
+        {
+            return contract.GetFunction("safeTransferFrom");
+        }
 
         private Function GetFunctionTokenState()
         {
@@ -263,9 +273,14 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<BigInteger>(index);
         }
 
-        protected override object[] GetTransferInput(GameItem item)
+        public override async Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
         {
-            return new object[] { (item.Metadata as Metadata).ItemId };
+            var function = GetFunctionTransfer();
+            BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
+            var gas = await function.EstimateGasAsync(addressFrom, new Nethereum.Hex.HexTypes.HexBigInteger(500000), new Nethereum.Hex.HexTypes.HexBigInteger(0), addressFrom, addressTo, tokenId);
+            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(addressFrom, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, addressFrom, addressTo, tokenId);
+            return receipt.Status.Value == 1;
         }
 
         public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
@@ -285,6 +300,24 @@ namespace Hoard.BC.Contracts
                 items[i] = new GameItem(Game, symbol, meta);
                 items[i].State = await GetTokenState(id);
             }
+
+            return items;
+        }
+
+        public override async Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams)
+        {
+            BigInteger itemBalance = await GetBalanceOf(gameItemsParams.PlayerID.ID);
+            string symbol = await GetSymbol();
+
+            ulong count = (ulong)itemBalance;
+
+            GameItem[] items = new GameItem[1];
+
+            BigInteger id = gameItemsParams.TokenId;
+            Metadata meta = new Metadata(Address, id);
+
+            items[0] = new GameItem(Game, symbol, meta);
+            items[0].State = await GetTokenState(id);
 
             return items;
         }

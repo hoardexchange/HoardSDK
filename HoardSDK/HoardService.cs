@@ -70,19 +70,20 @@ namespace Hoard
         private HoardService()
         {
         }
-       
+
         /// <summary>
         /// Request game item transfer to player.
         /// </summary>
         /// <param name="recipient">Transfer address.</param>
         /// <param name="item">Game item to be transfered.</param>
+        /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
-        public async Task<bool> RequestGameItemTransfer(PlayerID recipient, GameItem item)
+        public async Task<bool> RequestGameItemTransfer(PlayerID recipient, GameItem item, ulong amount)
         {
             IGameItemProvider gameItemProvider = GetGameItemProvider(item);
             if (gameItemProvider != null)
             {
-                return await gameItemProvider.Transfer(recipient, item);
+                return await gameItemProvider.Transfer(DefaultPlayer.ID, recipient.ID, item, amount);
             }
 
             return false;
@@ -182,7 +183,14 @@ namespace Hoard
             HoardGameItemProvider provider = new HoardGameItemProvider(game);//this will create REST client to communicate with backend
             //but in case server is down we will pass a fallback
             provider.FallbackConnector = new BCGameItemProvider(game,BCComm);
-                        
+
+            //init exchange service
+            GameExchangeService exchange = new GameExchangeService(this, provider);
+            if (exchange.Init(game))
+            {
+                GameExchangeService = exchange;
+            }
+
             return RegisterGame(game, provider);
         }
 

@@ -1,7 +1,10 @@
+using Hoard.BC.Contracts;
 using Hoard.GameItemProviders;
 using Newtonsoft.Json;
+using RestSharp;
 using System;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -31,35 +34,125 @@ namespace Hoard
 
     public class GameExchangeService : ExchangeService
     {
-        private BC.BCComm bcComm = null;
-        //TODO: should it really use HoardGameItemProvider? Is this the same backend? I doubt that.
-        private HoardGameItemProvider client = null;
+        private GameID Game = null;
+        private BC.BCComm BCComm = null;
         private BC.Contracts.GameExchangeContract GameExchangeContract = null;
-        private HoardService hoard = null;
+        private PlayerID PlayerID = null;
+        private IGameItemProvider ItemProvider = null;
 
-        public GameExchangeService(HoardGameItemProvider client, BC.BCComm bcComm, HoardService hoard)
+        private RestClient Client = null;
+        private string SessionKey = null;
+
+        public GameExchangeService(HoardService hoard, IGameItemProvider itemProvider)
         {
-            this.client = client;
-            this.bcComm = bcComm;
-            this.hoard = hoard; // FIXME: Circular dep.
+            this.BCComm = hoard.BCComm;
+            this.PlayerID = hoard.DefaultPlayer;
+            this.ItemProvider = itemProvider;
         }
 
-        public void Init(BC.Contracts.GameContract gameContract)
+        #region Backend connection
+
+        // Connect to exchange backend. 
+        // Note: Lets assume it connects on its own, independently from item providers.
+        private bool Connect(PlayerID player)
         {
-            GameExchangeContract = bcComm.GetContract<BC.Contracts.GameExchangeContract>(gameContract.GameExchangeContractAsync().Result);
+            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            {
+                Client = new RestClient(Game.Url);
+                Client.AutomaticDecompression = false;
+
+                //setup a cookie container for automatic cookies handling
+                Client.CookieContainer = new System.Net.CookieContainer();
+
+                //handshake
+
+                //1. GET challenge token
+                var request = new RestRequest("login/", Method.GET);
+                request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
+                var response = Client.Execute(request);
+
+                if (response.ErrorException != null)
+                    return false;
+
+                //UpdateCookies(response.Cookies);
+
+                string challengeToken = response.Content;
+                challengeToken = challengeToken.Substring(2);
+
+
+                var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
+                var nonceHex = nonce.ToString("x");
+
+                var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, player.PrivateKey);
+
+                var responseLogin = PostJson("login/", new
+                {
+                    token = response.Content,
+                    nonce = "0x" + nonceHex,
+                    address = player.ID,
+                    signature = sig
+                }).Result;
+
+                if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
+                    return false;
+
+                SessionKey = response.Content;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private void PrepareRequest(RestRequest req)
+        {
+            var cookies = Client.CookieContainer.GetCookies(new Uri(Game.Url));
+            req.AddHeader("X-CSRFToken", cookies["csrftoken"].Value);
+        }
+
+        private async Task<IRestResponse> PostJson(string url, object data)
+        {
+            var request = new RestRequest(url, Method.POST);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
+            request.AddJsonBody(data);
+
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
+
+            return response;
+        }
+
+        public async Task<string> GetJson(string url, object data)
+        {
+            var request = new RestRequest(url, Method.GET);
+            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
+            request.AddJsonBody(data);
+            PrepareRequest(request);
+
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
+
+            return response.Content;
+        }
+
+        #endregion
+
+        public bool Init(GameID game)
+        {
+            Game = game;
+            GameExchangeContract = BCComm.GetGameExchangeContract(game).Result;
+            return Connect(PlayerID);
         }
 
         public void Shutdown()
         {
             GameExchangeContract = null;
+            Client = null;
         }
 
-        // FIXME
         public override async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
         {
-            //TODO:
-            var jsonStr = "";/* await client.GetJson(
-                String.Format("exchange/orders/{0},{1}","",""), null);*/
+            var jsonStr = await GetJson(String.Format("exchange/orders/{0},{1}","",""), null);
 
             if (jsonStr != null)
             {
@@ -67,10 +160,10 @@ namespace Hoard
 
                 foreach (var l in list)
                 {
-                    //l.UpdateGameAssetsObjs(
-                    //    this.hoard.GameAssetAddressDict[l.tokenGet.ToLower()],
-                    //    this.hoard.GameAssetAddressDict[l.tokenGive.ToLower()]
-                    //    );
+                    l.UpdateGameItemObjs(
+                        CreateGameItem(l.tokenGet, 0), 
+                        CreateGameItem(l.tokenGive, l.tokenId)
+                    );
                 }
                 return list.ToList().FindAll(e => e.amount < e.amountGet).ToArray();
             }
@@ -80,28 +173,66 @@ namespace Hoard
 
         public override async Task<bool> Trade(Order order, ulong amount)
         {
-            return await GameExchangeContract.Trade(
-                order.tokenGet,
-                order.amountGet,
-                order.tokenGive,
-                order.amountGive,
-                order.expires,
-                order.nonce,
-                order.user,
-                amount,
-                hoard.DefaultPlayer.ID);
+            if (order.gameItemGive.Metadata is ERC223GameItemContract.Metadata)
+            {
+                return await GameExchangeContract.Trade(
+                    order.tokenGet,
+                    order.amountGet,
+                    order.tokenGive,
+                    order.amountGive,
+                    order.expires,
+                    order.nonce,
+                    order.user,
+                    amount,
+                    PlayerID.ID);
+            }
+            else if (order.gameItemGive.Metadata is ERC721GameItemContract.Metadata)
+            {
+                return await GameExchangeContract.TradeERC721(
+                    order.tokenGet,
+                    order.amountGet,
+                    order.tokenGive,
+                    order.tokenId,
+                    order.expires,
+                    order.nonce,
+                    order.user,
+                    amount,
+                    PlayerID.ID);
+            }
+
+            throw new NotImplementedException();
         }
 
         public override async Task<bool> Deposit(GameItem item, ulong amount)
         {
-            //return await asset.Contract.Transfer(GameExchangeContract.Address, amount, hoard.Accounts[0].Address);
-            throw new NotImplementedException();
+            return await ItemProvider.Transfer(PlayerID.ID, GameExchangeContract.Address, item, amount);
         }
 
         public override async Task<bool> Withdraw(GameItem item, ulong amount)
         {
-            //return await GameExchangeContract.Withdraw(asset.ContractAddress, amount, hoard.Accounts[0].Address);
+            var metadata223 = item.Metadata as ERC223GameItemContract.Metadata;
+            if (metadata223 != null)
+            {
+                return await GameExchangeContract.Withdraw(metadata223.OwnerAddress, amount, PlayerID.ID);
+            }
+
+            var metadata721 = item.Metadata as ERC721GameItemContract.Metadata;
+            if (metadata721 != null)
+            {
+                return await GameExchangeContract.WithdrawERC721(metadata721.OwnerAddress, metadata721.ItemId, PlayerID.ID);
+            }
+
             throw new NotImplementedException();
+        }
+
+        private GameItem CreateGameItem(string itemContractAddress, BigInteger tokenId)
+        {
+            GameItemsParams gameItemsParams = new GameItemsParams();
+            gameItemsParams.PlayerID = PlayerID;
+            gameItemsParams.ContractAddress = itemContractAddress;
+            gameItemsParams.TokenId = tokenId;
+
+            return ItemProvider.GetItems(new GameItemsParams[] { gameItemsParams })[0];
         }
     }
 
@@ -116,6 +247,10 @@ namespace Hoard
 
         [JsonProperty(propertyName: "tokenGive")]
         public string tokenGive { get; private set; }
+
+        [JsonProperty(propertyName: "tokenId")]
+        // [JsonConverter(typeof(BigIntegerConverter))]
+        public BigInteger tokenId { get; private set; }
 
         [JsonProperty(propertyName: "amountGive")]
         // [JsonConverter(typeof(BigIntegerConverter))]

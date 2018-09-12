@@ -95,6 +95,11 @@ namespace HoardTests.CryptKittyTests
 
         }
 
+        public GameItem[] GetItems(GameItemsParams[] gameItemsParams)
+        {
+            return null;
+        }
+
         public GameItem[] GetPlayerItems(PlayerID playerID, string itemType)
         {
             return null;
@@ -112,7 +117,7 @@ namespace HoardTests.CryptKittyTests
         }
 
 
-        public Task<bool> Transfer(PlayerID recipient, GameItem item)
+        public Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
         {
             throw new NotImplementedException();
         }

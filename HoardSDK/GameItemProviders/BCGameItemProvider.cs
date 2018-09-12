@@ -51,14 +51,26 @@ namespace Hoard.GameItemProviders
             return items.ToArray();
         }
 
+        public GameItem[] GetItems(GameItemsParams[] gameItemsParams)
+        {
+            List<GameItem> items = new List<GameItem>();
+            foreach (var param in gameItemsParams)
+            {
+                GameItemContract itemContract = GetGameItemContractByInterface(param.ContractAddress);
+                items.AddRange(itemContract.GetGameItems(param).Result);
+            }
+            return items.ToArray();
+        }
+
         public string[] GetItemTypes()
         {
             return itemContracts.Keys.ToArray();
         }
 
-        public Task<bool> Transfer(PlayerID recipient, GameItem item)
+        public Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
         {
-            throw new NotImplementedException();
+            GameItemContract gameItemContract = itemContracts[item.Symbol];
+            return gameItemContract.Transfer(addressFrom, addressTo, item, amount);
         }
 
         public bool Connect()
