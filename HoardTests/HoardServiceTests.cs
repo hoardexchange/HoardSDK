@@ -69,7 +69,7 @@ namespace HoardTests
                 HoardService.RegisterHoardGame(game);
 
                 // Check exchange
-                ExchangeService exchange = HoardService.GameExchangeService;
+                IExchangeService exchange = HoardService.GameExchangeService;
                 if (exchange != null)
                 {
                     var orders = exchange.ListOrders(null, null).Result;

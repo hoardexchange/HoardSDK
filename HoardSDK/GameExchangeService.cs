@@ -9,30 +9,18 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
-    public class ExchangeService
+    public interface IExchangeService
     {
-        public virtual Task<bool> Deposit(GameItem item, ulong amount)
-        {
-            throw new NotImplementedException();
-        }
+        Task<bool> Deposit(GameItem item, ulong amount);
 
-        public virtual Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
-        {
-            throw new NotImplementedException();
-        }
+        Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive);
 
-        public virtual Task<bool> Trade(Order order, ulong amount)
-        {
-            throw new NotImplementedException();
-        }
+        Task<bool> Trade(Order order, ulong amount);
 
-        public virtual Task<bool> Withdraw(GameItem item, ulong amount)
-        {
-            throw new NotImplementedException();
-        }
+        Task<bool> Withdraw(GameItem item, ulong amount);
     }
 
-    public class GameExchangeService : ExchangeService
+    public class GameExchangeService : IExchangeService
     {
         private GameID Game = null;
         private BC.BCComm BCComm = null;
@@ -41,7 +29,6 @@ namespace Hoard
         private IGameItemProvider ItemProvider = null;
 
         private RestClient Client = null;
-        private string SessionKey = null;
 
         public GameExchangeService(HoardService hoard, IGameItemProvider itemProvider)
         {
@@ -50,6 +37,8 @@ namespace Hoard
             this.ItemProvider = itemProvider;
         }
 
+        // Setup exchange backend client. 
+        // Note: Lets assume it connects on its own, independently from item providers.
         private bool SetupClient(PlayerID player)
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
@@ -80,6 +69,8 @@ namespace Hoard
         {
             Game = game;
             GameExchangeContract = BCComm.GetGameExchangeContract(game).Result;
+            if (GameExchangeContract == null)
+                return false;
             return SetupClient(PlayerID);
         }
 
@@ -89,7 +80,7 @@ namespace Hoard
             Client = null;
         }
 
-        public override async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
+        public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
         {
             var jsonStr = await GetJson(
                 String.Format("exchange/orders/{0},{1}",
@@ -113,7 +104,7 @@ namespace Hoard
             return new Order[0];
         }
 
-        public override async Task<bool> Trade(Order order, ulong amount)
+        public async Task<bool> Trade(Order order, ulong amount)
         {
             if (order.gameItemGive.Metadata is ERC223GameItemContract.Metadata)
             {
@@ -145,12 +136,12 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        public override async Task<bool> Deposit(GameItem item, ulong amount)
+        public async Task<bool> Deposit(GameItem item, ulong amount)
         {
             return await ItemProvider.Transfer(PlayerID.ID, GameExchangeContract.Address, item, amount);
         }
 
-        public override async Task<bool> Withdraw(GameItem item, ulong amount)
+        public async Task<bool> Withdraw(GameItem item, ulong amount)
         {
             var metadata223 = item.Metadata as ERC223GameItemContract.Metadata;
             if (metadata223 != null)
@@ -184,34 +175,27 @@ namespace Hoard
         public string tokenGet { get; private set; }
 
         [JsonProperty(propertyName: "amountGet")]
-        // [JsonConverter(typeof(BigIntegerConverter))]
         public ulong amountGet { get; private set; }
 
         [JsonProperty(propertyName: "tokenGive")]
         public string tokenGive { get; private set; }
 
         [JsonProperty(propertyName: "tokenId")]
-        // [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger tokenId { get; private set; }
 
         [JsonProperty(propertyName: "amountGive")]
-        // [JsonConverter(typeof(BigIntegerConverter))]
         public ulong amountGive { get; private set; }
 
         [JsonProperty(propertyName: "expires")]
-        // [JsonConverter(typeof(BigIntegerConverter))]
         public ulong expires { get; private set; }
 
         [JsonProperty(propertyName: "nonce")]
-        // [JsonConverter(typeof(BigIntegerConverter))]
         public ulong nonce { get; private set; }
 
         [JsonProperty(propertyName: "amount")]
-        // [JsonConverter(typeof(BigIntegerConverter))]
         public ulong amount { get; private set; }
 
         [JsonProperty(propertyName: "user")]
-        // [JsonConverter(typeof(BigIntegerConverter))]
         public string user { get; private set; }
 
         public GameItem gameItemGet { get; private set; } = null;
@@ -235,29 +219,4 @@ namespace Hoard
             gameItemGive = gaGive;
         }
     }
-
-    //class BigIntegerConverter : JsonConverter
-    //{
-    //    public override bool CanConvert(Type objectType)
-    //    {
-    //        return (objectType == typeof(BigInteger));
-    //    }
-
-    //    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-    //    {
-    //        JToken token = JToken.Load(reader);
-    //        if (token.Type == JTokenType.Integer || 
-    //            token.Type == JTokenType.String)
-    //        {
-    //            return new BigInteger(token.ToString());
-    //        }
-
-    //        return null;
-    //    }
-
-    //    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-    //    {
-    //        serializer.Serialize(writer, value);
-    //    }
-    //}
 }

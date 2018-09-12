@@ -32,7 +32,7 @@ namespace Hoard
         /// <summary>
         /// Game exchange service.
         /// </summary>
-        public ExchangeService GameExchangeService { get; private set; } = null;
+        public IExchangeService GameExchangeService { get; private set; } = null;
 
         /// <summary>
         /// List of registered GameItemProviders

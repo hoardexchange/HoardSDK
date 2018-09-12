@@ -7,6 +7,7 @@ using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -98,7 +99,16 @@ namespace Hoard.BC
         {
             GameContract gameContract = null;
             gameContracts.TryGetValue(game, out gameContract);
-            return new GameExchangeContract(web, await gameContract.GameExchangeContractAsync());
+
+            string exchangeAddress = await gameContract.GameExchangeContractAsync();
+            if (exchangeAddress.StartsWith("0x"))
+                exchangeAddress = exchangeAddress.Substring(2);
+
+            BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
+            if (!exchangeAddressInt.Equals(0))
+                return new GameExchangeContract(web, await gameContract.GameExchangeContractAsync());
+            else
+                return null;
         }
 
         // TEST METHODS BELOW.
