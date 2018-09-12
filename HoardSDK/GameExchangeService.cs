@@ -50,11 +50,7 @@ namespace Hoard
             this.ItemProvider = itemProvider;
         }
 
-        #region Backend connection
-
-        // Connect to exchange backend. 
-        // Note: Lets assume it connects on its own, independently from item providers.
-        private bool Connect(PlayerID player)
+        private bool SetupClient(PlayerID player)
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {
@@ -64,84 +60,27 @@ namespace Hoard
                 //setup a cookie container for automatic cookies handling
                 Client.CookieContainer = new System.Net.CookieContainer();
 
-                //handshake
-
-                //1. GET challenge token
-                var request = new RestRequest("login/", Method.GET);
-                request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-                var response = Client.Execute(request);
-
-                if (response.ErrorException != null)
-                    return false;
-
-                //UpdateCookies(response.Cookies);
-
-                string challengeToken = response.Content;
-                challengeToken = challengeToken.Substring(2);
-
-
-                var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
-                var nonceHex = nonce.ToString("x");
-
-                var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, player.PrivateKey);
-
-                var responseLogin = PostJson("login/", new
-                {
-                    token = response.Content,
-                    nonce = "0x" + nonceHex,
-                    address = player.ID,
-                    signature = sig
-                }).Result;
-
-                if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
-                    return false;
-
-                SessionKey = response.Content;
-
                 return true;
             }
-
             return false;
         }
 
-        private void PrepareRequest(RestRequest req)
-        {
-            var cookies = Client.CookieContainer.GetCookies(new Uri(Game.Url));
-            req.AddHeader("X-CSRFToken", cookies["csrftoken"].Value);
-        }
-
-        private async Task<IRestResponse> PostJson(string url, object data)
-        {
-            var request = new RestRequest(url, Method.POST);
-            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-            request.AddJsonBody(data);
-
-            PrepareRequest(request);
-
-            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
-
-            return response;
-        }
-
-        public async Task<string> GetJson(string url, object data)
+        private async Task<string> GetJson(string url, object data)
         {
             var request = new RestRequest(url, Method.GET);
             request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             request.AddJsonBody(data);
-            PrepareRequest(request);
 
             var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response.Content;
         }
 
-        #endregion
-
         public bool Init(GameID game)
         {
             Game = game;
             GameExchangeContract = BCComm.GetGameExchangeContract(game).Result;
-            return Connect(PlayerID);
+            return SetupClient(PlayerID);
         }
 
         public void Shutdown()
