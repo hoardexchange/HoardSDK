@@ -100,20 +100,23 @@ namespace Hoard.BC
             GameContract gameContract = null;
             gameContracts.TryGetValue(game, out gameContract);
 
-            string exchangeAddress = await gameContract.GameExchangeContractAsync();
-            if (exchangeAddress.StartsWith("0x"))
-                exchangeAddress = exchangeAddress.Substring(2);
+            if (gameContract != null)
+            {
+                string exchangeAddress = await gameContract.GameExchangeContractAsync();
+                if (exchangeAddress.StartsWith("0x"))
+                    exchangeAddress = exchangeAddress.Substring(2);
 
-            BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
-            if (!exchangeAddressInt.Equals(0))
-                return new GameExchangeContract(web, await gameContract.GameExchangeContractAsync());
-            else
-                return null;
+                BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
+                if (!exchangeAddressInt.Equals(0))
+                    return new GameExchangeContract(web, await gameContract.GameExchangeContractAsync());
+            }
+
+            return null;
         }
 
         // TEST METHODS BELOW.
 
-        
+
 
 
 
