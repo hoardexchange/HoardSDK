@@ -3,6 +3,7 @@ using Hoard.GameItemProviders;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -80,6 +81,29 @@ namespace Hoard
             Client = null;
         }
 
+        private class GameItemId
+        {
+            public string Address = null;
+            public string TokenId = null;
+
+            public GameItemId(string address, string tokenId)
+            {
+                Address = address;
+                TokenId = tokenId;
+            }
+
+            public override int GetHashCode()
+            {
+                return Address.GetHashCode() + TokenId.GetHashCode();
+            }
+
+            public override bool Equals(object obj)
+            {
+                GameItemId itemId = obj as GameItemId;
+                return Address == itemId.Address && TokenId == itemId.TokenId;
+            }
+        }
+
         public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
         {
             var jsonStr = await GetJson(
@@ -87,18 +111,41 @@ namespace Hoard
                 gaGet != null ? gaGet.Metadata.Get<string>("OwnerAddress") : "",
                 gaGive != null ? gaGive.Metadata.Get<string>("OwnerAddress") : ""), null);
 
+            HashSet<GameItemId> itemsIds = new HashSet<GameItemId>();
+
             if (jsonStr != null)
             {
                 var list = JsonConvert.DeserializeObject<Order[]>(jsonStr);
 
-                foreach (var l in list)
+                var filteredList = list.ToList().FindAll(e => e.amount < e.amountGet).ToArray();
+
+                foreach (var l in filteredList)
+                {
+                    itemsIds.Add(new GameItemId(l.tokenGet, "0"));
+                    itemsIds.Add(new GameItemId(l.tokenGive, l.tokenId.ToString()));
+                }
+
+                GameItemsParams[] gameItemsParams = new GameItemsParams[itemsIds.Count];
+                int itemsCount = 0;
+                foreach (var item in itemsIds)
+                {
+                    gameItemsParams[itemsCount] = new GameItemsParams();
+                    gameItemsParams[itemsCount].PlayerAddress = PlayerID.ID;
+                    gameItemsParams[itemsCount].ContractAddress = item.Address;
+                    gameItemsParams[itemsCount].TokenId = item.TokenId;
+                    itemsCount++;
+                }
+                GameItem[] itemsRetrieved = ItemProvider.GetItems(gameItemsParams);
+
+                foreach (var l in filteredList)
                 {
                     l.UpdateGameItemObjs(
-                        CreateGameItem(l.tokenGet, 0), 
-                        CreateGameItem(l.tokenGive, l.tokenId)
+                        SearchGameItem(itemsRetrieved, l.tokenGet, 0),
+                        SearchGameItem(itemsRetrieved, l.tokenGive, l.tokenId)
                     );
                 }
-                return list.ToList().FindAll(e => e.amount < e.amountGet).ToArray();
+
+                return filteredList;
             }
 
             return new Order[0];
@@ -158,14 +205,22 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        private GameItem CreateGameItem(string itemContractAddress, BigInteger tokenId)
+        private GameItem SearchGameItem(GameItem[] items, string itemContractAddress, BigInteger tokenId)
         {
-            GameItemsParams gameItemsParams = new GameItemsParams();
-            gameItemsParams.PlayerID = PlayerID;
-            gameItemsParams.ContractAddress = itemContractAddress;
-            gameItemsParams.TokenId = tokenId;
-
-            return ItemProvider.GetItems(new GameItemsParams[] { gameItemsParams })[0];
+            foreach (GameItem item in items)
+            {
+                if (item.Metadata.Get<string>("OwnerAddress") == itemContractAddress.ToLower())
+                {
+                    var metadata721 = item.Metadata as ERC721GameItemContract.Metadata;
+                    if (metadata721 != null)
+                    {
+                        if (metadata721.ItemId == tokenId)
+                            return item;
+                    }
+                    return item;
+                }
+            }
+            return null;
         }
     }
 

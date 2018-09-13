@@ -9,9 +9,9 @@ namespace Hoard
     /// </summary>
     public class GameItemsParams
     {
-        public PlayerID PlayerID = null;
+        public string PlayerAddress = null;
         public string ContractAddress = null;
-        public BigInteger TokenId = 0;
+        public string TokenId = null;
     }
 
     /// <summary>

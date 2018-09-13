@@ -1,6 +1,7 @@
 ﻿using Nethereum.Contracts;
 using Nethereum.Web3;
 using System;
+using System.Globalization;
 using System.Numerics;
 using System.Threading.Tasks;
 
@@ -195,7 +196,7 @@ namespace Hoard.BC.Contracts
 
         public override async Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams)
         {
-            BigInteger itemBalance = await GetBalanceOf(gameItemsParams.PlayerID.ID);
+            BigInteger itemBalance = await GetBalanceOf(gameItemsParams.PlayerAddress);
             string state = BitConverter.ToString(await GetTokenState());
             Metadata meta = new Metadata(state, Address, itemBalance);
             GameItem gi = new GameItem(Game, await GetSymbol(), meta);
@@ -306,14 +307,14 @@ namespace Hoard.BC.Contracts
 
         public override async Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams)
         {
-            BigInteger itemBalance = await GetBalanceOf(gameItemsParams.PlayerID.ID);
+            BigInteger itemBalance = await GetBalanceOf(gameItemsParams.PlayerAddress);
             string symbol = await GetSymbol();
 
             ulong count = (ulong)itemBalance;
 
             GameItem[] items = new GameItem[1];
 
-            BigInteger id = gameItemsParams.TokenId;
+            BigInteger id = BigInteger.Parse(gameItemsParams.TokenId, NumberStyles.AllowHexSpecifier);
             Metadata meta = new Metadata(Address, id);
 
             items[0] = new GameItem(Game, symbol, meta);

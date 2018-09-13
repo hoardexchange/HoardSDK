@@ -188,8 +188,7 @@ namespace Hoard.GameItemProviders
         {
             if (Client != null)
             {
-                var request = new RestRequest(string.Format("items/{0},{1},{2}", gameItemsParams[0].PlayerID.ID, gameItemsParams[0].ContractAddress, gameItemsParams[0].TokenId), Method.GET);
-                var response = Client.Execute(request);
+                var response = PostJson("items/", gameItemsParams).Result;
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
