@@ -98,13 +98,15 @@ namespace Hoard.BC
         public async Task<GameExchangeContract> GetGameExchangeContract()
         {
             string exchangeAddress = await gameCenter.GetExchangeAddressAsync();
-            if (exchangeAddress.StartsWith("0x"))
-                exchangeAddress = exchangeAddress.Substring(2);
+            if (exchangeAddress != null)
+            {
+                if (exchangeAddress.StartsWith("0x"))
+                    exchangeAddress = exchangeAddress.Substring(2);
 
-            BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
-            if (!exchangeAddressInt.Equals(0))
-                return new GameExchangeContract(web, exchangeAddress);
-
+                BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
+                if (!exchangeAddressInt.Equals(0))
+                    return new GameExchangeContract(web, exchangeAddress);
+            }
             return null;
         }
 
