@@ -48,11 +48,6 @@ namespace Hoard.BC.Contracts
         {
             return contract.GetFunction("itemContractMap");
         }
-        
-        private Function GetFunctionGameExchange()
-        {
-            return contract.GetFunction("gameExchange");
-        }
 
         //FIXME?
         //private Function GetFunctionPayoutPlayerReward()
@@ -94,12 +89,6 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionGetItemContract();
             return function.CallAsync<string>(gameId);
-        }
-
-        public Task<string> GameExchangeContractAsync()
-        {
-            var function = GetFunctionGameExchange();
-            return function.CallAsync<string>();
         }
 
         //FIXME?

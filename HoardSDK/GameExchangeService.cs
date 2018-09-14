@@ -3,6 +3,7 @@ using Hoard.GameItemProviders;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -23,28 +24,43 @@ namespace Hoard
 
     public class GameExchangeService : IExchangeService
     {
-        private GameID Game = null;
+        HoardService Hoard = null;
+        private string ExchangUrl = null;
         private BC.BCComm BCComm = null;
         private BC.Contracts.GameExchangeContract GameExchangeContract = null;
         private PlayerID PlayerID = null;
-        private IGameItemProvider ItemProvider = null;
 
         private RestClient Client = null;
 
-        public GameExchangeService(HoardService hoard, IGameItemProvider itemProvider)
+        public GameExchangeService(HoardService hoard)
         {
+            this.Hoard = hoard;
             this.BCComm = hoard.BCComm;
             this.PlayerID = hoard.DefaultPlayer;
-            this.ItemProvider = itemProvider;
+        }
+
+        public bool Init()
+        {
+            GameExchangeContract = BCComm.GetGameExchangeContract().Result;
+            if (GameExchangeContract == null)
+                return false;
+            ExchangUrl = BCComm.GetGameExchangeSrvURL().Result;
+            return SetupClient(PlayerID);
+        }
+
+        public void Shutdown()
+        {
+            GameExchangeContract = null;
+            Client = null;
         }
 
         // Setup exchange backend client. 
         // Note: Lets assume it connects on its own, independently from item providers.
         private bool SetupClient(PlayerID player)
         {
-            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            if (Uri.IsWellFormedUriString(ExchangUrl, UriKind.Absolute))
             {
-                Client = new RestClient(Game.Url);
+                Client = new RestClient(ExchangUrl);
                 Client.AutomaticDecompression = false;
 
                 //setup a cookie container for automatic cookies handling
@@ -64,21 +80,6 @@ namespace Hoard
             var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response.Content;
-        }
-
-        public bool Init(GameID game)
-        {
-            Game = game;
-            GameExchangeContract = BCComm.GetGameExchangeContract(game).Result;
-            if (GameExchangeContract == null)
-                return false;
-            return SetupClient(PlayerID);
-        }
-
-        public void Shutdown()
-        {
-            GameExchangeContract = null;
-            Client = null;
         }
 
         private class GameItemId
@@ -135,7 +136,7 @@ namespace Hoard
                     gameItemsParams[itemsCount].TokenId = item.TokenId;
                     itemsCount++;
                 }
-                GameItem[] itemsRetrieved = ItemProvider.GetItems(gameItemsParams);
+                GameItem[] itemsRetrieved = Hoard.GetItems(gameItemsParams);
 
                 foreach (var l in filteredList)
                 {
@@ -185,7 +186,12 @@ namespace Hoard
 
         public async Task<bool> Deposit(GameItem item, ulong amount)
         {
-            return await ItemProvider.Transfer(PlayerID.ID, GameExchangeContract.Address, item, amount);
+            IGameItemProvider gameItemProvider = Hoard.GetGameItemProvider(item);
+            if (gameItemProvider != null)
+            {
+                return await gameItemProvider.Transfer(PlayerID.ID, GameExchangeContract.Address, item, amount);
+            }
+            return false;
         }
 
         public async Task<bool> Withdraw(GameItem item, ulong amount)
@@ -205,7 +211,7 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        private GameItem SearchGameItem(GameItem[] items, string itemContractAddress, BigInteger tokenId)
+        private GameItem SearchGameItem(IEnumerable items, string itemContractAddress, BigInteger tokenId)
         {
             foreach (GameItem item in items)
             {

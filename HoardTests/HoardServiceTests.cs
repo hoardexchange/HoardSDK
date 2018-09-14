@@ -68,31 +68,6 @@ namespace HoardTests
                 Debug.WriteLine(String.Format("Registering Hoard game {0}", game.Name));
                 HoardService.RegisterHoardGame(game);
 
-                // Check exchange
-                IExchangeService exchange = HoardService.GameExchangeService;
-                if (exchange != null)
-                {
-                    var orders = exchange.ListOrders(null, null).Result;
-                    Debug.WriteLine(String.Format("Found {0} exchange orders.", orders.Length));
-                    foreach (Order order in orders)
-                    {
-                        Debug.WriteLine(String.Format("Order: Buy {0} {1} for {2} {3}.",
-                            order.amountGive,
-                            order.gameItemGive.Symbol,
-                            order.amountGet,
-                            order.gameItemGet.Symbol
-                        ));
-                    }
-                    // test trade:
-                    /*if (orders.Length > 1)
-                    {
-                        Order order = orders[0];
-                        bool result = exchange.Deposit(order.gameItemGet, order.amountGet).Result;
-                        result = exchange.Trade(order, order.amountGet).Result;
-                        result = exchange.Withdraw(order.gameItemGive, order.amountGive).Result;
-                    }*/
-                }
-
                 Debug.WriteLine(String.Format("Getting player items for game {0}", game.Name));
                 GameItem[] items = HoardService.GetPlayerItems(HoardService.DefaultPlayer, game);
 
@@ -106,6 +81,31 @@ namespace HoardTests
                         HoardService.FetchItemProperties(gi);
                     //TODO: enumerate properties...
                 }
+            }
+
+            // Check exchange
+            IExchangeService exchange = HoardService.GameExchangeService;
+            if (exchange != null)
+            {
+                var orders = exchange.ListOrders(null, null).Result;
+                Debug.WriteLine(String.Format("Found {0} exchange orders.", orders.Length));
+                foreach (Order order in orders)
+                {
+                    Debug.WriteLine(String.Format("Order: Buy {0} {1} for {2} {3}.",
+                        order.amountGive,
+                        order.gameItemGive.Symbol,
+                        order.amountGet,
+                        order.gameItemGet.Symbol
+                    ));
+                }
+                // test trade:
+                /*if (orders.Length > 1)
+                {
+                    Order order = orders[0];
+                    bool result = exchange.Deposit(order.gameItemGet, order.amountGet).Result;
+                    result = exchange.Trade(order, order.amountGet).Result;
+                    result = exchange.Withdraw(order.gameItemGive, order.amountGive).Result;
+                }*/
             }
 
             Debug.WriteLine("Shutting down HOARD...");
