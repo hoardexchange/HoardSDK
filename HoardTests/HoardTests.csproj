@@ -55,6 +55,8 @@
     <Compile Include="IPCTests.cs" />
     <Compile Include="NethereumRpcClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RpcModel\LegacyRpcClient.cs" />
+    <Compile Include="RpcModel\LegacyRpcModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
