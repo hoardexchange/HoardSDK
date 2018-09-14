@@ -41,7 +41,7 @@ namespace HoardIPC
             //Console.WriteLine("Customer {0} has ordered {1} {2} with delivery address {3}", order.CustomerName, order.Quantity, order.ProductName, order.Address);
         }
 
-        public void SendMessage(PipeMessage msg, Messages msgId)
+        public void SendMessage(PipeMessage msg)
         {
             Debug.Assert(NamedPipeClient != null);
             byte[] msgBytes = msg.Serialize();
@@ -49,7 +49,7 @@ namespace HoardIPC
             PipeHeader header = new PipeHeader
             {
                 msgSize = msgBytes.Length,
-                msgId = msgId
+                msgId = msg.GetId()
             };
             byte[] headerBytes = header.Serialize();
             NamedPipeClient.Write(headerBytes, 0, headerBytes.Length);            

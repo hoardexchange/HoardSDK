@@ -1,30 +1,25 @@
 ﻿using Hoard;
-using System;
-using System.Collections.Generic;
+using HoardTests.Fixtures;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace HoardTests.CryptKittyTests
 {
-    public class CryptoKittyTest
+    public class CryptoKittyTest : IClassFixture<HoardServiceFixture>
     {
+        HoardServiceFixture hoardFixture;
+
+        public CryptoKittyTest(HoardServiceFixture _hoardFixture)
+        {
+            hoardFixture = _hoardFixture;
+        }
+
         [Fact]
         public void TestCryptoKittyProvider()
         {
-            HoardService hoard = HoardService.Instance;
+            hoardFixture.InitializeFromConfig();
+            HoardService hoard = hoardFixture.HoardService;
 
-            HoardServiceOptions options = new HoardServiceOptions();
-            options.RpcClient = new Nethereum.JsonRpc.Client.RpcClient(new Uri(@"http://acedkewlxuu2nfnaexb4eraa.devel.hoard.exchange:8545"));
-            options.AccountsDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "acounts");
-            
-            Debug.WriteLine("Initalizing HOARD...");
-            Stopwatch sw = Stopwatch.StartNew();
-            Assert.True(hoard.Initialize(options), "ERROR: Could not initialize HOARD!");
-            sw.Stop();
-            Debug.WriteLine(string.Format("HOARD connected [{0}ms]!", sw.ElapsedMilliseconds));
             if (hoard.DefaultGame != GameID.kInvalidID)
             {
                 Debug.WriteLine("\tName: " + hoard.DefaultGame.Name);

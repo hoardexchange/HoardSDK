@@ -150,36 +150,12 @@ namespace Hoard.GameItemProviders
         {
             if (Client != null)
             {
-                var request = new RestRequest(string.Format("player_items/{0}", playerID.ID), Method.GET);
+                var request = new RestRequest(string.Format("player_items/{0},", playerID.ID), Method.GET);
                 var response = Client.Execute(request);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                {         
-                    var responseItems = JsonConvert.DeserializeObject<responseDict>(response.Content);
-                    GameItem[] items = new GameItem[responseItems.items.Count];
-                    for (int i=0;i<responseItems.items.Count;++i)
-                    {
-                        string player_address = responseItems.items[i]["player_address"];
-                        string symbol = responseItems.items[i]["symbol"];
-                        byte[] stateBytes = ToByteArray(responseItems.items[i]["state"]);
-                        string stateStr = BitConverter.ToString(stateBytes);
-
-                        BaseGameItemMetadata meta = null;
-                        if (responseItems.items[i]["metadata"] == "ERC223")
-                        {
-                            BigInteger balance = BigInteger.Parse(responseItems.items[i]["amount"]);
-                            meta = new ERC223GameItemContract.Metadata(stateStr, player_address, balance);
-                            items[i] = new GameItem(Game, symbol, meta);
-                        }
-                        else if (responseItems.items[i]["metadata"] == "ERC721")
-                        {
-                            BigInteger asset_id = BigInteger.Parse(responseItems.items[i]["asset_id"]);
-                            meta = new ERC721GameItemContract.Metadata(player_address, asset_id);
-                            items[i] = new GameItem(Game, symbol, meta);
-                            items[i].State = stateBytes;
-                        }
-                    }
-                    return items;
+                {
+                    return ParseItems(response.Content);
                 }
             }
             if (FallbackConnector != null)
@@ -191,7 +167,16 @@ namespace Hoard.GameItemProviders
 
         public GameItem[] GetPlayerItems(PlayerID playerID, string itemType)
         {
-            //TODO
+            if (Client != null)
+            {
+                var request = new RestRequest(string.Format("player_items/{0},{1}", playerID.ID, itemType), Method.GET);
+                var response = Client.Execute(request);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    return ParseItems(response.Content);
+                }
+            }
             if (FallbackConnector != null)
             {
                 return FallbackConnector.GetPlayerItems(playerID, itemType);
@@ -199,7 +184,54 @@ namespace Hoard.GameItemProviders
             return null;
         }
 
-        public Task<bool> Transfer(PlayerID recipient, GameItem item)
+        public GameItem[] GetItems(GameItemsParams[] gameItemsParams)
+        {
+            if (Client != null)
+            {
+                var response = PostJson("items/", gameItemsParams).Result;
+
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    return ParseItems(response.Content);
+                }
+            }
+            if (FallbackConnector != null)
+            {
+                return FallbackConnector.GetItems(gameItemsParams);
+            }
+            return null;
+        }
+
+        private GameItem[] ParseItems(string itemsStr)
+        {
+            var responseItems = JsonConvert.DeserializeObject<responseDict>(itemsStr);
+            GameItem[] items = new GameItem[responseItems.items.Count];
+            for (int i = 0; i < responseItems.items.Count; ++i)
+            {
+                string symbol = responseItems.items[i]["symbol"];
+                byte[] stateBytes = ToByteArray(responseItems.items[i]["state"]);
+                string stateStr = BitConverter.ToString(stateBytes);
+                string contract_address = responseItems.items[i]["contract_address"];
+
+                BaseGameItemMetadata meta = null;
+                if (responseItems.items[i]["metadata"] == "ERC223")
+                {
+                    BigInteger balance = BigInteger.Parse(responseItems.items[i]["amount"]);
+                    meta = new ERC223GameItemContract.Metadata(stateStr, contract_address, balance);
+                    items[i] = new GameItem(Game, symbol, meta);
+                }
+                else if (responseItems.items[i]["metadata"] == "ERC721")
+                {
+                    BigInteger asset_id = BigInteger.Parse(responseItems.items[i]["asset_id"]);
+                    meta = new ERC721GameItemContract.Metadata(contract_address, asset_id);
+                    items[i] = new GameItem(Game, symbol, meta);
+                    items[i].State = stateBytes;
+                }
+            }
+            return items;
+        }
+
+        public Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
         {
             if (Client != null)
             {
@@ -208,7 +240,7 @@ namespace Hoard.GameItemProviders
             }
             if (FallbackConnector != null)
             {
-                return FallbackConnector.Transfer(recipient, item);
+                return FallbackConnector.Transfer(addressFrom, addressTo, item, amount);
             }
             return new Task<bool>(()=> { return false; });
         }

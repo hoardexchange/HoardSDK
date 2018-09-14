@@ -3,7 +3,7 @@ using System.IO;
 
 namespace HoardIPC
 {
-    public enum Messages
+    public enum Message
     {
         MSG_UNKNOWN = 0,
         MSG_REGISTER_GAME,
@@ -16,7 +16,7 @@ namespace HoardIPC
         public uint headerId = 0x88888887;
         public int msgSize = 0;
         public int version = 100;
-        public Messages msgId;
+        public Message msgId;
 
         public byte[] Serialize()
         {
@@ -42,7 +42,7 @@ namespace HoardIPC
                     headerId = reader.ReadUInt32();
                     msgSize = reader.ReadInt32();
                     version = reader.ReadInt32();
-                    msgId = (Messages)reader.ReadInt32();
+                    msgId = (Message)reader.ReadInt32();
                 }
             }
         }
@@ -50,6 +50,10 @@ namespace HoardIPC
 
     public class PipeMessage
     {
+        protected Message id = Message.MSG_UNKNOWN;
+    
+        public Message GetId() { return id; }
+
         virtual public byte[] Serialize()
         {
             return null;
@@ -63,6 +67,8 @@ namespace HoardIPC
     public class MsgRegisterGame : PipeMessage
     {
         public uint gameId;
+
+        public MsgRegisterGame() { id = Message.MSG_REGISTER_GAME; }
 
         override public byte[] Serialize()
         {
@@ -90,9 +96,11 @@ namespace HoardIPC
 
     public class MsgUnregisterGame : MsgRegisterGame
     {
+        public MsgUnregisterGame() { id = Message.MSG_UNREGISTER_GAME; }
     }
 
     public class MsgHeartbeat : MsgRegisterGame
     {
+        public MsgHeartbeat() { id = Message.MSG_HEARTBEAT; }
     }
 }

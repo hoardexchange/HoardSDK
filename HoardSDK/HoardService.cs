@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
-using Hoard.DistributedStorage;
 using Hoard.GameItemProviders;
 
 #if DEBUG
@@ -33,7 +32,7 @@ namespace Hoard
         /// <summary>
         /// Game exchange service.
         /// </summary>
-        public ExchangeService GameExchangeService { get; private set; } = null;
+        public IExchangeService GameExchangeService { get; private set; } = null;
 
         /// <summary>
         /// List of registered GameItemProviders
@@ -71,19 +70,20 @@ namespace Hoard
         private HoardService()
         {
         }
-       
+
         /// <summary>
         /// Request game item transfer to player.
         /// </summary>
         /// <param name="recipient">Transfer address.</param>
         /// <param name="item">Game item to be transfered.</param>
+        /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
-        public async Task<bool> RequestGameItemTransfer(PlayerID recipient, GameItem item)
+        public async Task<bool> RequestGameItemTransfer(PlayerID recipient, GameItem item, ulong amount)
         {
             IGameItemProvider gameItemProvider = GetGameItemProvider(item);
             if (gameItemProvider != null)
             {
-                return await gameItemProvider.Transfer(recipient, item);
+                return await gameItemProvider.Transfer(DefaultPlayer.ID, recipient.ID, item, amount);
             }
 
             return false;
@@ -183,7 +183,14 @@ namespace Hoard
             HoardGameItemProvider provider = new HoardGameItemProvider(game);//this will create REST client to communicate with backend
             //but in case server is down we will pass a fallback
             provider.FallbackConnector = new BCGameItemProvider(game,BCComm);
-                        
+
+            //init exchange service
+            GameExchangeService exchange = new GameExchangeService(this, provider);
+            if (exchange.Init(game))
+            {
+                GameExchangeService = exchange;
+            }
+
             return RegisterGame(game, provider);
         }
 
@@ -194,16 +201,19 @@ namespace Hoard
         /// <param name="conn"></param>
         public bool RegisterGame(GameID game, IGameItemProvider provider)
         {
-            if (!Providers.ContainsKey(game))
-                Providers.Add(game, new List<IGameItemProvider>());
-
-            if (!Providers[game].Contains(provider))
+            if (!Providers.ContainsKey(game) || !Providers[game].Contains(provider))
             {
                 //connect to server and grab all important data (like supported item types)
                 if (provider.Connect())
                 {
                     //add to pool
+                    if (!Providers.ContainsKey(game))
+                    {
+                        Providers.Add(game, new List<IGameItemProvider>());
+                    }
+
                     Providers[game].Add(provider);
+
                     return true;
                 }
             }

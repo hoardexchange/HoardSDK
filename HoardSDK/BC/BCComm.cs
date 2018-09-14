@@ -2,10 +2,14 @@ using Hoard.BC.Contracts;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
+using Nethereum.RPC.NonceServices;
 using Nethereum.Web3;
+using Nethereum.Web3.Accounts;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hoard.BC
@@ -45,18 +49,23 @@ namespace Hoard.BC
 
         public async Task<string[]> GetGameItemContracts(GameID game)
         {
-            GameContract gameContract = new GameContract(web, gameContracts[game].Address);
-
-            ulong count = await gameContract.GetGameItemContractCountAsync();            
-
-            string[] contracts = new string[count];
-            for (ulong i = 0; i < count; ++i)
+            if (gameContracts.ContainsKey(game))
             {
-                BigInteger gameId = await gameContract.GetGameItemIdByIndexAsync(i);
-                contracts[i] = await gameContract.GetGameItemContractAsync(gameId);
+                GameContract gameContract = new GameContract(web, gameContracts[game].Address);
+
+                ulong count = await gameContract.GetGameItemContractCountAsync();
+
+                string[] contracts = new string[count];
+                for (ulong i = 0; i < count; ++i)
+                {
+                    BigInteger gameId = await gameContract.GetGameItemIdByIndexAsync(i);
+                    contracts[i] = await gameContract.GetGameItemContractAsync(gameId);
+                }
+
+                return contracts;
             }
 
-            return contracts;
+            return null;
         }
 
         public async Task<GameID[]> GetHoardGames()
@@ -86,15 +95,26 @@ namespace Hoard.BC
             return games;
         }
 
-        public async Task<GameExchangeContract> GetGameExchangeContract(string gameContract)
+        public async Task<GameExchangeContract> GetGameExchangeContract(GameID game)
         {
-            GameContract game = new GameContract(web, gameContract);
+            GameContract gameContract = null;
+            gameContracts.TryGetValue(game, out gameContract);
 
-            return new GameExchangeContract(web, await game.GameExchangeContractAsync());
+            if (gameContract != null)
+            {
+                string exchangeAddress = await gameContract.GameExchangeContractAsync();
+                if (exchangeAddress.StartsWith("0x"))
+                    exchangeAddress = exchangeAddress.Substring(2);
+
+                BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
+                if (!exchangeAddressInt.Equals(0))
+                    return new GameExchangeContract(web, await gameContract.GameExchangeContractAsync());
+            }
+
+            return null;
         }
 
         // TEST METHODS BELOW.
-
 
 
 
@@ -114,15 +134,31 @@ namespace Hoard.BC
                 account = HoardService.Instance.DefaultPlayer;
             }
 
-            int unlockTime = 120;
-            bool success = web.Personal.UnlockAccount.SendRequestAsync(account.ID, account.Password, unlockTime).Result;
-            if (success)
-            {
-                HexBigInteger gas = function.EstimateGasAsync(account.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput).Result;
-                return await function.SendTransactionAndWaitForReceiptAsync(account.ID, gas, new HexBigInteger(0), null, functionInput);
-            }
+            HexBigInteger gas = await function.EstimateGasAsync(account.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
 
-            return null;
+            Account acc = new Account(account.PrivateKey);
+            if (acc.NonceService == null)
+            {
+                acc.NonceService = new InMemoryNonceService(acc.Address, web.Client);
+            }
+            acc.NonceService.Client = web.Client;
+            BigInteger nonce = await acc.NonceService.GetNextNonceAsync();
+
+            string data = function.GetData(functionInput);
+            BigInteger gasPrice = BigInteger.Zero;
+            string encoded = Web3.OfflineTransactionSigner.SignTransaction(account.PrivateKey, function.ContractAddress, 
+                BigInteger.Zero, nonce, gasPrice, gas.Value, data);
+
+            //bool success = Web3.OfflineTransactionSigner.VerifyTransaction(encoded);
+
+            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + encoded);
+            TransactionReceipt receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
+            while (receipt == null)
+            {
+                Thread.Sleep(1000);
+                receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
+            }
+            return receipt;
         }
     }
 }

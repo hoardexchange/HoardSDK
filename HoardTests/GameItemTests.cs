@@ -112,26 +112,33 @@ namespace HoardTests
 
     public class GameItemTests : IClassFixture<HoardServiceFixture>, IClassFixture<IPFSFixture>
     {
-        static string HoardGameTestFile = "HoardGame.test.js";
+        static string HoardGameTestName = "HoardGame";
 
         HoardServiceFixture hoardFixture;
         IPFSFixture ipfsFixture;
 
         BCGameItemMockProvider gameItemProvider = null;
+        PlayerID DefaultPlayer = null;
 
-        public GameItemTests(HoardServiceFixture hoardFixture, IPFSFixture ipfsFixture)
+        public GameItemTests(HoardServiceFixture _hoardFixture, IPFSFixture _ipfsFixture)
         {
-            this.hoardFixture = hoardFixture;
-            this.ipfsFixture = ipfsFixture;
+            hoardFixture = _hoardFixture;
+            ipfsFixture = _ipfsFixture;
 
-            this.hoardFixture.Initialize(new string[] { HoardGameTestFile });
-            
+            hoardFixture.Initialize(HoardGameTestName);
+
             GameID[] games = hoardFixture.HoardService.QueryHoardGames().Result;
             Assert.NotEmpty(games);
-            HoardGameItemProvider hoardItemProvider = new HoardGameItemProvider(games[0]);
-            gameItemProvider = new BCGameItemMockProvider(games[0], hoardFixture.HoardService.BCComm);
+
+            GameID game = games[0];
+            HoardGameItemProvider hoardItemProvider = new HoardGameItemProvider(game);
+            gameItemProvider = new BCGameItemMockProvider(game, hoardFixture.HoardService.BCComm);
             hoardItemProvider.FallbackConnector = gameItemProvider;
-            hoardFixture.HoardService.RegisterGame(games[0], hoardItemProvider);
+            hoardFixture.HoardService.RegisterGame(game, hoardItemProvider);
+
+            Assert.NotNull(gameItemProvider);
+
+            DefaultPlayer = HoardServiceFixture.UserIDs[2];
         }
 
         [Fact]
@@ -140,7 +147,7 @@ namespace HoardTests
             GameItem swordItem = new GameItem(new GameID("test"), "TM721", null);
             swordItem.Properties = new SwordProperties(10, 5, 20);
 
-            GameItem[] items = gameItemProvider.GetPlayerItems(hoardFixture.PlayerUser, swordItem.Symbol);
+            GameItem[] items = gameItemProvider.GetPlayerItems(DefaultPlayer, swordItem.Symbol);
             Assert.Equal(2, items.Length);
 
             string propsJson = JsonConvert.SerializeObject(swordItem.Properties);
@@ -149,7 +156,7 @@ namespace HoardTests
 
             gameItemProvider.UpdateItemState(swordItem);
 
-            items = gameItemProvider.GetPlayerItems(hoardFixture.PlayerUser, swordItem.Symbol);
+            items = gameItemProvider.GetPlayerItems(DefaultPlayer, swordItem.Symbol);
             GameItem downloadedSwordItem = items[0];
             hoardFixture.HoardService.FetchItemProperties(downloadedSwordItem);
 
