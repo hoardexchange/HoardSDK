@@ -112,8 +112,7 @@ namespace Hoard.GameItemProviders
         {
             if (Client != null)
             {
-                //TODO: change url to "item_types" only
-                var request = new RestRequest("item_types/0x123", Method.GET);
+                var request = new RestRequest("item_types/", Method.GET);
                 var response = Client.Execute(request);
                 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
