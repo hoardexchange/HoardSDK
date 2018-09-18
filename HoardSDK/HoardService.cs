@@ -154,6 +154,13 @@ namespace Hoard
                 RegisterHoardGame(DefaultGame);
             }
 
+            //init exchange service
+            GameExchangeService exchange = new GameExchangeService(this);
+            if (exchange.Init())
+            {
+                GameExchangeService = exchange;
+            }
+
             return true;
         }
 
@@ -183,13 +190,6 @@ namespace Hoard
             HoardGameItemProvider provider = new HoardGameItemProvider(game);//this will create REST client to communicate with backend
             //but in case server is down we will pass a fallback
             provider.FallbackConnector = new BCGameItemProvider(game,BCComm);
-
-            //init exchange service
-            GameExchangeService exchange = new GameExchangeService(this, provider);
-            if (exchange.Init(game))
-            {
-                GameExchangeService = exchange;
-            }
 
             return RegisterGame(game, provider);
         }
@@ -357,6 +357,24 @@ namespace Hoard
                 foreach (IGameItemProvider c in list)
                 {
                     items.AddRange(c.GetPlayerItems(playerID));
+                }
+            }
+            return items.ToArray();
+        }
+
+        /// <summary>
+        /// Returns all Game Items matching gameItemsParams
+        /// </summary>
+        /// <param name="gameItemsParams"></param>
+        /// <returns></returns>
+        public GameItem[] GetItems(GameItemsParams[] gameItemsParams)
+        {
+            List<GameItem> items = new List<GameItem>();
+            foreach(var p in Providers)
+            {
+                foreach (IGameItemProvider provider in p.Value)
+                {
+                    items.AddRange(provider.GetItems(gameItemsParams));
                 }
             }
             return items.ToArray();

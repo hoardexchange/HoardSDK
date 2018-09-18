@@ -95,23 +95,26 @@ namespace Hoard.BC
             return games;
         }
 
-        public async Task<GameExchangeContract> GetGameExchangeContract(GameID game)
+        public async Task<GameExchangeContract> GetGameExchangeContract()
         {
-            GameContract gameContract = null;
-            gameContracts.TryGetValue(game, out gameContract);
-
-            if (gameContract != null)
+            string exchangeAddress = await gameCenter.GetExchangeAddressAsync();
+            if (exchangeAddress != null)
             {
-                string exchangeAddress = await gameContract.GameExchangeContractAsync();
                 if (exchangeAddress.StartsWith("0x"))
                     exchangeAddress = exchangeAddress.Substring(2);
 
                 BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
                 if (!exchangeAddressInt.Equals(0))
-                    return new GameExchangeContract(web, await gameContract.GameExchangeContractAsync());
+                    return new GameExchangeContract(web, exchangeAddress);
             }
-
             return null;
+        }
+
+        public async Task<string> GetGameExchangeSrvURL()
+        {
+            string url = await gameCenter.GetExchangeSrvURLAsync();
+            url = !url.StartsWith("http") ? "http://" + url : url;
+            return url;
         }
 
         // TEST METHODS BELOW.
