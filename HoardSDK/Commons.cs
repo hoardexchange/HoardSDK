@@ -46,9 +46,9 @@ namespace Hoard
     /// </summary>
     public class GameID : IEquatable<GameID>
     {
-        public string ID;
-        public string Name;
-        public string Url;
+        public string ID { get; set; }
+        public string Name { get; set; }
+        public string Url { get; set; }
 
         public static GameID kInvalidID { get; private set; } = new GameID(null);
 
