@@ -339,7 +339,14 @@ namespace Hoard
         /// <returns></returns>
         public float GetBalance(PlayerID playerID)
         {
-            return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(playerID.ID).Result));
+            try
+            {
+                return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(playerID.ID).Result));
+            }
+            catch(Exception e)
+            {
+                return 0;
+            }
         }
 
         /// <summary>
