@@ -333,6 +333,16 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Returns the ethers owned by the player.
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <returns></returns>
+        public float GetBalance(PlayerID playerID)
+        {
+            return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(playerID.ID).Result));
+        }
+
+        /// <summary>
         /// Returns all Game Items owned by player in default game (one passed in options to Initialize method).
         /// </summary>
         /// <param name="playerID"></param>

@@ -37,6 +37,12 @@ namespace Hoard.BC
             return await ver.SendRequestAsync();
         }
 
+        public async Task<HexBigInteger> GetBalance(string account)
+        {
+            var ver = new Nethereum.RPC.Eth.EthGetBalance(web.Client);
+            return await ver.SendRequestAsync(account);
+        }
+
         public GameItemContract GetGameItemContract(GameID game, string contractAddress, Type contractType)
         {
             return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress);
