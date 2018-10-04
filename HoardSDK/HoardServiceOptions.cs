@@ -37,6 +37,12 @@ namespace Hoard
             HoardServiceConfig config = Newtonsoft.Json.JsonConvert.DeserializeObject<HoardServiceConfig>(cfgString);
             return config;
         }
+
+        public static HoardServiceConfig LoadFromStream(string data)
+        {
+            HoardServiceConfig config = Newtonsoft.Json.JsonConvert.DeserializeObject<HoardServiceConfig>(data);
+            return config;
+        }
     }
     /// <summary>
     /// Initialization options for HoardService
