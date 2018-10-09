@@ -115,12 +115,6 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<ulong>();
         }
 
-        public Task<string> GetGameOwner(string gameID)
-        {
-            Function function = GetFunctionGetGameOwner();
-            return function.CallAsync<string>(gameID);
-        }
-
         public Task<bool> GetGameExistsAsync(string gameID)
         {
             var function = GetFunctionGameExists();

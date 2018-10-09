@@ -190,8 +190,12 @@ namespace Hoard
             HoardGameItemProvider provider = new HoardGameItemProvider(game);//this will create REST client to communicate with backend
             //but in case server is down we will pass a fallback
             provider.FallbackConnector = new BCGameItemProvider(game,BCComm);
-
-            return RegisterGame(game, provider);
+            if(BCComm.RegisterHoardGame(game).Result && RegisterGame(game, provider))
+            {
+                return true;
+            }
+            BCComm.UnregisterHoardGame(game);
+            return false;
         }
 
         /// <summary>
@@ -330,6 +334,15 @@ namespace Hoard
         {
             //for now we only support asking BC directly, but in future we might have some Hoard servers with caching
             return await BCComm.GetHoardGames();
+        }
+
+        /// <summary>
+        /// Return all registered game.
+        /// </summary>
+        /// <returns></returns>
+        public GameID[] GetRegisteredHoardGames()
+        {
+            return BCComm.GetRegisteredHoardGames();
         }
 
         /// <summary>
