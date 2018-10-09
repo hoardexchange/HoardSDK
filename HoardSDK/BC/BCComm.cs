@@ -82,15 +82,16 @@ namespace Hoard.BC
             GameID[] games = new GameID[count];
             for(ulong i =0;i<count;++i)
             {
-                BigInteger gameID = await gameCenter.GetGameIdByIndexAsync(i);
+                string gameID = (await gameCenter.GetGameIdByIndexAsync(i)).ToString("x");
                 string gameAddress = await gameCenter.GetGameContractAsync(gameID);
-                GameID game = new GameID(gameID.ToString("x"));                
+                GameID game = new GameID(gameID);                
                 {
                     GameContract gameContract = new GameContract(web, gameAddress);
 
                     string url = await gameContract.GetGameServerURLAsync();
 
                     game.Name = await gameContract.GetName();
+                    game.GameOwner = await gameContract.GetOwner();
                     game.Url = !url.StartsWith("http") ? "http://" + url : url;
 
                     gameContracts.Add(game, gameContract);

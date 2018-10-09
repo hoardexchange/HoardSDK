@@ -49,6 +49,7 @@ namespace Hoard
         public string ID { get; set; }
         public string Name { get; set; }
         public string Url { get; set; }
+        public string GameOwner { get; set; }
 
         public static GameID kInvalidID { get; private set; } = new GameID(null);
 

@@ -88,7 +88,7 @@ namespace Hoard.BC.Contracts
         /// </summary>
         /// <param name="gameID"></param>
         /// <returns></returns>
-        public Task<string> GetGameContractAsync(BigInteger gameID)
+        public Task<string> GetGameContractAsync(string gameID)
         {
             var function = GetFunctionGetGameContract();
             return function.CallAsync<string>(gameID);
@@ -115,10 +115,10 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<ulong>();
         }
 
-        public Task<string> NameAsync(ulong gameID)
+        public Task<string> GetGameOwner(string gameID)
         {
-            var function = GetFunctionName();
-            return function.CallAsync<string>();
+            Function function = GetFunctionGetGameOwner();
+            return function.CallAsync<string>(gameID);
         }
 
         public Task<bool> GetGameExistsAsync(string gameID)

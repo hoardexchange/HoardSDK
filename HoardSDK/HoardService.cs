@@ -343,7 +343,7 @@ namespace Hoard
             {
                 return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(playerID.ID).Result));
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 return 0;
             }

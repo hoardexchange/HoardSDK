@@ -60,6 +60,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("name");
         }
 
+        private Function GetFunctionOwner()
+        {
+            return contract.GetFunction("owner");
+        }
+
         public Task<string> GetGameServerURLAsync()
         {
             var function = GetFunctionGameSrvURL();
@@ -104,6 +109,12 @@ namespace Hoard.BC.Contracts
         public Task<string> GetName()
         {
             var function = GetFunctionName();
+            return function.CallAsync<string>();
+        }
+
+        public Task<string> GetOwner()
+        {
+            var function = GetFunctionOwner();
             return function.CallAsync<string>();
         }
     }
