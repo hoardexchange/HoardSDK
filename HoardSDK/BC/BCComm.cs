@@ -7,6 +7,7 @@ using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Threading;
@@ -74,32 +75,64 @@ namespace Hoard.BC
             return null;
         }
 
+        public async Task<bool> RegisterHoardGame(GameID game)
+        {
+            if (gameContracts.ContainsKey(game))
+            {
+                return true;
+            }
+
+            BigInteger gameId = BigInteger.Parse(game.ID, NumberStyles.HexNumber);
+            string gameAddress = await gameCenter.GetGameContractAsync(gameId);
+            GameContract gameContract = new GameContract(web, gameAddress);
+
+            string url = await gameContract.GetGameServerURLAsync();
+
+            game.Name = await gameContract.GetName();
+            game.Url = !url.StartsWith("http") ? "http://" + url : url;
+
+            gameContracts.Add(game, gameContract);
+            return true;
+        }
+
+        public void UnregisterHoardGame(GameID game)
+        {
+            gameContracts.Remove(game);
+        }
+
+        public GameID[] GetRegisteredHoardGames()
+        {
+            int count = gameContracts.Count;
+            int index = 0;
+            GameID[] games = new GameID[count];
+            foreach (KeyValuePair<GameID, GameContract> entry in gameContracts)
+            {
+                // do something with entry.Value or entry.Key
+                Debug.Assert(index < count);
+                games[index] = entry.Key;
+                index++;
+            }
+            return games;
+        }
+
         public async Task<GameID[]> GetHoardGames()
         {
-            gameContracts.Clear();
-
             ulong count = await gameCenter.GetGameCount();
             GameID[] games = new GameID[count];
-            for(ulong i =0;i<count;++i)
+            for (ulong i = 0; i < count; ++i)
             {
                 BigInteger gameID = await gameCenter.GetGameIdByIndexAsync(i);
                 string gameAddress = await gameCenter.GetGameContractAsync(gameID);
-                GameID game = new GameID(gameID.ToString("x"));                
-                {
-                    GameContract gameContract = new GameContract(web, gameAddress);
-
-                    string url = await gameContract.GetGameServerURLAsync();
-
-                    game.Name = await gameContract.GetName();
-                    game.Url = !url.StartsWith("http") ? "http://" + url : url;
-
-                    gameContracts.Add(game, gameContract);
-                }
-
+                GameID game = new GameID(gameID.ToString("x"));
+                GameContract gameContract = new GameContract(web, gameAddress);
+                string url = await gameContract.GetGameServerURLAsync();
+                game.Name = await gameContract.GetName();
+                game.Url = !url.StartsWith("http") ? "http://" + url : url;
                 games[i] = game;
             }
             return games;
         }
+
 
         public async Task<GameExchangeContract> GetGameExchangeContract()
         {
