@@ -126,6 +126,10 @@ namespace Hoard.BC
             return games;
         }
 
+        public async Task<bool> GetGameExistsAsync(string gameID)
+        {
+            return await gameCenter.GetGameExistsAsync(gameID);
+        }
 
         public async Task<GameExchangeContract> GetGameExchangeContract()
         {

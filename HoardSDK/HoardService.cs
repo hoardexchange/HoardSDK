@@ -225,6 +225,15 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Check if game exists
+        /// </summary>
+        /// <param name="game"></param>
+        public bool GetGameExists(GameID game)
+        {
+            return BCComm.GetGameExistsAsync(game.ID).Result;
+        }
+
+        /// <summary>
         /// Register provider of resolving item state and filling properties.
         /// </summary>
         /// <param name="provider">Provider to be registered.</param>
