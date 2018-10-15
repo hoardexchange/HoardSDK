@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Nethereum.Web3;
 using Nethereum.Contracts;
 using System.Numerics;
+using Nethereum.Web3.Accounts;
+using Nethereum.RPC.NonceServices;
 
 namespace Hoard.BC.Contracts
 {
@@ -30,9 +32,19 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("trade");
         }
 
+        private Function GetFunctionOrder()
+        {
+            return contract.GetFunction("order");
+        }
+
         private Function GetFunctionTradeERC721()
         {
             return contract.GetFunction("tradeERC721");
+        }
+
+        private Function GetFunctionOrderERC721()
+        {
+            return contract.GetFunction("orderERC721");
         }
 
         private Function GetFunctionTestTrade()
@@ -53,6 +65,92 @@ namespace Hoard.BC.Contracts
         private Function GetFunctionWithdrawTokenERC721()
         {
             return contract.GetFunction("withdrawTokenERC721");
+        }
+
+        public async Task<bool> Order(
+            string tokenGet,
+            ulong amountGet,
+            string tokenGive,
+            ulong amountGive,
+            PlayerID from)
+        {
+            Account acc = new Account(from.PrivateKey);
+            if (acc.NonceService == null)
+            {
+                acc.NonceService = new InMemoryNonceService(acc.Address, web3.Client);
+            }
+            acc.NonceService.Client = web3.Client;
+            BigInteger nonce = await acc.NonceService.GetNextNonceAsync();
+            var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+
+            var function = GetFunctionOrder();
+            var gas = await function.EstimateGasAsync(
+                from.ID,
+                new Nethereum.Hex.HexTypes.HexBigInteger(1000000),
+                new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                tokenGet,
+                amountGet,
+                tokenGive,
+                amountGive,
+                blockNumber,
+                nonce);
+
+            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(
+                from.ID,
+                gas,
+                new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                null,
+                tokenGet,
+                amountGet,
+                tokenGive,
+                amountGive,
+                blockNumber,
+                nonce);
+            return receipt.Status.Value == 1;
+        }
+
+        public async Task<bool> OrderERC721(
+            string tokenGet,
+            ulong amountGet,
+            string tokenGive,
+            BigInteger tokenId,
+            PlayerID from)
+        {
+            Account acc = new Account(from.PrivateKey);
+            if (acc.NonceService == null)
+            {
+                acc.NonceService = new InMemoryNonceService(acc.Address, web3.Client);
+            }
+            acc.NonceService.Client = web3.Client;
+            BigInteger nonce = await acc.NonceService.GetNextNonceAsync();
+            var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+
+            var function = GetFunctionOrderERC721();
+            var gas = await function.EstimateGasAsync(
+                from.ID,
+                new Nethereum.Hex.HexTypes.HexBigInteger(1000000),
+                new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                tokenGet,
+                amountGet,
+                tokenGive,
+                new Nethereum.Hex.HexTypes.HexBigInteger(tokenId),
+                blockNumber,
+                nonce);
+
+            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
+            var receipt = await function.SendTransactionAndWaitForReceiptAsync(
+                from.ID,
+                gas,
+                new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                null,
+                tokenGet,
+                amountGet,
+                tokenGive,
+                new Nethereum.Hex.HexTypes.HexBigInteger(tokenId),
+                blockNumber,
+                nonce);
+            return receipt.Status.Value == 1;
         }
 
         public async Task<bool> Trade(

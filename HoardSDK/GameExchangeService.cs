@@ -1,5 +1,4 @@
 using Hoard.BC.Contracts;
-using Hoard.GameItemProviders;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -16,6 +15,8 @@ namespace Hoard
         Task<bool> Deposit(GameItem item, ulong amount);
 
         Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive);
+
+        Task<bool> Order(GameItem item, ulong amount);
 
         Task<bool> Trade(Order order, ulong amount);
 
@@ -179,6 +180,22 @@ namespace Hoard
                     order.user,
                     amount,
                     PlayerID.ID);
+            }
+
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> Order(GameItem item, ulong amount)
+        {
+            string hoardTokenAddress = "0x0";   // TODO
+            if (item.Metadata is ERC721GameItemContract.Metadata)
+            {
+                return await GameExchangeContract.OrderERC721(
+                    hoardTokenAddress,
+                    1,
+                    item.Metadata.Get<string>("OwnerAddress"),
+                    item.Metadata.Get<BigInteger>("ItemId"),
+                    PlayerID);
             }
 
             throw new NotImplementedException();
