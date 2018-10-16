@@ -50,6 +50,7 @@
     <Compile Include="Account.cs" />
     <Compile Include="BC\Contracts\ContractInterfaceID.cs" />
     <Compile Include="BC\Contracts\HoardABIConfig.cs" />
+    <Compile Include="BC\Contracts\HoardTokenContract.cs" />
     <Compile Include="GameItemProviders\BCGameItemProvider.cs" />
     <Compile Include="BC\BCComm.cs" />
     <Compile Include="BC\Contracts\GameCenterContract.cs" />

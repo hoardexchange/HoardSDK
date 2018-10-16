@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 using Hoard.GameItemProviders;
+using System.Numerics;
 
 #if DEBUG
 using System.Diagnostics;
@@ -366,6 +367,23 @@ namespace Hoard
                 return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(playerID.ID).Result));
             }
             catch(Exception)
+            {
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Returns the hoard tokens amount owned by the player.
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <returns></returns>
+        public BigInteger GetHRDAmount(PlayerID playerID)
+        {
+            try
+            {
+                return BCComm.GetHRDAmount(playerID.ID).Result;
+            }
+            catch (Exception)
             {
                 return 0;
             }
