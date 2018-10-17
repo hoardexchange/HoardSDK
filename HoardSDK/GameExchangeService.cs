@@ -21,8 +21,6 @@ namespace Hoard
         Task<bool> Trade(Order order, ulong amount);
 
         Task<bool> Withdraw(GameItem item, ulong amount);
-
-        Task<string> GetHoardTokenAddressAsync();
     }
 
     public class GameExchangeService : IExchangeService
@@ -153,11 +151,6 @@ namespace Hoard
             }
 
             return new Order[0];
-        }
-
-        public async Task<string> GetHoardTokenAddressAsync()
-        {
-            return await GameExchangeContract.GetHoardTokenAddressAsync();
         }
 
         public async Task<bool> Trade(Order order, ulong amount)
