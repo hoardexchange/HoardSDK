@@ -187,11 +187,10 @@ namespace Hoard
 
         public async Task<bool> Order(GameItem item, ulong amount)
         {
-            string hoardTokenAddress = "0x0";   // TODO
             if (item.Metadata is ERC721GameItemContract.Metadata)
             {
                 return await GameExchangeContract.OrderERC721(
-                    hoardTokenAddress,
+                    Hoard.GetHRDAddress(),
                     1,
                     item.Metadata.Get<string>("OwnerAddress"),
                     item.Metadata.Get<BigInteger>("ItemId"),

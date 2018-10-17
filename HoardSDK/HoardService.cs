@@ -373,6 +373,23 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Returns the hoard tokens contract address.
+        /// </summary>
+        /// <param></param>
+        /// <returns></returns>
+        public string GetHRDAddress()
+        {
+            try
+            {
+                return BCComm.GetHRDAddressAsync().Result;
+            }
+            catch (Exception)
+            {
+                return "0x0";
+            }
+        }
+
+        /// <summary>
         /// Returns the hoard tokens amount owned by the player.
         /// </summary>
         /// <param name="playerID"></param>
