@@ -381,7 +381,7 @@ namespace Hoard
         {
             try
             {
-                return BCComm.GetHRDAmount(playerID.ID).Result;
+                return BCComm.GetHRDAmountAsync(playerID.ID).Result;
             }
             catch (Exception)
             {
