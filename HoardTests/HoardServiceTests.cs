@@ -45,8 +45,6 @@ namespace HoardTests
             hoardFixture.InitializeFromConfig();
             HoardService = hoardFixture.HoardService;
 
-            //ulong amount = (ulong)HoardService.GetHRDAmount(HoardService.DefaultPlayer);
-
             if (HoardService.DefaultGame != GameID.kInvalidID)
             {
                 Debug.WriteLine("\tName: " + HoardService.DefaultGame.Name);
