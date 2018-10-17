@@ -83,11 +83,6 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("exchangeSrvURL");
         }
 
-        private Function GetFunctionHoardTokenAddress()
-        {
-            return contract.GetFunction("hoardTokenAddress");
-        }
-
         /// <summary>
         /// Returns game contract address by id
         /// </summary>
@@ -153,12 +148,6 @@ namespace Hoard.BC.Contracts
         public async Task<string> GetExchangeSrvURLAsync()
         {
             var function = GetFunctionExchangeSrvURL();
-            return await function.CallAsync<string>();
-        }
-
-        public async Task<string> GetHoardTokenAddressAsync()
-        {
-            var function = GetFunctionHoardTokenAddress();
             return await function.CallAsync<string>();
         }
     }

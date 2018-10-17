@@ -44,15 +44,14 @@ namespace Hoard.BC
             return await ver.SendRequestAsync(account);
         }
 
-        public async Task<BigInteger> GetHRDAmount(string account)
+        public async Task<BigInteger> GetHRDAmount(string account, string hoardTokenAddress)
         {
-            string hrdAddress = await gameCenter.GetHoardTokenAddressAsync();
-            if (hrdAddress != null)
+            if (hoardTokenAddress != null)
             {
-                if (hrdAddress.StartsWith("0x"))
-                    hrdAddress = hrdAddress.Substring(2);
+                if (hoardTokenAddress.StartsWith("0x"))
+                    hoardTokenAddress = hoardTokenAddress.Substring(2);
 
-                HoardTokenContract hrdContract = new HoardTokenContract(web, hrdAddress);
+                HoardTokenContract hrdContract = new HoardTokenContract(web, hoardTokenAddress);
                 return await hrdContract.GetBalanceOf(account);
             }
             return new BigInteger(0);

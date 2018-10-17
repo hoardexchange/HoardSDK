@@ -67,6 +67,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("withdrawTokenERC721");
         }
 
+        private Function GetFunctionHoardTokenAddress()
+        {
+            return contract.GetFunction("hoardTokenAddress");
+        }
+
         public async Task<bool> Order(
             string tokenGet,
             ulong amountGet,
@@ -285,6 +290,12 @@ namespace Hoard.BC.Contracts
             gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
             var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, tokenAddress, tokenId);
             return receipt.Status.Value == 1;
+        }
+
+        public async Task<string> GetHoardTokenAddressAsync()
+        {
+            var function = GetFunctionHoardTokenAddress();
+            return await function.CallAsync<string>();
         }
     }
 }
