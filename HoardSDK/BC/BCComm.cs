@@ -150,6 +150,11 @@ namespace Hoard.BC
             return await gameCenter.GetGameExistsAsync(gameID);
         }
 
+        public async Task<string> GetGameExchangeContractAddressAsync()
+        {
+            return await gameCenter.GetExchangeAddressAsync();
+        }
+
         public async Task<GameExchangeContract> GetGameExchangeContractAsync()
         {
             string exchangeAddress = await gameCenter.GetExchangeAddressAsync();
@@ -163,6 +168,16 @@ namespace Hoard.BC
                     return new GameExchangeContract(web, exchangeAddress);
             }
             return null;
+        }
+
+        public async Task<TransactionReceipt> SetExchangeContractAsync(PlayerID account, string exchangeAddress)
+        {
+            return await gameCenter.SetExchangeAddressAsync(this, exchangeAddress, account);
+        }
+
+        public async Task<TransactionReceipt> SetExchangeSrvURLAsync(PlayerID account, string url)
+        {
+            return await gameCenter.SetExchangeSrvURLAsync(this, url, account);
         }
 
         public async Task<string> GetGameExchangeSrvURL()
