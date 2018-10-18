@@ -150,7 +150,7 @@ namespace Hoard.BC
             return await gameCenter.GetGameExistsAsync(gameID);
         }
 
-        public async Task<GameExchangeContract> GetGameExchangeContract()
+        public async Task<GameExchangeContract> GetGameExchangeContractAsync()
         {
             string exchangeAddress = await gameCenter.GetExchangeAddressAsync();
             if (exchangeAddress != null)

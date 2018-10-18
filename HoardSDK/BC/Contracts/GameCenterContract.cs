@@ -78,6 +78,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("exchangeAddress");
         }
 
+        private Function GetFunctionSetExchangeAddress()
+        {
+            return contract.GetFunction("setExchangeAddress");
+        }
+
         private Function GetFunctionExchangeSrvURL()
         {
             return contract.GetFunction("exchangeSrvURL");
@@ -86,6 +91,11 @@ namespace Hoard.BC.Contracts
         private Function GetFunctionHoardTokenAddress()
         {
             return contract.GetFunction("hoardTokenAddress");
+        }
+
+        private Function GetFunctionSetHoardTokenAddress()
+        {
+            return contract.GetFunction("setHoardTokenAddress");
         }
 
         /// <summary>
@@ -142,6 +152,12 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionRemoveAdmin();
             return await comm.EvaluateOnBC(account, function, adminAddr);
+        }
+
+        public async Task<TransactionReceipt> SetExchangeAddressAsync(BCComm comm, string address, PlayerID account = null)
+        {
+            var function = GetFunctionSetExchangeAddress();
+            return await comm.EvaluateOnBC(account, function, address);
         }
 
         public async Task<string> GetExchangeAddressAsync()

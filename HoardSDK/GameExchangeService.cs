@@ -42,7 +42,7 @@ namespace Hoard
 
         public bool Init()
         {
-            GameExchangeContract = BCComm.GetGameExchangeContract().Result;
+            GameExchangeContract = BCComm.GetGameExchangeContractAsync().Result;
             if (GameExchangeContract == null)
                 return false;
             ExchangUrl = BCComm.GetGameExchangeSrvURL().Result;
