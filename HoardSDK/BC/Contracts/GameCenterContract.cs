@@ -165,6 +165,12 @@ namespace Hoard.BC.Contracts
             return await comm.EvaluateOnBC(account, function, address);
         }
 
+        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(BCComm comm, string address, PlayerID account = null)
+        {
+            var function = GetFunctionSetHoardTokenAddress();
+            return await comm.EvaluateOnBC(account, function, address);
+        }
+
         public async Task<TransactionReceipt> SetExchangeSrvURLAsync(BCComm comm, string url, PlayerID account = null)
         {
             var function = GetFunctionSetExchangeSrvURL();

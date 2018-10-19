@@ -155,6 +155,11 @@ namespace Hoard.BC
             return await gameCenter.GetExchangeAddressAsync();
         }
 
+        public async Task<string> GetHoardTokenAddressAsync()
+        {
+            return await gameCenter.GetHoardTokenAddressAsync();
+        }
+
         public async Task<GameExchangeContract> GetGameExchangeContractAsync()
         {
             string exchangeAddress = await gameCenter.GetExchangeAddressAsync();
@@ -173,6 +178,11 @@ namespace Hoard.BC
         public async Task<TransactionReceipt> SetExchangeContractAsync(PlayerID account, string exchangeAddress)
         {
             return await gameCenter.SetExchangeAddressAsync(this, exchangeAddress, account);
+        }
+
+        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(PlayerID account, string hoardTokenAddress)
+        {
+            return await gameCenter.SetHoardTokenAddressAsync(this, hoardTokenAddress, account);
         }
 
         public async Task<TransactionReceipt> SetExchangeSrvURLAsync(PlayerID account, string url)
