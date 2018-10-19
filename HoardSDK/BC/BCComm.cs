@@ -175,6 +175,24 @@ namespace Hoard.BC
             return null;
         }
 
+        public async Task<bool> TransferHRDAsync(string from, string to, ulong amount)
+        {
+            string hoardTokenAddress = await gameCenter.GetHoardTokenAddressAsync();
+            if (hoardTokenAddress != null)
+            {
+                if (hoardTokenAddress.StartsWith("0x"))
+                    hoardTokenAddress = hoardTokenAddress.Substring(2);
+
+                BigInteger hoardTokenAddressInt = BigInteger.Parse(hoardTokenAddress, NumberStyles.AllowHexSpecifier);
+                if (!hoardTokenAddressInt.Equals(0))
+                {
+                    HoardTokenContract hrdContract = new HoardTokenContract(web, hoardTokenAddress);
+                    return await hrdContract.Transfer(from, to, amount);
+                }
+            }
+            return false;
+        }
+
         public async Task<TransactionReceipt> SetExchangeContractAsync(PlayerID account, string exchangeAddress)
         {
             return await gameCenter.SetExchangeAddressAsync(this, exchangeAddress, account);
