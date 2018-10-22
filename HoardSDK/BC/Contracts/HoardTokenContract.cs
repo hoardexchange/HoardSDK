@@ -47,7 +47,7 @@ namespace Hoard.BC.Contracts
             var function = GetFunctionTransfer();
             var gas = await function.EstimateGasAsync(
                 from,
-                new Nethereum.Hex.HexTypes.HexBigInteger(1000000),
+                new Nethereum.Hex.HexTypes.HexBigInteger(3000000),
                 new Nethereum.Hex.HexTypes.HexBigInteger(0),
                 to,
                 amount);
