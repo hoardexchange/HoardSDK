@@ -9,13 +9,14 @@ namespace Hoard
     /// <summary>
     /// Configuration params for HoardService
     /// </summary>
+    [System.Serializable]
     public class HoardServiceConfig
     {
-        public string GameID { get; set; } = null;
-        public string GameBackendUrl { get; set; } = "";
-        public string ClientUrl { get; set; } = "";
-        public string AccountsDir { get; set; } = null;
-        public string GameCenterContract { get; set; } = "0x9d4acb1e424d5eb00dac674ff5f59df7a9fac2b9";
+        public string GameID;
+        public string GameBackendUrl;
+        public string ClientUrl;
+        public string AccountsDir;
+        public string GameCenterContract;
 
         public static HoardServiceConfig Load(string path = null)
         {
@@ -44,6 +45,7 @@ namespace Hoard
             return config;
         }
     }
+
     /// <summary>
     /// Initialization options for HoardService
     /// </summary>
