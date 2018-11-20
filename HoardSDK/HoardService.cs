@@ -151,7 +151,7 @@ namespace Hoard
         /// <returns>True if initialization succeeds.</returns>
         public bool Initialize(HoardServiceOptions options)
         {
-            InitAccounts(options.AccountsDir, options.DefaultAccountPass);
+            InitAccount(options.AccountsDir, options.DefaultAccountPass);
 
             BCComm = new BC.BCComm(options.RpcClient, options.GameCenterContract); //access point to block chain - a must have
 
@@ -258,40 +258,78 @@ namespace Hoard
 
         #region PRIVATE SECTION
 
+        private bool IsHexString(string value)
+        {
+            string hx = "0123456789ABCDEF";
+            foreach (char c in value.ToUpper())
+            {
+                if (!hx.Contains(c))
+                    return false;
+            }
+            return true;
+        }
+
         /// <summary>
-        /// Init accounts. 
+        /// Create account. 
         /// </summary>
-        /// <param name="path">Path to directory with account files.</param>
+        /// <param name="path">Path to directory with account file.</param>
         /// <param name="password">Account's password.</param>
-        private void InitAccounts(string path, string password) 
+        private void CreateNewAccount(string path, string password)
+        {
+#if DEBUG
+            Debug.WriteLine("No account found. Generating one.", "INFO");
+#endif
+            var lastUserFile = System.IO.Path.Combine(path, "lastUser.txt");
+            var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
+            string address = ecKey.GetPublicAddress();
+            address = address.Substring(2);
+            path = System.IO.Path.Combine(path, address);
+            if (!System.IO.Directory.Exists(path))
+            {
+                System.IO.Directory.CreateDirectory(path);
+            }
+            string accountFile = AccountCreator.CreateAccountUTCFile(password, path, ecKey);
+            var json = File.ReadAllText(System.IO.Path.Combine(path, accountFile));
+            var account = Account.LoadFromKeyStore(json, password);
+            PlayerID player = new PlayerID(account.Address, account.PrivateKey, password);
+            if (!accounts.ContainsKey(player))
+            {
+                this.accounts.Add(player, account);
+            }
+
+            System.IO.StreamWriter file = new System.IO.StreamWriter(lastUserFile);
+            file.WriteLine(address);
+            file.Close();
+        }
+
+        /// <summary>
+        /// Load account. 
+        /// </summary>
+        /// <param name="path">Path to directory with account file.</param>
+        /// <param name="password">Account's password.</param>
+        private bool LoadAccount(string path, string password)
         {
 #if DEBUG
             Debug.WriteLine(String.Format("Initializing account from path: {0}", path), "INFO");
 #endif
             if (!System.IO.Directory.Exists(path))
             {
-                System.IO.Directory.CreateDirectory(path);
+                return false;
             }
 
             var accountsFiles = ListAccountsUTCFiles(path);
-
-            // if no account in accounts dir create one with default password.
             if (accountsFiles.Length == 0)
             {
-#if DEBUG
-                Debug.WriteLine("No account found. Generating one.", "INFO");
-#endif
-                accountsFiles = new string[1];
-                accountsFiles[0] = AccountCreator.CreateAccountUTCFile(password, path);
+                return false;
             }
 
-            foreach(var fileName in accountsFiles)
+            foreach (var fileName in accountsFiles)
             {
 #if DEBUG
                 Debug.WriteLine(String.Format("Loading account {0}", fileName), "INFO");
 #endif
                 var json = File.ReadAllText(System.IO.Path.Combine(path, fileName));
-                
+
                 var account = Account.LoadFromKeyStore(json, password);
                 //this.accounts.Add(new PlayerID(account.Address, account.PrivateKey), account);
                 PlayerID player = new PlayerID(account.Address, account.PrivateKey, password);
@@ -299,6 +337,50 @@ namespace Hoard
                 {
                     this.accounts.Add(player, account);
                 }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check last logged user address. 
+        /// </summary>
+        /// <param name="path">Path to directory with account file.</param>
+        private string CheckLastLoggedUserAddress(string path)
+        {
+            var lastUserFile = System.IO.Path.Combine(path, "lastUser.txt");
+            if (File.Exists(lastUserFile))
+            {
+                using (StreamReader sr = File.OpenText(lastUserFile))
+                {
+                    string s;
+                    while ((s = sr.ReadLine()) != null)
+                    {
+                        if (IsHexString(s))
+                        {
+                             return s;
+                        }
+                    }
+                }
+            }
+            return "";
+        }
+
+        /// <summary>
+        /// Init account. 
+        /// </summary>
+        /// <param name="path">Path to directory with account file.</param>
+        /// <param name="password">Account's password.</param>
+        private void InitAccount(string path, string password)
+        {
+            string userAddress = CheckLastLoggedUserAddress(path);
+            if (userAddress == "")
+            {
+                CreateNewAccount(path, password);
+            }
+            else
+            {
+                LoadAccount(System.IO.Path.Combine(path, userAddress), password);
             }
 
             if (accounts.Count > 0)

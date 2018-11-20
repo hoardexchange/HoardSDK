@@ -11,6 +11,11 @@ namespace Hoard
         {
             //Generate a private key pair using SecureRandom
             var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
+            return CreateAccountUTCFile(password, path, ecKey);
+        }
+
+        public static string CreateAccountUTCFile(string password, string path, Nethereum.Signer.EthECKey ecKey)
+        {
             //Get the public address (derivied from the public key)
             var address = ecKey.GetPublicAddress();
 
