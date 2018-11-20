@@ -19,9 +19,13 @@ namespace Hoard
     /// </summary>
     public sealed class HoardService
     {
-        public static readonly HoardService Instance = new HoardService();
         /// <summary>
-        /// Game ID with backend connection informations.
+        /// Global access instance. Always available
+        /// </summary>
+        public static readonly HoardService Instance = new HoardService();
+
+        /// <summary>
+        /// Default Game ID setup during initialization.
         /// </summary>
         public GameID DefaultGame { get; private set; } = GameID.kInvalidID;
 
@@ -36,21 +40,25 @@ namespace Hoard
         public IExchangeService GameExchangeService { get; private set; } = null;
 
         /// <summary>
-        /// List of registered GameItemProviders
-        /// </summary>
-        private List<IItemPropertyProvider> ItemPropertyProviders = new List<IItemPropertyProvider>();
-
-        /// <summary>
         /// Communication channel with block chain.
         /// </summary>
         public BC.BCComm BCComm { get; private set; } = null;
 
         /// <summary>
+        /// List of registered Property providers
+        /// </summary>
+        private List<IItemPropertyProvider> ItemPropertyProviders = new List<IItemPropertyProvider>();
+
+        /// <summary>
+        /// List of registered GameItemProviders
+        /// </summary>
+        private Dictionary<GameID, List<IGameItemProvider>> Providers = new Dictionary<GameID, List<IGameItemProvider>>();
+
+        /// <summary>
         /// Accounts per PlayerID
+        /// TODO: this is to be moved to auth providers
         /// </summary>
         private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
-
-        private Dictionary<GameID, List<IGameItemProvider>> Providers = new Dictionary<GameID, List<IGameItemProvider>>();
 
         /// <summary>
         /// List of player accounts.
