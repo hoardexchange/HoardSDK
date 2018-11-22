@@ -71,11 +71,11 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<string>();
         }
 
-        public async Task<TransactionReceipt> SetGameServerURLAsync(BCComm comm, string url, PlayerID account = null)
+        public async Task<TransactionReceipt> SetGameServerURLAsync(BCComm comm, string url, User user = null)
         {
             var function = GetFunctionSetGameSrvURL();
 
-            return await comm.EvaluateOnBC(account, function, url);
+            return await comm.EvaluateOnBC(user, function, url);
         }
 
         public Task<ulong> GetGameItemContractCountAsync()

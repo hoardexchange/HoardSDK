@@ -29,7 +29,7 @@ namespace Hoard
         private string ExchangUrl = null;
         private BC.BCComm BCComm = null;
         private BC.Contracts.GameExchangeContract GameExchangeContract = null;
-        private PlayerID PlayerID = null;
+        private User User = null;
 
         private RestClient Client = null;
 
@@ -37,7 +37,7 @@ namespace Hoard
         {
             this.Hoard = hoard;
             this.BCComm = hoard.BCComm;
-            this.PlayerID = hoard.DefaultPlayer;
+            this.User = hoard.DefaultUser;
         }
 
         public bool Init()
@@ -46,7 +46,7 @@ namespace Hoard
             if (GameExchangeContract == null)
                 return false;
             ExchangUrl = BCComm.GetGameExchangeSrvURL().Result;
-            return SetupClient(PlayerID);
+            return SetupClient(User);
         }
 
         public void Shutdown()
@@ -57,7 +57,7 @@ namespace Hoard
 
         // Setup exchange backend client. 
         // Note: Lets assume it connects on its own, independently from item providers.
-        private bool SetupClient(PlayerID player)
+        private bool SetupClient(User user)
         {
             if (Uri.IsWellFormedUriString(ExchangUrl, UriKind.Absolute))
             {
@@ -115,7 +115,7 @@ namespace Hoard
 
             HashSet<GameItemId> itemsIds = new HashSet<GameItemId>();
 
-            if (jsonStr != null)
+            if (jsonStr != null && User.ActiveAccount != null)
             {
                 var list = JsonConvert.DeserializeObject<Order[]>(jsonStr);
 
@@ -132,7 +132,7 @@ namespace Hoard
                 foreach (var item in itemsIds)
                 {
                     gameItemsParams[itemsCount] = new GameItemsParams();
-                    gameItemsParams[itemsCount].PlayerAddress = PlayerID.ID;
+                    gameItemsParams[itemsCount].PlayerAddress = User.ActiveAccount.ID;
                     gameItemsParams[itemsCount].ContractAddress = item.Address;
                     gameItemsParams[itemsCount].TokenId = item.TokenId;
                     itemsCount++;
@@ -166,7 +166,7 @@ namespace Hoard
                     order.nonce,
                     order.user,
                     amount,
-                    PlayerID.ID);
+                    User.ActiveAccount.ID);
             }
             else if (order.gameItemGive.Metadata is ERC721GameItemContract.Metadata)
             {
@@ -179,7 +179,7 @@ namespace Hoard
                     order.nonce,
                     order.user,
                     amount,
-                    PlayerID.ID);
+                    User.ActiveAccount.ID);
             }
 
             throw new NotImplementedException();
@@ -194,7 +194,7 @@ namespace Hoard
                     1,
                     item.Metadata.Get<string>("OwnerAddress"),
                     item.Metadata.Get<BigInteger>("ItemId"),
-                    PlayerID);
+                    User.ActiveAccount);
             }
 
             throw new NotImplementedException();
@@ -205,7 +205,7 @@ namespace Hoard
             IGameItemProvider gameItemProvider = Hoard.GetGameItemProvider(item);
             if (gameItemProvider != null)
             {
-                return await gameItemProvider.Transfer(PlayerID.ID, GameExchangeContract.Address, item, amount);
+                return await gameItemProvider.Transfer(User.ActiveAccount.ID, GameExchangeContract.Address, item, amount);
             }
             return false;
         }
@@ -215,13 +215,13 @@ namespace Hoard
             var metadata223 = item.Metadata as ERC223GameItemContract.Metadata;
             if (metadata223 != null)
             {
-                return await GameExchangeContract.Withdraw(metadata223.OwnerAddress, amount, PlayerID.ID);
+                return await GameExchangeContract.Withdraw(metadata223.OwnerAddress, amount, User.ActiveAccount.ID);
             }
 
             var metadata721 = item.Metadata as ERC721GameItemContract.Metadata;
             if (metadata721 != null)
             {
-                return await GameExchangeContract.WithdrawERC721(metadata721.OwnerAddress, metadata721.ItemId, PlayerID.ID);
+                return await GameExchangeContract.WithdrawERC721(metadata721.OwnerAddress, metadata721.ItemId, User.ActiveAccount.ID);
             }
 
             throw new NotImplementedException();

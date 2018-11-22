@@ -32,9 +32,9 @@ namespace Hoard.GameItemProviders
         {
         }
 
-        private bool Connect(PlayerID player)
+        private bool Connect(User user)
         {
-            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            if ((user.ActiveAccount == null) && Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {                
                 Client = new RestClient(Game.Url);
                 Client.AutomaticDecompression = false;
@@ -61,13 +61,13 @@ namespace Hoard.GameItemProviders
                 var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
                 var nonceHex = nonce.ToString("x");
 
-                var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, player.PrivateKey);
+                var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, user.ActiveAccount.PrivateKey);
 
                 var responseLogin = PostJson("login/", new
                 {
                     token = response.Content,
                     nonce = "0x" + nonceHex,
-                    address = player.ID,
+                    address = user.ActiveAccount.ID,
                     signature = sig
                 }).Result;
 
@@ -145,11 +145,11 @@ namespace Hoard.GameItemProviders
             public List<Dictionary<string,string>> items = null;
         }
 
-        public GameItem[] GetPlayerItems(PlayerID playerID)
+        public GameItem[] GetPlayerItems(AccountInfo account)
         {
             if (Client != null)
             {
-                var request = new RestRequest(string.Format("player_items/{0},", playerID.ID), Method.GET);
+                var request = new RestRequest(string.Format("player_items/{0},", account.ID), Method.GET);
                 var response = Client.Execute(request);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
@@ -159,16 +159,16 @@ namespace Hoard.GameItemProviders
             }
             if (FallbackConnector != null)
             {
-                return FallbackConnector.GetPlayerItems(playerID);
+                return FallbackConnector.GetPlayerItems(account);
             }
             return null;
         }
 
-        public GameItem[] GetPlayerItems(PlayerID playerID, string itemType)
+        public GameItem[] GetPlayerItems(AccountInfo account, string itemType)
         {
             if (Client != null)
             {
-                var request = new RestRequest(string.Format("player_items/{0},{1}", playerID.ID, itemType), Method.GET);
+                var request = new RestRequest(string.Format("player_items/{0},{1}", account.ID, itemType), Method.GET);
                 var response = Client.Execute(request);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
@@ -178,7 +178,7 @@ namespace Hoard.GameItemProviders
             }
             if (FallbackConnector != null)
             {
-                return FallbackConnector.GetPlayerItems(playerID, itemType);
+                return FallbackConnector.GetPlayerItems(account, itemType);
             }
             return null;
         }
@@ -248,7 +248,7 @@ namespace Hoard.GameItemProviders
         {
             bool connected = false;
             //1. connect to REST server
-            connected = Connect(HoardService.Instance.DefaultPlayer);
+            connected = Connect(HoardService.Instance.DefaultUser);
             //2. check also fallback connector
             if (FallbackConnector != null)
             {

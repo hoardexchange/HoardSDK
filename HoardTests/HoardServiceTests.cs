@@ -54,10 +54,6 @@ namespace HoardTests
                 Debug.WriteLine("\tGameID: " + HoardService.DefaultGame.ID);
             }
 
-            Hoard.PlayerID myId = HoardService.DefaultPlayer;
-            Assert.True(myId != PlayerID.kInvalidID, "ERROR: Invalid player ID!");
-            Debug.WriteLine(string.Format("Current player is: {0}", myId.ID));
-
             Debug.WriteLine("Getting Hoard games...");
 
             GameID[] games = HoardService.QueryHoardGames().Result;
@@ -71,7 +67,7 @@ namespace HoardTests
                 HoardService.RegisterHoardGame(game);
 
                 Debug.WriteLine(String.Format("Getting player items for game {0}", game.Name));
-                GameItem[] items = HoardService.GetPlayerItems(HoardService.DefaultPlayer, game);
+                GameItem[] items = HoardService.GetPlayerItems(HoardService.DefaultUser, game);
 
                 Debug.WriteLine(String.Format("Found {0} items.", items.Length));
                 foreach (GameItem gi in items)
