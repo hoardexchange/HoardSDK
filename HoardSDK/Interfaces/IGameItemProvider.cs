@@ -35,14 +35,14 @@ namespace Hoard
         /// </summary>
         /// <param name="playerID"></param>
         /// <returns></returns>
-        GameItem[] GetPlayerItems(PlayerID playerID);
+        GameItem[] GetPlayerItems(AccountInfo account);
         /// <summary>
         /// Returns all items belonging to a particular player with given type
         /// </summary>
         /// <param name="playerID"></param>
         /// <param name="itemType"></param>
         /// <returns></returns>
-        GameItem[] GetPlayerItems(PlayerID playerID, string itemType);
+        GameItem[] GetPlayerItems(AccountInfo account, string itemType);
 
         /// Retrieve all items matching given parameters
         /// </summary>

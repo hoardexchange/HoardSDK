@@ -17,7 +17,7 @@ namespace HoardTests.Fixtures
 
         public HoardService HoardService { get; private set; }
 
-        public static List<PlayerID> UserIDs = new List<PlayerID>();
+        public static List<User> UserIDs = new List<User>();
         private Process cmd = new Process();
 
         public HoardServiceFixture()
@@ -43,8 +43,8 @@ namespace HoardTests.Fixtures
 
             Assert.True(HoardService.Initialize(options), "ERROR: Could not initialize HOARD!");
 
-            UserIDs.AddRange(HoardService.Players);
-            HoardService.DefaultPlayer = UserIDs[0];
+            UserIDs.AddRange(HoardService.Users);
+            HoardService.DefaultUser = UserIDs[0];
         }
 
         public void Initialize(string testName = null)
@@ -61,17 +61,19 @@ namespace HoardTests.Fixtures
 
             options.RpcClient = new Nethereum.JsonRpc.Client.RpcClient(new Uri(string.Format("http://{0}:{1}", data["network"]["host"], data["network"]["port"])));
 
+            User newUser = new User("TestUser", "dev");
             foreach (KeyData account in data["accounts"])
             {
                 Account acc = new Account(account.Value);
-                UserIDs.Add(new PlayerID(acc.Address, acc.PrivateKey, ""));
+                UserIDs.Add(newUser);
+                HoardService.LoadAccountInplace(newUser, acc.Address, acc.PrivateKey, "dev", User.ServiceType.KeyContainer);
             }
 
             HoardService = HoardService.Instance;
             
             Assert.True(HoardService.Initialize(options), "ERROR: Could not initialize HOARD!");
 
-            HoardService.DefaultPlayer = UserIDs[0];
+            HoardService.DefaultUser = UserIDs[0];
         }
 
         private void Deploy(string testName = null)

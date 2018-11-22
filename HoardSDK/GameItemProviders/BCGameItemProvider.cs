@@ -31,22 +31,22 @@ namespace Hoard.GameItemProviders
 
         #region IGameItemProvider interface implementation
 
-        public GameItem[] GetPlayerItems(PlayerID playerID)
+        public GameItem[] GetPlayerItems(AccountInfo account)
         {
             List<GameItem> items = new List<GameItem>();
             foreach (var contract in itemContracts.Values)
             {
-                items.AddRange(contract.GetGameItems(playerID).Result);
+                items.AddRange(contract.GetGameItems(account).Result);
             }
             return items.ToArray();
         }
 
-        public GameItem[] GetPlayerItems(PlayerID playerID, string itemType)
+        public GameItem[] GetPlayerItems(AccountInfo account, string itemType)
         {
             List<GameItem> items = new List<GameItem>();
             if (itemContracts.ContainsKey(itemType))
             {
-                items.AddRange(itemContracts[itemType].GetGameItems(playerID).Result);
+                items.AddRange(itemContracts[itemType].GetGameItems(account).Result);
             }
             return items.ToArray();
         }

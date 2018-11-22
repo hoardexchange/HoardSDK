@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Hoard.GameItemProviders;
 using System.Numerics;
+using Hoard.Utils;
 
 #if DEBUG
 using System.Diagnostics;
@@ -19,20 +20,22 @@ namespace Hoard
     /// </summary>
     public sealed class HoardService
     {
-        /// <summary>
-        /// Global access instance. Always available
-        /// </summary>
         public static readonly HoardService Instance = new HoardService();
 
         /// <summary>
-        /// Default Game ID setup during initialization.
+        /// Game ID with backend connection informations.
         /// </summary>
         public GameID DefaultGame { get; private set; } = GameID.kInvalidID;
 
         /// <summary>
+        /// List of all users.
+        /// </summary>
+        public List<User> Users = new List<User>();
+
+        /// <summary>
         /// Default player.
         /// </summary>
-        public PlayerID DefaultPlayer { get; set; } = PlayerID.kInvalidID;
+        public User DefaultUser{ get; set; } = null;
 
         /// <summary>
         /// Game exchange service.
@@ -40,33 +43,21 @@ namespace Hoard
         public IExchangeService GameExchangeService { get; private set; } = null;
 
         /// <summary>
-        /// Communication channel with block chain.
-        /// </summary>
-        public BC.BCComm BCComm { get; private set; } = null;
-
-        /// <summary>
-        /// List of registered Property providers
+        /// List of registered GameItemProviders
         /// </summary>
         private List<IItemPropertyProvider> ItemPropertyProviders = new List<IItemPropertyProvider>();
 
         /// <summary>
-        /// List of registered GameItemProviders
+        /// Communication channels with hoard authentication server.
         /// </summary>
+        private List<IAuthService> AuthServices = new List<IAuthService>();
+
+        /// <summary>
+        /// Communication channel with block chain.
+        /// </summary>
+        public BC.BCComm BCComm { get; private set; } = null;
+
         private Dictionary<GameID, List<IGameItemProvider>> Providers = new Dictionary<GameID, List<IGameItemProvider>>();
-
-        /// <summary>
-        /// Accounts per PlayerID
-        /// TODO: this is to be moved to auth providers
-        /// </summary>
-        private Dictionary<PlayerID, Account> accounts = new Dictionary<PlayerID, Account>();
-
-        /// <summary>
-        /// List of player accounts.
-        /// </summary>
-        public List<PlayerID> Players
-        {
-            get { return accounts.Keys.ToList(); }
-        }
 
         /// <summary>
         /// Optimization to cancel beforefieldinit mark
@@ -87,12 +78,12 @@ namespace Hoard
         /// <param name="item">Game item to be transfered.</param>
         /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
-        public async Task<bool> RequestGameItemTransfer(PlayerID recipient, GameItem item, ulong amount)
+        public async Task<bool> RequestGameItemTransfer(User recipient, GameItem item, ulong amount)
         {
             IGameItemProvider gameItemProvider = GetGameItemProvider(item);
-            if (gameItemProvider != null)
+            if (gameItemProvider != null && DefaultUser.ActiveAccount != null && recipient.ActiveAccount != null)
             {
-                return await gameItemProvider.Transfer(DefaultPlayer.ID, recipient.ID, item, amount);
+                return await gameItemProvider.Transfer(DefaultUser.ActiveAccount.ID, recipient.ActiveAccount.ID, item, amount);
             }
 
             return false;
@@ -116,9 +107,9 @@ namespace Hoard
         /// <summary>
         /// Check if player is signed in.
         /// </summary>
-        /// <param name="id">Player's id to be checked.</param>
+        /// <param name="user">Player to be checked.</param>
         /// <returns>True if given player is signed in.</returns>
-        public bool IsSignedIn(PlayerID id)
+        public bool IsSignedIn(User user)
         {
             //TODO: this seems deprecated as each provider connects on its own
             throw new NotImplementedException();
@@ -128,9 +119,9 @@ namespace Hoard
         /// <summary>
         /// Sign in given player.
         /// </summary>
-        /// <param name="id">Player's id to be signed in.</param>
+        /// <param name="user">Player to be signed in.</param>
         /// <returns>True if given player has been successfully signed in.</returns>
-        public bool SignIn(PlayerID id)
+        public bool SignIn(User user)
         {
             //TODO: this seems deprecated as each provider connects on its own
             throw new NotImplementedException();
@@ -151,7 +142,9 @@ namespace Hoard
         /// <returns>True if initialization succeeds.</returns>
         public bool Initialize(HoardServiceOptions options)
         {
-            InitAccount(options.AccountsDir, options.DefaultAccountPass);
+            AuthServices.Add(new KeyStoreAuthService());
+
+            InitAccount(options, "TestUser", options.DefaultAccountPass, User.ServiceType.KeyContainer);
 
             BCComm = new BC.BCComm(options.RpcClient, options.GameCenterContract); //access point to block chain - a must have
 
@@ -179,12 +172,13 @@ namespace Hoard
         public bool Shutdown()
         {
             DefaultGame = GameID.kInvalidID;
-            DefaultPlayer = PlayerID.kInvalidID;
+            DefaultUser = null;
             GameExchangeService = null;
             ItemPropertyProviders.Clear();
             BCComm = null;
             ClearAccounts();
             Providers.Clear();
+            AuthServices.Clear();
 
             return true;
         }
@@ -273,33 +267,16 @@ namespace Hoard
         /// Create account. 
         /// </summary>
         /// <param name="path">Path to directory with account file.</param>
+        /// <param name="login">Account's login.</param>
         /// <param name="password">Account's password.</param>
-        private void CreateNewAccount(string path, string password)
+        public bool CreateNewAccount(HoardServiceOptions options, User user, User.ServiceType type)
         {
-#if DEBUG
-            Debug.WriteLine("No account found. Generating one.", "INFO");
-#endif
-            var lastUserFile = System.IO.Path.Combine(path, "lastUser.txt");
-            var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
-            string address = ecKey.GetPublicAddress();
-            address = address.Substring(2);
-            path = System.IO.Path.Combine(path, address);
-            if (!System.IO.Directory.Exists(path))
-            {
-                System.IO.Directory.CreateDirectory(path);
-            }
-            string accountFile = AccountCreator.CreateAccountUTCFile(password, path, ecKey);
-            var json = File.ReadAllText(System.IO.Path.Combine(path, accountFile));
-            var account = Account.LoadFromKeyStore(json, password);
-            PlayerID player = new PlayerID(account.Address, account.PrivateKey, password);
-            if (!accounts.ContainsKey(player))
-            {
-                this.accounts.Add(player, account);
-            }
-
-            System.IO.StreamWriter file = new System.IO.StreamWriter(lastUserFile);
-            file.WriteLine(address);
-            file.Close();
+            Debug.Assert(user.AccountServices[(int)type] != null);
+            user.AccountServices[(int)type].CreateAccount(options, user.UserName, user.Password);
+            List<AccountInfo> accounts = user.AccountServices[(int)type].GetAccounts();
+            Debug.Assert(accounts.Count > 0);
+            user.SetActiveAccount(accounts[0]);
+            return true;
         }
 
         /// <summary>
@@ -307,46 +284,40 @@ namespace Hoard
         /// </summary>
         /// <param name="path">Path to directory with account file.</param>
         /// <param name="password">Account's password.</param>
-        private bool LoadAccount(string path, string password)
+        public bool LoadAccounts(HoardServiceOptions options, User user)
         {
-#if DEBUG
-            Debug.WriteLine(String.Format("Initializing account from path: {0}", path), "INFO");
-#endif
-            if (!System.IO.Directory.Exists(path))
+            bool accountLoaded = false;
+            foreach (IAccountService service in user.AccountServices)
             {
-                return false;
-            }
-
-            var accountsFiles = ListAccountsUTCFiles(path);
-            if (accountsFiles.Length == 0)
-            {
-                return false;
-            }
-
-            foreach (var fileName in accountsFiles)
-            {
-#if DEBUG
-                Debug.WriteLine(String.Format("Loading account {0}", fileName), "INFO");
-#endif
-                var json = File.ReadAllText(System.IO.Path.Combine(path, fileName));
-
-                var account = Account.LoadFromKeyStore(json, password);
-                //this.accounts.Add(new PlayerID(account.Address, account.PrivateKey), account);
-                PlayerID player = new PlayerID(account.Address, account.PrivateKey, password);
-                if (!accounts.ContainsKey(player))
+                if (service.LoadAccounts(options, user.UserName, user.Password))
                 {
-                    this.accounts.Add(player, account);
+                    accountLoaded = true;
+                }
+                List<AccountInfo> accounts = service.GetAccounts();
+                if (user.ActiveAccount == null && accounts.Count > 0)
+                {
+                    user.SetActiveAccount(accounts[0]);
                 }
             }
+            return accountLoaded;
+        }
 
-            return true;
+        /// <summary>
+        /// Load account in place. 
+        /// </summary>
+        /// <param name="path">Path to directory with account file.</param>
+        /// <param name="password">Account's password.</param>
+        public bool LoadAccountInplace(User user, string address, string key, string password, User.ServiceType type)
+        {
+            Debug.Assert(user.AccountServices[(int)type] != null);
+            return user.AccountServices[(int)type].LoadAccountInplace(address, key, password);
         }
 
         /// <summary>
         /// Check last logged user address. 
         /// </summary>
         /// <param name="path">Path to directory with account file.</param>
-        private string CheckLastLoggedUserAddress(string path)
+        private string CheckLastLoggedUser(string path)
         {
             var lastUserFile = System.IO.Path.Combine(path, "lastUser.txt");
             if (File.Exists(lastUserFile))
@@ -371,21 +342,33 @@ namespace Hoard
         /// </summary>
         /// <param name="path">Path to directory with account file.</param>
         /// <param name="password">Account's password.</param>
-        private void InitAccount(string path, string password)
+        private void InitAccount(HoardServiceOptions options, string login, string password, User.ServiceType type)
         {
-            string userAddress = CheckLastLoggedUserAddress(path);
-            if (userAddress == "")
+            if (login == "")
             {
-                CreateNewAccount(path, password);
+                string lastLogin = CheckLastLoggedUser(options.AccountsDir);
+                if (lastLogin == "")
+                {
+                    DefaultUser = new User(login, password);
+                    Users.Add(DefaultUser);
+                    CreateNewAccount(options, DefaultUser, type);
+                }
+                else
+                {
+                    DefaultUser = new User(lastLogin, password);
+                    Users.Add(DefaultUser);
+                    LoadAccounts(options, DefaultUser);
+                }
             }
             else
             {
-                LoadAccount(System.IO.Path.Combine(path, userAddress), password);
+                DefaultUser = new User(login, password);
+                Users.Add(DefaultUser);
+                if (!LoadAccounts(options, DefaultUser))
+                {
+                    CreateNewAccount(options, DefaultUser, type);
+                }
             }
-
-            if (accounts.Count > 0)
-                DefaultPlayer = accounts.Keys.First();
-
 #if DEBUG
             Debug.WriteLine("Accounts initialized.", "INFO");
 #endif
@@ -396,17 +379,7 @@ namespace Hoard
         /// </summary>
         private void ClearAccounts()
         {
-            accounts.Clear();
-        }
-
-        /// <summary>
-        /// Return account files from given directory. Account are stored in UTC compliant files.
-        /// </summary>
-        /// <param name="path">path to account files.</param>
-        /// <returns>Account filenames.</returns>
-        private string[] ListAccountsUTCFiles(string path)
-        {
-            return Directory.GetFiles(path, "UTC--*");
+            Users.Clear();
         }
 
         /// <summary>
@@ -450,11 +423,11 @@ namespace Hoard
         /// </summary>
         /// <param name="playerID"></param>
         /// <returns></returns>
-        public float GetBalance(PlayerID playerID)
+        public float GetBalance(AccountInfo account)
         {
             try
             {
-                return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(playerID.ID).Result));
+                return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(account.ID).Result));
             }
             catch(Exception)
             {
@@ -484,11 +457,11 @@ namespace Hoard
         /// </summary>
         /// <param name="playerID"></param>
         /// <returns></returns>
-        public BigInteger GetHRDAmount(PlayerID playerID)
+        public BigInteger GetHRDAmount(AccountInfo info)
         {
             try
             {
-                return BCComm.GetHRDAmountAsync(playerID.ID).Result;
+                return BCComm.GetHRDAmountAsync(info.ID).Result;
             }
             catch (Exception)
             {
@@ -497,22 +470,32 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Returns all Game Items owned by player's subaacount in default game (one passed in options to Initialize method).
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns></returns>
+        public GameItem[] GetPlayerItems(AccountInfo account)
+        {
+            return GetPlayerItems(account, DefaultGame);
+        }
+
+        /// <summary>
         /// Returns all Game Items owned by player in default game (one passed in options to Initialize method).
         /// </summary>
         /// <param name="playerID"></param>
         /// <returns></returns>
-        public GameItem[] GetPlayerItems(PlayerID playerID)
+        public GameItem[] GetPlayerItems(User user)
         {
-            return GetPlayerItems(playerID, DefaultGame);
+            return GetPlayerItems(user, DefaultGame);
         }
 
         /// <summary>
-        /// Returns all Game Items owned by player in particular game
+        /// Returns all Game Items owned by player's subaccount in particular game
         /// </summary>
-        /// <param name="playerID"></param>
+        /// <param name="account"></param>
         /// <param name="gameID"></param>
         /// <returns></returns>
-        public GameItem[] GetPlayerItems(PlayerID playerID, GameID gameID)
+        public GameItem[] GetPlayerItems(AccountInfo account, GameID gameID)
         {
             List<GameItem> items = new List<GameItem>();
             if (Providers.ContainsKey(gameID))
@@ -520,7 +503,27 @@ namespace Hoard
                 var list = Providers[gameID];
                 foreach (IGameItemProvider c in list)
                 {
-                    items.AddRange(c.GetPlayerItems(playerID));
+                    items.AddRange(c.GetPlayerItems(account));
+                }
+            }
+            return items.ToArray();
+        }
+
+        /// <summary>
+        /// Returns all Game Items owned by playerin particular game
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="gameID"></param>
+        /// <returns></returns>
+        public GameItem[] GetPlayerItems(User user, GameID gameID)
+        {
+            List<GameItem> items = new List<GameItem>();
+            foreach (IAccountService service in user.AccountServices)
+            {
+                List<AccountInfo> accounts = service.GetAccounts();
+                foreach (AccountInfo account in accounts)
+                {
+                    items.AddRange(GetPlayerItems(account, gameID));
                 }
             }
             return items.ToArray();

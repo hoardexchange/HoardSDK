@@ -193,19 +193,19 @@ namespace Hoard.BC
             return false;
         }
 
-        public async Task<TransactionReceipt> SetExchangeContractAsync(PlayerID account, string exchangeAddress)
+        public async Task<TransactionReceipt> SetExchangeContractAsync(User user, string exchangeAddress)
         {
-            return await gameCenter.SetExchangeAddressAsync(this, exchangeAddress, account);
+            return await gameCenter.SetExchangeAddressAsync(this, exchangeAddress, user);
         }
 
-        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(PlayerID account, string hoardTokenAddress)
+        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(User user, string hoardTokenAddress)
         {
-            return await gameCenter.SetHoardTokenAddressAsync(this, hoardTokenAddress, account);
+            return await gameCenter.SetHoardTokenAddressAsync(this, hoardTokenAddress, user);
         }
 
-        public async Task<TransactionReceipt> SetExchangeSrvURLAsync(PlayerID account, string url)
+        public async Task<TransactionReceipt> SetExchangeSrvURLAsync(User user, string url)
         {
-            return await gameCenter.SetExchangeSrvURLAsync(this, url, account);
+            return await gameCenter.SetExchangeSrvURLAsync(this, url, user);
         }
 
         public async Task<string> GetGameExchangeSrvURL()
@@ -227,17 +227,18 @@ namespace Hoard.BC
         /// temporary function to call functions on blockchain
         /// </summary>
         /// <returns></returns>
-        public async Task<TransactionReceipt> EvaluateOnBC(PlayerID account, Function function, params object[] functionInput)
+        public async Task<TransactionReceipt> EvaluateOnBC(User user, Function function, params object[] functionInput)
         {
-            if (account == null)
+            if (user == null)
             {
                 // use default user
-                account = HoardService.Instance.DefaultPlayer;
+                user = HoardService.Instance.DefaultUser;
             }
+            Debug.Assert(user.ActiveAccount != null);
 
-            HexBigInteger gas = await function.EstimateGasAsync(account.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
+            HexBigInteger gas = await function.EstimateGasAsync(user.ActiveAccount.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
 
-            Account acc = new Account(account.PrivateKey);
+            Account acc = new Account(user.ActiveAccount.PrivateKey);
             if (acc.NonceService == null)
             {
                 acc.NonceService = new InMemoryNonceService(acc.Address, web.Client);
@@ -247,7 +248,7 @@ namespace Hoard.BC
 
             string data = function.GetData(functionInput);
             BigInteger gasPrice = BigInteger.Zero;
-            string encoded = Web3.OfflineTransactionSigner.SignTransaction(account.PrivateKey, function.ContractAddress, 
+            string encoded = Web3.OfflineTransactionSigner.SignTransaction(user.ActiveAccount.PrivateKey, function.ContractAddress, 
                 BigInteger.Zero, nonce, gasPrice, gas.Value, data);
 
             //bool success = Web3.OfflineTransactionSigner.VerifyTransaction(encoded);

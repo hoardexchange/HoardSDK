@@ -124,7 +124,7 @@ namespace Hoard.BC.Contracts
 
         public abstract Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount);
 
-        public abstract Task<GameItem[]> GetGameItems(PlayerID playerID);
+        public abstract Task<GameItem[]> GetGameItems(AccountInfo info);
 
         public abstract Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams);
     }
@@ -180,9 +180,9 @@ namespace Hoard.BC.Contracts
             return receipt.Status.Value == 1;
         }
 
-        public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
+        public override async Task<GameItem[]> GetGameItems(AccountInfo info)
         {
-            BigInteger itemBalance = await GetBalanceOf(playerID.ID);
+            BigInteger itemBalance = await GetBalanceOf(info.ID);
             if (BigInteger.Zero.CompareTo(itemBalance)<0)
             {
                 string state = BitConverter.ToString(await GetTokenState());
@@ -284,9 +284,9 @@ namespace Hoard.BC.Contracts
             return receipt.Status.Value == 1;
         }
 
-        public override async Task<GameItem[]> GetGameItems(PlayerID playerID)
+        public override async Task<GameItem[]> GetGameItems(AccountInfo info)
         {
-            BigInteger itemBalance = await GetBalanceOf(playerID.ID);
+            BigInteger itemBalance = await GetBalanceOf(info.ID);
             string symbol = await GetSymbol();
 
             ulong count = (ulong)itemBalance;
@@ -295,7 +295,7 @@ namespace Hoard.BC.Contracts
 
             for (ulong i = 0; i < count; ++i)
             {
-                BigInteger id = await TokenOfOwnerByIndex(playerID.ID, i);
+                BigInteger id = await TokenOfOwnerByIndex(info.ID, i);
                 Metadata meta = new Metadata(Address, id);
 
                 items[i] = new GameItem(Game, symbol, meta);

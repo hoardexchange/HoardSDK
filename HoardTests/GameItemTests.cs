@@ -78,16 +78,16 @@ namespace HoardTests
             return contract.GetFunction("setTokenState");
         }
 
-        public async Task<TransactionReceipt> MintToken(string ownerAddress, BigInteger tokenID, byte[] tokenState, PlayerID account = null)
+        public async Task<TransactionReceipt> MintToken(string ownerAddress, BigInteger tokenID, byte[] tokenState, User user = null)
         {
             Function function = GetFunctionMintToken();
-            return await HoardService.Instance.BCComm.EvaluateOnBC(account, function, ownerAddress, tokenID, tokenState);
+            return await HoardService.Instance.BCComm.EvaluateOnBC(user, function, ownerAddress, tokenID, tokenState);
         }
 
-        public async Task<TransactionReceipt> SetTokenState(BigInteger tokenID, byte[] tokenState, PlayerID account = null)
+        public async Task<TransactionReceipt> SetTokenState(BigInteger tokenID, byte[] tokenState, User user = null)
         {
             Function function = GetFunctionSetTokenState();
-            return await HoardService.Instance.BCComm.EvaluateOnBC(account, function, tokenID, tokenState);
+            return await HoardService.Instance.BCComm.EvaluateOnBC(user, function, tokenID, tokenState);
         }
     }
 
@@ -118,7 +118,7 @@ namespace HoardTests
         IPFSFixture ipfsFixture;
 
         BCGameItemMockProvider gameItemProvider = null;
-        PlayerID DefaultPlayer = null;
+        User DefaultPlayer = null;
 
         public GameItemTests(HoardServiceFixture _hoardFixture, IPFSFixture _ipfsFixture)
         {
@@ -147,7 +147,7 @@ namespace HoardTests
             GameItem swordItem = new GameItem(new GameID("test"), "TM721", null);
             swordItem.Properties = new SwordProperties(10, 5, 20);
 
-            GameItem[] items = gameItemProvider.GetPlayerItems(DefaultPlayer, swordItem.Symbol);
+            GameItem[] items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol);
             Assert.Equal(2, items.Length);
 
             string propsJson = JsonConvert.SerializeObject(swordItem.Properties);
@@ -156,7 +156,7 @@ namespace HoardTests
 
             gameItemProvider.UpdateItemState(swordItem);
 
-            items = gameItemProvider.GetPlayerItems(DefaultPlayer, swordItem.Symbol);
+            items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol);
             GameItem downloadedSwordItem = items[0];
             hoardFixture.HoardService.FetchItemProperties(downloadedSwordItem);
 

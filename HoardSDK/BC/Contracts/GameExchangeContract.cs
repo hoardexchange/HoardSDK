@@ -72,7 +72,7 @@ namespace Hoard.BC.Contracts
             ulong amountGet,
             string tokenGive,
             ulong amountGive,
-            PlayerID from)
+            AccountInfo from)
         {
             Account acc = new Account(from.PrivateKey);
             if (acc.NonceService == null)
@@ -115,7 +115,7 @@ namespace Hoard.BC.Contracts
             ulong amountGet,
             string tokenGive,
             BigInteger tokenId,
-            PlayerID from)
+            AccountInfo from)
         {
             Account acc = new Account(from.PrivateKey);
             if (acc.NonceService == null)

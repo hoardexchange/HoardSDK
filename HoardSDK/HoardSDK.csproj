@@ -48,6 +48,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Account.cs" />
+    <Compile Include="AccountServices\KeyContainerService.cs" />
+    <Compile Include="AuthServices\KeyStoreAuthService.cs" />
     <Compile Include="BC\Contracts\ContractInterfaceID.cs" />
     <Compile Include="BC\Contracts\HoardABIConfig.cs" />
     <Compile Include="BC\Contracts\HoardTokenContract.cs" />
@@ -65,8 +67,10 @@
     <Compile Include="GameExchangeService.cs" />
     <Compile Include="GameItem.cs" />
     <Compile Include="GameItemProviders\HoardGameItemProvider.cs" />
-    <Compile Include="IGameItemProvider.cs" />
-    <Compile Include="IItemPropertyProvider.cs" />
+    <Compile Include="Interfaces\IAccountService.cs" />
+    <Compile Include="Interfaces\IAuthService.cs" />
+    <Compile Include="Interfaces\IGameItemProvider.cs" />
+    <Compile Include="Interfaces\IItemPropertyProvider.cs" />
     <Compile Include="ItemPropertyProviders\IPFSPropertyProvider.cs" />
     <Compile Include="HoardService.cs" />
     <Compile Include="HoardServiceOptions.cs" />
@@ -114,6 +118,7 @@
       <Version>106.3.1</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

@@ -60,7 +60,7 @@ namespace HoardTests.CryptKittyTests
             return new string[] {"CryptoKitty"};
         }
 
-        public GameItem[] GetPlayerItems(PlayerID playerID)
+        public GameItem[] GetPlayerItems(AccountInfo playerID)
         {
             List<GameItem> items = new List<GameItem>();
 
@@ -100,12 +100,12 @@ namespace HoardTests.CryptKittyTests
             return null;
         }
 
-        public GameItem[] GetPlayerItems(PlayerID playerID, string itemType)
+        public GameItem[] GetPlayerItems(AccountInfo playerID, string itemType)
         {
             return null;
         }
 
-        private bool validateOwnerOnBC(PlayerID player, string tokenId)
+        private bool validateOwnerOnBC(AccountInfo player, string tokenId)
         {
             BigInteger tokenBigInt = new BigInteger(Encoding.Unicode.GetBytes(tokenId));
 

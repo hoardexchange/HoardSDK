@@ -35,7 +35,7 @@ namespace HoardTests.CryptKittyTests
 
             hoard.RegisterGame(myGame, new CKGameItemProvider(myGame));
 
-            GameItem[] items = hoard.GetPlayerItems(HoardService.Instance.DefaultPlayer, myGame);
+            GameItem[] items = hoard.GetPlayerItems(HoardService.Instance.DefaultUser, myGame);
             
             Debug.WriteLine("Shutting down HOARD...");
             Assert.True(hoard.Shutdown());

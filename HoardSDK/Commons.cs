@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Hoard.Utils;
+using Nethereum.Web3.Accounts;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,21 +9,23 @@ using System.Threading.Tasks;
 namespace Hoard
 {
     /// <summary>
-    /// Player identifier. Holds only ID information.
+    /// Account basic information.
     /// </summary>
-    public class PlayerID // FIXME: should be renamed to UserAccount?
+    public class AccountInfo
     {
-        public static PlayerID kInvalidID { get; private set; } = new PlayerID("0x0","0x0","");
+        public static AccountInfo kInvalidID { get; private set; } = new AccountInfo("0x0","0x0","", null);
         public string ID { get; private set; } = null;
-        // FIXME: probably we shouldn't store private key or password here
-        public string PrivateKey { get; private set; }
-        public string Password { get; private set; }
+        public string PrivateKey { get; private set; } = "";
+        public string Password { get; private set; } = "";
+        public Account BCAccount;
+        public IAccountService AccountService { get; private set; } = null;
 
-        public PlayerID(string id, string privateKey, string password)
+        public AccountInfo(string id, string privateKey, string password, IAccountService service)
         {
             ID = id.ToLower();
             PrivateKey = privateKey;
             Password = password;
+            AccountService = service;
         }
 
         public override int GetHashCode() 
@@ -31,14 +35,59 @@ namespace Hoard
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as PlayerID);
+            return Equals(obj as AccountInfo);
         }
 
-        public bool Equals(PlayerID obj)
+        public bool Equals(AccountInfo obj)
         {
             return obj != null && obj.ID.ToLower() == ID && obj.PrivateKey == PrivateKey && obj.Password == Password;
         }
 
+    }
+
+    /// <summary>
+    /// Hoard user.
+    /// </summary>
+    public class User
+    {
+        public enum ServiceType
+        {
+            KeyContainer = 0,
+            MaxServiceTypes
+        }
+
+        public string UserName { get; private set; } = "";
+        public string HashedUsername { get; private set; } = "";
+        public string Password { get; private set; } = "";
+        public AccountInfo ActiveAccount { get; private set; } = null;
+        public IAccountService[] AccountServices = new IAccountService[(int)ServiceType.MaxServiceTypes];
+
+        public User(string name, string password)
+        {
+            UserName = name;
+            Password = password;
+            HashedUsername = Helper.SHA256HexHashString(name);
+
+            AccountServices[(int)ServiceType.KeyContainer] = new KeyContainerService();
+        }
+
+        public bool SetActiveAccount(AccountInfo account)
+        {
+            foreach(IAccountService service in AccountServices)
+            {
+                List<AccountInfo> accounts = service.GetAccounts();
+                foreach(AccountInfo ac in accounts)
+                {
+                    if(ac.ID == account.ID)
+                    {
+                        ActiveAccount = ac;
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
     }
 
     /// <summary>
