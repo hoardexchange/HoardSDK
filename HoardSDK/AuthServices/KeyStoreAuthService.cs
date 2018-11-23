@@ -13,18 +13,50 @@ namespace Hoard
 {
     public class KeyStoreAuthService : IAuthService
     {
-        public User CreateUser(string userName, string password)
+        public string Name { get; } = "KeyStoreAuthService";
+
+        private HoardServiceOptions Options = null;
+
+        public KeyStoreAuthService(HoardServiceOptions options)
         {
-            return null;
+            Options = options;
         }
 
-        public User LoginUser(string userName, string password)
+        public async Task<User> CreateUser()
         {
-            return null;
+            //ask for user login
+            string userId = await Options.UserInputProvider.RequestInput(null, eUserInputType.kLogin, "login");
+            return new User(userId);
         }
 
-        public User CreateUser(string path, string userName, string password)
+        public async Task<User> LoginUser()
         {
+            //ask for user login
+            string userId = await Options.UserInputProvider.RequestInput(null, eUserInputType.kLogin, "login");
+            string hashedName = Helper.SHA256HexHashString(userId);
+            //now look for existing account folder (so we know that user exists)
+            if (!Directory.Exists(Options.AccountsDir))
+            {
+                Trace.TraceWarning("Not found Hoard user directory.");
+                return null;
+            }
+
+            var accountsDirs = Directory.GetDirectories(Options.AccountsDir);
+            if (accountsDirs.Length == 0)
+            {
+                Trace.TraceWarning("Not found any Hoard users.");
+                return null;
+            }
+
+            foreach (var dirName in accountsDirs)
+            {
+                //if found return user with proper id
+                string[] parts = dirName.Split(Path.DirectorySeparatorChar);
+                if (parts.Length>0 && parts.Last() == hashedName)
+                    return new User(userId);
+            }
+            
+            //if not found return null
             return null;
         }
     }

@@ -22,6 +22,8 @@ namespace Hoard
     {
         public static readonly HoardService Instance = new HoardService();
 
+        public HoardServiceOptions Options { get; private set; } = null;
+
         /// <summary>
         /// Game ID with backend connection informations.
         /// </summary>
@@ -35,7 +37,7 @@ namespace Hoard
         /// <summary>
         /// Default player.
         /// </summary>
-        public User DefaultUser{ get; set; } = null;
+        public User DefaultUser { get; set; } = null;
 
         /// <summary>
         /// Game exchange service.
@@ -48,9 +50,16 @@ namespace Hoard
         private List<IItemPropertyProvider> ItemPropertyProviders = new List<IItemPropertyProvider>();
 
         /// <summary>
-        /// Communication channels with hoard authentication server.
+        /// Communication channels with hoard authentication services.
         /// </summary>
         private List<IAuthService> AuthServices = new List<IAuthService>();
+
+        public IAuthService DefaultAuthService { get; private set; } = null;
+
+        /// <summary>
+        /// Communication channels with hoard account services.
+        /// </summary>
+        private List<IAccountService> AccountServices = new List<IAccountService>();
 
         /// <summary>
         /// Communication channel with block chain.
@@ -142,13 +151,25 @@ namespace Hoard
         /// <returns>True if initialization succeeds.</returns>
         public bool Initialize(HoardServiceOptions options)
         {
-            AuthServices.Add(new KeyStoreAuthService());
+            Options = options;
 
-            InitAccount(options, "TestUser", options.DefaultAccountPass, User.ServiceType.KeyContainer);
+            //register known auth services
+            AuthServices.Clear();
+            AuthServices.Add(new KeyStoreAuthService(Options));
 
-            BCComm = new BC.BCComm(options.RpcClient, options.GameCenterContract); //access point to block chain - a must have
+            DefaultAuthService = AuthServices[0];
 
-            DefaultGame = options.Game;
+            //register known account services
+            AccountServices.Clear();
+            AccountServices.Add(new KeyContainerService(Options));
+
+            //access point to block chain - a must have
+            BCComm = new BC.BCComm(Options.RpcClient, Options.GameCenterContract);
+            Tuple<bool,string> result = BCComm.Connect().Result;
+            if (!result.Item1)
+                return false;
+
+            DefaultGame = Options.Game;
 
             //our default GameItemProvider
             if (DefaultGame != GameID.kInvalidID)
@@ -192,7 +213,7 @@ namespace Hoard
             //assumig this is a hoard game we can use a hoardconnector
             HoardGameItemProvider provider = new HoardGameItemProvider(game);//this will create REST client to communicate with backend
             //but in case server is down we will pass a fallback
-            provider.FallbackConnector = new BCGameItemProvider(game,BCComm);
+            provider.SecureProvider = new BCGameItemProvider(game,BCComm);
             if(BCComm.RegisterHoardGame(game).Result && RegisterGame(game, provider))
             {
                 return true;
@@ -228,15 +249,6 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Check if game exists
-        /// </summary>
-        /// <param name="game"></param>
-        public bool GetGameExists(GameID game)
-        {
-            return BCComm.GetGameExistsAsync(game.ID).Result;
-        }
-
-        /// <summary>
         /// Register provider of resolving item state and filling properties.
         /// </summary>
         /// <param name="provider">Provider to be registered.</param>
@@ -250,6 +262,33 @@ namespace Hoard
             return false;
         }
 
+        public async Task<User> LoginPlayer()
+        {
+            if (Options.UserInputProvider == null)
+            {
+                Trace.Fail("UserInputProvider is not set. Hoard Service is not initialized properly!");
+                return null;
+            }
+
+            User user = await DefaultAuthService.LoginUser();
+
+            //add accounts for user from all known services
+            foreach (IAccountService service in AccountServices)
+            {
+                await service.RequestAccounts(user);//this might spawn a prompt with login request using IUserInput
+            }
+
+            if (user.Accounts.Count > 0)
+                user.SetActiveAccount(user.Accounts[0]);
+
+            if (DefaultUser == null)
+                DefaultUser = user;
+
+            Users.Add(user);
+
+            return user;
+        }
+
         #region PRIVATE SECTION
 
         private bool IsHexString(string value)
@@ -261,56 +300,6 @@ namespace Hoard
                     return false;
             }
             return true;
-        }
-
-        /// <summary>
-        /// Create account. 
-        /// </summary>
-        /// <param name="path">Path to directory with account file.</param>
-        /// <param name="login">Account's login.</param>
-        /// <param name="password">Account's password.</param>
-        public bool CreateNewAccount(HoardServiceOptions options, User user, User.ServiceType type)
-        {
-            Debug.Assert(user.AccountServices[(int)type] != null);
-            user.AccountServices[(int)type].CreateAccount(options, user.UserName, user.Password);
-            List<AccountInfo> accounts = user.AccountServices[(int)type].GetAccounts();
-            Debug.Assert(accounts.Count > 0);
-            user.SetActiveAccount(accounts[0]);
-            return true;
-        }
-
-        /// <summary>
-        /// Load account. 
-        /// </summary>
-        /// <param name="path">Path to directory with account file.</param>
-        /// <param name="password">Account's password.</param>
-        public bool LoadAccounts(HoardServiceOptions options, User user)
-        {
-            bool accountLoaded = false;
-            foreach (IAccountService service in user.AccountServices)
-            {
-                if (service.LoadAccounts(options, user.UserName, user.Password))
-                {
-                    accountLoaded = true;
-                }
-                List<AccountInfo> accounts = service.GetAccounts();
-                if (user.ActiveAccount == null && accounts.Count > 0)
-                {
-                    user.SetActiveAccount(accounts[0]);
-                }
-            }
-            return accountLoaded;
-        }
-
-        /// <summary>
-        /// Load account in place. 
-        /// </summary>
-        /// <param name="path">Path to directory with account file.</param>
-        /// <param name="password">Account's password.</param>
-        public bool LoadAccountInplace(User user, string address, string key, string password, User.ServiceType type)
-        {
-            Debug.Assert(user.AccountServices[(int)type] != null);
-            return user.AccountServices[(int)type].LoadAccountInplace(address, key, password);
         }
 
         /// <summary>
@@ -335,43 +324,6 @@ namespace Hoard
                 }
             }
             return "";
-        }
-
-        /// <summary>
-        /// Init account. 
-        /// </summary>
-        /// <param name="path">Path to directory with account file.</param>
-        /// <param name="password">Account's password.</param>
-        private void InitAccount(HoardServiceOptions options, string login, string password, User.ServiceType type)
-        {
-            if (login == "")
-            {
-                string lastLogin = CheckLastLoggedUser(options.AccountsDir);
-                if (lastLogin == "")
-                {
-                    DefaultUser = new User(login, password);
-                    Users.Add(DefaultUser);
-                    CreateNewAccount(options, DefaultUser, type);
-                }
-                else
-                {
-                    DefaultUser = new User(lastLogin, password);
-                    Users.Add(DefaultUser);
-                    LoadAccounts(options, DefaultUser);
-                }
-            }
-            else
-            {
-                DefaultUser = new User(login, password);
-                Users.Add(DefaultUser);
-                if (!LoadAccounts(options, DefaultUser))
-                {
-                    CreateNewAccount(options, DefaultUser, type);
-                }
-            }
-#if DEBUG
-            Debug.WriteLine("Accounts initialized.", "INFO");
-#endif
         }
 
         /// <summary>
@@ -407,6 +359,15 @@ namespace Hoard
         {
             //for now we only support asking BC directly, but in future we might have some Hoard servers with caching
             return await BCComm.GetHoardGames();
+        }
+
+        /// <summary>
+        /// Check if game exists
+        /// </summary>
+        /// <param name="game"></param>
+        public bool GetGameExists(GameID game)
+        {
+            return BCComm.GetGameExistsAsync(game.ID).Result;
         }
 
         /// <summary>
@@ -518,13 +479,9 @@ namespace Hoard
         public GameItem[] GetPlayerItems(User user, GameID gameID)
         {
             List<GameItem> items = new List<GameItem>();
-            foreach (IAccountService service in user.AccountServices)
+            foreach (AccountInfo account in user.Accounts)
             {
-                List<AccountInfo> accounts = service.GetAccounts();
-                foreach (AccountInfo account in accounts)
-                {
-                    items.AddRange(GetPlayerItems(account, gameID));
-                }
+                items.AddRange(GetPlayerItems(account, gameID));
             }
             return items.ToArray();
         }

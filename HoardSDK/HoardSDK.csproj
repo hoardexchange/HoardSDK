@@ -47,7 +47,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Account.cs" />
     <Compile Include="AccountServices\KeyContainerService.cs" />
     <Compile Include="AuthServices\KeyStoreAuthService.cs" />
     <Compile Include="BC\Contracts\ContractInterfaceID.cs" />
@@ -71,14 +70,16 @@
     <Compile Include="Interfaces\IAuthService.cs" />
     <Compile Include="Interfaces\IGameItemProvider.cs" />
     <Compile Include="Interfaces\IItemPropertyProvider.cs" />
+    <Compile Include="Interfaces\IUserInputProvider.cs" />
     <Compile Include="ItemPropertyProviders\IPFSPropertyProvider.cs" />
     <Compile Include="HoardService.cs" />
     <Compile Include="HoardServiceOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Result.cs" />
-    <Compile Include="Utils.cs" />
+    <Compile Include="Utils\Helper.cs" />
     <Compile Include="Utils\Base58Check\ArrayHelpers.cs" />
     <Compile Include="Utils\Base58Check\Base58CheckEncoding.cs" />
+    <Compile Include="Utils\KeyStoreUtils.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

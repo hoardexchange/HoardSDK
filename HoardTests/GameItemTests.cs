@@ -133,7 +133,7 @@ namespace HoardTests
             GameID game = games[0];
             HoardGameItemProvider hoardItemProvider = new HoardGameItemProvider(game);
             gameItemProvider = new BCGameItemMockProvider(game, hoardFixture.HoardService.BCComm);
-            hoardItemProvider.FallbackConnector = gameItemProvider;
+            hoardItemProvider.SecureProvider = gameItemProvider;
             hoardFixture.HoardService.RegisterGame(game, hoardItemProvider);
 
             Assert.NotNull(gameItemProvider);

@@ -1,30 +1,22 @@
-﻿using Hoard.Utils;
-using Nethereum.Web3.Accounts;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Hoard
 {
     /// <summary>
-    /// Account basic information.
+    /// User account basic information.
     /// </summary>
     public class AccountInfo
     {
-        public static AccountInfo kInvalidID { get; private set; } = new AccountInfo("0x0","0x0","", null);
         public string ID { get; private set; } = null;
-        public string PrivateKey { get; private set; } = "";
-        public string Password { get; private set; } = "";
-        public Account BCAccount;
+        public string Name { get; private set; } = null;
         public IAccountService AccountService { get; private set; } = null;
 
-        public AccountInfo(string id, string privateKey, string password, IAccountService service)
+        public AccountInfo(string name, string id, IAccountService service)
         {
+            Name = name;
             ID = id.ToLower();
-            PrivateKey = privateKey;
-            Password = password;
             AccountService = service;
         }
 
@@ -40,9 +32,13 @@ namespace Hoard
 
         public bool Equals(AccountInfo obj)
         {
-            return obj != null && obj.ID.ToLower() == ID && obj.PrivateKey == PrivateKey && obj.Password == Password;
+            return obj != null && obj.ID.ToLower() == ID;
         }
 
+        public async Task<string> Sign(byte[] input)
+        {
+            return await AccountService.Sign(input, this);
+        }
     }
 
     /// <summary>
@@ -50,41 +46,24 @@ namespace Hoard
     /// </summary>
     public class User
     {
-        public enum ServiceType
-        {
-            KeyContainer = 0,
-            MaxServiceTypes
-        }
-
         public string UserName { get; private set; } = "";
-        public string HashedUsername { get; private set; } = "";
-        public string Password { get; private set; } = "";
+        public List<AccountInfo> Accounts = new List<AccountInfo>();
         public AccountInfo ActiveAccount { get; private set; } = null;
-        public IAccountService[] AccountServices = new IAccountService[(int)ServiceType.MaxServiceTypes];
 
-        public User(string name, string password)
+        public User(string name)
         {
             UserName = name;
-            Password = password;
-            HashedUsername = Helper.SHA256HexHashString(name);
-
-            AccountServices[(int)ServiceType.KeyContainer] = new KeyContainerService();
         }
 
         public bool SetActiveAccount(AccountInfo account)
         {
-            foreach(IAccountService service in AccountServices)
+            if (Accounts.Contains(account))
             {
-                List<AccountInfo> accounts = service.GetAccounts();
-                foreach(AccountInfo ac in accounts)
-                {
-                    if(ac.ID == account.ID)
-                    {
-                        ActiveAccount = ac;
-                        return true;
-                    }
-                }
+                ActiveAccount = account;
+                return true;
             }
+
+            System.Diagnostics.Debug.Fail("Invalid parameter. This account is not verified!");
             
             return false;
         }

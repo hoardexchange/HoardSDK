@@ -1,112 +1,124 @@
 ﻿using Hoard.Utils;
 using Nethereum.Web3.Accounts;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Hoard
 {
     public class KeyContainerService : IAccountService
     {
-        private List<AccountInfo> Accounts = new List<AccountInfo>();
-
-        private string[] ListAccountsUTCFiles(string path)
+        private class KeyStoreAccount : AccountInfo
         {
-            return Directory.GetFiles(path, "UTC--*");
-        }
+            public string PrivateKey = null;
 
-        private bool CheckAccount(string address)
-        {
-            foreach (AccountInfo ainfo in Accounts)
+            public KeyStoreAccount(string name, string id, string key, KeyContainerService service)
+                :base(name,id,service)
             {
-                if (ainfo.ID == address)
-                {
-                    return true;
-                }
+                PrivateKey = key;
             }
-            return false;
         }
 
-        public bool CreateAccount(HoardServiceOptions options, string username, string password)
-        {
-#if DEBUG
-            Debug.WriteLine("Generating user.", "INFO");
-#endif
-            string hashedName = Helper.SHA256HexHashString(username);
-            string path = System.IO.Path.Combine(options.AccountsDir, hashedName);
+        private HoardServiceOptions Options;
 
-            var lastUserFile = System.IO.Path.Combine(options.AccountsDir, "lastUser.txt");
+        public KeyContainerService(HoardServiceOptions options)
+        {
+            Options = options;
+        }
+
+        private static string CreateAccountUTCFile(string password, string path, Nethereum.Signer.EthECKey ecKey)
+        {
+            //Get the public address (derivied from the public key)
+            var address = ecKey.GetPublicAddress();
+
+            //Create a store service, to encrypt and save the file using the web3 standard
+            var service = new Nethereum.KeyStore.KeyStoreService();
+            var encryptedKey = service.EncryptAndGenerateDefaultKeyStoreAsJson(password, ecKey.GetPrivateKeyAsBytes(), address);
+            var fileName = service.GenerateUTCFileName(address);
+            //save the File
+            using (var newfile = File.CreateText(Path.Combine(path, fileName)))
+            {
+                newfile.Write(encryptedKey);
+                newfile.Flush();
+            }
+
+            return fileName;
+        }
+
+        public async Task<bool> CreateAccount(string name, User user)
+        {
+            System.Diagnostics.Trace.TraceInformation("Generating user account.");
+
+            string hashedName = Helper.SHA256HexHashString(user.UserName);
+            string path = Path.Combine(Options.AccountsDir, hashedName);
+            //generate new secure random key
             var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
-            if (!System.IO.Directory.Exists(path))
-            {
-                System.IO.Directory.CreateDirectory(path);
-            }
-            string accountFile = AccountCreator.CreateAccountUTCFile(password, path, ecKey);
-            var json = File.ReadAllText(System.IO.Path.Combine(path, accountFile));
-            var account = Account.LoadFromKeyStore(json, password);
-            AccountInfo accountInfo = new AccountInfo(account.Address, account.PrivateKey, password, this);
-            Accounts.Add(accountInfo);
 
-            System.IO.StreamWriter file = new System.IO.StreamWriter(lastUserFile);
-            file.WriteLine(username);
-            file.Close();
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            string password = await Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
+            string accountFile = CreateAccountUTCFile(password, path, ecKey);
+
+            Account account = new Account(ecKey);
+            AccountInfo accountInfo = new KeyStoreAccount(name, account.Address, account.PrivateKey, this);
+            user.Accounts.Add(accountInfo);
 
             return true;
         }
 
-        public bool LoadAccounts(HoardServiceOptions options, string username, string password)
+        public async Task<bool> RequestAccounts(User user)
         {
-            string hashedName = Helper.SHA256HexHashString(username);
-            string path = System.IO.Path.Combine(options.AccountsDir, hashedName);
-#if DEBUG
-            Debug.WriteLine(String.Format("Initializing account from path: {0}", path), "INFO");
-#endif
-            if (!System.IO.Directory.Exists(path))
+            string hashedName = Helper.SHA256HexHashString(user.UserName);
+            string path = Path.Combine(Options.AccountsDir, hashedName);
+
+            System.Diagnostics.Trace.TraceInformation(string.Format("Loading accounts from path: {0}", path));
+
+            if (!Directory.Exists(path))
             {
+                System.Diagnostics.Trace.TraceWarning("Not found any account files.");
                 return false;
             }
 
-            var accountsFiles = ListAccountsUTCFiles(path);
+            var accountsFiles = Directory.GetFiles(path, "UTC--*");
             if (accountsFiles.Length == 0)
             {
+                System.Diagnostics.Trace.TraceWarning("Not found any account files.");
                 return false;
             }
 
             foreach (var fileName in accountsFiles)
             {
-#if DEBUG
-                Debug.WriteLine(String.Format("Loading account {0}", fileName), "INFO");
-#endif
-                var json = File.ReadAllText(System.IO.Path.Combine(path, fileName));
+                System.Diagnostics.Trace.WriteLine(string.Format("Loading account {0}", fileName), "INFO");
+
+                var json = File.ReadAllText(Path.Combine(path, fileName));
+
+                string password = await Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, fileName);
 
                 var account = Account.LoadFromKeyStore(json, password);
-                if (CheckAccount(account.Address))
-                    continue;
 
-                AccountInfo accountInfo = new AccountInfo(account.Address, account.PrivateKey, password, this);
-                Accounts.Add(accountInfo);
+                AccountInfo accountInfo = new KeyStoreAccount(fileName, account.Address, account.PrivateKey, this);
+                user.Accounts.Add(accountInfo);
             }
 
             return true;
         }
 
-        public bool LoadAccountInplace(string address, string key, string password)
+        public Task<string> Sign(byte[] input, AccountInfo signature)
         {
-            if (CheckAccount(address))
-                return false;
+            KeyStoreAccount ksa = signature as KeyStoreAccount;
+            if (ksa == null)
+            {
+                System.Diagnostics.Trace.Fail("Invalid signature!");
+                return null;
+            }
 
-            AccountInfo accountInfo = new AccountInfo(address, key, password, this);
-            Accounts.Add(accountInfo);
-            return true;
-        }
-
-        public List<AccountInfo> GetAccounts()
-        {
-            return Accounts;
+            return new Task<string>(() =>
+            {
+                var signer = new Nethereum.Signer.EthereumMessageSigner();
+                var ecKey = new Nethereum.Signer.EthECKey(ksa.PrivateKey);
+                return signer.Sign(input, ecKey);
+            });
         }
     }
 }

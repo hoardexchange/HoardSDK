@@ -74,13 +74,8 @@ namespace Hoard.BC.Contracts
             ulong amountGive,
             AccountInfo from)
         {
-            Account acc = new Account(from.PrivateKey);
-            if (acc.NonceService == null)
-            {
-                acc.NonceService = new InMemoryNonceService(acc.Address, web3.Client);
-            }
-            acc.NonceService.Client = web3.Client;
-            BigInteger nonce = await acc.NonceService.GetNextNonceAsync();
+            var nonceService = new InMemoryNonceService(from.ID, web3.Client);
+            BigInteger nonce = await nonceService.GetNextNonceAsync();
             var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
 
             var function = GetFunctionOrder();
@@ -117,13 +112,8 @@ namespace Hoard.BC.Contracts
             BigInteger tokenId,
             AccountInfo from)
         {
-            Account acc = new Account(from.PrivateKey);
-            if (acc.NonceService == null)
-            {
-                acc.NonceService = new InMemoryNonceService(acc.Address, web3.Client);
-            }
-            acc.NonceService.Client = web3.Client;
-            BigInteger nonce = await acc.NonceService.GetNextNonceAsync();
+            var nonceService =  new InMemoryNonceService(from.ID, web3.Client);
+            BigInteger nonce = await nonceService.GetNextNonceAsync();
             var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
 
             var function = GetFunctionOrderERC721();

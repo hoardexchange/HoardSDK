@@ -1,17 +1,29 @@
 ﻿using Hoard;
 using IniParser;
 using IniParser.Model;
-using Nethereum.Web3.Accounts;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace HoardTests.Fixtures
 {
     public class HoardServiceFixture : IDisposable
     {
+        public class UserInputProviderFixture : IUserInputProvider
+        {
+            public async Task<string> RequestInput(User user, eUserInputType type, string name)
+            {
+                if (type == eUserInputType.kLogin)
+                    return "TestUser";
+                else if (type == eUserInputType.kPassword)
+                    return "dev";
+
+                return null;
+            }
+        }
         public static string EnvironmentCurrentDirectory = Environment.CurrentDirectory;
         public static string ScriptsDirectory = EnvironmentCurrentDirectory + "\\..\\..\\..\\..\\HoardTools\\Scripts";
 
@@ -38,12 +50,15 @@ namespace HoardTests.Fixtures
         {
             HoardServiceConfig config = HoardServiceConfig.Load(configPath);
             HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
+            options.UserInputProvider = new UserInputProviderFixture();
 
             HoardService = HoardService.Instance;
 
             Assert.True(HoardService.Initialize(options), "ERROR: Could not initialize HOARD!");
 
-            UserIDs.AddRange(HoardService.Users);
+            //authenticate user
+            UserIDs.Add(HoardService.Instance.LoginPlayer().Result);
+
             HoardService.DefaultUser = UserIDs[0];
         }
 
@@ -52,6 +67,7 @@ namespace HoardTests.Fixtures
             Deploy(testName);
 
             HoardServiceOptions options = new HoardServiceOptions();
+            options.UserInputProvider = new UserInputProviderFixture();
     
             FileIniDataParser parser = new FileIniDataParser();
             IniData data = parser.ReadFile("settings.ini");
@@ -60,18 +76,13 @@ namespace HoardTests.Fixtures
             Assert.NotEmpty(options.GameCenterContract);
 
             options.RpcClient = new Nethereum.JsonRpc.Client.RpcClient(new Uri(string.Format("http://{0}:{1}", data["network"]["host"], data["network"]["port"])));
-
-            User newUser = new User("TestUser", "dev");
-            foreach (KeyData account in data["accounts"])
-            {
-                Account acc = new Account(account.Value);
-                UserIDs.Add(newUser);
-                HoardService.LoadAccountInplace(newUser, acc.Address, acc.PrivateKey, "dev", User.ServiceType.KeyContainer);
-            }
-
+            
             HoardService = HoardService.Instance;
             
             Assert.True(HoardService.Initialize(options), "ERROR: Could not initialize HOARD!");
+
+            //authenticate user
+            UserIDs.Add(HoardService.Instance.LoginPlayer().Result);
 
             HoardService.DefaultUser = UserIDs[0];
         }

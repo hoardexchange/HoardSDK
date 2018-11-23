@@ -16,9 +16,9 @@ namespace Hoard.GameItemProviders
     {
         public GameID Game { get; private set; }
         /// <summary>
-        /// Fallback in case server is down. Should be set to sth more reliable like BCGameItemProvider.
+        /// Secure provider used for validation but also in case server is down. Should be set to sth reliable like BCGameItemProvider.
         /// </summary>
-        public IGameItemProvider FallbackConnector { get; set; } = null;
+        public IGameItemProvider SecureProvider { get; set; } = null;
 
         private RestClient Client = null;
         private string SessionKey = null;
@@ -61,7 +61,10 @@ namespace Hoard.GameItemProviders
                 var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
                 var nonceHex = nonce.ToString("x");
 
-                var sig = Hoard.Eth.Utils.Sign(response.Content.Substring(2) + nonceHex, user.ActiveAccount.PrivateKey);
+                var dataBytes = Encoding.ASCII.GetBytes(response.Content.Substring(2) + nonceHex);
+                string sig = user.ActiveAccount.Sign(dataBytes).Result;
+                if (sig == null)
+                    return false;
 
                 var responseLogin = PostJson("login/", new
                 {
@@ -121,9 +124,9 @@ namespace Hoard.GameItemProviders
                     return responseDeserialized.types.ToArray();
                 }
             }
-            if (FallbackConnector != null)
+            if (SecureProvider != null)
             {
-                return FallbackConnector.GetItemTypes();
+                return SecureProvider.GetItemTypes();
             }
             return null;
         }
@@ -157,9 +160,9 @@ namespace Hoard.GameItemProviders
                     return ParseItems(response.Content);
                 }
             }
-            if (FallbackConnector != null)
+            if (SecureProvider != null)
             {
-                return FallbackConnector.GetPlayerItems(account);
+                return SecureProvider.GetPlayerItems(account);
             }
             return null;
         }
@@ -176,9 +179,9 @@ namespace Hoard.GameItemProviders
                     return ParseItems(response.Content);
                 }
             }
-            if (FallbackConnector != null)
+            if (SecureProvider != null)
             {
-                return FallbackConnector.GetPlayerItems(account, itemType);
+                return SecureProvider.GetPlayerItems(account, itemType);
             }
             return null;
         }
@@ -194,9 +197,9 @@ namespace Hoard.GameItemProviders
                     return ParseItems(response.Content);
                 }
             }
-            if (FallbackConnector != null)
+            if (SecureProvider != null)
             {
-                return FallbackConnector.GetItems(gameItemsParams);
+                return SecureProvider.GetItems(gameItemsParams);
             }
             return null;
         }
@@ -237,9 +240,9 @@ namespace Hoard.GameItemProviders
                 //TODO: implement this
                 //throw new NotImplementedException();
             }
-            if (FallbackConnector != null)
+            if (SecureProvider != null)
             {
-                return FallbackConnector.Transfer(addressFrom, addressTo, item, amount);
+                return SecureProvider.Transfer(addressFrom, addressTo, item, amount);
             }
             return new Task<bool>(()=> { return false; });
         }
@@ -250,9 +253,9 @@ namespace Hoard.GameItemProviders
             //1. connect to REST server
             connected = Connect(HoardService.Instance.DefaultUser);
             //2. check also fallback connector
-            if (FallbackConnector != null)
+            if (SecureProvider != null)
             {
-                connected |= FallbackConnector.Connect();
+                connected |= SecureProvider.Connect();
             }
             //TODO: cut it out, this should be done from hoard.Init and then perhaphs manually per StateType not Item Symbol
             //3. register known item types to be supported by IPFSPropertyProvider

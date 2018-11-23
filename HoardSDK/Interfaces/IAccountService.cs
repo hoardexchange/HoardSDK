@@ -1,16 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿
 using System.Threading.Tasks;
 
 namespace Hoard
 {
     public interface IAccountService
     {
-        bool CreateAccount(HoardServiceOptions options, string username, string password);
-        bool LoadAccounts(HoardServiceOptions options, string username, string password);
-        bool LoadAccountInplace(string address, string key, string password);
-        List<AccountInfo> GetAccounts();
+        /// <summary>
+        /// Create new account for User
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        Task<bool> CreateAccount(string name, User user);
+
+        /// <summary>
+        /// Load all accounts registered for User
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        Task<bool> RequestAccounts(User user);
+
+        /// <summary>
+        /// Sings any message with account signature
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="signature"></param>
+        /// <returns>Signed message</returns>
+        Task<string> Sign(byte[] input, AccountInfo signature);
     }
 }

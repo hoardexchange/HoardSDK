@@ -32,10 +32,18 @@ namespace Hoard.BC
             gameCenter = GetContract<GameCenterContract>(gameCenterContract);
         }
 
-        public async Task<string> Connect()
+        public async Task<Tuple<bool,string>> Connect()
         {
             var ver = new Nethereum.RPC.Web3.Web3ClientVersion(web.Client);
-            return await ver.SendRequestAsync();
+            try
+            {
+                return new Tuple<bool, string>(true, await ver.SendRequestAsync());
+            }
+            catch(Exception ex)
+            {
+                Trace.Fail(ex.Message);
+                return new Tuple<bool, string>(false, ex.Message);
+            }
         }
 
         public async Task<HexBigInteger> GetBalance(string account)
@@ -238,20 +246,19 @@ namespace Hoard.BC
 
             HexBigInteger gas = await function.EstimateGasAsync(user.ActiveAccount.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
 
-            Account acc = new Account(user.ActiveAccount.PrivateKey);
-            if (acc.NonceService == null)
-            {
-                acc.NonceService = new InMemoryNonceService(acc.Address, web.Client);
-            }
-            acc.NonceService.Client = web.Client;
-            BigInteger nonce = await acc.NonceService.GetNextNonceAsync();
+            var nonceService = new InMemoryNonceService(user.ActiveAccount.ID, web.Client);
+            BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             string data = function.GetData(functionInput);
             BigInteger gasPrice = BigInteger.Zero;
-            string encoded = Web3.OfflineTransactionSigner.SignTransaction(user.ActiveAccount.PrivateKey, function.ContractAddress, 
+            var trans = new Nethereum.Signer.Transaction(function.ContractAddress,
                 BigInteger.Zero, nonce, gasPrice, gas.Value, data);
-
-            //bool success = Web3.OfflineTransactionSigner.VerifyTransaction(encoded);
+            string encoded = user.ActiveAccount.Sign(trans.GetRLPEncodedRaw()).Result;
+            if (encoded == null)
+            {
+                Trace.Fail("Could not sign transaction!");
+                return null;
+            }
 
             string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + encoded);
             TransactionReceipt receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
