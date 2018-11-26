@@ -18,13 +18,7 @@ namespace Hoard
         string Name { get; }
 
         /// <summary>
-        /// Creates new user with given name and password.
-        /// </summary>
-        /// <returns></returns>
-        Task<User> CreateUser();
-
-        /// <summary>
-        /// Logins user with given name and password.
+        /// Logins a user.
         /// </summary>
         /// <returns></returns>
         Task<User> LoginUser();

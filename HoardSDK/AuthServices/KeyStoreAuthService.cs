@@ -22,42 +22,33 @@ namespace Hoard
             Options = options;
         }
 
-        public async Task<User> CreateUser()
-        {
-            //ask for user login
-            string userId = await Options.UserInputProvider.RequestInput(null, eUserInputType.kLogin, "login");
-            return new User(userId);
-        }
-
         public async Task<User> LoginUser()
         {
             //ask for user login
             string userId = await Options.UserInputProvider.RequestInput(null, eUserInputType.kLogin, "login");
-            string hashedName = Helper.SHA256HexHashString(userId);
-            //now look for existing account folder (so we know that user exists)
-            if (!Directory.Exists(Options.AccountsDir))
+
+            User user = new User(userId);
+
+            bool foundUserAccount = false;
+
+            KeyStoreUtils.EnumerateAccounts(userId, (string accountId) =>
             {
-                Trace.TraceWarning("Not found Hoard user directory.");
-                return null;
+                foundUserAccount = true;
+            });
+
+            if (!foundUserAccount)
+            {
+                //ask for password
+                string password = await Options.UserInputProvider.RequestInput(null, eUserInputType.kPassword, "password");
+
+                //ask for name
+                string name = "default";
+
+                //no accounts so let's create new one
+                KeyStoreUtils.CreateAccount(user, name, password);
             }
 
-            var accountsDirs = Directory.GetDirectories(Options.AccountsDir);
-            if (accountsDirs.Length == 0)
-            {
-                Trace.TraceWarning("Not found any Hoard users.");
-                return null;
-            }
-
-            foreach (var dirName in accountsDirs)
-            {
-                //if found return user with proper id
-                string[] parts = dirName.Split(Path.DirectorySeparatorChar);
-                if (parts.Length>0 && parts.Last() == hashedName)
-                    return new User(userId);
-            }
-            
-            //if not found return null
-            return null;
+            return user;
         }
     }
 }

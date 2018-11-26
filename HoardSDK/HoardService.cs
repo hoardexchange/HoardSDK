@@ -272,10 +272,16 @@ namespace Hoard
 
             User user = await DefaultAuthService.LoginUser();
 
+            if (user == null)
+            {
+                Trace.Fail("Cannot log in a user!");
+                return null;
+            }
+
             //add accounts for user from all known services
             foreach (IAccountService service in AccountServices)
             {
-                await service.RequestAccounts(user);//this might spawn a prompt with login request using IUserInput
+                bool found = await service.RequestAccounts(user);//this might spawn a prompt with login request using IUserInput
             }
 
             if (user.Accounts.Count > 0)
