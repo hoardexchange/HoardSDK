@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AccountServices\HoardAccountService.cs" />
     <Compile Include="AccountServices\KeyContainerService.cs" />
     <Compile Include="AuthServices\KeyStoreAuthService.cs" />
     <Compile Include="BC\Contracts\ContractInterfaceID.cs" />

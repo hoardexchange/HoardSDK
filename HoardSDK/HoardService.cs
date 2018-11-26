@@ -162,6 +162,7 @@ namespace Hoard
             //register known account services
             AccountServices.Clear();
             AccountServices.Add(new KeyContainerService(Options));
+            AccountServices.Add(new HoardAccountService(Options));
 
             //access point to block chain - a must have
             BCComm = new BC.BCComm(Options.RpcClient, Options.GameCenterContract);

@@ -50,7 +50,7 @@ namespace Hoard
                     if (accountTuple != null)
                     {
                         AccountInfo accountInfo = new KeyStoreAccount(accountId, accountTuple.Item1, accountTuple.Item2, this);
-                        user.Accounts.Add(accountInfo);//TODO: move it to another list!
+                        user.Accounts.Add(accountInfo);
                     }
                 });
 
