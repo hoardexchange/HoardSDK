@@ -25,7 +25,7 @@ namespace Hoard.HW.Ledger
             DerivationPath = derivationPath;
         }
 
-        public async Task<bool> CreateAccount(string name, User user) { return true; }
+        public async Task<AccountInfo> CreateAccount(string name, User user) { return null; }
 
         abstract public Task<bool> RequestAccounts(User user);
 
