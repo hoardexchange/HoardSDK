@@ -80,7 +80,6 @@
     <Compile Include="Interfaces\IAccountService.cs" />
     <Compile Include="Interfaces\IGameItemProvider.cs" />
     <Compile Include="Interfaces\IItemPropertyProvider.cs" />
-    <Compile Include="HW\App.cs" />
     <Compile Include="HW\KeyPath.cs" />
     <Compile Include="HW\Ledger\Ethereum\EthConstants.cs" />
     <Compile Include="HW\Ledger\Ethereum\EthGetAddress.cs" />
