@@ -20,11 +20,19 @@ namespace Hoard
         Task<bool> RequestAccounts(User user);
 
         /// <summary>
+        /// Sings transaction with account signature
+        /// </summary>
+        /// <param name="rlpEncodedTransaction"></param>
+        /// <param name="signature"></param>
+        /// <returns>Signed transaction</returns>
+        Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature);
+
+        /// <summary>
         /// Sings any message with account signature
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="message"></param>
         /// <param name="signature"></param>
         /// <returns>Signed message</returns>
-        Task<string> Sign(byte[] input, AccountInfo signature);
+        Task<string> SignMessage(byte[] message, AccountInfo signature);
     }
 }

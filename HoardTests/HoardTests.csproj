@@ -52,6 +52,8 @@
     <Compile Include="Fixtures\IPFSFixture.cs" />
     <Compile Include="GameItemTests.cs" />
     <Compile Include="HoardServiceTests.cs" />
+    <Compile Include="HW\LedgerWalletTest.cs" />
+    <Compile Include="HW\TrezorWalletTest.cs" />
     <Compile Include="IPCTests.cs" />
     <Compile Include="NethereumRpcClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

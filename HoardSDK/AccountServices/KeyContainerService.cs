@@ -60,7 +60,7 @@ namespace Hoard
             return task;
         }
 
-        public Task<string> Sign(byte[] input, AccountInfo signature)
+        public Task<string> SignMessage(byte[] input, AccountInfo signature)
         {
             KeyStoreAccount ksa = signature as KeyStoreAccount;
             if (ksa == null)
@@ -77,6 +77,11 @@ namespace Hoard
             });
             task.Start();
             return task;
+        }
+
+        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
+        {
+            throw new NotImplementedException();
         }
     }
 }

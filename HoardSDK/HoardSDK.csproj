@@ -67,10 +67,29 @@
     <Compile Include="GameExchangeService.cs" />
     <Compile Include="GameItem.cs" />
     <Compile Include="GameItemProviders\HoardGameItemProvider.cs" />
+    <Compile Include="HW\Ledger\Ethereum\EthSignTransaction.cs" />
+    <Compile Include="HW\Ledger\LedgerFactory.cs" />
+    <Compile Include="HW\Trezor\Ethereum\EthGetAddress.cs" />
+    <Compile Include="HW\Trezor\Ethereum\EthSignTransaction.cs" />
+    <Compile Include="HW\Trezor\Ethereum\EthTrezorWallet.cs" />
+    <Compile Include="HW\Trezor\CommonContracts.cs" />
+    <Compile Include="HW\Trezor\MessageType.cs" />
+    <Compile Include="HW\UsageSpecification.cs" />
+    <Compile Include="HW\VendorProductIds.cs" />
+    <Compile Include="HW\Trezor\TrezorFactory.cs" />
+    <Compile Include="HW\Trezor\TrezorWallet.cs" />
     <Compile Include="Interfaces\IAccountService.cs" />
     <Compile Include="Interfaces\IAuthService.cs" />
     <Compile Include="Interfaces\IGameItemProvider.cs" />
     <Compile Include="Interfaces\IItemPropertyProvider.cs" />
+    <Compile Include="HW\App.cs" />
+    <Compile Include="HW\KeyPath.cs" />
+    <Compile Include="HW\Ledger\Ethereum\EthConstants.cs" />
+    <Compile Include="HW\Ledger\Ethereum\EthGetAddress.cs" />
+    <Compile Include="HW\Helpers.cs" />
+    <Compile Include="HW\Ledger\Ethereum\EthLedgerWallet.cs" />
+    <Compile Include="HW\Ledger\LedgerWallet.cs" />
+    <Compile Include="HW\Ledger\APDU.cs" />
     <Compile Include="Interfaces\IUserInputProvider.cs" />
     <Compile Include="ItemPropertyProviders\IPFSPropertyProvider.cs" />
     <Compile Include="HoardService.cs" />
@@ -107,6 +126,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Hid.Net">
+      <Version>1.3.0</Version>
+    </PackageReference>
     <PackageReference Include="Hoard.NethereumCore">
       <Version>1.0.6761.17447</Version>
     </PackageReference>
@@ -115,6 +137,9 @@
     </PackageReference>
     <PackageReference Include="Portable.BouncyCastle">
       <Version>1.8.1.4</Version>
+    </PackageReference>
+    <PackageReference Include="protobuf-net">
+      <Version>2.4.0</Version>
     </PackageReference>
     <PackageReference Include="RestSharp">
       <Version>106.3.1</Version>

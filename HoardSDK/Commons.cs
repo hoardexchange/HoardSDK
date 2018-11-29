@@ -37,7 +37,7 @@ namespace Hoard
 
         public async Task<string> Sign(byte[] input)
         {
-            return await AccountService.Sign(input, this);
+            return await AccountService.SignTransaction(input, this);
         }
     }
 

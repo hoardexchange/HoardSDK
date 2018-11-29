@@ -64,7 +64,7 @@ namespace Hoard
             return false;
         }
 
-        public Task<string> Sign(byte[] input, AccountInfo signature)
+        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
         {
             throw new NotImplementedException();
         }
@@ -89,6 +89,11 @@ namespace Hoard
             System.Diagnostics.Trace.Fail("could not authenticate user!");
 
             return null;
+        }
+
+        public Task<string> SignMessage(byte[] input, AccountInfo signature)
+        {
+            throw new NotImplementedException();
         }
     }
 }
