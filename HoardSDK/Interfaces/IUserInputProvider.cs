@@ -13,6 +13,6 @@ namespace Hoard
 
     public interface IUserInputProvider
     {
-        Task<string> RequestInput(User user, eUserInputType type, string name);
+        Task<string> RequestInput(User user, eUserInputType type, string description);
     }
 }

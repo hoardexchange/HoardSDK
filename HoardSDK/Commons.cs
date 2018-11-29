@@ -20,21 +20,6 @@ namespace Hoard
             AccountService = service;
         }
 
-        public override int GetHashCode() 
-        {
-            return ID.GetHashCode();
-        }
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as AccountInfo);
-        }
-
-        public bool Equals(AccountInfo obj)
-        {
-            return obj != null && obj.ID.ToLower() == ID;
-        }
-
         public async Task<string> Sign(byte[] input)
         {
             return await AccountService.Sign(input, this);

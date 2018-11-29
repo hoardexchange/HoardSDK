@@ -30,11 +30,6 @@ namespace Hoard
         public GameID DefaultGame { get; private set; } = GameID.kInvalidID;
 
         /// <summary>
-        /// List of all users.
-        /// </summary>
-        public List<User> Users = new List<User>();
-
-        /// <summary>
         /// Default player.
         /// </summary>
         public User DefaultUser { get; set; } = null;
@@ -50,17 +45,15 @@ namespace Hoard
         private List<IItemPropertyProvider> ItemPropertyProviders = new List<IItemPropertyProvider>();
 
         /// <summary>
-        /// Communication channels with hoard authentication services.
-        /// </summary>
-        private List<IAuthService> AuthServices = new List<IAuthService>();
-
-        public IAuthService DefaultAuthService { get; private set; } = null;
-
-        /// <summary>
         /// Communication channels with hoard account services.
         /// </summary>
         private List<IAccountService> AccountServices = new List<IAccountService>();
 
+        /// <summary>
+        /// Default Account service
+        /// </summary>
+        public IAccountService DefaultAccountService { get; set; } = null;
+        
         /// <summary>
         /// Communication channel with block chain.
         /// </summary>
@@ -153,16 +146,12 @@ namespace Hoard
         {
             Options = options;
 
-            //register known auth services
-            AuthServices.Clear();
-            AuthServices.Add(new KeyStoreAuthService(Options));
-
-            DefaultAuthService = AuthServices[0];
-
             //register known account services
             AccountServices.Clear();
-            AccountServices.Add(new KeyContainerService(Options));
+            AccountServices.Add(new KeyStoreAccountService(Options));
             AccountServices.Add(new HoardAccountService(Options));
+
+            DefaultAccountService = AccountServices[0];
 
             //access point to block chain - a must have
             BCComm = new BC.BCComm(Options.RpcClient, Options.GameCenterContract);
@@ -198,9 +187,8 @@ namespace Hoard
             GameExchangeService = null;
             ItemPropertyProviders.Clear();
             BCComm = null;
-            ClearAccounts();
             Providers.Clear();
-            AuthServices.Clear();
+            AccountServices.Clear();
 
             return true;
         }
@@ -263,6 +251,14 @@ namespace Hoard
             return false;
         }
 
+        /// <summary>
+        /// This function is work in progress: we need a complete UI solution that allows user to enter login, password when prompted
+        /// as well as choose which account service to use or even which account to use.
+        /// This might be a separate interface or class that creates a User
+        /// There might be some functionality to change active account (requires game restart/ from start screen)
+        /// Assume that it should setup default account for queries
+        /// </summary>
+        /// <returns></returns>
         public async Task<User> LoginPlayer()
         {
             if (Options.UserInputProvider == null)
@@ -271,27 +267,36 @@ namespace Hoard
                 return null;
             }
 
-            User user = await DefaultAuthService.LoginUser();
-
-            if (user == null)
+            //ask for user login
+            string userId = await Options.UserInputProvider.RequestInput(null, eUserInputType.kLogin, "login");
+            if (string.IsNullOrEmpty(userId))
             {
                 Trace.Fail("Cannot log in a user!");
                 return null;
             }
+            //TODO: do some check on userId (minimum number of characters or so...)?
+            User user = new User(userId);
 
             //add accounts for user from all known services
             foreach (IAccountService service in AccountServices)
             {
-                bool found = await service.RequestAccounts(user);//this might spawn a prompt with login request using IUserInput
+                bool found = await service.RequestAccounts(user);
             }
 
             if (user.Accounts.Count > 0)
                 user.SetActiveAccount(user.Accounts[0]);
+            else
+            {
+                //TODO: ask user to choose accountservice
+                IAccountService accountService = DefaultAccountService;
+                AccountInfo newAccount = await accountService.CreateAccount("default", user);
+                if (newAccount == null)
+                    return null;
+                user.SetActiveAccount(newAccount);
+            }
 
             if (DefaultUser == null)
                 DefaultUser = user;
-
-            Users.Add(user);
 
             return user;
         }
@@ -331,14 +336,6 @@ namespace Hoard
                 }
             }
             return "";
-        }
-
-        /// <summary>
-        /// Forget any cached accounts.
-        /// </summary>
-        private void ClearAccounts()
-        {
-            Users.Clear();
         }
 
         /// <summary>

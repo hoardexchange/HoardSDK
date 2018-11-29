@@ -30,7 +30,7 @@ namespace Hoard
             authClient = new RestClient(options.HoardAuthServiceUrl);
         }
 
-        public Task<bool> CreateAccount(string name, User user)
+        public Task<AccountInfo> CreateAccount(string name, User user)
         {
             throw new NotImplementedException();
         }
