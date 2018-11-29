@@ -8,9 +8,9 @@ namespace Hoard
         /// <summary>
         /// Create new account for User
         /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        Task<bool> CreateAccount(string name, User user);
+        /// <param name="user">user to create account for</param>
+        /// <returns>new account and also binds to the user</returns>
+        Task<AccountInfo> CreateAccount(string name, User user);
 
         /// <summary>
         /// Load all accounts registered for User

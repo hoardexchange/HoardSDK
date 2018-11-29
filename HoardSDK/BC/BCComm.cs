@@ -201,19 +201,19 @@ namespace Hoard.BC
             return false;
         }
 
-        public async Task<TransactionReceipt> SetExchangeContractAsync(User user, string exchangeAddress)
+        public async Task<TransactionReceipt> SetExchangeContractAsync(AccountInfo account, string exchangeAddress)
         {
-            return await gameCenter.SetExchangeAddressAsync(this, exchangeAddress, user);
+            return await gameCenter.SetExchangeAddressAsync(this, exchangeAddress, account);
         }
 
-        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(User user, string hoardTokenAddress)
+        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(AccountInfo account, string hoardTokenAddress)
         {
-            return await gameCenter.SetHoardTokenAddressAsync(this, hoardTokenAddress, user);
+            return await gameCenter.SetHoardTokenAddressAsync(this, hoardTokenAddress, account);
         }
 
-        public async Task<TransactionReceipt> SetExchangeSrvURLAsync(User user, string url)
+        public async Task<TransactionReceipt> SetExchangeSrvURLAsync(AccountInfo account, string url)
         {
-            return await gameCenter.SetExchangeSrvURLAsync(this, url, user);
+            return await gameCenter.SetExchangeSrvURLAsync(this, url, account);
         }
 
         public async Task<string> GetGameExchangeSrvURL()
@@ -235,25 +235,20 @@ namespace Hoard.BC
         /// temporary function to call functions on blockchain
         /// </summary>
         /// <returns></returns>
-        public async Task<TransactionReceipt> EvaluateOnBC(User user, Function function, params object[] functionInput)
+        public async Task<TransactionReceipt> EvaluateOnBC(AccountInfo account, Function function, params object[] functionInput)
         {
-            if (user == null)
-            {
-                // use default user
-                user = HoardService.Instance.DefaultUser;
-            }
-            Debug.Assert(user.ActiveAccount != null);
+            Debug.Assert(account != null);
 
-            HexBigInteger gas = await function.EstimateGasAsync(user.ActiveAccount.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
+            HexBigInteger gas = await function.EstimateGasAsync(account.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
 
-            var nonceService = new InMemoryNonceService(user.ActiveAccount.ID, web.Client);
+            var nonceService = new InMemoryNonceService(account.ID, web.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             string data = function.GetData(functionInput);
             BigInteger gasPrice = BigInteger.Zero;
             var trans = new Nethereum.Signer.Transaction(function.ContractAddress,
                 BigInteger.Zero, nonce, gasPrice, gas.Value, data);
-            string encoded = user.ActiveAccount.Sign(trans.GetRLPEncodedRaw()).Result;
+            string encoded = account.Sign(trans.GetRLPEncodedRaw()).Result;
             if (encoded == null)
             {
                 Trace.Fail("Could not sign transaction!");

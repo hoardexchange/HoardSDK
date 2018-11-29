@@ -48,8 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccountServices\HoardAccountService.cs" />
-    <Compile Include="AccountServices\KeyContainerService.cs" />
-    <Compile Include="AuthServices\KeyStoreAuthService.cs" />
+    <Compile Include="AccountServices\KeyStoreAccountService.cs" />
     <Compile Include="BC\Contracts\ContractInterfaceID.cs" />
     <Compile Include="BC\Contracts\HoardABIConfig.cs" />
     <Compile Include="BC\Contracts\HoardTokenContract.cs" />
@@ -79,7 +78,6 @@
     <Compile Include="HW\Trezor\TrezorFactory.cs" />
     <Compile Include="HW\Trezor\TrezorWallet.cs" />
     <Compile Include="Interfaces\IAccountService.cs" />
-    <Compile Include="Interfaces\IAuthService.cs" />
     <Compile Include="Interfaces\IGameItemProvider.cs" />
     <Compile Include="Interfaces\IItemPropertyProvider.cs" />
     <Compile Include="HW\App.cs" />

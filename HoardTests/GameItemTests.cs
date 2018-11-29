@@ -78,16 +78,16 @@ namespace HoardTests
             return contract.GetFunction("setTokenState");
         }
 
-        public async Task<TransactionReceipt> MintToken(string ownerAddress, BigInteger tokenID, byte[] tokenState, User user = null)
+        public async Task<TransactionReceipt> MintToken(string ownerAddress, BigInteger tokenID, byte[] tokenState, AccountInfo account)
         {
             Function function = GetFunctionMintToken();
-            return await HoardService.Instance.BCComm.EvaluateOnBC(user, function, ownerAddress, tokenID, tokenState);
+            return await HoardService.Instance.BCComm.EvaluateOnBC(account, function, ownerAddress, tokenID, tokenState);
         }
 
-        public async Task<TransactionReceipt> SetTokenState(BigInteger tokenID, byte[] tokenState, User user = null)
+        public async Task<TransactionReceipt> SetTokenState(BigInteger tokenID, byte[] tokenState, AccountInfo account)
         {
             Function function = GetFunctionSetTokenState();
-            return await HoardService.Instance.BCComm.EvaluateOnBC(user, function, tokenID, tokenState);
+            return await HoardService.Instance.BCComm.EvaluateOnBC(account, function, tokenID, tokenState);
         }
     }
 
@@ -98,12 +98,12 @@ namespace HoardTests
             RegisterContractInterfaceID(ERC721GameItemMockContract.InterfaceID, typeof(ERC721GameItemMockContract));
         }
 
-        public bool UpdateItemState(GameItem gameItem)
+        public bool UpdateItemState(GameItem gameItem, AccountInfo account)
         {
             ERC721GameItemMockContract contract = (ERC721GameItemMockContract)BCComm.GetGameItemContract(gameItem.Game, itemContracts[gameItem.Symbol].Address, typeof(ERC721GameItemMockContract));
             if (contract != null)
             {
-                contract.SetTokenState(((ERC721GameItemContract.Metadata)gameItem.Metadata).ItemId, gameItem.State).Wait();
+                contract.SetTokenState(((ERC721GameItemContract.Metadata)gameItem.Metadata).ItemId, gameItem.State, account).Wait();
                 return true;
             }
             return false;
@@ -154,7 +154,7 @@ namespace HoardTests
             swordItem.State = ipfsFixture.Client.UploadAsync(Encoding.ASCII.GetBytes(propsJson)).Result;
             swordItem.Metadata = items[0].Metadata;
 
-            gameItemProvider.UpdateItemState(swordItem);
+            gameItemProvider.UpdateItemState(swordItem, DefaultPlayer.ActiveAccount);
 
             items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol);
             GameItem downloadedSwordItem = items[0];

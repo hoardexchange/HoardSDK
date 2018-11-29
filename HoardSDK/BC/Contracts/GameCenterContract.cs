@@ -141,37 +141,37 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<bool>(gameID);
         }
 
-        public async Task<TransactionReceipt> AddGameAsync(BCComm comm, string gameAddr, User account = null)
+        public async Task<TransactionReceipt> AddGameAsync(BCComm comm, string gameAddr, AccountInfo account)
         {
             var function = GetFunctionAddGame();
             return await comm.EvaluateOnBC(account, function, gameAddr);
         }
 
-        public async Task<TransactionReceipt> AddAdminAsync(BCComm comm, string adminAddr, User account = null)
+        public async Task<TransactionReceipt> AddAdminAsync(BCComm comm, string adminAddr, AccountInfo account)
         {
             var function = GetFunctionAddAdmin();
             return await comm.EvaluateOnBC(account, function, adminAddr);
         }
 
-        public async Task<TransactionReceipt> RemoveAdminAsync(BCComm comm, string adminAddr, User account = null)
+        public async Task<TransactionReceipt> RemoveAdminAsync(BCComm comm, string adminAddr, AccountInfo account)
         {
             var function = GetFunctionRemoveAdmin();
             return await comm.EvaluateOnBC(account, function, adminAddr);
         }
 
-        public async Task<TransactionReceipt> SetExchangeAddressAsync(BCComm comm, string address, User account = null)
+        public async Task<TransactionReceipt> SetExchangeAddressAsync(BCComm comm, string address, AccountInfo account)
         {
             var function = GetFunctionSetExchangeAddress();
             return await comm.EvaluateOnBC(account, function, address);
         }
 
-        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(BCComm comm, string address, User account = null)
+        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(BCComm comm, string address, AccountInfo account)
         {
             var function = GetFunctionSetHoardTokenAddress();
             return await comm.EvaluateOnBC(account, function, address);
         }
 
-        public async Task<TransactionReceipt> SetExchangeSrvURLAsync(BCComm comm, string url, User account = null)
+        public async Task<TransactionReceipt> SetExchangeSrvURLAsync(BCComm comm, string url, AccountInfo account)
         {
             var function = GetFunctionSetExchangeSrvURL();
             return await comm.EvaluateOnBC(account, function, url);

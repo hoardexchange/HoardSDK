@@ -4,13 +4,13 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
-    public class KeyContainerService : IAccountService
+    public class KeyStoreAccountService : IAccountService
     {
         private class KeyStoreAccount : AccountInfo
         {
             public string PrivateKey = null;
 
-            public KeyStoreAccount(string name, string id, string key, KeyContainerService service)
+            public KeyStoreAccount(string name, string id, string key, KeyStoreAccountService service)
                 :base(name,id,service)
             {
                 PrivateKey = key;
@@ -19,12 +19,12 @@ namespace Hoard
 
         private HoardServiceOptions Options;
 
-        public KeyContainerService(HoardServiceOptions options)
+        public KeyStoreAccountService(HoardServiceOptions options)
         {
             Options = options;
         }
 
-        public async Task<bool> CreateAccount(string name, User user)
+        public async Task<AccountInfo> CreateAccount(string name, User user)
         {
             System.Diagnostics.Trace.TraceInformation("Generating user account.");
 
@@ -35,7 +35,7 @@ namespace Hoard
             AccountInfo accountInfo = new KeyStoreAccount(name, accountTuple.Item1, accountTuple.Item2, this);
             user.Accounts.Add(accountInfo);
 
-            return true;
+            return accountInfo;
         }
 
         public Task<bool> RequestAccounts(User user)
@@ -43,17 +43,16 @@ namespace Hoard
             var task = new Task<bool>(() =>
             {
                 KeyStoreUtils.EnumerateAccounts(user.UserName, (string accountId) =>
-                {
-                    string password = Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
-                    Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user.UserName, accountId, password);
+                 {
+                     string password = Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
+                     Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user.UserName, accountId, password);
 
-                    if (accountTuple != null)
-                    {
-                        AccountInfo accountInfo = new KeyStoreAccount(accountId, accountTuple.Item1, accountTuple.Item2, this);
-                        user.Accounts.Add(accountInfo);
-                    }
-                });
-
+                     if (accountTuple != null)
+                     {
+                         AccountInfo accountInfo = new KeyStoreAccount(accountId, accountTuple.Item1, accountTuple.Item2, this);
+                         user.Accounts.Add(accountInfo);
+                     }
+                 });
                 return user.Accounts.Count > 0;
             });
             task.Start();

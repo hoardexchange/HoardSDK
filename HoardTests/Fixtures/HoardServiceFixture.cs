@@ -14,7 +14,7 @@ namespace HoardTests.Fixtures
     {
         public class UserInputProviderFixture : IUserInputProvider
         {
-            public async Task<string> RequestInput(User user, eUserInputType type, string name)
+            public async Task<string> RequestInput(User user, eUserInputType type, string description)
             {
                 if (type == eUserInputType.kLogin)
                     return "TestUser";
