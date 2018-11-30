@@ -150,6 +150,16 @@ namespace Hoard
             AccountServices.Clear();
             AccountServices.Add(new KeyStoreAccountService(Options));
             AccountServices.Add(new HoardAccountService(Options));
+            {
+                IAccountService service = HW.Ledger.LedgerFactory.GetLedgerWalletAsync(HW.DerivationPath.BIP44).Result;
+                if (service!=null)
+                    AccountServices.Add(service);
+            }
+            {
+                IAccountService service = HW.Trezor.TrezorFactory.GetTrezorWalletAsync(HW.DerivationPath.BIP44).Result;
+                if (service!=null)
+                    AccountServices.Add(service);
+            }
 
             DefaultAccountService = AccountServices[0];
 
