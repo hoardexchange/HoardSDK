@@ -1,9 +1,5 @@
 ﻿using Hid.Net;
-using Hoard.HW.Ledger;
-using Hoard.HW.Ledger.Ethereum;
 using Nethereum.RLP;
-using Nethereum.Signer;
-using Org.BouncyCastle.Math;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;

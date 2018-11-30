@@ -1,8 +1,6 @@
 ﻿using Hid.Net;
 using Hoard.HW.Trezor.Ethereum;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,21 +21,13 @@ namespace Hoard.HW.Trezor
         private SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
         private object lastRequest;
 
-        public delegate Task<string> PinCallback();
-        private readonly PinCallback pinCallback;
+        private IUserInputProvider pinInputProvider;
 
-        public TrezorWallet(IHidDevice hidDevice, string derivationPath)
+        public TrezorWallet(IHidDevice hidDevice, string derivationPath, IUserInputProvider _pinInputProvider)
         {
             HIDDevice = hidDevice;
             DerivationPath = derivationPath;
-            pinCallback = Helpers.GetPin;
-        }
-
-        public TrezorWallet(IHidDevice hidDevice, string derivationPath, PinCallback _pinCallback)
-        {
-            HIDDevice = hidDevice;
-            DerivationPath = derivationPath;
-            pinCallback = _pinCallback;
+            pinInputProvider = _pinInputProvider;
         }
 
         public async Task<AccountInfo> CreateAccount(string name, User user) { return null; }
@@ -79,7 +69,6 @@ namespace Hoard.HW.Trezor
         }
 
         //-------------------------
-
         protected object GetEnumValue(string messageTypeString)
         {
             var isValid = Enum.TryParse(messageTypeString, out MessageType messageType);
@@ -221,7 +210,7 @@ namespace Hoard.HW.Trezor
             {
                 if (response is PinMatrixRequest)
                 {
-                    var pin = await pinCallback.Invoke();
+                    var pin = await pinInputProvider.RequestInput(null, eUserInputType.kPIN, "Trezor PIN request");
                     response = await PinMatrixAckAsync(pin);
                 }
                 else if (response is ButtonRequest)

@@ -16,12 +16,12 @@ namespace Hoard.HW.Trezor
             new UsageSpecification(0xff00, 0x01)
         };
 
-        public static async Task<TrezorWallet> GetTrezorWalletAsync(string derivationPath)
+        public static async Task<TrezorWallet> GetTrezorWalletAsync(string derivationPath, IUserInputProvider pinInputProvider)
         {
             var hidDevice = await Helpers.GetHIDDeviceAsync(DeviceInfo, UsageSpecification);
             if (hidDevice != null)
             {
-                var wallet = new EthTrezorWallet(hidDevice, derivationPath);
+                var wallet = new EthTrezorWallet(hidDevice, derivationPath, pinInputProvider);
                 await wallet.InitializeAsync();
                 return wallet;
             }

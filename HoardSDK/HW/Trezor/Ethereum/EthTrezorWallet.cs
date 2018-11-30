@@ -10,7 +10,8 @@ namespace Hoard.HW.Trezor.Ethereum
         private byte[] derivation;
         private uint[] indices;
 
-        public EthTrezorWallet(IHidDevice hidDevice, string derivationPath, uint index = 0) : base(hidDevice, derivationPath)
+        public EthTrezorWallet(IHidDevice hidDevice, string derivationPath, IUserInputProvider pinInputProvider, uint index = 0) 
+            : base(hidDevice, derivationPath, pinInputProvider)
         {
             keyPath = new KeyPath(derivationPath).Derive(index);
             indices = keyPath.Indices;

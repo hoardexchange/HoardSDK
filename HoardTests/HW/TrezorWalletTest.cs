@@ -11,11 +11,30 @@ namespace HoardTests.HW
 {
     public class TrezorWalletTest
     {
+        public class PINInputProviderFixture : IUserInputProvider
+        {
+            public async Task<string> RequestInput(User user, eUserInputType type, string description)
+            {
+                if (type == eUserInputType.kPIN)
+                {
+                    var pinWindow = new PINWindow();
+                    pinWindow.Text = description;
+                    pinWindow.ShowDialog();
+                    pinWindow.PINEnteredEvent.WaitOne();
+                    pinWindow.PINEnteredEvent.Reset();
+                    pinWindow.Dispose();
+                    return pinWindow.PINValue;
+                }
+                return null;
+            }
+        }
+
         IAccountService signer;
 
         public TrezorWalletTest()
         {
-            signer = TrezorFactory.GetTrezorWalletAsync(DerivationPath.BIP44).Result;
+            var pinInputProvider = new PINInputProviderFixture();
+            signer = TrezorFactory.GetTrezorWalletAsync(DerivationPath.BIP44, pinInputProvider).Result;
             Assert.True(signer != null);
         }
 
