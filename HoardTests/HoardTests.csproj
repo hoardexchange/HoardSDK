@@ -75,19 +75,19 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Hoard.NethereumCore">
-      <Version>1.0.6761.17447</Version>
+      <Version>3.0.6908.27727</Version>
     </PackageReference>
     <PackageReference Include="ini-parser">
       <Version>2.5.2</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>11.0.2</Version>
+      <Version>12.0.1</Version>
     </PackageReference>
     <PackageReference Include="Portable.BouncyCastle">
-      <Version>1.8.1.4</Version>
+      <Version>1.8.4</Version>
     </PackageReference>
     <PackageReference Include="RestSharp">
-      <Version>106.3.1</Version>
+      <Version>106.5.4</Version>
     </PackageReference>
     <PackageReference Include="xunit">
       <Version>2.4.0</Version>
