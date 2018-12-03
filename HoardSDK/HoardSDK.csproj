@@ -66,6 +66,7 @@
     <Compile Include="GameExchangeService.cs" />
     <Compile Include="GameItem.cs" />
     <Compile Include="GameItemProviders\HoardGameItemProvider.cs" />
+    <Compile Include="HW\Ledger\Ethereum\EthSignMessage.cs" />
     <Compile Include="HW\Ledger\Ethereum\EthSignTransaction.cs" />
     <Compile Include="HW\Ledger\LedgerFactory.cs" />
     <Compile Include="HW\Trezor\Ethereum\EthGetAddress.cs" />

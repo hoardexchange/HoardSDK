@@ -61,7 +61,35 @@ namespace Hoard.HW.Ledger.Ethereum
 
         public override async Task<string> SignMessage(byte[] message, AccountInfo accountInfo)
         {
-            throw new NotImplementedException();
+            uint msgLength = (uint)message.Length;
+            uint bytesToCopy = Math.Min(0xff - (uint)derivation.Length - sizeof(int), msgLength);
+
+            var messageChunk = new byte[bytesToCopy + sizeof(int)];
+            msgLength.ToBytes().CopyTo(messageChunk, 0);
+
+            Array.Copy(message, 0, messageChunk, sizeof(int), bytesToCopy);
+            var output = await SendRequestAsync(EthSignMessage.Request(derivation, messageChunk, true));
+
+            msgLength -= bytesToCopy;
+            uint pos = bytesToCopy;
+            while (msgLength > 0 && IsSuccess(output.StatusCode))
+            {
+                bytesToCopy = Math.Min(0xff, msgLength);
+                messageChunk = new byte[bytesToCopy];
+
+                Array.Copy(message, pos, messageChunk, 0, bytesToCopy);
+                output = await SendRequestAsync(EthSignMessage.Request(derivation, messageChunk, false));
+
+                msgLength -= bytesToCopy;
+                pos += bytesToCopy;
+            }
+
+            if (IsSuccess(output.StatusCode))
+            {
+                return EthSignMessage.GetStringSignature(output.Data);
+            }
+
+            return null;
         }
     }
 }

@@ -9,13 +9,13 @@ namespace Hoard.HW.Ledger.Ethereum
 {
     public static class EthSignTransaction
     {
-        public static byte[] Request(byte[] derivation, byte[] rlpEncodedTransaction, bool firstBlock = true)
+        public static byte[] Request(byte[] derivation, byte[] rlpTransactionChunk, bool firstBlock = true)
         {
             return APDU.InputData(EthConstants.CLA,
                                 EthConstants.INS_SIGN_TRANSACTION,
                                 firstBlock ? EthConstants.P1_FIRST_BLOCK : EthConstants.P1_SUBSEQUENT_BLOCK,
                                 EthConstants.EMPTY,
-                                derivation.Concat(rlpEncodedTransaction).ToArray());
+                                firstBlock ? derivation.Concat(rlpTransactionChunk).ToArray() : rlpTransactionChunk);
         }
 
         public static string GetRLPEncoded(byte[] signature, byte[] rlpEncodedTransaction)
