@@ -47,7 +47,6 @@ namespace HoardTests.HW
             Assert.True(user.Accounts.Count > 0);
             Assert.True(user.Accounts[0].Name == TrezorWallet.AccountInfoName);
             Assert.True(user.Accounts[0].ID.Length > 0);
-            Assert.True(user.Accounts[0].AccountService is TrezorWallet);
         }
 
         [Fact]

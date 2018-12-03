@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AccountServices\KeyStoreAccountServiceTest.cs" />
     <Compile Include="CryptKittyTests\CKGameItemProvider.cs" />
     <Compile Include="CryptKittyTests\CryptoKittyTest.cs" />
     <Compile Include="DistributedStorageTests\IPFSClientTests.cs" />

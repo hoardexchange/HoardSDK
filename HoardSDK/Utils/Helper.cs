@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using Nethereum.RLP;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -35,6 +36,20 @@ namespace Hoard.Utils
             }
 
             return hashString;
+        }
+
+        internal static byte[][] ToBytes(this RLPCollection collection)
+        {
+            var data = new byte[collection.Count][];
+            for (var i = 0; i < collection.Count; ++i)
+            {
+                if (collection[i].RLPData != null)
+                {
+                    data[i] = new byte[collection[i].RLPData.Length];
+                    collection[i].RLPData.CopyTo(data[i], 0);
+                }
+            }
+            return data;
         }
     }
 }

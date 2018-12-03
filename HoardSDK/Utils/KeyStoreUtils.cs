@@ -10,10 +10,10 @@ namespace Hoard.Utils
 {
     public class KeyStoreUtils
     {
-        public static void EnumerateAccounts(string userName, Action<string> enumFunc)
+        public static void EnumerateAccounts(string userName, string accountsDir, Action<string> enumFunc)
         {
             string hashedName = Helper.SHA256HexHashString(userName);
-            string path = Path.Combine(HoardService.Instance.Options.AccountsDir, hashedName);
+            string path = Path.Combine(accountsDir, hashedName);
 
             System.Diagnostics.Trace.TraceInformation(string.Format("Loading accounts from path: {0}", path));
 
@@ -38,10 +38,10 @@ namespace Hoard.Utils
             }
         }
 
-        public static Tuple<string, string> LoadAccount(string userName, string accountId, string password)
+        public static Tuple<string, string> LoadAccount(string userName, string accountId, string password, string accountsDir)
         {
             string hashedName = Helper.SHA256HexHashString(userName);
-            var accountsFiles = Directory.GetFiles(Path.Combine(HoardService.Instance.Options.AccountsDir, hashedName), "UTC--*--" + accountId);
+            var accountsFiles = Directory.GetFiles(Path.Combine(accountsDir, hashedName), "UTC--*--" + accountId);
             if (accountsFiles.Length == 0)
                 return null;
             string fileName = accountsFiles[0];
@@ -54,10 +54,10 @@ namespace Hoard.Utils
             return new Tuple<string, string>(account.Address, account.PrivateKey);
         }
 
-        public static Tuple<string, string> CreateAccount(User user, string name, string password)
+        public static Tuple<string, string> CreateAccount(User user, string name, string password, string accountsDir)
         {
             string hashedName = Helper.SHA256HexHashString(user.UserName);
-            string path = Path.Combine(HoardService.Instance.Options.AccountsDir, hashedName);
+            string path = Path.Combine(accountsDir, hashedName);
             //generate new secure random key
             var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
 

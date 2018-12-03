@@ -1,4 +1,6 @@
 ﻿using Hoard.Utils;
+using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.RLP;
 using System;
 using System.Threading.Tasks;
 
@@ -40,7 +42,7 @@ namespace Hoard
 
             string password = await Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
 
-            Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, name, password);
+            Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, name, password, Options.AccountsDir);
 
             AccountInfo accountInfo = new KeyStoreAccount(name, accountTuple.Item1, accountTuple.Item2);
             user.Accounts.Add(accountInfo);
@@ -52,10 +54,10 @@ namespace Hoard
         {
             var task = new Task<bool>(() =>
             {
-                KeyStoreUtils.EnumerateAccounts(user.UserName, (string accountId) =>
+                KeyStoreUtils.EnumerateAccounts(user.UserName, Options.AccountsDir, (string accountId) =>
                  {
                      string password = Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
-                     Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user.UserName, accountId, password);
+                     Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user.UserName, accountId, password, Options.AccountsDir);
 
                      if (accountTuple != null)
                      {
@@ -81,7 +83,7 @@ namespace Hoard
             return SignMessage(input, ksa.PrivateKey);
         }
 
-        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
+        public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature)
         {
             KeyStoreAccount ksa = signature as KeyStoreAccount;
             if (ksa == null)
@@ -90,7 +92,7 @@ namespace Hoard
                 return null;
             }
 
-            return SignTransaction(input, ksa.PrivateKey);
+            return SignTransaction(rlpEncodedTransaction, ksa.PrivateKey);
         }
 
         public static Task<string> SignMessage(byte[] input, string privKey)
@@ -105,9 +107,22 @@ namespace Hoard
             return task;
         }
 
-        public static Task<string> SignTransaction(byte[] input, string privKey)
+        public static Task<string> SignTransaction(byte[] rlpEncodedTransaction, string privKey)
         {
-            throw new NotImplementedException();
+            var task = new Task<string>(() =>
+            {
+                var decodedList = RLP.Decode(rlpEncodedTransaction);
+                var decodedRlpCollection = (RLPCollection)decodedList[0];
+                var data = decodedRlpCollection.ToBytes();
+
+                var ecKey = new Nethereum.Signer.EthECKey(privKey);
+                var signer = new Nethereum.Signer.RLPSigner(data);
+
+                signer.Sign(ecKey);
+                return signer.GetRLPEncoded().ToHex();
+            });
+            task.Start();
+            return task;
         }
     }
 }

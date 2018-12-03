@@ -1,5 +1,4 @@
 ﻿using Hid.Net;
-using Nethereum.RLP;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
@@ -76,20 +75,6 @@ namespace Hoard.HW
                 (byte)(value >> 8),
                 (byte)value,
             };
-        }
-
-        internal static byte[][] ToBytes(this RLPCollection collection)
-        {
-            var data = new byte[collection.Count][];
-            for (var i = 0; i < collection.Count; ++i)
-            {
-                if (collection[i].RLPData != null)
-                {
-                    data[i] = new byte[collection[i].RLPData.Length];
-                    collection[i].RLPData.CopyTo(data[i], 0);
-                }
-            }
-            return data;
         }
     }
 }

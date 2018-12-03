@@ -1,4 +1,5 @@
-﻿using Nethereum.Hex.HexConvertors.Extensions;
+﻿using Hoard.Utils;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using Nethereum.Signer;
 using System.IO;
