@@ -7,23 +7,20 @@ namespace Hoard
     /// <summary>
     /// User account basic information.
     /// </summary>
-    public class AccountInfo
+    public abstract class AccountInfo
     {
         public string ID { get; private set; } = null;
         public string Name { get; private set; } = null;
-        public IAccountService AccountService { get; private set; } = null;
 
-        public AccountInfo(string name, string id, IAccountService service)
+        public AccountInfo(string name, string id)
         {
             Name = name;
             ID = id.ToLower();
-            AccountService = service;
         }
 
-        public async Task<string> Sign(byte[] input)
-        {
-            return await AccountService.SignTransaction(input, this);
-        }
+        public abstract Task<string> SignTransaction(byte[] input);
+
+        public abstract Task<string> SignMessage(byte[] input);
     }
 
     /// <summary>

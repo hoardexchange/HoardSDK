@@ -14,9 +14,9 @@ namespace Hoard
 
         class AuthToken
         {
-            public string access_token;
-            public string token_type;
-            public string expires_in;
+            public string access_token = null;
+            public string token_type = null;
+            public string expires_in = null;
 
             public bool IsValid()
             {

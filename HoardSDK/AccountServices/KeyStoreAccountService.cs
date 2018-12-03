@@ -6,14 +6,24 @@ namespace Hoard
 {
     public class KeyStoreAccountService : IAccountService
     {
-        private class KeyStoreAccount : AccountInfo
+        public class KeyStoreAccount : AccountInfo
         {
             public string PrivateKey = null;
 
-            public KeyStoreAccount(string name, string id, string key, KeyStoreAccountService service)
-                :base(name,id,service)
+            public KeyStoreAccount(string name, string id, string key)
+                :base(name,id)
             {
                 PrivateKey = key;
+            }
+
+            public async override Task<string> SignTransaction(byte[] input)
+            {
+                return await KeyStoreAccountService.SignTransaction(input,PrivateKey);
+            }
+
+            public async override Task<string> SignMessage(byte[] input)
+            {
+                return await KeyStoreAccountService.SignMessage(input, PrivateKey);
             }
         }
 
@@ -32,7 +42,7 @@ namespace Hoard
 
             Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, name, password);
 
-            AccountInfo accountInfo = new KeyStoreAccount(name, accountTuple.Item1, accountTuple.Item2, this);
+            AccountInfo accountInfo = new KeyStoreAccount(name, accountTuple.Item1, accountTuple.Item2);
             user.Accounts.Add(accountInfo);
 
             return accountInfo;
@@ -49,7 +59,7 @@ namespace Hoard
 
                      if (accountTuple != null)
                      {
-                         AccountInfo accountInfo = new KeyStoreAccount(accountId, accountTuple.Item1, accountTuple.Item2, this);
+                         AccountInfo accountInfo = new KeyStoreAccount(accountId, accountTuple.Item1, accountTuple.Item2);
                          user.Accounts.Add(accountInfo);
                      }
                  });
@@ -68,17 +78,34 @@ namespace Hoard
                 return null;
             }
 
-            var task =  new Task<string>(() =>
+            return SignMessage(input, ksa.PrivateKey);
+        }
+
+        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
+        {
+            KeyStoreAccount ksa = signature as KeyStoreAccount;
+            if (ksa == null)
+            {
+                System.Diagnostics.Trace.Fail("Invalid signature!");
+                return null;
+            }
+
+            return SignTransaction(input, ksa.PrivateKey);
+        }
+
+        public static Task<string> SignMessage(byte[] input, string privKey)
+        {
+            var task = new Task<string>(() =>
             {
                 var signer = new Nethereum.Signer.EthereumMessageSigner();
-                var ecKey = new Nethereum.Signer.EthECKey(ksa.PrivateKey);
+                var ecKey = new Nethereum.Signer.EthECKey(privKey);
                 return signer.Sign(input, ecKey);
             });
             task.Start();
             return task;
         }
 
-        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
+        public static Task<string> SignTransaction(byte[] input, string privKey)
         {
             throw new NotImplementedException();
         }

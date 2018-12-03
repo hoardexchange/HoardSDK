@@ -248,7 +248,7 @@ namespace Hoard.BC
             BigInteger gasPrice = BigInteger.Zero;
             var trans = new Nethereum.Signer.Transaction(function.ContractAddress,
                 BigInteger.Zero, nonce, gasPrice, gas.Value, data);
-            string encoded = account.Sign(trans.GetRLPEncodedRaw()).Result;
+            string encoded = account.SignTransaction(trans.GetRLPEncodedRaw()).Result;
             if (encoded == null)
             {
                 Trace.Fail("Could not sign transaction!");

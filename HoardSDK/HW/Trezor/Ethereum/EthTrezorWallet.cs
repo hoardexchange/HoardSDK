@@ -6,6 +6,26 @@ namespace Hoard.HW.Trezor.Ethereum
 {
     public class EthTrezorWallet : TrezorWallet
     {
+        private class HDWalletAccountInfo : AccountInfo
+        {
+            private EthTrezorWallet Wallet;
+
+            public HDWalletAccountInfo(string name, string id, EthTrezorWallet wallet)
+                : base(name, id)
+            {
+                Wallet = wallet;
+            }
+
+            public override async Task<string> SignMessage(byte[] input)
+            {
+                return await Wallet.SignMessage(input, this);
+            }
+
+            public override async Task<string> SignTransaction(byte[] input)
+            {
+                return await Wallet.SignTransaction(input, this);
+            }
+        }
         private KeyPath keyPath;
         private byte[] derivation;
         private uint[] indices;
@@ -22,7 +42,7 @@ namespace Hoard.HW.Trezor.Ethereum
         {
             var output = await SendRequestAsync(EthGetAddress.Request(indices));
             var address = EthGetAddress.GetAddress(output);
-            user.Accounts.Add(new AccountInfo(AccountInfoName, address, this));
+            user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this));
             return true;
         }
 

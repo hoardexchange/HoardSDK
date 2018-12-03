@@ -62,7 +62,7 @@ namespace Hoard.GameItemProviders
                 var nonceHex = nonce.ToString("x");
 
                 var dataBytes = Encoding.ASCII.GetBytes(response.Content.Substring(2) + nonceHex);
-                string sig = user.ActiveAccount.Sign(dataBytes).Result;
+                string sig = user.ActiveAccount.SignMessage(dataBytes).Result;
                 if (sig == null)
                     return false;
 

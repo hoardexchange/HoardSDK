@@ -6,6 +6,26 @@ namespace Hoard.HW.Ledger.Ethereum
 {
     public class EthLedgerWallet : LedgerWallet
     {
+        private class HDWalletAccountInfo : AccountInfo
+        {
+            private EthLedgerWallet Wallet;
+
+            public HDWalletAccountInfo(string name, string id, EthLedgerWallet wallet)
+                :base(name,id)
+            {
+                Wallet = wallet;
+            }
+
+            public override async Task<string> SignMessage(byte[] input)
+            {
+                return await Wallet.SignMessage(input, this);
+            }
+
+            public override async Task<string> SignTransaction(byte[] input)
+            {
+                return await Wallet.SignTransaction(input, this);
+            }
+        }
         private KeyPath keyPath;
         private byte[] derivation;
 
@@ -21,7 +41,7 @@ namespace Hoard.HW.Ledger.Ethereum
             if(IsSuccess(output.StatusCode))
             {
                 var address = EthGetAddress.GetAddress(output.Data);
-                user.Accounts.Add(new AccountInfo(AccountInfoName, address, this));
+                user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this));
                 return true;
             }
 

@@ -91,11 +91,5 @@ namespace Hoard.HW
             }
             return data;
         }
-
-        internal static async Task<string> GetPin()
-        {
-            Console.WriteLine("Enter PIN based on Trezor values: ");
-            return Console.ReadLine().Trim();
-        }
     }
 }
