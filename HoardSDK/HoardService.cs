@@ -5,13 +5,8 @@ using System.Threading.Tasks;
 using System.IO;
 using Hoard.GameItemProviders;
 using System.Numerics;
-using Hoard.Utils;
 
-#if DEBUG
 using System.Diagnostics;
-#endif
-
-using Nethereum.Web3.Accounts;
 
 namespace Hoard
 {
