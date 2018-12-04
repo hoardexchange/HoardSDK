@@ -54,7 +54,8 @@ namespace Hoard.HW.Trezor.Ethereum
 
         public override async Task<string> SignMessage(byte[] message, AccountInfo accountInfo)
         {
-            throw new NotImplementedException();
+            var output = await SendRequestAsync(EthSignMessage.Request(indices, message));
+            return EthSignMessage.GetRLPEncoded(output, message);
         }
     }
 }

@@ -70,6 +70,7 @@
     <Compile Include="HW\Ledger\Ethereum\EthSignTransaction.cs" />
     <Compile Include="HW\Ledger\LedgerFactory.cs" />
     <Compile Include="HW\Trezor\Ethereum\EthGetAddress.cs" />
+    <Compile Include="HW\Trezor\Ethereum\EthSignMessage.cs" />
     <Compile Include="HW\Trezor\Ethereum\EthSignTransaction.cs" />
     <Compile Include="HW\Trezor\Ethereum\EthTrezorWallet.cs" />
     <Compile Include="HW\Trezor\CommonContracts.cs" />

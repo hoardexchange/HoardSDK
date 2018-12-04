@@ -238,6 +238,10 @@ namespace Hoard.HW.Trezor
                     return typeof(EthSignTransactionRequest);
                 case MessageType.MessageTypeEthSignTransactionResponse:
                     return typeof(EthSignTransactionResponse);
+                case MessageType.MessageTypeEthSignMessageRequest:
+                    return typeof(EthSignMessageRequest);
+                case MessageType.MessageTypeEthSignMessageResponse:
+                    return typeof(EthSignMessageResponse);
                 case MessageType.MessageTypeEthAddressRequest:
                     return typeof(EthAddressRequest);
                 case MessageType.MessageTypeEthAddressResponse:

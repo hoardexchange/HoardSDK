@@ -4,6 +4,9 @@ using Hoard.HW.Trezor;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using Nethereum.Signer;
+using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -47,6 +50,37 @@ namespace HoardTests.HW
             Assert.True(user.Accounts.Count > 0);
             Assert.True(user.Accounts[0].Name == TrezorWallet.AccountInfoName);
             Assert.True(user.Accounts[0].ID.Length > 0);
+        }
+
+        [Fact]
+        public async Task SignMessages()
+        {
+            var rand = new Random();
+            var messages = new List<byte[]>();
+
+            var message0 = Encoding.UTF8.GetBytes("Hello world");
+            var message1 = new byte[256];
+            for (var i = 0; i < message1.Length; ++i)
+                message1[i] = (byte)rand.Next(0, 256);
+            var message2 = new byte[1024];
+            for (var i = 0; i < message2.Length; ++i)
+                message2[i] = (byte)rand.Next(0, 256);
+
+            messages.Add(message0);
+            messages.Add(message1);
+            messages.Add(message2);
+
+            for (var i = 0; i < messages.Count; ++i)
+            {
+                var signature = await signer.SignMessage(messages[i], null);
+
+                var user = new User("TrezorUser");
+                var response = await signer.RequestAccounts(user);
+
+                var msgSigner = new EthereumMessageSigner();
+                var addressRec = msgSigner.EcRecover(messages[i], signature);
+                Assert.Equal(user.Accounts[0].ID.ToLower(), addressRec.ToLower());
+            }
         }
 
         [Fact]

@@ -25,5 +25,9 @@
         MessageTypeEthSignTransactionRequest = 58,
         [ProtoBuf.ProtoEnum(Name = @"MessageType_EthereumTxRequest")]
         MessageTypeEthSignTransactionResponse = 59,
+        [ProtoBuf.ProtoEnum(Name = @"MessageType_EthereumSignMessage")]
+        MessageTypeEthSignMessageRequest = 64,
+        [ProtoBuf.ProtoEnum(Name = @"MessageType_EthereumMessageSignature")]
+        MessageTypeEthSignMessageResponse= 66,
     }
 }

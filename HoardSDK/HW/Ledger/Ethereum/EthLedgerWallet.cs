@@ -50,8 +50,28 @@ namespace Hoard.HW.Ledger.Ethereum
 
         public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
         {
-            var output = await SendRequestAsync(EthSignTransaction.Request(derivation, rlpEncodedTransaction));
-            if(IsSuccess(output.StatusCode))
+            uint txLength = (uint)rlpEncodedTransaction.Length;
+            uint bytesToCopy = Math.Min(0xff - (uint)derivation.Length, txLength);
+
+            var txChunk = new byte[bytesToCopy];
+            Array.Copy(rlpEncodedTransaction, 0, txChunk, 0, bytesToCopy);
+            var output = await SendRequestAsync(EthSignTransaction.Request(derivation, txChunk, true));
+
+            txLength -= bytesToCopy;
+            uint pos = bytesToCopy;
+            while (txLength > 0 && IsSuccess(output.StatusCode))
+            {
+                bytesToCopy = Math.Min(0xff, txLength);
+                txChunk = new byte[bytesToCopy];
+
+                Array.Copy(rlpEncodedTransaction, pos, txChunk, 0, bytesToCopy);
+                output = await SendRequestAsync(EthSignTransaction.Request(derivation, txChunk, false));
+
+                txLength -= bytesToCopy;
+                pos += bytesToCopy;
+            }
+
+            if (IsSuccess(output.StatusCode))
             {
                 return EthSignTransaction.GetRLPEncoded(output.Data, rlpEncodedTransaction);
             }
