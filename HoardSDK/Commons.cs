@@ -29,6 +29,7 @@ namespace Hoard
     public class User
     {
         public string UserName { get; private set; } = "";
+        public string HoardId { get; internal set; } = "";
         public List<AccountInfo> Accounts = new List<AccountInfo>();
         public AccountInfo ActiveAccount { get; private set; } = null;
 

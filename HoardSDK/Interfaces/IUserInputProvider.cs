@@ -7,6 +7,7 @@ namespace Hoard
         kLogin = 0,
         kPassword,
         kPIN,
+        kEmail,
         kCustom,
 
         kMaxUserInputValue

@@ -20,6 +20,8 @@ namespace HoardTests.Fixtures
                     return "TestUser";
                 else if (type == eUserInputType.kPassword)
                     return "dev";
+                else if (type == eUserInputType.kEmail)
+                    return "test.user@not.existing.domain";
 
                 return null;
             }
