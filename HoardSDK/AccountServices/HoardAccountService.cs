@@ -77,6 +77,7 @@ namespace Hoard
             tokenRequest.AddParameter("grant_type", "password");
             tokenRequest.AddParameter("username", user.UserName);
             tokenRequest.AddParameter("password", password);
+            tokenRequest.AddParameter("client_id", Options.HoardAuthServiceClientId);
 
             var tokenResponse = await authClient.ExecuteTaskAsync(tokenRequest);
 

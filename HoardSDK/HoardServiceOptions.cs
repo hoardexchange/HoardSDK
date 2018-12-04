@@ -18,6 +18,7 @@ namespace Hoard
         public string AccountsDir;
         public string GameCenterContract;
         public string HoardAuthServiceUrl;
+        public string HoardAuthServiceClientId;
 
         public static HoardServiceConfig Load(string path = null)
         {
@@ -57,6 +58,7 @@ namespace Hoard
         public string AccountsDir { get; set; } = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Hoard", "accounts");
         public string GameCenterContract { get; set; } = "";
         public string HoardAuthServiceUrl { get; set; } = "http://localhost:8081";
+        public string HoardAuthServiceClientId { get; set; } = "HoardTestAuthClient";
         public IUserInputProvider UserInputProvider { get; set; } = null;
 
         public HoardServiceOptions() { }
@@ -78,6 +80,9 @@ namespace Hoard
 
             if (!string.IsNullOrEmpty(cfg.HoardAuthServiceUrl))
                 HoardAuthServiceUrl = cfg.HoardAuthServiceUrl;
+
+            if (!string.IsNullOrEmpty(cfg.HoardAuthServiceClientId))
+                HoardAuthServiceClientId = cfg.HoardAuthServiceClientId;
 
             RpcClient = rpcClient;
 
