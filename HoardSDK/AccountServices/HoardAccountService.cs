@@ -38,15 +38,22 @@ namespace Hoard
             public string error = null;
         }
 
-        class AuthToken
+        class TokenResponse
         {
             public string access_token = null;
             public string token_type = null;
             public string expires_in = null;
+        }
+
+        class AuthToken
+        {
+            public string AccessToken = null;
+            public DateTime ExpireTime;
 
             public bool IsValid()
             {
-                return true;//TODO: implement
+                int dateCompare = DateTime.Compare(DateTime.UtcNow, ExpireTime);
+                return dateCompare < 0;
             }
         }
 
@@ -138,11 +145,18 @@ namespace Hoard
             tokenRequest.AddParameter("password", password);
             tokenRequest.AddParameter("client_id", Options.HoardAuthServiceClientId);
 
+            DateTime tokenExpireDate = DateTime.UtcNow;
+
             var tokenResponse = await authClient.ExecuteTaskAsync(tokenRequest);
 
             if (tokenResponse.StatusCode == System.Net.HttpStatusCode.OK)
             {
-                AuthToken authToken = JsonConvert.DeserializeObject<AuthToken>(tokenResponse.Content);
+                TokenResponse tokenResponseObj = JsonConvert.DeserializeObject<TokenResponse>(tokenResponse.Content);
+
+                AuthToken authToken = new AuthToken();
+                authToken.AccessToken = tokenResponseObj.access_token;
+                authToken.ExpireTime = tokenExpireDate.AddSeconds(Convert.ToInt32(tokenResponseObj.expires_in));
+
                 return authToken;
             }
 
