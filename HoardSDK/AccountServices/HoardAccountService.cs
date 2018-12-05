@@ -95,11 +95,15 @@ namespace Hoard
             }
 
             if (token != null)
-            {   
+            {
                 //pass token to account server
                 //server should call /userinfo with access_token to prove it is valid
                 //assume it did and returned a valid account or no accounts (which is also valid)
                 //TODO: if no accounts, we should perhaps call CreateAccount? (or this should be explicitly done by user?)
+
+                AccountInfo accountInfo = new HoardAccount(user.HoardId, "");
+                user.Accounts.Add(accountInfo);
+
                 return true;
             }
 

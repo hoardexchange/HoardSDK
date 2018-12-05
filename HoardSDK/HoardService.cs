@@ -272,15 +272,10 @@ namespace Hoard
                 return null;
             }
 
-            //ask for user login
-            string userId = await Options.UserInputProvider.RequestInput(null, eUserInputType.kLogin, "login");
-            if (string.IsNullOrEmpty(userId))
-            {
-                Trace.Fail("Cannot log in a user!");
-                return null;
-            }
-            //TODO: do some check on userId (minimum number of characters or so...)?
-            User user = new User(userId);
+            User user = new User("player");
+
+            // ask for hoard account identity
+            user.HoardId = await Options.UserInputProvider.RequestInput(null, eUserInputType.kEmail, "Hoard account username (email)");
 
             //add accounts for user from all known services
             foreach (IAccountService service in AccountServices)
