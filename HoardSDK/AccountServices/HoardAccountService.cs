@@ -10,19 +10,22 @@ namespace Hoard
     {
         public class HoardAccount : AccountInfo
         {
-            public HoardAccount(string name, string id)
-                : base(name, id)
+            private HoardAccountService HoardSigner;
+
+            public HoardAccount(string name, HoardAccountService signer)
+                : base(name, "")
             {
+                HoardSigner = signer;
             }
 
             public async override Task<string> SignTransaction(byte[] input)
             {
-                throw new NotImplementedException();
+                return await HoardSigner.SignTransaction(input, this);
             }
 
             public async override Task<string> SignMessage(byte[] input)
             {
-                throw new NotImplementedException();
+                return await HoardSigner.SignMessage(input, this);
             }
         }
 
@@ -66,7 +69,7 @@ namespace Hoard
             if (createResponse.StatusCode == System.Net.HttpStatusCode.Created)
             {
                 user.HoardId = email;
-                AccountInfo accountInfo = new HoardAccount(email, "");
+                AccountInfo accountInfo = new HoardAccount(email, this);
                 user.Accounts.Add(accountInfo);
                 return accountInfo;
             }
@@ -101,18 +104,13 @@ namespace Hoard
                 //assume it did and returned a valid account or no accounts (which is also valid)
                 //TODO: if no accounts, we should perhaps call CreateAccount? (or this should be explicitly done by user?)
 
-                AccountInfo accountInfo = new HoardAccount(user.HoardId, "");
+                AccountInfo accountInfo = new HoardAccount(user.HoardId, this);
                 user.Accounts.Add(accountInfo);
 
                 return true;
             }
 
             return false;
-        }
-
-        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
-        {
-            throw new NotImplementedException();
         }
 
         private async Task<AuthToken> RequestAuthToken(User user)
@@ -136,6 +134,11 @@ namespace Hoard
             System.Diagnostics.Trace.Fail("could not authenticate user!");
 
             return null;
+        }
+
+        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
+        {
+            throw new NotImplementedException();
         }
 
         public Task<string> SignMessage(byte[] input, AccountInfo signature)
