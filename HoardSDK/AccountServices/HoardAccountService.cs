@@ -33,6 +33,11 @@ namespace Hoard
         HoardServiceOptions Options = null;
         Dictionary<User, AuthToken> userAuthTokens = new Dictionary<User, AuthToken>();
 
+        class ErrorResponse
+        {
+            public string error = null;
+        }
+
         class AuthToken
         {
             public string access_token = null;
@@ -53,12 +58,12 @@ namespace Hoard
 
         public async Task<AccountInfo> CreateAccount(string name, User user)
         {
-            if (user.HoardId != "")
-                return null;
+            System.Diagnostics.Trace.TraceInformation("Generating user account on Hoard Auth Server.");
 
-            System.Diagnostics.Trace.TraceInformation("Generating user account on hoard service.");
+            string email = user.HoardId;
+            if (email == "")
+                email = await Options.UserInputProvider.RequestInput(user, eUserInputType.kEmail, "email");
 
-            string email = await Options.UserInputProvider.RequestInput(user, eUserInputType.kEmail, "email");
             string password = await Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
 
             var createRequest = new RestRequest("/create_user", Method.POST);
@@ -72,6 +77,16 @@ namespace Hoard
                 AccountInfo accountInfo = new HoardAccount(email, this);
                 user.Accounts.Add(accountInfo);
                 return accountInfo;
+            }
+            else
+            {
+                string errorMsg = "Unable to create new user account: Hoard Auth Server status code: " + createResponse.StatusCode;
+                if (createResponse.Content != null)
+                {
+                    ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(createResponse.Content);
+                    errorMsg += ", error: " + errorResponse.error;
+                }
+                System.Diagnostics.Trace.TraceInformation(errorMsg);
             }
 
             return null;
