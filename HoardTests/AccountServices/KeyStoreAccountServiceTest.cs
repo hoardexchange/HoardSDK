@@ -35,6 +35,7 @@ namespace HoardTests.AccountServices
         }
 
         [Fact]
+        [Trait("Category", "Unit")]
         public async Task SignMessage()
         {
             var message = "Hello world";
@@ -46,6 +47,7 @@ namespace HoardTests.AccountServices
         }
 
         [Fact]
+        [Trait("Category", "Unit")]
         public async Task SignTransaction()
         {
             var nonce = 324.ToBytesForRLPEncoding();
