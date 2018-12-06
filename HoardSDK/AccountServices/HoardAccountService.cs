@@ -162,7 +162,7 @@ namespace Hoard
             else
             {
                 string errorMsg = "Unable to authenticate user account " + user.HoardId  + ": Hoard Auth Server status code: " + tokenResponse.StatusCode;
-                if (tokenResponse.Content != null)
+                if (!string.IsNullOrEmpty(tokenResponse.Content))
                 {
                     ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(tokenResponse.Content);
                     errorMsg += ", error: " + errorResponse.error;
