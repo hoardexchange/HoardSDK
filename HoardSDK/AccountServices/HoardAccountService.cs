@@ -159,8 +159,16 @@ namespace Hoard
 
                 return authToken;
             }
-
-            System.Diagnostics.Trace.Fail("could not authenticate user!");
+            else
+            {
+                string errorMsg = "Unable to authenticate user account " + user.HoardId  + ": Hoard Auth Server status code: " + tokenResponse.StatusCode;
+                if (tokenResponse.Content != null)
+                {
+                    ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(tokenResponse.Content);
+                    errorMsg += ", error: " + errorResponse.error;
+                }
+                System.Diagnostics.Trace.TraceInformation(errorMsg);
+            }
 
             return null;
         }
