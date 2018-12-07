@@ -12,7 +12,7 @@ using Nethereum.RPC.NonceServices;
 namespace Hoard.BC.Contracts
 {
     //TODO: comment it!
-    public class GameExchangeContract
+    public class ExchangeContract
     {
         public const string ABI = HoardABIConfig.HoardExchangeABI;
 
@@ -21,7 +21,7 @@ namespace Hoard.BC.Contracts
 
         public string Address { get { return contract.Address; } }
 
-        public GameExchangeContract(Web3 web3, string address)
+        public ExchangeContract(Web3 web3, string address)
         {
             this.web3 = web3;
             this.contract = web3.Eth.GetContract(ABI, address);

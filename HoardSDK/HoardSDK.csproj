@@ -56,14 +56,14 @@
     <Compile Include="BC\BCComm.cs" />
     <Compile Include="BC\Contracts\GameCenterContract.cs" />
     <Compile Include="BC\Contracts\GameContract.cs" />
-    <Compile Include="BC\Contracts\GameExchangeContract.cs" />
+    <Compile Include="BC\Contracts\HoardExchangeContract.cs" />
     <Compile Include="BC\Contracts\GameItemContract.cs" />
     <Compile Include="Commons.cs" />
     <Compile Include="DistributedStorage\IDistributedStorageClient.cs" />
     <Compile Include="DistributedStorage\IPFSClient.cs" />
     <Compile Include="DistributedStorage\SwarmClient.cs" />
     <Compile Include="Eth\Utils.cs" />
-    <Compile Include="GameExchangeService.cs" />
+    <Compile Include="HoardExchangeService.cs" />
     <Compile Include="GameItem.cs" />
     <Compile Include="GameItemProviders\HoardGameItemProvider.cs" />
     <Compile Include="HW\Ledger\Ethereum\EthSignMessage.cs" />
