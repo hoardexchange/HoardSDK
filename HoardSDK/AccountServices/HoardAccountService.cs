@@ -75,7 +75,7 @@ namespace Hoard
 
             var createRequest = new RestRequest("/create_user", Method.POST);
             createRequest.RequestFormat = DataFormat.Json;
-            createRequest.AddBody(new { email, password });
+            createRequest.AddBody(new { email, password, client_id = Options.HoardAuthServiceClientId });
             var createResponse = authClient.Execute(createRequest);
 
             if (createResponse.StatusCode == System.Net.HttpStatusCode.Created)

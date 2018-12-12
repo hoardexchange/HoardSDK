@@ -32,7 +32,7 @@ namespace Hoard
         /// <summary>
         /// Game exchange service.
         /// </summary>
-        public IExchangeService GameExchangeService { get; private set; } = null;
+        public IExchangeService ExchangeService { get; private set; } = null;
 
         /// <summary>
         /// List of registered GameItemProviders
@@ -173,10 +173,10 @@ namespace Hoard
             }
 
             //init exchange service
-            GameExchangeService exchange = new GameExchangeService(this);
+            HoardExchangeService exchange = new HoardExchangeService(this);
             if (exchange.Init())
             {
-                GameExchangeService = exchange;
+                ExchangeService = exchange;
             }
 
             return true;
@@ -189,7 +189,7 @@ namespace Hoard
         {
             DefaultGame = GameID.kInvalidID;
             DefaultUser = null;
-            GameExchangeService = null;
+            ExchangeService = null;
             ItemPropertyProviders.Clear();
             BCComm = null;
             Providers.Clear();

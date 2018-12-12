@@ -17,6 +17,7 @@ namespace Hoard
         public string ClientUrl;
         public string AccountsDir;
         public string GameCenterContract;
+        public string ExchangeServiceUrl;
         public string HoardAuthServiceUrl;
         public string HoardAuthServiceClientId;
 
@@ -57,6 +58,7 @@ namespace Hoard
         public Nethereum.JsonRpc.Client.IClient RpcClient { get; set; } = null;
         public string AccountsDir { get; set; } = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Hoard", "accounts");
         public string GameCenterContract { get; set; } = "";
+        public string ExchangeServiceUrl { get; set; } = "http://localhost:8000";
         public string HoardAuthServiceUrl { get; set; } = "http://localhost:8081";
         public string HoardAuthServiceClientId { get; set; } = "HoardTestAuthClient";
         public IUserInputProvider UserInputProvider { get; set; } = null;
@@ -77,6 +79,9 @@ namespace Hoard
             
             if (!string.IsNullOrEmpty(cfg.AccountsDir))
                 AccountsDir = cfg.AccountsDir;
+
+            if (!string.IsNullOrEmpty(cfg.ExchangeServiceUrl))
+                ExchangeServiceUrl = cfg.ExchangeServiceUrl;
 
             if (!string.IsNullOrEmpty(cfg.HoardAuthServiceUrl))
                 HoardAuthServiceUrl = cfg.HoardAuthServiceUrl;

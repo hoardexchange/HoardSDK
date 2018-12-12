@@ -168,7 +168,7 @@ namespace Hoard.BC
             return await gameCenter.GetHoardTokenAddressAsync();
         }
 
-        public async Task<GameExchangeContract> GetGameExchangeContractAsync()
+        public async Task<ExchangeContract> GetGameExchangeContractAsync()
         {
             string exchangeAddress = await gameCenter.GetExchangeAddressAsync();
             if (exchangeAddress != null)
@@ -178,7 +178,7 @@ namespace Hoard.BC
 
                 BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
                 if (!exchangeAddressInt.Equals(0))
-                    return new GameExchangeContract(web, exchangeAddress);
+                    return new ExchangeContract(web, exchangeAddress);
             }
             return null;
         }
@@ -209,18 +209,6 @@ namespace Hoard.BC
         public async Task<TransactionReceipt> SetHoardTokenAddressAsync(AccountInfo account, string hoardTokenAddress)
         {
             return await gameCenter.SetHoardTokenAddressAsync(this, hoardTokenAddress, account);
-        }
-
-        public async Task<TransactionReceipt> SetExchangeSrvURLAsync(AccountInfo account, string url)
-        {
-            return await gameCenter.SetExchangeSrvURLAsync(this, url, account);
-        }
-
-        public async Task<string> GetGameExchangeSrvURL()
-        {
-            string url = await gameCenter.GetExchangeSrvURLAsync();
-            url = !url.StartsWith("http") ? "http://" + url : url;
-            return url;
         }
 
         // TEST METHODS BELOW.

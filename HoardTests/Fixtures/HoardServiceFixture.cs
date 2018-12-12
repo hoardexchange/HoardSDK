@@ -96,14 +96,14 @@ namespace HoardTests.Fixtures
             cmd.StartInfo = new ProcessStartInfo
             {
                 FileName = "cmd",
-                Arguments = "/c python deploy_hoard_contracts.py",
+                Arguments = "/c workon hoardtools && python deploy_hoard_contracts.py",
                 RedirectStandardOutput = true,
                 UseShellExecute = false
             };
 
             if (testName != null)
             {
-                cmd.StartInfo.Arguments = "/c python deploy_hoard_contracts.py --test " + testName;
+                cmd.StartInfo.Arguments += " --test " + testName;
             }
 
             cmd.Start();

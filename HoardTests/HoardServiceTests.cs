@@ -82,7 +82,7 @@ namespace HoardTests
             }
 
             // Check exchange
-            IExchangeService exchange = HoardService.GameExchangeService;
+            IExchangeService exchange = HoardService.ExchangeService;
             if (exchange != null)
             {
                 var orders = exchange.ListOrders(null, null).Result;

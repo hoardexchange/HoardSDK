@@ -36,6 +36,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
@@ -51,9 +52,11 @@
     <Compile Include="CryptKittyTests\CKGameItemProvider.cs" />
     <Compile Include="CryptKittyTests\CryptoKittyTest.cs" />
     <Compile Include="DistributedStorageTests\IPFSClientTests.cs" />
+    <Compile Include="Fixtures\HoardExchangeFixture.cs" />
     <Compile Include="Fixtures\HoardServiceFixture.cs" />
     <Compile Include="Fixtures\IPFSFixture.cs" />
     <Compile Include="GameItemTests.cs" />
+    <Compile Include="HoardExchangeTest.cs" />
     <Compile Include="HoardServiceTests.cs" />
     <Compile Include="HW\LedgerWalletTest.cs" />
     <Compile Include="HW\PINWindow.cs">
