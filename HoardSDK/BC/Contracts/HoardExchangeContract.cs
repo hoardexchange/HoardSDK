@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Nethereum.Web3;
-using Nethereum.Contracts;
-using System.Numerics;
-using Nethereum.Web3.Accounts;
+﻿using Nethereum.Contracts;
 using Nethereum.RPC.NonceServices;
+using Nethereum.Web3;
+using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
 {
@@ -67,92 +62,60 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("withdrawTokenERC721");
         }
 
+        private Function GetFunctionCancelOrder()
+        {
+            return contract.GetFunction("cancelOrder");
+        }
+
+        private Function GetFunctionCancelOrderERC721()
+        {
+            return contract.GetFunction("cancelOrderERC721");
+        }
+
         public async Task<bool> Order(
+            AccountInfo from,
             string tokenGet,
-            ulong amountGet,
+            BigInteger amountGet,
             string tokenGive,
-            ulong amountGive,
-            AccountInfo from)
+            BigInteger amountGive,
+            ulong blockTimeDuration)
         {
             var nonceService = new InMemoryNonceService(from.ID, web3.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
             var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+            var expires = blockNumber.Value + blockTimeDuration;
 
             var function = GetFunctionOrder();
-            var gas = await function.EstimateGasAsync(
-                from.ID,
-                new Nethereum.Hex.HexTypes.HexBigInteger(1000000),
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                tokenGet,
-                amountGet,
-                tokenGive,
-                amountGive,
-                blockNumber,
-                nonce);
-
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(
-                from.ID,
-                gas,
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                null,
-                tokenGet,
-                amountGet,
-                tokenGive,
-                amountGive,
-                blockNumber,
-                nonce);
-            return receipt.Status.Value == 1;
+            return await SendTransaction(from, function, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
         }
 
         public async Task<bool> OrderERC721(
+            AccountInfo from,
             string tokenGet,
-            ulong amountGet,
+            BigInteger amountGet,
             string tokenGive,
             BigInteger tokenId,
-            AccountInfo from)
+            ulong blockTimeDuration)
         {
             var nonceService =  new InMemoryNonceService(from.ID, web3.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
             var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+            var expires = blockNumber.Value + blockTimeDuration;
 
             var function = GetFunctionOrderERC721();
-            var gas = await function.EstimateGasAsync(
-                from.ID,
-                new Nethereum.Hex.HexTypes.HexBigInteger(1000000),
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                tokenGet,
-                amountGet,
-                tokenGive,
-                new Nethereum.Hex.HexTypes.HexBigInteger(tokenId),
-                blockNumber,
-                nonce);
-
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(
-                from.ID,
-                gas,
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                null,
-                tokenGet,
-                amountGet,
-                tokenGive,
-                new Nethereum.Hex.HexTypes.HexBigInteger(tokenId),
-                blockNumber,
-                nonce);
-            return receipt.Status.Value == 1;
+            return await SendTransaction(from, function, tokenGet, amountGet, tokenGive, tokenId, expires, nonce);
         }
 
         public async Task<bool> Trade(
-            string tokenGet, 
-            ulong amountGet, 
+            AccountInfo from,
+            string tokenGet,
+            BigInteger amountGet, 
             string tokenGive,
-            ulong amountGive,
-            ulong expires,
-            ulong nonce,
-            string user,
-            ulong amount,
-            string from)
+            BigInteger amountGive,
+            BigInteger expires,
+            BigInteger nonce,
+            string orderOwner,
+            BigInteger amount)
         {
             var testTradeFun = GetFunctionTestTrade();
 
@@ -163,54 +126,27 @@ namespace Hoard.BC.Contracts
                 amountGive,
                 expires,
                 nonce,
-                user,
+                orderOwner,
                 amount,
-                from);
+                from.ID);
 
             if (!test)
                 return false;
 
             var function = GetFunctionTrade();
-            var gas = await function.EstimateGasAsync(
-                from,
-                new Nethereum.Hex.HexTypes.HexBigInteger(1000000),
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                tokenGet,
-                amountGet,
-                tokenGive,
-                amountGive,
-                expires,
-                nonce,
-                user,
-                amount);
-
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(
-                from,
-                gas,
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                null,
-                tokenGet, 
-                amountGet, 
-                tokenGive, 
-                amountGive, 
-                expires, 
-                nonce,
-                user,
-                amount);
-            return receipt.Status.Value == 1;
+            return await SendTransaction(from, function, tokenGet, amountGet, tokenGive, amountGive, expires, nonce, orderOwner, amount);
         }
 
         public async Task<bool> TradeERC721(
+            AccountInfo from,
             string tokenGet,
-            ulong amountGet,
+            BigInteger amountGet,
             string tokenGive,
             BigInteger tokenId,
-            ulong expires,
-            ulong nonce,
-            string user,
-            ulong amount,
-            string from)
+            BigInteger expires,
+            BigInteger nonce,
+            string orderOwner,
+            BigInteger amount)
         {
             var testTradeFun = GetFunctionTestTradeERC721();
 
@@ -221,59 +157,69 @@ namespace Hoard.BC.Contracts
                 tokenId,
                 expires,
                 nonce,
-                user,
+                orderOwner,
                 amount,
-                from);
+                from.ID);
 
             if (!test)
                 return false;
 
             var function = GetFunctionTradeERC721();
-            var gas = await function.EstimateGasAsync(
-                from,
-                new Nethereum.Hex.HexTypes.HexBigInteger(1000000),
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                tokenGet,
-                amountGet,
-                tokenGive,
-                tokenId,
-                expires,
-                nonce,
-                user,
-                amount);
+            return await SendTransaction(from, function, tokenGet, amountGet, tokenGive, tokenId, expires, nonce, orderOwner, amount);
+        }
 
+        public async Task<bool> Withdraw(AccountInfo from, string tokenAddress, BigInteger value)
+        {
+            var function = GetFunctionWithdrawToken();
+            return await SendTransaction(from, function, tokenAddress, value);
+        }
+
+        public async Task<bool> WithdrawERC721(AccountInfo from, string tokenAddress, BigInteger tokenId)
+        {
+            var function = GetFunctionWithdrawTokenERC721();
+            return await SendTransaction(from, function, tokenAddress, tokenId);
+        }
+
+        public async Task<bool> CancelOrder(
+            AccountInfo from,
+            string tokenGet,
+            BigInteger amountGet,
+            string tokenGive,
+            BigInteger amountGive,
+            BigInteger expires,
+            BigInteger nonce)
+        {
+            var function = GetFunctionCancelOrder();
+            return await SendTransaction(from, function, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
+        }
+
+        public async Task<bool> CancelOrderERC721(
+            AccountInfo from,
+            string tokenGet,
+            BigInteger amountGet,
+            string tokenGive,
+            BigInteger tokenIdGive,
+            BigInteger expires,
+            BigInteger nonce)
+        {
+            var function = GetFunctionCancelOrderERC721();
+            return await SendTransaction(from, function, tokenGet, amountGet, tokenGive, tokenIdGive, expires, nonce);
+        }
+
+        private async Task<bool> SendTransaction(AccountInfo from, Function function, params object[] functionInput)
+        {
+            var gas = await function.EstimateGasAsync(
+                from.ID,
+                new Nethereum.Hex.HexTypes.HexBigInteger(200000),
+                new Nethereum.Hex.HexTypes.HexBigInteger(0),
+                functionInput);
             gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
             var receipt = await function.SendTransactionAndWaitForReceiptAsync(
-                from,
+                from.ID,
                 gas,
                 new Nethereum.Hex.HexTypes.HexBigInteger(0),
                 null,
-                tokenGet,
-                amountGet,
-                tokenGive,
-                tokenId,
-                expires,
-                nonce,
-                user,
-                amount);
-            return receipt.Status.Value == 1;
-        }
-
-        public async Task<bool> Withdraw(string tokenAddress, ulong value, string from)
-        {
-            var function = GetFunctionWithdrawToken();
-            var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), tokenAddress, value);
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, tokenAddress, value);
-            return receipt.Status.Value == 1;
-        }
-
-        public async Task<bool> WithdrawERC721(string tokenAddress, BigInteger tokenId, string from)
-        {
-            var function = GetFunctionWithdrawTokenERC721();
-            var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(200000), new Nethereum.Hex.HexTypes.HexBigInteger(0), tokenAddress, tokenId);
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, tokenAddress, tokenId);
+                functionInput);
             return receipt.Status.Value == 1;
         }
     }

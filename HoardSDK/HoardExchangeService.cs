@@ -14,13 +14,13 @@ namespace Hoard
     {
         Task<bool> Deposit(GameItem item, ulong amount);
 
-        Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive);
+        Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account);
 
-        Task<bool> Order(GameItem item, ulong amount);
+        Task<bool> Order(GameItem getItem, GameItem giveItem, ulong blockTimeDuration);
 
-        Task<bool> Trade(Order order, ulong amount);
+        Task<bool> Trade(Order order);
 
-        Task<bool> Withdraw(GameItem item, ulong amount);
+        Task<bool> Withdraw(GameItem item);
     }
 
     public class HoardExchangeService : IExchangeService
@@ -104,58 +104,46 @@ namespace Hoard
             }
         }
 
-        public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive)
+        public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
         {
             var jsonStr = await GetJson(
-                String.Format("exchange/orders/{0},{1}",
+                String.Format("exchange/orders/{0},{1},{2}",
                 gaGet != null ? gaGet.Metadata.Get<string>("OwnerAddress") : "",
-                gaGive != null ? gaGive.Metadata.Get<string>("OwnerAddress") : ""), null);
+                gaGive != null ? gaGive.Metadata.Get<string>("OwnerAddress") : "",
+                account != null ? account.ID : ""), null);
 
-            HashSet<GameItemId> itemsIds = new HashSet<GameItemId>();
-
-            if (jsonStr != null && User.ActiveAccount != null)
+            if (jsonStr != null)
             {
-                var list = JsonConvert.DeserializeObject<Order[]>(jsonStr);
-
-                var filteredList = list.ToList().FindAll(e => e.amount < e.amountGet).ToArray();
-
-                foreach (var l in filteredList)
+                var orders = JsonConvert.DeserializeObject<Order[]>(jsonStr);
+                GameItemsParams[] gameItemsParams = new GameItemsParams[orders.Length * 2];
+                for (var i = 0; i < orders.Length; ++i)
                 {
-                    itemsIds.Add(new GameItemId(l.tokenGet, "0"));
-                    itemsIds.Add(new GameItemId(l.tokenGive, l.tokenId.ToString()));
+                    gameItemsParams[i * 2] = new GameItemsParams();
+                    gameItemsParams[i * 2].ContractAddress = orders[i].tokenGive;
+                    gameItemsParams[i * 2].TokenId = orders[i].tokenIdGive.ToString();
+
+                    gameItemsParams[i * 2 + 1] = new GameItemsParams();
+                    gameItemsParams[i * 2 + 1].ContractAddress = orders[i].tokenGet;
                 }
 
-                GameItemsParams[] gameItemsParams = new GameItemsParams[itemsIds.Count];
-                int itemsCount = 0;
-                foreach (var item in itemsIds)
-                {
-                    gameItemsParams[itemsCount] = new GameItemsParams();
-                    gameItemsParams[itemsCount].PlayerAddress = User.ActiveAccount.ID;
-                    gameItemsParams[itemsCount].ContractAddress = item.Address;
-                    gameItemsParams[itemsCount].TokenId = item.TokenId;
-                    itemsCount++;
-                }
                 GameItem[] itemsRetrieved = Hoard.GetItems(gameItemsParams);
-
-                foreach (var l in filteredList)
+                for (var i = 0; i < orders.Length; ++i)
                 {
-                    l.UpdateGameItemObjs(
-                        SearchGameItem(itemsRetrieved, l.tokenGet, 0),
-                        SearchGameItem(itemsRetrieved, l.tokenGive, l.tokenId)
-                    );
+                    orders[i].UpdateGameItemObjs(itemsRetrieved[i * 2 + 1], itemsRetrieved[i * 2]);
                 }
 
-                return filteredList;
+                return orders;
             }
 
             return new Order[0];
         }
 
-        public async Task<bool> Trade(Order order, ulong amount)
+        public async Task<bool> Trade(Order order)
         {
             if (order.gameItemGive.Metadata is ERC223GameItemContract.Metadata)
             {
                 return await ExchangeContract.Trade(
+                    User.ActiveAccount,
                     order.tokenGet,
                     order.amountGet,
                     order.tokenGive,
@@ -163,36 +151,46 @@ namespace Hoard
                     order.expires,
                     order.nonce,
                     order.user,
-                    amount,
-                    User.ActiveAccount.ID);
+                    order.amount);
             }
             else if (order.gameItemGive.Metadata is ERC721GameItemContract.Metadata)
             {
                 return await ExchangeContract.TradeERC721(
+                    User.ActiveAccount,
                     order.tokenGet,
                     order.amountGet,
                     order.tokenGive,
-                    order.tokenId,
+                    order.tokenIdGive,
                     order.expires,
                     order.nonce,
                     order.user,
-                    amount,
-                    User.ActiveAccount.ID);
+                    order.amount);
             }
 
             throw new NotImplementedException();
         }
 
-        public async Task<bool> Order(GameItem item, ulong amount)
+        public async Task<bool> Order(GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
         {
-            if (item.Metadata is ERC721GameItemContract.Metadata)
+            if (giveItem.Metadata is ERC223GameItemContract.Metadata)
+            {
+                return await ExchangeContract.Order(
+                    User.ActiveAccount,
+                    getItem.Metadata.Get<string>("OwnerAddress"),
+                    getItem.Metadata.Get<BigInteger>("Balance"),
+                    giveItem.Metadata.Get<string>("OwnerAddress"),
+                    giveItem.Metadata.Get<BigInteger>("Balance"),
+                    blockTimeDuration);
+            }
+            else if (giveItem.Metadata is ERC721GameItemContract.Metadata)
             {
                 return await ExchangeContract.OrderERC721(
-                    Hoard.GetHRDAddress(),
-                    1,
-                    item.Metadata.Get<string>("OwnerAddress"),
-                    item.Metadata.Get<BigInteger>("ItemId"),
-                    User.ActiveAccount);
+                    User.ActiveAccount,
+                    getItem.Metadata.Get<string>("OwnerAddress"),
+                    getItem.Metadata.Get<BigInteger>("Balance"),
+                    giveItem.Metadata.Get<string>("OwnerAddress"),
+                    giveItem.Metadata.Get<BigInteger>("ItemId"),
+                    blockTimeDuration);
             }
 
             throw new NotImplementedException();
@@ -200,47 +198,75 @@ namespace Hoard
 
         public async Task<bool> Deposit(GameItem item, ulong amount)
         {
-            IGameItemProvider gameItemProvider = Hoard.GetGameItemProvider(item);
-            if (gameItemProvider != null)
+            try
             {
-                return await gameItemProvider.Transfer(User.ActiveAccount.ID, ExchangeContract.Address, item, amount);
+                IGameItemProvider gameItemProvider = Hoard.GetGameItemProvider(item);
+                if (gameItemProvider != null)
+                {
+                    return await gameItemProvider.Transfer(User.ActiveAccount.ID, ExchangeContract.Address, item, amount);
+                }
+            }
+            catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
+            {
+                // TODO: log invalid transaction
             }
             return false;
         }
 
-        public async Task<bool> Withdraw(GameItem item, ulong amount)
+        public async Task<bool> Withdraw(GameItem item)
         {
-            var metadata223 = item.Metadata as ERC223GameItemContract.Metadata;
-            if (metadata223 != null)
+            try
             {
-                return await ExchangeContract.Withdraw(metadata223.OwnerAddress, amount, User.ActiveAccount.ID);
+                if (item.Metadata is ERC223GameItemContract.Metadata)
+                {
+                    return await ExchangeContract.Withdraw(User.ActiveAccount,
+                                                            item.Metadata.Get<string>("OwnerAddress"),
+                                                            item.Metadata.Get<BigInteger>("Balance"));
+                }
+                else if (item.Metadata is ERC721GameItemContract.Metadata)
+                {
+                    return await ExchangeContract.WithdrawERC721(User.ActiveAccount,
+                                                                item.Metadata.Get<string>("OwnerAddress"),
+                                                                item.Metadata.Get<BigInteger>("ItemId"));
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
             }
-
-            var metadata721 = item.Metadata as ERC721GameItemContract.Metadata;
-            if (metadata721 != null)
+            catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
-                return await ExchangeContract.WithdrawERC721(metadata721.OwnerAddress, metadata721.ItemId, User.ActiveAccount.ID);
+                // TODO: log invalid withdraw
+            }
+            return false;
+        }
+
+        public async Task<bool> CancelOrder(Order order)
+        {
+            if (order.gameItemGive.Metadata is ERC223GameItemContract.Metadata)
+            {
+                return await ExchangeContract.CancelOrder(
+                    User.ActiveAccount,
+                    order.tokenGet,
+                    order.amountGet,
+                    order.tokenGive,
+                    order.amountGive,
+                    order.expires,
+                    order.nonce);
+            }
+            else if (order.gameItemGive.Metadata is ERC721GameItemContract.Metadata)
+            {
+                return await ExchangeContract.CancelOrderERC721(
+                    User.ActiveAccount,
+                    order.tokenGet,
+                    order.amountGet,
+                    order.tokenGive,
+                    order.tokenIdGive,
+                    order.expires,
+                    order.nonce);
             }
 
             throw new NotImplementedException();
-        }
-
-        private GameItem SearchGameItem(IEnumerable items, string itemContractAddress, BigInteger tokenId)
-        {
-            foreach (GameItem item in items)
-            {
-                if (item.Metadata.Get<string>("OwnerAddress") == itemContractAddress.ToLower())
-                {
-                    var metadata721 = item.Metadata as ERC721GameItemContract.Metadata;
-                    if (metadata721 != null)
-                    {
-                        if (metadata721.ItemId == tokenId)
-                            return item;
-                    }
-                    return item;
-                }
-            }
-            return null;
         }
 
         public void SetUser(User user)
@@ -255,43 +281,31 @@ namespace Hoard
         public string tokenGet { get; private set; }
 
         [JsonProperty(propertyName: "amountGet")]
-        public ulong amountGet { get; private set; }
+        public BigInteger amountGet { get; private set; }
 
         [JsonProperty(propertyName: "tokenGive")]
         public string tokenGive { get; private set; }
 
         [JsonProperty(propertyName: "tokenId")]
-        public BigInteger tokenId { get; private set; }
+        public BigInteger tokenIdGive { get; private set; }
 
         [JsonProperty(propertyName: "amountGive")]
-        public ulong amountGive { get; private set; }
+        public BigInteger amountGive { get; private set; }
 
         [JsonProperty(propertyName: "expires")]
-        public ulong expires { get; private set; }
+        public BigInteger expires { get; private set; }
 
         [JsonProperty(propertyName: "nonce")]
-        public ulong nonce { get; private set; }
+        public BigInteger nonce { get; private set; }
 
         [JsonProperty(propertyName: "amount")]
-        public ulong amount { get; private set; }
+        public BigInteger amount { get; set; }
 
         [JsonProperty(propertyName: "user")]
         public string user { get; private set; }
 
         public GameItem gameItemGet { get; private set; } = null;
         public GameItem gameItemGive { get; private set; } = null;
-
-        public Order(string tokenGet, ulong amountGet, string tokenGive, ulong amountGive, ulong expires, ulong nonce, ulong amount, string user)
-        {
-            this.tokenGet = tokenGet;
-            this.amountGet = amountGet;
-            this.tokenGive = tokenGive;
-            this.amountGive = amountGive;
-            this.expires = expires;
-            this.nonce = nonce;
-            this.amount = amount;
-            this.user = user;
-        }
 
         public void UpdateGameItemObjs(GameItem gaGet, GameItem gaGive)
         {

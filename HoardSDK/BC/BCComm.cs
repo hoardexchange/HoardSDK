@@ -110,16 +110,22 @@ namespace Hoard.BC
             }
 
             string gameAddress = await gameCenter.GetGameContractAsync(game.ID);
-            GameContract gameContract = new GameContract(web, gameAddress);
 
-            string url = await gameContract.GetGameServerURLAsync();
+            if (gameAddress != Eth.Utils.EMPTY_ADDRESS)
+            {
+                GameContract gameContract = new GameContract(web, gameAddress);
 
-            game.Name = await gameContract.GetName();
-            game.GameOwner = await gameContract.GetOwner();
-            game.Url = !url.StartsWith("http") ? "http://" + url : url;
+                string url = await gameContract.GetGameServerURLAsync();
 
-            gameContracts.Add(game, gameContract);
-            return true;
+                game.Name = await gameContract.GetName();
+                game.GameOwner = await gameContract.GetOwner();
+                game.Url = !url.StartsWith("http") ? "http://" + url : url;
+
+                gameContracts.Add(game, gameContract);
+                return true;
+            }
+
+            return false;
         }
 
         public void UnregisterHoardGame(GameID game)

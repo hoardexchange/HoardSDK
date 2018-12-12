@@ -57,7 +57,7 @@ namespace Hoard.GameItemProviders
             foreach (var param in gameItemsParams)
             {
                 GameItemContract itemContract = GetGameItemContractByInterface(param.ContractAddress);
-                items.AddRange(itemContract.GetGameItems(param).Result);
+                items.Add(itemContract.GetGameItem(param).Result);
             }
             return items.ToArray();
         }

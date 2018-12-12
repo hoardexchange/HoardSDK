@@ -11,6 +11,7 @@ namespace Hoard
     {
         public string PlayerAddress = null;
         public string ContractAddress = null;
+        public BigInteger Amount = BigInteger.Zero;
         public string TokenId = null;
     }
 

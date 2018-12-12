@@ -126,7 +126,7 @@ namespace Hoard.BC.Contracts
 
         public abstract Task<GameItem[]> GetGameItems(AccountInfo info);
 
-        public abstract Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams);
+        public abstract Task<GameItem> GetGameItem(GameItemsParams gameItemsParams);
     }
 
     /// <summary>
@@ -194,13 +194,11 @@ namespace Hoard.BC.Contracts
                 return new GameItem[0];
         }
 
-        public override async Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams)
+        public override async Task<GameItem> GetGameItem(GameItemsParams gameItemsParams)
         {
-            BigInteger itemBalance = await GetBalanceOf(gameItemsParams.PlayerAddress);
             string state = BitConverter.ToString(await GetTokenState());
-            Metadata meta = new Metadata(state, Address, itemBalance);
-            GameItem gi = new GameItem(Game, await GetSymbol(), meta);
-            return new GameItem[] { gi };
+            Metadata meta = new Metadata(state, Address, gameItemsParams.Amount);
+            return new GameItem(Game, await GetSymbol(), meta);
         }
     }
 
@@ -305,22 +303,13 @@ namespace Hoard.BC.Contracts
             return items;
         }
 
-        public override async Task<GameItem[]> GetGameItems(GameItemsParams gameItemsParams)
+        public override async Task<GameItem> GetGameItem(GameItemsParams gameItemsParams)
         {
-            BigInteger itemBalance = await GetBalanceOf(gameItemsParams.PlayerAddress);
-            string symbol = await GetSymbol();
-
-            ulong count = (ulong)itemBalance;
-
-            GameItem[] items = new GameItem[1];
-
-            BigInteger id = BigInteger.Parse(gameItemsParams.TokenId, NumberStyles.AllowHexSpecifier);
+            var id = BigInteger.Parse(gameItemsParams.TokenId, NumberStyles.AllowHexSpecifier);
             Metadata meta = new Metadata(Address, id);
-
-            items[0] = new GameItem(Game, symbol, meta);
-            items[0].State = await GetTokenState(id);
-
-            return items;
+            GameItem item = new GameItem(Game, await GetSymbol(), meta);
+            item.State = await GetTokenState(id);
+            return item;
         }
     }
 }

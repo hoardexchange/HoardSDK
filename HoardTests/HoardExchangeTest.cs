@@ -1,38 +1,197 @@
 ﻿using Hoard;
+using Hoard.BC.Contracts;
 using HoardTests.Fixtures;
-using System;
-using System.Diagnostics;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Threading;
 using Xunit;
 using static Hoard.KeyStoreAccountService;
 
 namespace HoardTests
 {
-    public class HoardExchangeTests : IClassFixture<HoardServiceFixture>, IClassFixture<HoardExchangeFixture>
+    [TestCaseOrderer("HoardTests.TestCaseOrdering.PriorityOrderer", "HoardTests")]
+    public class HoardExchangeTests : IClassFixture<HoardExchangeFixture>
     {
-        static string HoardGameTestName = "HoardExchange";
-
+        public HoardExchangeFixture HoardExchangeFixture { get; private set; }
         public HoardService HoardService { get; private set; }
+        public HoardExchangeService ExchangeService { get; private set; }
+        public GameID[] gameIDs { get; private set; }
+        public User[] users { get; private set; }
+        public List<GameItem> items { get; private set; }
 
-        public HoardExchangeTests(HoardServiceFixture _hoardService, HoardExchangeFixture _hoardExchange)
+        public HoardExchangeTests(HoardExchangeFixture _hoardExchange)
         {
-            _hoardService.Initialize(HoardGameTestName);
-            HoardService = _hoardService.HoardService;
-
-            var user = new User("user");
-            var account = new KeyStoreAccount("keystore", "0xdc457d26e6c34ed3c3db13e9af63709869bc3565", "0x28a9e620b91445c666b91d9c7eba7ba109289a11fdbbad9c7e2812538239e9e6");
-            user.Accounts.Add(account);
-            user.SetActiveAccount(account);
-            HoardService.DefaultUser = user;
-
-            _hoardExchange.Initialize(HoardService);
-            ((HoardExchangeService)HoardService.ExchangeService).SetUser(user);
+            HoardExchangeFixture = _hoardExchange;
+            HoardService = _hoardExchange.HoardService;
+            ExchangeService = _hoardExchange.ExchangeService;
+            gameIDs = _hoardExchange.GameIDs;
+            users = _hoardExchange.Users;
+            items = _hoardExchange.Items;
         }
 
-        [Fact]
+        [Fact, TestPriority(0)]
         public void ListAllOrders()
         {
-            var orders = HoardService.ExchangeService.ListOrders(null, null).Result;
+            var orders = ExchangeService.ListOrders(null, null, null).Result;
             Assert.NotEmpty(orders);
+        }
+
+        [Fact, TestPriority(1)]
+        public void Deposit()
+        {
+            //ERC223
+            ExchangeService.SetUser(users[0]);
+            var success = ExchangeService.Deposit(items[1], 1).Result;
+            Assert.True(success);
+
+            //deposit non-existing items
+            success = ExchangeService.Deposit(items[1], 1).Result;
+            Assert.False(success);
+
+            ExchangeService.SetUser(users[1]);
+            success = ExchangeService.Deposit(items[0], 1000).Result;
+            Assert.True(success);
+
+            //ERC721
+            ExchangeService.SetUser(users[0]);
+            success = ExchangeService.Deposit(items[2], 1).Result;
+            Assert.True(success);
+        }
+
+        [Fact, TestPriority(2)]
+        public void Order()
+        {
+            ExchangeService.SetUser(users[0]);
+
+            //ERC223
+            items[0].Metadata.Set<BigInteger>("Balance", 20);
+            var success = ExchangeService.Order(items[0], items[1], 0xFFFFFFF).Result;
+            Assert.True(success);
+
+            Thread.Sleep(3000);
+
+            var orders = ExchangeService.ListOrders(items[0], items[1], users[0].ActiveAccount).Result;
+            Assert.NotEmpty(orders);
+
+            //ERC721
+            items[0].Metadata.Set<BigInteger>("Balance", 20);
+            success = ExchangeService.Order(items[0], items[2], 0xFFFFFFF).Result;
+            Assert.True(success);
+
+            Thread.Sleep(3000);
+
+            orders = ExchangeService.ListOrders(items[0], items[2], users[0].ActiveAccount).Result;
+            Assert.NotEmpty(orders);
+        }
+
+        [Fact, TestPriority(3)]
+        public void Trade()
+        {
+            ExchangeService.SetUser(users[1]);
+
+            //ERC223
+            var orders = ExchangeService.ListOrders(items[0], items[1], users[0].ActiveAccount).Result;
+            Assert.NotEmpty(orders);
+
+            orders[0].amount = orders[0].amountGet / 2;
+            var success = ExchangeService.Trade(orders[0]).Result;
+            Assert.False(success);
+
+            orders[0].amount = orders[0].amountGet;
+            success = ExchangeService.Trade(orders[0]).Result;
+            Assert.True(success);
+
+            //trade non-existing order
+            success = ExchangeService.Trade(orders[0]).Result;
+            Assert.False(success);
+
+            //ERC721
+            orders = ExchangeService.ListOrders(items[0], items[2], users[0].ActiveAccount).Result;
+            Assert.NotEmpty(orders);
+
+            orders[0].amount = orders[0].amountGet / 2;
+            success = ExchangeService.Trade(orders[0]).Result;
+            Assert.False(success);
+
+            orders[0].amount = orders[0].amountGet;
+            success = ExchangeService.Trade(orders[0]).Result;
+            Assert.True(success);
+        }
+
+        [Fact, TestPriority(4)]
+        public void Withdraw()
+        {
+            //ERC721
+            ExchangeService.SetUser(users[1]);
+            var success = ExchangeService.Withdraw(items[2]).Result;
+            Assert.True(success);
+
+            //withdraw non-existing tokens
+            success = ExchangeService.Withdraw(items[2]).Result;
+            Assert.False(success);
+
+            //ERC223
+            success = ExchangeService.Withdraw(items[1]).Result;
+            Assert.True(success);
+
+            ExchangeService.SetUser(users[0]);
+
+            items[0].Metadata.Set<BigInteger>("Balance", 40);
+            success = ExchangeService.Withdraw(items[0]).Result;
+            Assert.True(success);
+
+            var items0 = HoardExchangeFixture.GetGameItems(users[0]);
+            Assert.Equal(1, items0.Count);
+
+            var items1 = HoardExchangeFixture.GetGameItems(users[1]);
+            Assert.Equal(4, items1.Count);
+        }
+
+        [Fact, TestPriority(5)]
+        public void CancelOrder()
+        {
+            ExchangeService.SetUser(users[1]);
+
+            //ERC223
+            items[0].Metadata.Set<BigInteger>("Balance", 20);
+            var success = ExchangeService.Order(items[0], items[1], 0xFFFFFFF).Result;
+            Assert.True(success);
+
+            //ERC721
+            items[0].Metadata.Set<BigInteger>("Balance", 20);
+            success = ExchangeService.Order(items[0], items[2], 0xFFFFFFF).Result;
+            Assert.True(success);
+
+            Thread.Sleep(3000);
+
+            var orders = ExchangeService.ListOrders(items[0], items[1], users[1].ActiveAccount).Result;
+            Assert.True(orders.Length == 2);
+
+            success = ExchangeService.CancelOrder(orders[0]).Result;
+            Assert.True(success);
+
+            Thread.Sleep(3000);
+
+            //FIXME is it correct?
+            //cancel non-existing order
+            success = ExchangeService.CancelOrder(orders[0]).Result;
+            Assert.True(success);
+
+            Thread.Sleep(3000);
+
+            orders = ExchangeService.ListOrders(items[0], items[1], users[1].ActiveAccount).Result;
+            Assert.True(orders.Length == 1);
+
+            orders = ExchangeService.ListOrders(items[0], items[2], users[1].ActiveAccount).Result;
+            Assert.True(orders.Length == 1);
+
+            success = ExchangeService.CancelOrder(orders[0]).Result;
+            Assert.True(success);
+
+            Thread.Sleep(3000);
+            
+            orders = ExchangeService.ListOrders(items[0], items[2], users[1].ActiveAccount).Result;
+            Assert.True(orders.Length == 0);
         }
     }
 }

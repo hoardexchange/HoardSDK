@@ -38,7 +38,7 @@ namespace HoardTests.Fixtures
         {
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (HoardService != null)
             {
@@ -96,7 +96,7 @@ namespace HoardTests.Fixtures
             cmd.StartInfo = new ProcessStartInfo
             {
                 FileName = "cmd",
-                Arguments = "/c workon hoardtools && python deploy_hoard_contracts.py",
+                Arguments = "/c python deploy_hoard_contracts.py",
                 RedirectStandardOutput = true,
                 UseShellExecute = false
             };

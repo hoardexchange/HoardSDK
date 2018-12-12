@@ -9,6 +9,8 @@ namespace Hoard.Eth
 {
     public class Utils
     {
+        public const string EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
+
         static public BigInteger Mine(string challenge, BigInteger difficulty)
         {
             Byte[] b = new Byte[8];
