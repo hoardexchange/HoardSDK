@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Hoard.GameItemProviders;
+using HoardSDK.ExchangeServices;
+using HoardSDK.Interfaces;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.IO;
-using Hoard.GameItemProviders;
-using System.Numerics;
-
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Hoard
 {
@@ -173,7 +174,7 @@ namespace Hoard
             }
 
             //init exchange service
-            HoardExchangeService exchange = new HoardExchangeService(this);
+            IExchangeService exchange = new HoardExchangeService(this);
             if (exchange.Init())
             {
                 ExchangeService = exchange;

@@ -1,5 +1,6 @@
 ﻿using Hoard;
 using Hoard.BC.Contracts;
+using HoardSDK.ExchangeServices;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,10 +19,13 @@ namespace HoardTests.Fixtures
         public static string ExchangeDirectory = EnvironmentCurrentDirectory + "\\..\\..\\..\\..\\HoardExchangeServer";
 
         public HoardServiceFixture HoardServiceFixture { get; private set; }
-        public HoardExchangeService ExchangeService { get; private set; }
         public GameID[] GameIDs { get; private set; }
         public User[] Users { get; private set; }
         public List<GameItem> Items { get; private set; }
+
+        public BCExchangeService BCExchangeService { get; private set; }
+        public HoardExchangeService HoardExchangeService { get; private set; }
+
 
         private Process cmd = new Process();
 
@@ -33,8 +37,14 @@ namespace HoardTests.Fixtures
             HoardService.DefaultUser = Users[0];
 
             RunExchangeServer();
-            ExchangeService = (HoardExchangeService)HoardService.ExchangeService;
-            ExchangeService.SetUser(Users[0]);
+
+            BCExchangeService = new BCExchangeService(HoardService);
+            BCExchangeService.Init();
+            BCExchangeService.User = Users[0];
+
+            HoardExchangeService = new HoardExchangeService(HoardService);
+            HoardExchangeService.Init();
+            HoardExchangeService.User = Users[0];
 
             GameIDs = HoardService.QueryHoardGames().Result;
             foreach (var game in GameIDs)

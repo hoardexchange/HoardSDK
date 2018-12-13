@@ -209,12 +209,12 @@ namespace Hoard.BC
 
         public async Task<TransactionReceipt> SetExchangeContractAsync(AccountInfo account, string exchangeAddress)
         {
-            return await gameCenter.SetExchangeAddressAsync(this, exchangeAddress, account);
+            return await gameCenter.SetExchangeAddressAsync(exchangeAddress, account);
         }
 
         public async Task<TransactionReceipt> SetHoardTokenAddressAsync(AccountInfo account, string hoardTokenAddress)
         {
-            return await gameCenter.SetHoardTokenAddressAsync(this, hoardTokenAddress, account);
+            return await gameCenter.SetHoardTokenAddressAsync(hoardTokenAddress, account);
         }
 
         // TEST METHODS BELOW.
@@ -229,7 +229,7 @@ namespace Hoard.BC
         /// temporary function to call functions on blockchain
         /// </summary>
         /// <returns></returns>
-        public async Task<TransactionReceipt> EvaluateOnBC(AccountInfo account, Function function, params object[] functionInput)
+        public static async Task<TransactionReceipt> EvaluateOnBC(Web3 web, AccountInfo account, Function function, params object[] functionInput)
         {
             Debug.Assert(account != null);
 
