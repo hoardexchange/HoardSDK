@@ -36,20 +36,20 @@ namespace Hoard
         /// </summary>
         /// <param name="playerID"></param>
         /// <returns></returns>
-        GameItem[] GetPlayerItems(AccountInfo account);
+        Task<GameItem[]> GetPlayerItems(AccountInfo account);
         /// <summary>
         /// Returns all items belonging to a particular player with given type
         /// </summary>
         /// <param name="playerID"></param>
         /// <param name="itemType"></param>
         /// <returns></returns>
-        GameItem[] GetPlayerItems(AccountInfo account, string itemType);
+        Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType);
 
         /// Retrieve all items matching given parameters
         /// </summary>
         /// <param name="gameItemsParams"></param>
         /// <returns></returns>
-        GameItem[] GetItems(GameItemsParams[] gameItemsParams);
+        Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams);
 
         /// <summary>
         /// Changes ownership of an item, sending it to new owner
@@ -65,6 +65,6 @@ namespace Hoard
         /// Initializes provider (connects to backend)
         /// </summary>
         /// <returns></returns>
-        bool Connect();
+        Task<bool> Connect();
     }
 }

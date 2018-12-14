@@ -52,9 +52,9 @@ namespace Hoard.BC
             return await ver.SendRequestAsync(account);
         }
 
-        public async Task<string> GetHRDAddressAsync()
+        public Task<string> GetHRDAddressAsync()
         {
-            return await gameCenter.GetHoardTokenAddressAsync();
+            return gameCenter.GetHoardTokenAddressAsync();
         }
 
         public async Task<BigInteger> GetHRDAmountAsync(string account)

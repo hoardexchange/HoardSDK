@@ -140,10 +140,10 @@ namespace HoardTests
             success = ExchangeService.Withdraw(items[0]).Result;
             Assert.True(success);
 
-            var items0 = HoardExchangeFixture.GetGameItems(users[0]);
-            Assert.Equal(1, items0.Count);
+            var items0 = HoardExchangeFixture.GetGameItems(users[0]).Result;
+            Assert.Single(items0);
 
-            var items1 = HoardExchangeFixture.GetGameItems(users[1]);
+            var items1 = HoardExchangeFixture.GetGameItems(users[1]).Result;
             Assert.Equal(4, items1.Count);
         }
 

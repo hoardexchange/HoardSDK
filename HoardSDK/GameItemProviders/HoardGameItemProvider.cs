@@ -1,4 +1,5 @@
 ﻿using Hoard.BC.Contracts;
+using Hoard.Utils;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -23,6 +24,11 @@ namespace Hoard.GameItemProviders
         private RestClient Client = null;
         private string SessionKey = null;
 
+        /// <summary>
+        /// Cached list of all supported item types as returned from server
+        /// </summary>
+        private List<string> ItemTypes = null;
+
         public HoardGameItemProvider(GameID game)
         {
             Game = game;
@@ -32,13 +38,12 @@ namespace Hoard.GameItemProviders
         {
         }
 
-        private bool Connect(User user)
+        private async Task<bool> ConnectToGameServer()
         {
-            if ((user.ActiveAccount == null) && Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {                
                 Client = new RestClient(Game.Url);
                 Client.AutomaticDecompression = false;
-
                 //setup a cookie container for automatic cookies handling
                 Client.CookieContainer = new System.Net.CookieContainer();
 
@@ -47,22 +52,22 @@ namespace Hoard.GameItemProviders
                 //1. GET challenge token
                 var request = new RestRequest("login/", Method.GET);
                 request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-                var response = Client.Execute(request);
+                var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
 
                 if (response.ErrorException != null)
                     return false;
-
-                //UpdateCookies(response.Cookies);
-
+                
                 string challengeToken = response.Content;
                 challengeToken = challengeToken.Substring(2);
 
-
-                var nonce = Hoard.Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
+                var nonce = Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
                 var nonceHex = nonce.ToString("x");
 
+                //generate new secure random key
+                var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
+
                 var dataBytes = Encoding.ASCII.GetBytes(response.Content.Substring(2) + nonceHex);
-                string sig = user.ActiveAccount.SignMessage(dataBytes).Result;
+                string sig = await KeyStoreAccountService.SignMessage(dataBytes,ecKey.GetPrivateKey()).ConfigureAwait(false);
                 if (sig == null)
                     return false;
 
@@ -70,7 +75,7 @@ namespace Hoard.GameItemProviders
                 {
                     token = response.Content,
                     nonce = "0x" + nonceHex,
-                    address = user.ActiveAccount.ID,
+                    address = ecKey.GetPublicAddress(),
                     signature = sig
                 }).Result;
 
@@ -113,6 +118,10 @@ namespace Hoard.GameItemProviders
 
         public string[] GetItemTypes()
         {
+            if (ItemTypes == null)
+            {
+                //try to grab from server
+            }
             if (Client != null)
             {
                 var request = new RestRequest("item_types/", Method.GET);
@@ -148,12 +157,12 @@ namespace Hoard.GameItemProviders
             public List<Dictionary<string,string>> items = null;
         }
 
-        public GameItem[] GetPlayerItems(AccountInfo account)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
         {
             if (Client != null)
             {
                 var request = new RestRequest(string.Format("player_items/{0},", account.ID), Method.GET);
-                var response = Client.Execute(request);
+                var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
@@ -162,17 +171,17 @@ namespace Hoard.GameItemProviders
             }
             if (SecureProvider != null)
             {
-                return SecureProvider.GetPlayerItems(account);
+                return await SecureProvider.GetPlayerItems(account).ConfigureAwait(false);
             }
             return null;
         }
 
-        public GameItem[] GetPlayerItems(AccountInfo account, string itemType)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
         {
             if (Client != null)
             {
                 var request = new RestRequest(string.Format("player_items/{0},{1}", account.ID, itemType), Method.GET);
-                var response = Client.Execute(request);
+                var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
@@ -181,16 +190,16 @@ namespace Hoard.GameItemProviders
             }
             if (SecureProvider != null)
             {
-                return SecureProvider.GetPlayerItems(account, itemType);
+                return await SecureProvider.GetPlayerItems(account, itemType).ConfigureAwait(false);
             }
             return null;
         }
 
-        public GameItem[] GetItems(GameItemsParams[] gameItemsParams)
+        public async Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
             if (Client != null)
             {
-                var response = PostJson("items/", gameItemsParams).Result;
+                var response = await PostJson("items/", gameItemsParams).ConfigureAwait(false);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
@@ -199,7 +208,7 @@ namespace Hoard.GameItemProviders
             }
             if (SecureProvider != null)
             {
-                return SecureProvider.GetItems(gameItemsParams);
+                return await SecureProvider.GetItems(gameItemsParams);
             }
             return null;
         }
@@ -247,18 +256,16 @@ namespace Hoard.GameItemProviders
             return new Task<bool>(()=> { return false; });
         }
 
-        public bool Connect()
+        public async Task<bool> Connect()
         {
             bool connected = false;
             //1. connect to REST server
-            connected = Connect(HoardService.Instance.DefaultUser);
+            connected = await ConnectToGameServer();
             //2. check also fallback connector
             if (SecureProvider != null)
             {
-                connected |= SecureProvider.Connect();
+                connected |= await SecureProvider.Connect();
             }
-            //TODO: cut it out, this should be done from hoard.Init and then perhaphs manually per StateType not Item Symbol
-            //3. register known item types to be supported by IPFSPropertyProvider
 
             return connected;
         }

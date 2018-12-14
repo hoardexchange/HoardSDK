@@ -67,7 +67,7 @@ namespace HoardTests
                 HoardService.RegisterHoardGame(game);
 
                 Debug.WriteLine(String.Format("Getting player items for game {0}", game.Name));
-                GameItem[] items = HoardService.GetPlayerItems(HoardService.DefaultUser, game);
+                GameItem[] items = HoardService.GetPlayerItems(HoardService.DefaultUser, game).Result;
 
                 Debug.WriteLine(String.Format("Found {0} items.", items.Length));
                 foreach (GameItem gi in items)

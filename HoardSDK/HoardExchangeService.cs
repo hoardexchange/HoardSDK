@@ -10,19 +10,6 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
-    public interface IExchangeService
-    {
-        Task<bool> Deposit(GameItem item, ulong amount);
-
-        Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account);
-
-        Task<bool> Order(GameItem getItem, GameItem giveItem, ulong blockTimeDuration);
-
-        Task<bool> Trade(Order order);
-
-        Task<bool> Withdraw(GameItem item);
-    }
-
     public class HoardExchangeService : IExchangeService
     {
         HoardService Hoard = null;
@@ -107,7 +94,7 @@ namespace Hoard
         public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
         {
             var jsonStr = await GetJson(
-                String.Format("exchange/orders/{0},{1},{2}",
+                string.Format("exchange/orders/{0},{1},{2}",
                 gaGet != null ? gaGet.Metadata.Get<string>("OwnerAddress") : "",
                 gaGive != null ? gaGive.Metadata.Get<string>("OwnerAddress") : "",
                 account != null ? account.ID : ""), null);
@@ -126,7 +113,7 @@ namespace Hoard
                     gameItemsParams[i * 2 + 1].ContractAddress = orders[i].tokenGet;
                 }
 
-                GameItem[] itemsRetrieved = Hoard.GetItems(gameItemsParams);
+                GameItem[] itemsRetrieved = await Hoard.GetItems(gameItemsParams).ConfigureAwait(false);
                 for (var i = 0; i < orders.Length; ++i)
                 {
                     orders[i].UpdateGameItemObjs(itemsRetrieved[i * 2 + 1], itemsRetrieved[i * 2]);
@@ -206,7 +193,7 @@ namespace Hoard
                     return await gameItemProvider.Transfer(User.ActiveAccount.ID, ExchangeContract.Address, item, amount);
                 }
             }
-            catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
+            catch (Nethereum.JsonRpc.Client.RpcResponseException)
             {
                 // TODO: log invalid transaction
             }
@@ -234,7 +221,7 @@ namespace Hoard
                     throw new NotImplementedException();
                 }
             }
-            catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
+            catch (Nethereum.JsonRpc.Client.RpcResponseException)
             {
                 // TODO: log invalid withdraw
             }

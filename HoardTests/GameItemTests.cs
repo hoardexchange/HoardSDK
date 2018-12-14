@@ -147,7 +147,7 @@ namespace HoardTests
             GameItem swordItem = new GameItem(new GameID("test"), "TM721", null);
             swordItem.Properties = new SwordProperties(10, 5, 20);
 
-            GameItem[] items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol);
+            GameItem[] items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol).Result;
             Assert.Equal(2, items.Length);
 
             string propsJson = JsonConvert.SerializeObject(swordItem.Properties);
@@ -156,7 +156,7 @@ namespace HoardTests
 
             gameItemProvider.UpdateItemState(swordItem, DefaultPlayer.ActiveAccount);
 
-            items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol);
+            items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol).Result;
             GameItem downloadedSwordItem = items[0];
             hoardFixture.HoardService.FetchItemProperties(downloadedSwordItem);
 

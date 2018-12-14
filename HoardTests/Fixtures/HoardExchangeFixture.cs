@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Management;
+using System.Threading.Tasks;
 using Xunit;
 using static Hoard.KeyStoreAccountService;
 
@@ -42,7 +43,7 @@ namespace HoardTests.Fixtures
                 HoardService.RegisterHoardGame(game);
             }
 
-            Items = GetGameItems(HoardService.DefaultUser);
+            Items = GetGameItems(HoardService.DefaultUser).Result;
             Assert.Equal(3, Items.Count);
             Assert.True(Items[0].Metadata is ERC223GameItemContract.Metadata);
             Assert.True(Items[1].Metadata is ERC223GameItemContract.Metadata);
@@ -78,7 +79,7 @@ namespace HoardTests.Fixtures
         private static void OutputHandler(object sendingProcess, DataReceivedEventArgs outLine)
         {
             // Collect the sort command output.
-            if (!String.IsNullOrEmpty(outLine.Data))
+            if (!string.IsNullOrEmpty(outLine.Data))
             {
                 Trace.WriteLine(outLine.Data);
             }
@@ -102,12 +103,12 @@ namespace HoardTests.Fixtures
             }
         }
 
-        public List<GameItem> GetGameItems(User user)
+        public async Task<List<GameItem>> GetGameItems(User user)
         {
             var items = new List<GameItem>();
             foreach (var game in GameIDs)
             {
-                items.AddRange(HoardService.GetPlayerItems(user, game));
+                items.AddRange(await HoardService.GetPlayerItems(user, game));
             }
             return items;
         }

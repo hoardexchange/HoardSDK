@@ -204,16 +204,11 @@ namespace Hoard
         /// <param name="game"></param>
         public bool RegisterHoardGame(GameID game)
         {
-            //assumig this is a hoard game we can use a hoardconnector
-            HoardGameItemProvider provider = new HoardGameItemProvider(game);//this will create REST client to communicate with backend
-            //but in case server is down we will pass a fallback
-            provider.SecureProvider = new BCGameItemProvider(game,BCComm);
-            if(BCComm.RegisterHoardGame(game).Result && RegisterGame(game, provider))
-            {
-                return true;
-            }
-            BCComm.UnregisterHoardGame(game);
-            return false;
+            //assumig this is a hoard game we can use a default hoard provider that connects to Hoard game server backend
+            HoardGameItemProvider provider = new HoardGameItemProvider(game);
+            //for security reasons (or fallback in case server is down) we will pass a BC provider
+            provider.SecureProvider = new BCGameItemProvider(game, BCComm);
+            return RegisterGame(game, provider);
         }
 
         /// <summary>
@@ -223,20 +218,28 @@ namespace Hoard
         /// <param name="conn"></param>
         public bool RegisterGame(GameID game, IGameItemProvider provider)
         {
-            if (!Providers.ContainsKey(game) || !Providers[game].Contains(provider))
+            //create pool
+            if (!Providers.ContainsKey(game))
             {
-                //connect to server and grab all important data (like supported item types)
-                if (provider.Connect())
+                Providers.Add(game, new List<IGameItemProvider>());
+            }
+            //add provider to pool
+            if (!Providers[game].Contains(provider))
+            {
+                //register this game in BC (this is a must for every game)
+                //TODO: should we asume that all games should have a SecureProvider as BCGameItemProvider?
+                //TODO: should we keep SecureProvider in original provider or parallel to it?
+                //TODO: when to use SecureProvider:
+                // - only when secure check should happen 
+                // - when original GameItemProvider fails
+                // - switch original to SecureProvider upon direct request
+                if (BCComm.RegisterHoardGame(game).Result)
                 {
-                    //add to pool
-                    if (!Providers.ContainsKey(game))
+                    if (provider.Connect().Result)
                     {
-                        Providers.Add(game, new List<IGameItemProvider>());
+                        Providers[game].Add(provider);
+                        return true;
                     }
-
-                    Providers[game].Add(provider);
-
-                    return true;
                 }
             }
             return false;
@@ -262,6 +265,10 @@ namespace Hoard
         /// This might be a separate interface or class that creates a User
         /// There might be some functionality to change active account (requires game restart/ from start screen)
         /// Assume that it should setup default account for queries
+        /// TODO: I think that DefaultAccountService should be refactored into AccountService and set during Initialization
+        /// SDK should'n really care about any logins, passwords, etc. SDK should work on AccountInfo only!
+        /// It is up to developer to create all UI and flow that allows choosing proper IAccountService or way of authentication
+        /// check also comments in HoardAccountService.cs
         /// </summary>
         /// <returns></returns>
         public async Task<User> LoginPlayer()
@@ -439,9 +446,9 @@ namespace Hoard
         /// </summary>
         /// <param name="account"></param>
         /// <returns></returns>
-        public GameItem[] GetPlayerItems(AccountInfo account)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
         {
-            return GetPlayerItems(account, DefaultGame);
+            return await GetPlayerItems(account, DefaultGame).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -449,9 +456,9 @@ namespace Hoard
         /// </summary>
         /// <param name="playerID"></param>
         /// <returns></returns>
-        public GameItem[] GetPlayerItems(User user)
+        public async Task<GameItem[]> GetPlayerItems(User user)
         {
-            return GetPlayerItems(user, DefaultGame);
+            return await GetPlayerItems(user, DefaultGame).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -460,7 +467,7 @@ namespace Hoard
         /// <param name="account"></param>
         /// <param name="gameID"></param>
         /// <returns></returns>
-        public GameItem[] GetPlayerItems(AccountInfo account, GameID gameID)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, GameID gameID)
         {
             List<GameItem> items = new List<GameItem>();
             if (Providers.ContainsKey(gameID))
@@ -468,7 +475,7 @@ namespace Hoard
                 var list = Providers[gameID];
                 foreach (IGameItemProvider c in list)
                 {
-                    items.AddRange(c.GetPlayerItems(account));
+                    items.AddRange(await c.GetPlayerItems(account).ConfigureAwait(false));
                 }
             }
             return items.ToArray();
@@ -480,12 +487,12 @@ namespace Hoard
         /// <param name="user"></param>
         /// <param name="gameID"></param>
         /// <returns></returns>
-        public GameItem[] GetPlayerItems(User user, GameID gameID)
+        public async Task<GameItem[]> GetPlayerItems(User user, GameID gameID)
         {
             List<GameItem> items = new List<GameItem>();
             foreach (AccountInfo account in user.Accounts)
             {
-                items.AddRange(GetPlayerItems(account, gameID));
+                items.AddRange(await GetPlayerItems(account, gameID).ConfigureAwait(false));
             }
             return items.ToArray();
         }
@@ -495,14 +502,14 @@ namespace Hoard
         /// </summary>
         /// <param name="gameItemsParams"></param>
         /// <returns></returns>
-        public GameItem[] GetItems(GameItemsParams[] gameItemsParams)
+        public async Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
             List<GameItem> items = new List<GameItem>();
             foreach(var p in Providers)
             {
                 foreach (IGameItemProvider provider in p.Value)
                 {
-                    items.AddRange(provider.GetItems(gameItemsParams));
+                    items.AddRange(await provider.GetItems(gameItemsParams).ConfigureAwait(false));
                 }
             }
             return items.ToArray();
