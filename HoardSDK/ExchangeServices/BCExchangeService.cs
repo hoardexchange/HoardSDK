@@ -1,11 +1,10 @@
 using Hoard;
 using Hoard.BC.Contracts;
-using HoardSDK.Interfaces;
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
 
-namespace HoardSDK.ExchangeServices
+namespace Hoard.ExchangeServices
 {
     public class BCExchangeService : IExchangeService
     {
@@ -13,18 +12,13 @@ namespace HoardSDK.ExchangeServices
         private Hoard.BC.BCComm BCComm = null;
         private ExchangeContract ExchangeContract = null;
 
-        private User user;
-        public User User
-        {
-            get { return user; }
-            set { user = value; }
-        }
+        public User User {get; set;}
 
         public BCExchangeService(HoardService hoard)
         {
-            this.Hoard = hoard;
-            this.BCComm = hoard.BCComm;
-            this.user = hoard.DefaultUser;
+            Hoard = hoard;
+            BCComm = hoard.BCComm;
+            User = hoard.DefaultUser;
         }
 
         public bool Init()
@@ -63,7 +57,7 @@ namespace HoardSDK.ExchangeServices
             }
         }
 
-        public async Task<Order[]> ListOrdersAsync(GameItem gaGet, GameItem gaGive, AccountInfo account)
+        public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
         {
             // FIXME: is it possible to get orders directly from bc?
             return new Order[0];

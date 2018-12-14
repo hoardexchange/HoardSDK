@@ -1,6 +1,5 @@
-﻿using Hoard.GameItemProviders;
-using HoardSDK.ExchangeServices;
-using HoardSDK.Interfaces;
+﻿using Hoard.ExchangeServices;
+using Hoard.GameItemProviders;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

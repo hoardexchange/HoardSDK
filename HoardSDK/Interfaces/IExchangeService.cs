@@ -1,4 +1,4 @@
-﻿using Hoard;
+﻿using Hoard.ExchangeServices;
 using System.Threading.Tasks;
 
 namespace Hoard

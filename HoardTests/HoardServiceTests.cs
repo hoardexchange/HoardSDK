@@ -1,6 +1,5 @@
 ﻿using Hoard;
-using HoardSDK.ExchangeServices;
-using HoardSDK.Interfaces;
+using Hoard.ExchangeServices;
 using HoardTests.Fixtures;
 using System;
 using System.Diagnostics;
@@ -87,7 +86,7 @@ namespace HoardTests
             IExchangeService exchange = HoardService.ExchangeService;
             if (exchange != null)
             {
-                var orders = exchange.ListOrdersAsync(null, null, null).Result;
+                var orders = exchange.ListOrders(null, null, null).Result;
                 Debug.WriteLine(String.Format("Found {0} exchange orders.", orders.Length));
                 foreach (Order order in orders)
                 {

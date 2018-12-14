@@ -1,5 +1,5 @@
 ﻿using Hoard;
-using HoardSDK.ExchangeServices;
+using Hoard.ExchangeServices;
 using HoardTests.Fixtures;
 using System.Collections.Generic;
 using System.Numerics;
@@ -208,7 +208,7 @@ namespace HoardTests
 
         private Order[] ListOrders(GameItem itemGet, GameItem itemGive, AccountInfo account)
         {
-            return HoardExchangeService.ListOrdersAsync(itemGet, itemGive, account).Result;
+            return HoardExchangeService.ListOrders(itemGet, itemGive, account).Result;
         }
     }
 }

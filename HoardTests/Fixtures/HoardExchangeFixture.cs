@@ -1,6 +1,6 @@
 ﻿using Hoard;
 using Hoard.BC.Contracts;
-using HoardSDK.ExchangeServices;
+using Hoard.ExchangeServices;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
