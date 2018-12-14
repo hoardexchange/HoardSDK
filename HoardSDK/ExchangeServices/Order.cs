@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using System.Numerics;
 
-namespace HoardSDK.ExchangeServices
+namespace Hoard.ExchangeServices
 {
     public class Order
     {

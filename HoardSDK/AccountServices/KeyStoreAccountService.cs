@@ -18,14 +18,14 @@ namespace Hoard
                 PrivateKey = key;
             }
 
-            public async override Task<string> SignTransaction(byte[] input)
+            public override Task<string> SignTransaction(byte[] input)
             {
-                return await KeyStoreAccountService.SignTransaction(input,PrivateKey);
+                return KeyStoreAccountService.SignTransaction(input,PrivateKey);
             }
 
-            public async override Task<string> SignMessage(byte[] input)
+            public override Task<string> SignMessage(byte[] input)
             {
-                return await KeyStoreAccountService.SignMessage(input, PrivateKey);
+                return KeyStoreAccountService.SignMessage(input, PrivateKey);
             }
         }
 
@@ -50,25 +50,23 @@ namespace Hoard
             return accountInfo;
         }
 
-        public Task<bool> RequestAccounts(User user)
+        public async Task<bool> RequestAccounts(User user)
         {
-            var task = new Task<bool>(() =>
+            return await Task.Run(() =>
             {
-                KeyStoreUtils.EnumerateAccounts(user.UserName, Options.AccountsDir, (string accountId) =>
-                 {
-                     string password = Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
-                     Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user.UserName, accountId, password, Options.AccountsDir);
+                KeyStoreUtils.EnumerateAccounts(user.UserName, Options.AccountsDir, async (string accountId) =>
+                {
+                    string password = Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
+                    Tuple<string, string> accountTuple = await KeyStoreUtils.LoadAccount(user.UserName, accountId, password, Options.AccountsDir);
 
-                     if (accountTuple != null)
-                     {
-                         AccountInfo accountInfo = new KeyStoreAccount(accountId, accountTuple.Item1, accountTuple.Item2);
-                         user.Accounts.Add(accountInfo);
-                     }
-                 });
+                    if (accountTuple != null)
+                    {
+                        AccountInfo accountInfo = new KeyStoreAccount(accountId, accountTuple.Item1, accountTuple.Item2);
+                        user.Accounts.Add(accountInfo);
+                    }
+                });
                 return user.Accounts.Count > 0;
             });
-            task.Start();
-            return task;
         }
 
         public Task<string> SignMessage(byte[] input, AccountInfo signature)
@@ -97,19 +95,19 @@ namespace Hoard
 
         public static Task<string> SignMessage(byte[] input, string privKey)
         {
-            var task = new Task<string>(() =>
+            //CPU-bound
+            return Task.Run(() =>
             {
                 var signer = new Nethereum.Signer.EthereumMessageSigner();
                 var ecKey = new Nethereum.Signer.EthECKey(privKey);
                 return signer.Sign(input, ecKey);
             });
-            task.Start();
-            return task;
         }
 
         public static Task<string> SignTransaction(byte[] rlpEncodedTransaction, string privKey)
         {
-            var task = new Task<string>(() =>
+            //CPU-bound
+            return Task.Run(() =>
             {
                 var decodedList = RLP.Decode(rlpEncodedTransaction);
                 var decodedRlpCollection = (RLPCollection)decodedList[0];
@@ -121,8 +119,6 @@ namespace Hoard
                 signer.Sign(ecKey);
                 return signer.GetRLPEncoded().ToHex();
             });
-            task.Start();
-            return task;
         }
     }
 }

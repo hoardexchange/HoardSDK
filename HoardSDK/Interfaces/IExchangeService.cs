@@ -1,9 +1,11 @@
-﻿using Hoard;
-using HoardSDK.ExchangeServices;
+﻿using Hoard.ExchangeServices;
 using System.Threading.Tasks;
 
-namespace HoardSDK.Interfaces
+namespace Hoard
 {
+    /// <summary>
+    /// TODO: document this class
+    /// </summary>
     public interface IExchangeService
     {
         User User { get; set; }
@@ -12,7 +14,7 @@ namespace HoardSDK.Interfaces
 
         Task<bool> Deposit(GameItem item, ulong amount);
 
-        Task<Order[]> ListOrdersAsync(GameItem gaGet, GameItem gaGive, AccountInfo account);
+        Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account);
 
         Task<bool> Order(GameItem getItem, GameItem giveItem, ulong blockTimeDuration);
 

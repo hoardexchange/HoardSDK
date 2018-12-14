@@ -18,14 +18,14 @@ namespace Hoard
                 HoardSigner = signer;
             }
 
-            public async override Task<string> SignTransaction(byte[] input)
+            public override Task<string> SignTransaction(byte[] input)
             {
-                return await HoardSigner.SignTransaction(input, this);
+                return HoardSigner.SignTransaction(input, this);
             }
 
-            public async override Task<string> SignMessage(byte[] input)
+            public override Task<string> SignMessage(byte[] input)
             {
-                return await HoardSigner.SignMessage(input, this);
+                return HoardSigner.SignMessage(input, this);
             }
         }
 
@@ -76,7 +76,7 @@ namespace Hoard
             var createRequest = new RestRequest("/create_user", Method.POST);
             createRequest.RequestFormat = DataFormat.Json;
             createRequest.AddBody(new { email, password, client_id = Options.HoardAuthServiceClientId });
-            var createResponse = authClient.Execute(createRequest);
+            var createResponse = await authClient.ExecuteTaskAsync(createRequest);
 
             if (createResponse.StatusCode == System.Net.HttpStatusCode.Created)
             {
@@ -107,6 +107,14 @@ namespace Hoard
             //connect to account server using REST
             //server asks for auth token from HoardAuthService
             //to get this token we should authenticate with HoardAuthService (send password etc.)
+
+            //TODO: assume that our account service is a certified ISteamGameServer (or alike) and allows
+            //authentication via Steam API (for example using Session Tickets or Encrypted Application Tickets)
+            //in that case it doesn't need auth token from OpenID Connect server
+            //But it has to know which form of authentication to choose
+            //Ad some kind of HoardAccountService::SetAuthProvider(SteamAuthProvider p) and expose it through SDK
+            //Also developer should be able to easily set up which IAccountService is the active one
+            //Do sth similar for Switch authentication
 
             AuthToken token = null;
             //check if we have valid auth token

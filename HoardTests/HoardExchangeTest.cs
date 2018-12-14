@@ -1,5 +1,5 @@
 ﻿using Hoard;
-using HoardSDK.ExchangeServices;
+using Hoard.ExchangeServices;
 using HoardTests.Fixtures;
 using System.Collections.Generic;
 using System.Numerics;
@@ -144,10 +144,10 @@ namespace HoardTests
             success = BCExchangeService.Withdraw(items[0]).Result;
             Assert.True(success);
 
-            var items0 = HoardExchangeFixture.GetGameItems(users[0]);
-            Assert.Equal(1, items0.Count);
+            var items0 = HoardExchangeFixture.GetGameItems(users[0]).Result;
+            Assert.Single(items0);
 
-            var items1 = HoardExchangeFixture.GetGameItems(users[1]);
+            var items1 = HoardExchangeFixture.GetGameItems(users[1]).Result;
             Assert.Equal(4, items1.Count);
         }
 
@@ -208,7 +208,7 @@ namespace HoardTests
 
         private Order[] ListOrders(GameItem itemGet, GameItem itemGive, AccountInfo account)
         {
-            return HoardExchangeService.ListOrdersAsync(itemGet, itemGive, account).Result;
+            return HoardExchangeService.ListOrders(itemGet, itemGive, account).Result;
         }
     }
 }

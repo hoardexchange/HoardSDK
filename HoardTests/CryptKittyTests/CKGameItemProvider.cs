@@ -47,7 +47,7 @@ namespace HoardTests.CryptKittyTests
             Game = game;
         }
 
-        public bool Connect()
+        public async Task<bool> Connect()
         {
             Client = new RestClient("https://api.cryptokitties.co");
             Client.AutomaticDecompression = false;
@@ -60,13 +60,13 @@ namespace HoardTests.CryptKittyTests
             return new string[] {"CryptoKitty"};
         }
 
-        public GameItem[] GetPlayerItems(AccountInfo playerID)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo playerID)
         {
             List<GameItem> items = new List<GameItem>();
 
             var request = new RestRequest("kitties?owner_wallet_address=" + playerID.ID + "&limit=10&offset=0", Method.GET);
-            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-            var response = Client.Execute(request);
+            request.AddDecompressionMethod(DecompressionMethods.None);
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -84,7 +84,7 @@ namespace HoardTests.CryptKittyTests
 
             foreach (var kitty in userKitties.kitties)
             {
-                if (validateOwnerOnBC(playerID, kitty.id))
+                if (await validateOwnerOnBC(playerID, kitty.id))
                 {
                     GameItem gi = new GameItem(Game, "CK", new Metadata(playerID.ID, ulong.Parse(kitty.id), "CK_DNA"));
                     gi.State = Encoding.Unicode.GetBytes(kitty.image_url);//this should be dna!
@@ -95,23 +95,25 @@ namespace HoardTests.CryptKittyTests
 
         }
 
-        public GameItem[] GetItems(GameItemsParams[] gameItemsParams)
+        public async Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
-            return null;
+            throw new NotImplementedException();
         }
 
-        public GameItem[] GetPlayerItems(AccountInfo playerID, string itemType)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo playerID, string itemType)
         {
-            return null;
+            if (itemType == GetItemTypes()[0])
+                return await GetPlayerItems(playerID);
+            throw new ArgumentException();
         }
 
-        private bool validateOwnerOnBC(AccountInfo player, string tokenId)
+        private async Task<bool> validateOwnerOnBC(AccountInfo player, string tokenId)
         {
             BigInteger tokenBigInt = new BigInteger(Encoding.Unicode.GetBytes(tokenId));
 
             ERC721GameItemContract contract =  HoardService.Instance.BCComm.GetContract<ERC721GameItemContract>("0x06012c8cf97BEaD5deAe237070F9587f8E7A266d");
 
-            BigInteger owner = contract.OwnerOf(tokenBigInt).Result;
+            BigInteger owner = await contract.OwnerOf(tokenBigInt);
             
             return (player.ID == owner.ToString());
         }

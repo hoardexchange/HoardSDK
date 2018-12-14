@@ -1,11 +1,9 @@
-﻿using Hoard;
-using HoardSDK.Interfaces;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using RestSharp;
 using System;
 using System.Threading.Tasks;
 
-namespace HoardSDK.ExchangeServices
+namespace Hoard.ExchangeServices
 {
     public class HoardExchangeService : IExchangeService
     {
@@ -52,7 +50,7 @@ namespace HoardSDK.ExchangeServices
             throw new NotImplementedException();
         }
 
-        public async Task<Order[]> ListOrdersAsync(GameItem gaGet, GameItem gaGive, AccountInfo account)
+        public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
         {
             var jsonStr = await GetJson(
                             String.Format("exchange/orders/{0},{1},{2}",
@@ -74,7 +72,7 @@ namespace HoardSDK.ExchangeServices
                     gameItemsParams[i * 2 + 1].ContractAddress = orders[i].tokenGet;
                 }
 
-                GameItem[] itemsRetrieved = Hoard.GetItems(gameItemsParams);
+                GameItem[] itemsRetrieved = await Hoard.GetItems(gameItemsParams);
                 for (var i = 0; i < orders.Length; ++i)
                 {
                     orders[i].UpdateGameItemObjs(itemsRetrieved[i * 2 + 1], itemsRetrieved[i * 2]);
