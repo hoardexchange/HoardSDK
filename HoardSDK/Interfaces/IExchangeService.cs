@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using Hoard;
+using System.Threading.Tasks;
 
 namespace Hoard
 {
@@ -7,6 +8,10 @@ namespace Hoard
     /// </summary>
     public interface IExchangeService
     {
+        User User { get; set; }
+
+        bool Init();
+
         Task<bool> Deposit(GameItem item, ulong amount);
 
         Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account);

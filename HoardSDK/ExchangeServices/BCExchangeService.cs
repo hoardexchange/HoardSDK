@@ -1,29 +1,30 @@
+using Hoard;
 using Hoard.BC.Contracts;
-using Newtonsoft.Json;
-using RestSharp;
+using HoardSDK.Interfaces;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 
-namespace Hoard
+namespace HoardSDK.ExchangeServices
 {
-    public class HoardExchangeService : IExchangeService
+    public class BCExchangeService : IExchangeService
     {
-        HoardService Hoard = null;
-        private BC.BCComm BCComm = null;
+        private HoardService Hoard = null;
+        private Hoard.BC.BCComm BCComm = null;
         private ExchangeContract ExchangeContract = null;
-        private User User = null;
 
-        private RestClient Client = null;
+        private User user;
+        public User User
+        {
+            get { return user; }
+            set { user = value; }
+        }
 
-        public HoardExchangeService(HoardService hoard)
+        public BCExchangeService(HoardService hoard)
         {
             this.Hoard = hoard;
             this.BCComm = hoard.BCComm;
-            this.User = hoard.DefaultUser;
+            this.user = hoard.DefaultUser;
         }
 
         public bool Init()
@@ -31,41 +32,12 @@ namespace Hoard
             ExchangeContract = BCComm.GetGameExchangeContractAsync().Result;
             if (ExchangeContract == null)
                 return false;
-            return SetupClient(User);
+            return true;
         }
 
         public void Shutdown()
         {
             ExchangeContract = null;
-            Client = null;
-        }
-
-        // Setup exchange backend client. 
-        // Note: Lets assume it connects on its own, independently from item providers.
-        private bool SetupClient(User user)
-        {
-            if (Uri.IsWellFormedUriString(Hoard.Options.ExchangeServiceUrl, UriKind.Absolute))
-            {
-                Client = new RestClient(Hoard.Options.ExchangeServiceUrl);
-                Client.AutomaticDecompression = false;
-
-                //setup a cookie container for automatic cookies handling
-                Client.CookieContainer = new System.Net.CookieContainer();
-
-                return true;
-            }
-            return false;
-        }
-
-        private async Task<string> GetJson(string url, object data)
-        {
-            var request = new RestRequest(url, Method.GET);
-            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-            request.AddJsonBody(data);
-
-            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
-
-            return response.Content;
         }
 
         private class GameItemId
@@ -91,37 +63,9 @@ namespace Hoard
             }
         }
 
-        public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
+        public async Task<Order[]> ListOrdersAsync(GameItem gaGet, GameItem gaGive, AccountInfo account)
         {
-            var jsonStr = await GetJson(
-                string.Format("exchange/orders/{0},{1},{2}",
-                gaGet != null ? gaGet.Metadata.Get<string>("OwnerAddress") : "",
-                gaGive != null ? gaGive.Metadata.Get<string>("OwnerAddress") : "",
-                account != null ? account.ID : ""), null);
-
-            if (jsonStr != null)
-            {
-                var orders = JsonConvert.DeserializeObject<Order[]>(jsonStr);
-                GameItemsParams[] gameItemsParams = new GameItemsParams[orders.Length * 2];
-                for (var i = 0; i < orders.Length; ++i)
-                {
-                    gameItemsParams[i * 2] = new GameItemsParams();
-                    gameItemsParams[i * 2].ContractAddress = orders[i].tokenGive;
-                    gameItemsParams[i * 2].TokenId = orders[i].tokenIdGive.ToString();
-
-                    gameItemsParams[i * 2 + 1] = new GameItemsParams();
-                    gameItemsParams[i * 2 + 1].ContractAddress = orders[i].tokenGet;
-                }
-
-                GameItem[] itemsRetrieved = await Hoard.GetItems(gameItemsParams).ConfigureAwait(false);
-                for (var i = 0; i < orders.Length; ++i)
-                {
-                    orders[i].UpdateGameItemObjs(itemsRetrieved[i * 2 + 1], itemsRetrieved[i * 2]);
-                }
-
-                return orders;
-            }
-
+            // FIXME: is it possible to get orders directly from bc?
             return new Order[0];
         }
 
@@ -193,7 +137,7 @@ namespace Hoard
                     return await gameItemProvider.Transfer(User.ActiveAccount.ID, ExchangeContract.Address, item, amount);
                 }
             }
-            catch (Nethereum.JsonRpc.Client.RpcResponseException)
+            catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
                 // TODO: log invalid transaction
             }
@@ -221,7 +165,7 @@ namespace Hoard
                     throw new NotImplementedException();
                 }
             }
-            catch (Nethereum.JsonRpc.Client.RpcResponseException)
+            catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
                 // TODO: log invalid withdraw
             }
@@ -254,50 +198,6 @@ namespace Hoard
             }
 
             throw new NotImplementedException();
-        }
-
-        public void SetUser(User user)
-        {
-            User = user;
-        }
-    }
-
-    public class Order
-    {
-        [JsonProperty(propertyName: "tokenGet")]
-        public string tokenGet { get; private set; }
-
-        [JsonProperty(propertyName: "amountGet")]
-        public BigInteger amountGet { get; private set; }
-
-        [JsonProperty(propertyName: "tokenGive")]
-        public string tokenGive { get; private set; }
-
-        [JsonProperty(propertyName: "tokenId")]
-        public BigInteger tokenIdGive { get; private set; }
-
-        [JsonProperty(propertyName: "amountGive")]
-        public BigInteger amountGive { get; private set; }
-
-        [JsonProperty(propertyName: "expires")]
-        public BigInteger expires { get; private set; }
-
-        [JsonProperty(propertyName: "nonce")]
-        public BigInteger nonce { get; private set; }
-
-        [JsonProperty(propertyName: "amount")]
-        public BigInteger amount { get; set; }
-
-        [JsonProperty(propertyName: "user")]
-        public string user { get; private set; }
-
-        public GameItem gameItemGet { get; private set; } = null;
-        public GameItem gameItemGive { get; private set; } = null;
-
-        public void UpdateGameItemObjs(GameItem gaGet, GameItem gaGive)
-        {
-            gameItemGet = gaGet;
-            gameItemGive = gaGive;
         }
     }
 }

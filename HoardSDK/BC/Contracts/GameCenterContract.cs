@@ -1,11 +1,9 @@
 ﻿using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
-using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
 {
@@ -136,34 +134,34 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<bool>(gameID);
         }
 
-        public async Task<TransactionReceipt> AddGameAsync(BCComm comm, string gameAddr, AccountInfo account)
+        public async Task<TransactionReceipt> AddGameAsync(string gameAddr, AccountInfo account)
         {
             var function = GetFunctionAddGame();
-            return await comm.EvaluateOnBC(account, function, gameAddr);
+            return await BCComm.EvaluateOnBC(web3, account, function, gameAddr);
         }
 
-        public async Task<TransactionReceipt> AddAdminAsync(BCComm comm, string adminAddr, AccountInfo account)
+        public async Task<TransactionReceipt> AddAdminAsync(string adminAddr, AccountInfo account)
         {
             var function = GetFunctionAddAdmin();
-            return await comm.EvaluateOnBC(account, function, adminAddr);
+            return await BCComm.EvaluateOnBC(web3, account, function, adminAddr);
         }
 
-        public async Task<TransactionReceipt> RemoveAdminAsync(BCComm comm, string adminAddr, AccountInfo account)
+        public async Task<TransactionReceipt> RemoveAdminAsync(string adminAddr, AccountInfo account)
         {
             var function = GetFunctionRemoveAdmin();
-            return await comm.EvaluateOnBC(account, function, adminAddr);
+            return await BCComm.EvaluateOnBC(web3, account, function, adminAddr);
         }
 
-        public async Task<TransactionReceipt> SetExchangeAddressAsync(BCComm comm, string address, AccountInfo account)
+        public async Task<TransactionReceipt> SetExchangeAddressAsync(string address, AccountInfo account)
         {
             var function = GetFunctionSetExchangeAddress();
-            return await comm.EvaluateOnBC(account, function, address);
+            return await BCComm.EvaluateOnBC(web3, account, function, address);
         }
 
-        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(BCComm comm, string address, AccountInfo account)
+        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(string address, AccountInfo account)
         {
             var function = GetFunctionSetHoardTokenAddress();
-            return await comm.EvaluateOnBC(account, function, address);
+            return await BCComm.EvaluateOnBC(web3, account, function, address);
         }
 
         public async Task<string> GetExchangeAddressAsync()
