@@ -357,8 +357,9 @@ namespace Hoard
             return null;
         }
 
-        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
+        public Task<string> SignMessage(byte[] input, AccountInfo signature)
         {
+
             var signer = new Nethereum.Signer.EthereumMessageSigner();
             MemoryStream ms = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(ms);
@@ -377,7 +378,7 @@ namespace Hoard
             return Task.FromResult<string>("");
         }
 
-        public Task<string> SignMessage(byte[] input, AccountInfo signature)
+        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
         {
             throw new NotImplementedException();
         }
