@@ -23,6 +23,11 @@
       <Version>106.5.4</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="websocket-sharp">
+      <HintPath>bin\Release\websocket-sharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>
     </PostBuildEvent>
