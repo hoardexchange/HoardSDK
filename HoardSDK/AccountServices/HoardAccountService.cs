@@ -295,8 +295,7 @@ namespace Hoard
                 writer.Write(StringToByteArray(token.AccessToken, (int)Helper.kTokenLength));
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
-                socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
-                if(socketData.ReceivedAccounts != null)
+                if(socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS) && (socketData.ReceivedAccounts != null))
                 {
                     for(uint i = 0; i < socketData.ReceivedAccounts.Length; i++)
                     {
@@ -363,8 +362,8 @@ namespace Hoard
             {
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
-                socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
-                return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
+                if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+                    return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
             }
             return Task.FromResult<string>("");
         }
