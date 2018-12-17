@@ -10,7 +10,7 @@ namespace Hoard.HW.Ledger.Ethereum
         {
             private EthLedgerWallet Wallet;
 
-            public HDWalletAccountInfo(string name, string id, EthLedgerWallet wallet)
+            public HDWalletAccountInfo(string name, HoardID id, EthLedgerWallet wallet)
                 :base(name,id)
             {
                 Wallet = wallet;
@@ -40,7 +40,7 @@ namespace Hoard.HW.Ledger.Ethereum
             var output = await SendRequestAsync(EthGetAddress.Request(derivation));
             if(IsSuccess(output.StatusCode))
             {
-                var address = EthGetAddress.GetAddress(output.Data);
+                var address = new HoardID(EthGetAddress.GetAddress(output.Data));
                 user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this));
                 return true;
             }

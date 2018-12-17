@@ -13,7 +13,7 @@ namespace Hoard
             private HoardAccountService HoardSigner;
 
             public HoardAccount(string name, HoardAccountService signer)
-                : base(name, "")
+                : base(name, new HoardID(System.Numerics.BigInteger.Zero))
             {
                 HoardSigner = signer;
             }

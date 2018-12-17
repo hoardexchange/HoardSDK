@@ -10,7 +10,7 @@ namespace Hoard.HW.Trezor.Ethereum
         {
             private EthTrezorWallet Wallet;
 
-            public HDWalletAccountInfo(string name, string id, EthTrezorWallet wallet)
+            public HDWalletAccountInfo(string name, HoardID id, EthTrezorWallet wallet)
                 : base(name, id)
             {
                 Wallet = wallet;
@@ -41,7 +41,7 @@ namespace Hoard.HW.Trezor.Ethereum
         public override async Task<bool> RequestAccounts(User user)
         {
             var output = await SendRequestAsync(EthGetAddress.Request(indices));
-            var address = EthGetAddress.GetAddress(output);
+            var address = new HoardID(EthGetAddress.GetAddress(output));
             user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this));
             return true;
         }
