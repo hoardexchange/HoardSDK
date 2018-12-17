@@ -27,7 +27,6 @@ namespace HoardTests.Fixtures
         public BCExchangeService BCExchangeService { get; private set; }
         public HoardExchangeService HoardExchangeService { get; private set; }
 
-
         private Process cmd = new Process();
 
         public HoardExchangeFixture()
@@ -35,17 +34,14 @@ namespace HoardTests.Fixtures
             base.Initialize(HoardGameTestName);
 
             Users = GetUsers();
-            HoardService.DefaultUser = Users[0];
 
             RunExchangeServer();
 
             BCExchangeService = new BCExchangeService(HoardService);
             BCExchangeService.Init();
-            BCExchangeService.User = Users[0];
 
             HoardExchangeService = new HoardExchangeService(HoardService);
             HoardExchangeService.Init();
-            HoardExchangeService.User = Users[0];
 
             GameIDs = HoardService.QueryHoardGames().Result;
             foreach (var game in GameIDs)
@@ -53,7 +49,7 @@ namespace HoardTests.Fixtures
                 HoardService.RegisterHoardGame(game);
             }
 
-            Items = GetGameItems(HoardService.DefaultUser).Result;
+            Items = GetGameItems(Users[0]).Result;
             Assert.Equal(3, Items.Count);
             Assert.True(Items[0].Metadata is ERC223GameItemContract.Metadata);
             Assert.True(Items[1].Metadata is ERC223GameItemContract.Metadata);
@@ -73,15 +69,18 @@ namespace HoardTests.Fixtures
             cmd.StartInfo = new ProcessStartInfo
             {
                 FileName = "cmd",
-                Arguments = "/c python manage.py runserver --hoardaddress " + HoardService.Options.GameCenterContract,
+                Arguments = "/c \""+ GetPythonInstallPath() + "\" manage.py runserver --hoardaddress " + HoardService.Options.GameCenterContract,
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false
             };
 
             cmd.Start();
             cmd.OutputDataReceived += new DataReceivedEventHandler(OutputHandler);
+            cmd.ErrorDataReceived += new DataReceivedEventHandler(OutputHandler);
 
             cmd.BeginOutputReadLine();
+            cmd.BeginErrorReadLine();
 
             Directory.SetCurrentDirectory(EnvironmentCurrentDirectory);
         }

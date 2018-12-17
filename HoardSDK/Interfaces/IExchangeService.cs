@@ -8,18 +8,16 @@ namespace Hoard
     /// </summary>
     public interface IExchangeService
     {
-        User User { get; set; }
-
         bool Init();
-
-        Task<bool> Deposit(GameItem item, ulong amount);
 
         Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account);
 
-        Task<bool> Order(GameItem getItem, GameItem giveItem, ulong blockTimeDuration);
+        Task<bool> Deposit(AccountInfo account, GameItem item, ulong amount);
 
-        Task<bool> Trade(Order order);
+        Task<bool> Order(AccountInfo account, GameItem getItem, GameItem giveItem, ulong blockTimeDuration);
 
-        Task<bool> Withdraw(GameItem item);
+        Task<bool> Trade(AccountInfo account, Order order);
+
+        Task<bool> Withdraw(AccountInfo account, GameItem item);
     }
 }

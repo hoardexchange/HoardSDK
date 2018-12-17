@@ -138,7 +138,7 @@ namespace HoardTests
 
             Assert.NotNull(gameItemProvider);
 
-            DefaultPlayer = HoardServiceFixture.UserIDs[2];
+            DefaultPlayer = hoardFixture.UserIDs[2];
         }
 
         [Fact]

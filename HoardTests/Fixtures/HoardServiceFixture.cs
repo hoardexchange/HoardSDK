@@ -31,7 +31,7 @@ namespace HoardTests.Fixtures
 
         public HoardService HoardService { get; private set; }
 
-        public static List<User> UserIDs = new List<User>();
+        public List<User> UserIDs = new List<User>();
         private Process cmd = new Process();
 
         public HoardServiceFixture()
@@ -48,20 +48,29 @@ namespace HoardTests.Fixtures
             cmd.Close();
         }
 
+        public async Task<User> CreateUser()
+        {
+            //create user
+            User user = new User("testPlayer");
+
+            KeyStoreAccountService service = new KeyStoreAccountService(new UserInputProviderFixture());
+            AccountInfo mainAcc = await service.CreateAccount("default", user);
+            user.SetActiveAccount(mainAcc);
+
+            return user;
+        }
+
         public void InitializeFromConfig(string configPath = null)
         {
             HoardServiceConfig config = HoardServiceConfig.Load(configPath);
             HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
-            options.UserInputProvider = new UserInputProviderFixture();
 
             HoardService = HoardService.Instance;
 
             Assert.True(HoardService.Initialize(options), "ERROR: Could not initialize HOARD!");
 
             //authenticate user
-            UserIDs.Add(HoardService.Instance.LoginPlayer().Result);
-
-            HoardService.DefaultUser = UserIDs[0];
+            UserIDs.Add(CreateUser().Result);
         }
 
         public void Initialize(string testName = null)
@@ -69,7 +78,6 @@ namespace HoardTests.Fixtures
             Deploy(testName);
 
             HoardServiceOptions options = new HoardServiceOptions();
-            options.UserInputProvider = new UserInputProviderFixture();
     
             FileIniDataParser parser = new FileIniDataParser();
             IniData data = parser.ReadFile("settings.ini");
@@ -84,9 +92,7 @@ namespace HoardTests.Fixtures
             Assert.True(HoardService.Initialize(options), "ERROR: Could not initialize HOARD!");
 
             //authenticate user
-            UserIDs.Add(HoardService.Instance.LoginPlayer().Result);
-
-            HoardService.DefaultUser = UserIDs[0];
+            UserIDs.Add(CreateUser().Result);
         }
 
         private void Deploy(string testName = null)
@@ -96,8 +102,9 @@ namespace HoardTests.Fixtures
             cmd.StartInfo = new ProcessStartInfo
             {
                 FileName = "cmd",
-                Arguments = "/c python deploy_hoard_contracts.py",
+                Arguments = "/c \"" + GetPythonInstallPath() + "\" deploy_hoard_contracts.py",
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false
             };
 
@@ -108,8 +115,10 @@ namespace HoardTests.Fixtures
 
             cmd.Start();
             cmd.OutputDataReceived += new DataReceivedEventHandler(OutputHandler);
+            cmd.ErrorDataReceived += new DataReceivedEventHandler(OutputHandler);
 
             cmd.BeginOutputReadLine();
+            cmd.BeginErrorReadLine();
             cmd.WaitForExit();
 
             Directory.SetCurrentDirectory(EnvironmentCurrentDirectory);
@@ -120,10 +129,22 @@ namespace HoardTests.Fixtures
         private static void OutputHandler(object sendingProcess, DataReceivedEventArgs outLine)
         {
             // Collect the sort command output.
-            if (!String.IsNullOrEmpty(outLine.Data))
+            if (!string.IsNullOrEmpty(outLine.Data))
             {
                 Trace.WriteLine(outLine.Data);
             }
+        }
+
+        protected static string GetPythonInstallPath()
+        {
+            Microsoft.Win32.RegistryKey localmachineKey = Microsoft.Win32.RegistryKey.OpenBaseKey(
+                Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64);
+            var pythonKey = localmachineKey.OpenSubKey(@"SOFTWARE\Python\PythonCore\3.6\InstallPath");
+            if (pythonKey == null)
+                return null;
+
+            string filePath = (string)pythonKey.GetValue("ExecutablePath");
+            return filePath;
         }
     }
 }

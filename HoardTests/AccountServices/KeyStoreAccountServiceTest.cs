@@ -27,9 +27,7 @@ namespace HoardTests.AccountServices
 
         public KeyStoreAccountServiceTest()
         {
-            var options = new HoardServiceOptions();
-            options.UserInputProvider = new UserInputProviderFixture();
-            signer = new KeyStoreAccountService(options);
+            signer = new KeyStoreAccountService(new UserInputProviderFixture());
             user = new User("KeyStoreUser");
             user.SetActiveAccount(signer.CreateAccount("KeyStoreAccount", user).Result);
         }

@@ -29,20 +29,25 @@ namespace Hoard
             }
         }
 
-        private HoardServiceOptions Options;
+        private string AccountsDir = null;
+        private IUserInputProvider UserInputProvider = null;
 
-        public KeyStoreAccountService(HoardServiceOptions options)
+        public KeyStoreAccountService(IUserInputProvider userInputProvider, string accountsDir = null)
         {
-            Options = options;
+            UserInputProvider = userInputProvider;
+            if (accountsDir != null)
+                AccountsDir = accountsDir;
+            else
+                AccountsDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Hoard", "accounts");
         }
 
         public async Task<AccountInfo> CreateAccount(string name, User user)
         {
             System.Diagnostics.Trace.TraceInformation("Generating user account.");
 
-            string password = await Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
+            string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
 
-            Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, name, password, Options.AccountsDir);
+            Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, name, password, AccountsDir);
 
             AccountInfo accountInfo = new KeyStoreAccount(name, accountTuple.Item1, accountTuple.Item2);
             user.Accounts.Add(accountInfo);
@@ -54,10 +59,10 @@ namespace Hoard
         {
             return await Task.Run(() =>
             {
-                KeyStoreUtils.EnumerateAccounts(user.UserName, Options.AccountsDir, async (string accountId) =>
+                KeyStoreUtils.EnumerateAccounts(user.UserName, AccountsDir, async (string accountId) =>
                 {
-                    string password = Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
-                    Tuple<string, string> accountTuple = await KeyStoreUtils.LoadAccount(user.UserName, accountId, password, Options.AccountsDir);
+                    string password = UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
+                    Tuple<string, string> accountTuple = await KeyStoreUtils.LoadAccount(user.UserName, accountId, password, AccountsDir);
 
                     if (accountTuple != null)
                     {

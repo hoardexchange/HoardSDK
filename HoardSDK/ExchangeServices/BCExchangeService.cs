@@ -1,4 +1,3 @@
-using Hoard;
 using Hoard.BC.Contracts;
 using System;
 using System.Numerics;
@@ -9,16 +8,13 @@ namespace Hoard.ExchangeServices
     public class BCExchangeService : IExchangeService
     {
         private HoardService Hoard = null;
-        private Hoard.BC.BCComm BCComm = null;
+        private BC.BCComm BCComm = null;
         private ExchangeContract ExchangeContract = null;
-
-        public User User {get; set;}
 
         public BCExchangeService(HoardService hoard)
         {
             Hoard = hoard;
             BCComm = hoard.BCComm;
-            User = hoard.DefaultUser;
         }
 
         public bool Init()
@@ -63,12 +59,12 @@ namespace Hoard.ExchangeServices
             return new Order[0];
         }
 
-        public async Task<bool> Trade(Order order)
+        public async Task<bool> Trade(AccountInfo account, Order order)
         {
             if (order.gameItemGive.Metadata is ERC223GameItemContract.Metadata)
             {
                 return await ExchangeContract.Trade(
-                    User.ActiveAccount,
+                    account,
                     order.tokenGet,
                     order.amountGet,
                     order.tokenGive,
@@ -81,7 +77,7 @@ namespace Hoard.ExchangeServices
             else if (order.gameItemGive.Metadata is ERC721GameItemContract.Metadata)
             {
                 return await ExchangeContract.TradeERC721(
-                    User.ActiveAccount,
+                    account,
                     order.tokenGet,
                     order.amountGet,
                     order.tokenGive,
@@ -95,12 +91,12 @@ namespace Hoard.ExchangeServices
             throw new NotImplementedException();
         }
 
-        public async Task<bool> Order(GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
+        public async Task<bool> Order(AccountInfo account, GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
         {
             if (giveItem.Metadata is ERC223GameItemContract.Metadata)
             {
                 return await ExchangeContract.Order(
-                    User.ActiveAccount,
+                    account,
                     getItem.Metadata.Get<string>("OwnerAddress"),
                     getItem.Metadata.Get<BigInteger>("Balance"),
                     giveItem.Metadata.Get<string>("OwnerAddress"),
@@ -110,7 +106,7 @@ namespace Hoard.ExchangeServices
             else if (giveItem.Metadata is ERC721GameItemContract.Metadata)
             {
                 return await ExchangeContract.OrderERC721(
-                    User.ActiveAccount,
+                    account,
                     getItem.Metadata.Get<string>("OwnerAddress"),
                     getItem.Metadata.Get<BigInteger>("Balance"),
                     giveItem.Metadata.Get<string>("OwnerAddress"),
@@ -121,14 +117,14 @@ namespace Hoard.ExchangeServices
             throw new NotImplementedException();
         }
 
-        public async Task<bool> Deposit(GameItem item, ulong amount)
+        public async Task<bool> Deposit(AccountInfo account, GameItem item, ulong amount)
         {
             try
             {
                 IGameItemProvider gameItemProvider = Hoard.GetGameItemProvider(item);
                 if (gameItemProvider != null)
                 {
-                    return await gameItemProvider.Transfer(User.ActiveAccount.ID, ExchangeContract.Address, item, amount);
+                    return await gameItemProvider.Transfer(account.ID, ExchangeContract.Address, item, amount);
                 }
             }
             catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
@@ -138,19 +134,19 @@ namespace Hoard.ExchangeServices
             return false;
         }
 
-        public async Task<bool> Withdraw(GameItem item)
+        public async Task<bool> Withdraw(AccountInfo account, GameItem item)
         {
             try
             {
                 if (item.Metadata is ERC223GameItemContract.Metadata)
                 {
-                    return await ExchangeContract.Withdraw(User.ActiveAccount,
+                    return await ExchangeContract.Withdraw(account,
                                                             item.Metadata.Get<string>("OwnerAddress"),
                                                             item.Metadata.Get<BigInteger>("Balance"));
                 }
                 else if (item.Metadata is ERC721GameItemContract.Metadata)
                 {
-                    return await ExchangeContract.WithdrawERC721(User.ActiveAccount,
+                    return await ExchangeContract.WithdrawERC721(account,
                                                                 item.Metadata.Get<string>("OwnerAddress"),
                                                                 item.Metadata.Get<BigInteger>("ItemId"));
                 }
@@ -166,12 +162,12 @@ namespace Hoard.ExchangeServices
             return false;
         }
 
-        public async Task<bool> CancelOrder(Order order)
+        public async Task<bool> CancelOrder(AccountInfo account, Order order)
         {
             if (order.gameItemGive.Metadata is ERC223GameItemContract.Metadata)
             {
                 return await ExchangeContract.CancelOrder(
-                    User.ActiveAccount,
+                   account,
                     order.tokenGet,
                     order.amountGet,
                     order.tokenGive,
@@ -182,7 +178,7 @@ namespace Hoard.ExchangeServices
             else if (order.gameItemGive.Metadata is ERC721GameItemContract.Metadata)
             {
                 return await ExchangeContract.CancelOrderERC721(
-                    User.ActiveAccount,
+                    account,
                     order.tokenGet,
                     order.amountGet,
                     order.tokenGive,

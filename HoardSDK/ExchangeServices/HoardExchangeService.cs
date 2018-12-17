@@ -10,17 +10,9 @@ namespace Hoard.ExchangeServices
         private HoardService Hoard = null;
         private RestClient Client = null;
 
-        private User user;
-        public User User
-        {
-            get { return user; }
-            set { user = value; }
-        }
-
         public HoardExchangeService(HoardService hoard)
         {
-            this.Hoard = hoard;
-            this.user = hoard.DefaultUser;
+            Hoard = hoard;
         }
 
         // Setup exchange backend client. 
@@ -45,7 +37,7 @@ namespace Hoard.ExchangeServices
             Client = null;
         }
 
-        public Task<bool> Deposit(GameItem item, ulong amount)
+        public Task<bool> Deposit(AccountInfo account, GameItem item, ulong amount)
         {
             throw new NotImplementedException();
         }
@@ -53,12 +45,12 @@ namespace Hoard.ExchangeServices
         public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
         {
             var jsonStr = await GetJson(
-                            String.Format("exchange/orders/{0},{1},{2}",
+                            string.Format("exchange/orders/{0},{1},{2}",
                             gaGet != null ? gaGet.Metadata.Get<string>("OwnerAddress") : "",
                             gaGive != null ? gaGive.Metadata.Get<string>("OwnerAddress") : "",
                             account != null ? account.ID : ""), null);
 
-            if (jsonStr != null)
+            if (!string.IsNullOrEmpty(jsonStr))
             {
                 var orders = JsonConvert.DeserializeObject<Order[]>(jsonStr);
                 GameItemsParams[] gameItemsParams = new GameItemsParams[orders.Length * 2];
@@ -84,17 +76,17 @@ namespace Hoard.ExchangeServices
             return new Order[0];
         }
 
-        public Task<bool> Order(GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
+        public Task<bool> Order(AccountInfo account, GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
         {
             throw new NotImplementedException();
         }
 
-        public Task<bool> Trade(Order order)
+        public Task<bool> Trade(AccountInfo account, Order order)
         {
             throw new NotImplementedException();
         }
 
-        public Task<bool> Withdraw(GameItem item)
+        public Task<bool> Withdraw(AccountInfo account, GameItem item)
         {
             throw new NotImplementedException();
         }

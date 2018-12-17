@@ -29,9 +29,10 @@ namespace Hoard
             }
         }
 
-        RestClient authClient = null;
-        HoardServiceOptions Options = null;
-        Dictionary<User, AuthToken> userAuthTokens = new Dictionary<User, AuthToken>();
+        RestClient AuthClient = null;
+        IUserInputProvider UserInputProvider = null;
+        string ClientId = null;
+        Dictionary<User, AuthToken> UserAuthTokens = new Dictionary<User, AuthToken>();
 
         class ErrorResponse
         {
@@ -57,10 +58,11 @@ namespace Hoard
             }
         }
 
-        public HoardAccountService(HoardServiceOptions options)
+        public HoardAccountService(string url, string clientId, IUserInputProvider userInputProvider)
         {
-            Options = options;
-            authClient = new RestClient(options.HoardAuthServiceUrl);
+            UserInputProvider = userInputProvider;
+            ClientId = clientId;
+            AuthClient = new RestClient(url);
         }
 
         public async Task<AccountInfo> CreateAccount(string name, User user)
@@ -69,14 +71,14 @@ namespace Hoard
 
             string email = user.HoardId;
             if (email == "")
-                email = await Options.UserInputProvider.RequestInput(user, eUserInputType.kEmail, "email");
+                email = await UserInputProvider.RequestInput(user, eUserInputType.kEmail, "email");
 
-            string password = await Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
+            string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
 
             var createRequest = new RestRequest("/create_user", Method.POST);
             createRequest.RequestFormat = DataFormat.Json;
-            createRequest.AddBody(new { email, password, client_id = Options.HoardAuthServiceClientId });
-            var createResponse = await authClient.ExecuteTaskAsync(createRequest);
+            createRequest.AddBody(new { email, password, client_id = ClientId });
+            var createResponse = await AuthClient.ExecuteTaskAsync(createRequest);
 
             if (createResponse.StatusCode == System.Net.HttpStatusCode.Created)
             {
@@ -118,13 +120,13 @@ namespace Hoard
 
             AuthToken token = null;
             //check if we have valid auth token
-            if (!userAuthTokens.TryGetValue(user, out token) || !token.IsValid())
+            if (!UserAuthTokens.TryGetValue(user, out token) || !token.IsValid())
             {
                 //none found ask for a new one
                 token = await RequestAuthToken(user);
                 //store
                 if (token != null)
-                    userAuthTokens[user] = token;
+                    UserAuthTokens[user] = token;
             }
 
             if (token != null)
@@ -145,17 +147,17 @@ namespace Hoard
 
         private async Task<AuthToken> RequestAuthToken(User user)
         {
-            string password = await Options.UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
+            string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
 
             var tokenRequest = new RestRequest("/token", Method.POST);
             tokenRequest.AddParameter("grant_type", "password");
             tokenRequest.AddParameter("username", user.HoardId);
             tokenRequest.AddParameter("password", password);
-            tokenRequest.AddParameter("client_id", Options.HoardAuthServiceClientId);
+            tokenRequest.AddParameter("client_id", ClientId);
 
             DateTime tokenExpireDate = DateTime.UtcNow;
 
-            var tokenResponse = await authClient.ExecuteTaskAsync(tokenRequest);
+            var tokenResponse = await AuthClient.ExecuteTaskAsync(tokenRequest);
 
             if (tokenResponse.StatusCode == System.Net.HttpStatusCode.OK)
             {

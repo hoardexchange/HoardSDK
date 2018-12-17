@@ -64,18 +64,18 @@ namespace HoardTests
             foreach (GameID game in games)
             {
                 //Register hoard provider for this gam
-                Debug.WriteLine(String.Format("Registering Hoard game {0}", game.Name));
+                Debug.WriteLine(string.Format("Registering Hoard game {0}", game.Name));
                 HoardService.RegisterHoardGame(game);
 
-                Debug.WriteLine(String.Format("Getting player items for game {0}", game.Name));
-                GameItem[] items = HoardService.GetPlayerItems(HoardService.DefaultUser, game).Result;
+                Debug.WriteLine(string.Format("Getting player items for game {0}", game.Name));
+                GameItem[] items = HoardService.GetPlayerItems(hoardFixture.UserIDs[0], game).Result;
 
-                Debug.WriteLine(String.Format("Found {0} items.", items.Length));
+                Debug.WriteLine(string.Format("Found {0} items.", items.Length));
                 foreach (GameItem gi in items)
                 {
                     //assume we need to populate properties
                     //TODO: if properties is not null we would need to compare state with some cached data and if there is mismatch update too
-                    Debug.WriteLine(String.Format("Getting properties for item {0}:{1}...", gi.Symbol, gi.State));
+                    Debug.WriteLine(string.Format("Getting properties for item {0}:{1}...", gi.Symbol, gi.State));
                     if (gi.Properties == null)
                         HoardService.FetchItemProperties(gi);
                     //TODO: enumerate properties...
@@ -87,10 +87,10 @@ namespace HoardTests
             if (exchange != null)
             {
                 var orders = exchange.ListOrders(null, null, null).Result;
-                Debug.WriteLine(String.Format("Found {0} exchange orders.", orders.Length));
+                Debug.WriteLine(string.Format("Found {0} exchange orders.", orders.Length));
                 foreach (Order order in orders)
                 {
-                    Debug.WriteLine(String.Format("Order: Buy {0} {1} for {2} {3}.",
+                    Debug.WriteLine(string.Format("Order: Buy {0} {1} for {2} {3}.",
                         order.amountGive,
                         order.gameItemGive.Symbol,
                         order.amountGet,

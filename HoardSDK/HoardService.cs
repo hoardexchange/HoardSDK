@@ -25,11 +25,6 @@ namespace Hoard
         public GameID DefaultGame { get; private set; } = GameID.kInvalidID;
 
         /// <summary>
-        /// Default player.
-        /// </summary>
-        public User DefaultUser { get; set; } = null;
-
-        /// <summary>
         /// Game exchange service.
         /// </summary>
         public IExchangeService ExchangeService { get; private set; } = null;
@@ -38,16 +33,6 @@ namespace Hoard
         /// List of registered GameItemProviders
         /// </summary>
         private List<IItemPropertyProvider> ItemPropertyProviders = new List<IItemPropertyProvider>();
-
-        /// <summary>
-        /// Communication channels with hoard account services.
-        /// </summary>
-        private List<IAccountService> AccountServices = new List<IAccountService>();
-
-        /// <summary>
-        /// Default Account service
-        /// </summary>
-        public IAccountService DefaultAccountService { get; set; } = null;
         
         /// <summary>
         /// Communication channel with block chain.
@@ -75,12 +60,12 @@ namespace Hoard
         /// <param name="item">Game item to be transfered.</param>
         /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
-        public async Task<bool> RequestGameItemTransfer(User recipient, GameItem item, ulong amount)
+        public async Task<bool> RequestGameItemTransfer(AccountInfo sender, AccountInfo recipient, GameItem item, ulong amount)
         {
             IGameItemProvider gameItemProvider = GetGameItemProvider(item);
-            if (gameItemProvider != null && DefaultUser.ActiveAccount != null && recipient.ActiveAccount != null)
+            if (gameItemProvider != null && sender != null && recipient != null)
             {
-                return await gameItemProvider.Transfer(DefaultUser.ActiveAccount.ID, recipient.ActiveAccount.ID, item, amount);
+                return await gameItemProvider.Transfer(sender.ID, recipient.ID, item, amount);
             }
 
             return false;
@@ -141,23 +126,6 @@ namespace Hoard
         {
             Options = options;
 
-            //register known account services
-            AccountServices.Clear();
-            AccountServices.Add(new KeyStoreAccountService(Options));
-            AccountServices.Add(new HoardAccountService(Options));
-            {
-                IAccountService service = HW.Ledger.LedgerFactory.GetLedgerWalletAsync(HW.DerivationPath.BIP44).Result;
-                if (service!=null)
-                    AccountServices.Add(service);
-            }
-            {
-                IAccountService service = HW.Trezor.TrezorFactory.GetTrezorWalletAsync(HW.DerivationPath.BIP44).Result;
-                if (service!=null)
-                    AccountServices.Add(service);
-            }
-
-            DefaultAccountService = AccountServices[0];
-
             //access point to block chain - a must have
             BCComm = new BC.BCComm(Options.RpcClient, Options.GameCenterContract);
             Tuple<bool,string> result = BCComm.Connect().Result;
@@ -188,12 +156,10 @@ namespace Hoard
         public bool Shutdown()
         {
             DefaultGame = GameID.kInvalidID;
-            DefaultUser = null;
             ExchangeService = null;
             ItemPropertyProviders.Clear();
             BCComm = null;
             Providers.Clear();
-            AccountServices.Clear();
 
             return true;
         }
@@ -257,55 +223,6 @@ namespace Hoard
                 return true;
             }
             return false;
-        }
-
-        /// <summary>
-        /// This function is work in progress: we need a complete UI solution that allows user to enter login, password when prompted
-        /// as well as choose which account service to use or even which account to use.
-        /// This might be a separate interface or class that creates a User
-        /// There might be some functionality to change active account (requires game restart/ from start screen)
-        /// Assume that it should setup default account for queries
-        /// TODO: I think that DefaultAccountService should be refactored into AccountService and set during Initialization
-        /// SDK should'n really care about any logins, passwords, etc. SDK should work on AccountInfo only!
-        /// It is up to developer to create all UI and flow that allows choosing proper IAccountService or way of authentication
-        /// check also comments in HoardAccountService.cs
-        /// </summary>
-        /// <returns></returns>
-        public async Task<User> LoginPlayer()
-        {
-            if (Options.UserInputProvider == null)
-            {
-                Trace.Fail("UserInputProvider is not set. Hoard Service is not initialized properly!");
-                return null;
-            }
-
-            User user = new User("player");
-
-            // ask for hoard account identity
-            user.HoardId = await Options.UserInputProvider.RequestInput(null, eUserInputType.kEmail, "Hoard account username (email)");
-
-            //add accounts for user from all known services
-            foreach (IAccountService service in AccountServices)
-            {
-                bool found = await service.RequestAccounts(user);
-            }
-
-            if (user.Accounts.Count > 0)
-                user.SetActiveAccount(user.Accounts[0]);
-            else
-            {
-                //TODO: ask user to choose accountservice
-                IAccountService accountService = DefaultAccountService;
-                AccountInfo newAccount = await accountService.CreateAccount("default", user);
-                if (newAccount == null)
-                    return null;
-                user.SetActiveAccount(newAccount);
-            }
-
-            if (DefaultUser == null)
-                DefaultUser = user;
-
-            return user;
         }
 
         #region PRIVATE SECTION
