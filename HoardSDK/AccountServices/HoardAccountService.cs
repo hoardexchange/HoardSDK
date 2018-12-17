@@ -31,15 +31,29 @@ namespace Hoard
             kSignature = 65,
             kHash = 32
         }
+ 
+        public class SocketData
+        {
+            public string[] ReceivedAccounts = null;
+            public byte[] ReceivedSignature = new byte[(int)Helper.kSignature];
+            public ManualResetEvent ResponseEvent = new ManualResetEvent(false);
+            public WebSocket Socket = null;
+
+            public SocketData()
+            {
+            }
+        }
 
         public class HoardAccount : AccountInfo
         {
             private HoardAccountService HoardSigner;
+            public User Owner;
 
-            public HoardAccount(string name, string id, HoardAccountService signer)
+            public HoardAccount(string name, string id, User user, HoardAccountService signer)
                 : base(name, id)
             {
                 HoardSigner = signer;
+                Owner = user;
             }
 
             public override Task<string> SignTransaction(byte[] input)
@@ -56,11 +70,9 @@ namespace Hoard
         RestClient AuthClient = null;
         IUserInputProvider UserInputProvider = null;
         string ClientId = null;
-        Dictionary<User, AuthToken> UserAuthTokens = new Dictionary<User, AuthToken>();
-        WebSocket SignerClient = null;
-        ManualResetEvent ResponseEvent = new ManualResetEvent(false);
-        string[] ReceivedAccounts = null;
-        byte[] ReceivedSignature = new byte[(int)Helper.kSignature];
+        Dictionary<User, AuthToken> UserAuthTokens = new Dictionary<User, AuthToken>();        
+        string SignerUrl = "";
+        Dictionary<User, SocketData> SignerClients = new Dictionary<User, SocketData>();
 
         static UInt32 MessagePrefix = 0xaabbccdd;
         static int MAX_WAIT_TIME_IN_MS = 20000;
@@ -99,32 +111,10 @@ namespace Hoard
             UserInputProvider = userInputProvider;
             ClientId = clientId;
             AuthClient = new RestClient(url);
-            SignerClient = new WebSocket(url, "internal-hoard-protocol");
-            SignerClient.OnMessage += (sender, e) =>
-            {
-                Debug.WriteLine("Message received: " + e.Data);
-                if (ProcessMessage(e.RawData))
-                    ResponseEvent.Set();
-            };
-            SignerClient.OnOpen += (sender, e) =>
-            {
-                Debug.WriteLine("Connection established");
-                ResponseEvent.Set();
-            };
-            SignerClient.OnClose += (sender, e) =>
-            {
-                Debug.WriteLine("Connection closed");
-                ResponseEvent.Set();
-            };
-            SignerClient.OnError += (sender, e) =>
-            {
-                Debug.WriteLine("Connection error!");
-                ResponseEvent.Set();
-            };
-            SignerClient.Connect();
+            SignerUrl = url;
         }
 
-        protected bool ProcessMessage(byte[] msg)
+        protected bool ProcessMessage(byte[] msg, SocketData sd)
         {
             MemoryStream ms = new MemoryStream(msg);
             BinaryReader reader = new BinaryReader(ms);
@@ -138,14 +128,14 @@ namespace Hoard
                     Debug.WriteLine("Invalid message");
                     return true;
                 case MessageId.kAuthenticate:
-                    return Msg_Authenticate(reader);
+                    return Msg_Authenticate(reader, sd);
                 case MessageId.kEnumerateAccounts:
-                    return Msg_EnumerateAccounts(reader);
+                    return Msg_EnumerateAccounts(reader, sd);
                 case MessageId.kGiveActiveAccount:
                     Debug.WriteLine("Invalid message");
                     return true;
                 case MessageId.kSign:
-                    return Msg_Sign(reader);
+                    return Msg_Sign(reader, sd);
                 default:
                     Debug.WriteLine("Invalid message id [" + id.ToString() + "]");
                     return true;
@@ -153,7 +143,7 @@ namespace Hoard
         }
 
         //
-        protected bool Msg_Authenticate(BinaryReader reader)
+        protected bool Msg_Authenticate(BinaryReader reader, SocketData sd)
         {
             UInt32 userAuthenticated = reader.ReadUInt32();
             if (userAuthenticated != 0)
@@ -163,7 +153,7 @@ namespace Hoard
                 BinaryWriter writer = new BinaryWriter(ms);
                 writer.Write(MessagePrefix);
                 writer.Write((UInt32)MessageId.kEnumerateAccounts);
-                SignerClient.Send(ms.ToArray());
+                sd.Socket.Send(ms.ToArray());
                 return false;
             }
             else
@@ -172,27 +162,28 @@ namespace Hoard
         }
 
         //
-        protected bool Msg_EnumerateAccounts(BinaryReader reader)
+        protected bool Msg_EnumerateAccounts(BinaryReader reader, SocketData sd)
         {
-            ReceivedAccounts = null;
+            sd.ReceivedAccounts = null;
             UInt32 numAccounts = reader.ReadUInt32();
             if (numAccounts > 0)
             {
-                ReceivedAccounts = new string[numAccounts];
+                sd.ReceivedAccounts = new string[numAccounts];
                 for (uint i = 0; i < numAccounts; i++)
                 {
                     byte[] address = new byte[(int)Helper.kAddressLength];
                     reader.Read(address, 0, (int)Helper.kAddressLength);
-                    ReceivedAccounts[i] = BitConverter.ToString(address).Replace("-", string.Empty).ToLower();
-                    Debug.WriteLine("SignerAccountService: " + ReceivedAccounts[i]  + " received");
+                    sd.ReceivedAccounts[i] = BitConverter.ToString(address).Replace("-", string.Empty).ToLower();
+                    Debug.WriteLine("SignerAccountService: " + sd.ReceivedAccounts[i]  + " received");
                 }
             }
             return true;
 	    }
 
         //
-        protected bool Msg_Sign(BinaryReader reader)
+        protected bool Msg_Sign(BinaryReader reader, SocketData sd)
         {
+            reader.Read(sd.ReceivedSignature, 0, (int)Helper.kSignature);
             return true;
         }
 
@@ -266,23 +257,53 @@ namespace Hoard
                 //server should call /userinfo with access_token to prove it is valid
                 //assume it did and returned a valid account or no accounts (which is also valid)
 
+                SocketData socketData = null;
+                if (!SignerClients.TryGetValue(user, out socketData))
+                {
+                    socketData = new SocketData();
+                    socketData.Socket = new WebSocket(SignerUrl, "internal-hoard-protocol");
+                    socketData.Socket.OnMessage += (sender, e) =>
+                    {
+                        Debug.WriteLine("Message received: " + e.Data);
+                        if (ProcessMessage(e.RawData, socketData))
+                            socketData.ResponseEvent.Set();
+                    };
+                    socketData.Socket.OnOpen += (sender, e) =>
+                    {
+                        Debug.WriteLine("Connection established");
+                        socketData.ResponseEvent.Set();
+                    };
+                    socketData.Socket.OnClose += (sender, e) =>
+                    {
+                        Debug.WriteLine("Connection closed");
+                        socketData.ResponseEvent.Set();
+                    };
+                    socketData.Socket.OnError += (sender, e) =>
+                    {
+                        Debug.WriteLine("Connection error!");
+                        socketData.ResponseEvent.Set();
+                    };
+                    SignerClients[user] = socketData;
+                    socketData.Socket.Connect();
+                }
+
                 MemoryStream ms = new MemoryStream();
                 BinaryWriter writer = new BinaryWriter(ms);
                 writer.Write(MessagePrefix);
                 writer.Write((UInt32)MessageId.kAuthenticate);
                 writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
                 writer.Write(StringToByteArray(token.AccessToken, (int)Helper.kTokenLength));
-                ResponseEvent.Reset();
-                SignerClient.Send(ms.ToArray());
-                ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
-                if(ReceivedAccounts != null)
+                socketData.ResponseEvent.Reset();
+                socketData.Socket.Send(ms.ToArray());
+                socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
+                if(socketData.ReceivedAccounts != null)
                 {
-                    for(uint i = 0; i < ReceivedAccounts.Length; i++)
+                    for(uint i = 0; i < socketData.ReceivedAccounts.Length; i++)
                     {
-                        AccountInfo accountInfo = new HoardAccount(user.HoardId, ReceivedAccounts[i], this);
+                        AccountInfo accountInfo = new HoardAccount(user.HoardId, socketData.ReceivedAccounts[i], user, this);
                         user.Accounts.Add(accountInfo);
                     }
-                    ReceivedAccounts = null;
+                    socketData.ReceivedAccounts = null;
                 }
                 return true;
             }
@@ -336,10 +357,16 @@ namespace Hoard
             writer.Write(MessagePrefix);
             writer.Write((UInt32)MessageId.kSign);
             writer.Write(signer.HashPrefixedMessage(input), 0, (int)Helper.kHash);
-            ResponseEvent.Reset();
-            SignerClient.Send(ms.ToArray());
-            ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
-            return Task.FromResult<string>(BitConverter.ToString(ReceivedSignature).Replace("-", string.Empty).ToLower());
+            Debug.Assert(((HoardAccount)signature).Owner != null);
+            SocketData socketData = null;
+            if (SignerClients.TryGetValue(((HoardAccount)signature).Owner, out socketData))
+            {
+                socketData.ResponseEvent.Reset();
+                socketData.Socket.Send(ms.ToArray());
+                socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
+                return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
+            }
+            return Task.FromResult<string>("");
         }
 
         public Task<string> SignMessage(byte[] input, AccountInfo signature)
