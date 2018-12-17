@@ -174,6 +174,7 @@ namespace Hoard
         //
         protected bool Msg_EnumerateAccounts(BinaryReader reader)
         {
+            ReceivedAccounts = null;
             UInt32 numAccounts = reader.ReadUInt32();
             if (numAccounts > 0)
             {
@@ -281,6 +282,7 @@ namespace Hoard
                         AccountInfo accountInfo = new HoardAccount(user.HoardId, ReceivedAccounts[i], this);
                         user.Accounts.Add(accountInfo);
                     }
+                    ReceivedAccounts = null;
                 }
                 return true;
             }
