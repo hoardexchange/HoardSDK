@@ -42,6 +42,11 @@ namespace Hoard
             public SocketData()
             {
             }
+            ~SocketData()
+            {
+                if (Socket != null)
+                    Socket.Close();
+            }
         }
 
         public class HoardAccount : AccountInfo
