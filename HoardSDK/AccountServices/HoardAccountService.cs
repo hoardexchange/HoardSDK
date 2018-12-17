@@ -42,6 +42,11 @@ namespace Hoard
             public SocketData()
             {
             }
+            ~SocketData()
+            {
+                if (Socket != null)
+                    Socket.Close();
+            }
         }
 
         public class HoardAccount : AccountInfo
@@ -293,18 +298,22 @@ namespace Hoard
                 writer.Write((UInt32)MessageId.kAuthenticate);
                 writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
                 writer.Write(StringToByteArray(token.AccessToken, (int)Helper.kTokenLength));
+                socketData.ReceivedAccounts = null;
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
-                if(socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS) && (socketData.ReceivedAccounts != null))
+                if(socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
-                    for(uint i = 0; i < socketData.ReceivedAccounts.Length; i++)
+                    if (socketData.ReceivedAccounts != null)
                     {
-                        AccountInfo accountInfo = new HoardAccount(user.HoardId, socketData.ReceivedAccounts[i], user, this);
-                        user.Accounts.Add(accountInfo);
+                        for (uint i = 0; i < socketData.ReceivedAccounts.Length; i++)
+                        {
+                            AccountInfo accountInfo = new HoardAccount(user.HoardId, socketData.ReceivedAccounts[i], user, this);
+                            user.Accounts.Add(accountInfo);
+                        }
+                        socketData.ReceivedAccounts = null;
                     }
-                    socketData.ReceivedAccounts = null;
+                    return true;
                 }
-                return true;
             }
 
             return false;
