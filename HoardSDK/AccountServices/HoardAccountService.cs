@@ -50,7 +50,7 @@ namespace Hoard
             public User Owner;
 
             public HoardAccount(string name, string id, User user, HoardAccountService signer)
-                : base(name, id)
+                : base(name, new HoardID(System.Numerics.BigInteger.Zero))
             {
                 HoardSigner = signer;
                 Owner = user;

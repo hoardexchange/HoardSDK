@@ -12,7 +12,7 @@ namespace Hoard
         {
             public string PrivateKey = null;
 
-            public KeyStoreAccount(string name, string id, string key)
+            public KeyStoreAccount(string name, HoardID id, string key)
                 :base(name,id)
             {
                 PrivateKey = key;
@@ -48,8 +48,8 @@ namespace Hoard
             string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
 
             Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, name, password, AccountsDir);
-
-            AccountInfo accountInfo = new KeyStoreAccount(name, accountTuple.Item1, accountTuple.Item2);
+            
+            AccountInfo accountInfo = new KeyStoreAccount(name, new HoardID(accountTuple.Item1), accountTuple.Item2);
             user.Accounts.Add(accountInfo);
 
             return accountInfo;
@@ -59,14 +59,14 @@ namespace Hoard
         {
             return await Task.Run(() =>
             {
-                KeyStoreUtils.EnumerateAccounts(user.UserName, AccountsDir, async (string accountId) =>
+                KeyStoreUtils.EnumerateAccounts(user.UserName, AccountsDir, (string accountId) =>
                 {
                     string password = UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
-                    Tuple<string, string> accountTuple = await KeyStoreUtils.LoadAccount(user.UserName, accountId, password, AccountsDir);
+                    Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user.UserName, accountId, password, AccountsDir);
 
                     if (accountTuple != null)
                     {
-                        AccountInfo accountInfo = new KeyStoreAccount(accountId, accountTuple.Item1, accountTuple.Item2);
+                        AccountInfo accountInfo = new KeyStoreAccount(accountId, new HoardID(accountTuple.Item1), accountTuple.Item2);
                         user.Accounts.Add(accountInfo);
                     }
                 });

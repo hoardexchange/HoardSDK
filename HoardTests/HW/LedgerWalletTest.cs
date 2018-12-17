@@ -30,7 +30,6 @@ namespace HoardTests.HW
             Assert.True(response);
             Assert.True(user.Accounts.Count > 0);
             Assert.True(user.Accounts[0].Name == LedgerWallet.AccountInfoName);
-            Assert.True(user.Accounts[0].ID.Length > 0);
         }
 
         [Fact]
@@ -59,8 +58,8 @@ namespace HoardTests.HW
                 var response = await signer.RequestAccounts(user);
 
                 var msgSigner = new EthereumMessageSigner();
-                var addressRec = msgSigner.EcRecover(messages[i], signature);
-                Assert.Equal(user.Accounts[0].ID.ToLower(), addressRec.ToLower());
+                var addressRec = new HoardID(msgSigner.EcRecover(messages[i], signature));
+                Assert.Equal(user.Accounts[0].ID, addressRec);
             }
         }
 
@@ -85,8 +84,8 @@ namespace HoardTests.HW
             var response = await signer.RequestAccounts(user);
 
             tx = new RLPSigner(rlpEncoded.HexToByteArray(), 6);
-            var account = EthECKey.RecoverFromSignature(tx.Signature, tx.RawHash).GetPublicAddress();
-            Assert.Equal(user.Accounts[0].ID.ToLower(), account.ToLower());
+            var account = new HoardID(EthECKey.RecoverFromSignature(tx.Signature, tx.RawHash).GetPublicAddress());
+            Assert.Equal(user.Accounts[0].ID, account);
             Assert.Equal(tx.Data[3].ToHex().ToLower().EnsureHexPrefix(), "0x4bc1EF56d94c766A49153A102096E56fAE2004e1".ToLower());
         }
     }
