@@ -38,7 +38,7 @@ namespace Hoard.Utils
             }
         }
 
-        public static async Task<Tuple<string, string>> LoadAccount(string userName, string accountId, string password, string accountsDir)
+        public static Tuple<string, string> LoadAccount(string userName, string accountId, string password, string accountsDir)
         {
             string hashedName = Helper.SHA256HexHashString(userName);
             var accountsFiles = Directory.GetFiles(Path.Combine(accountsDir, hashedName), "UTC--*--" + accountId);
@@ -47,11 +47,7 @@ namespace Hoard.Utils
             string fileName = accountsFiles[0];
             System.Diagnostics.Trace.WriteLine(string.Format("Loading account {0}", fileName), "INFO");
 
-            string json = null;
-            using (var reader = File.OpenText(fileName))
-            {
-                json = await reader.ReadToEndAsync();
-            }
+            string json = File.ReadAllText(fileName);
 
             var account = Account.LoadFromKeyStore(json, password);
 
