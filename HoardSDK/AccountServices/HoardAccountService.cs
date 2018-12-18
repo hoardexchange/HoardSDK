@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Nethereum.RLP;
 using Newtonsoft.Json;
 using RestSharp;
 using WebSocketSharp;
@@ -20,7 +21,8 @@ namespace Hoard
             kAuthenticate,
             kEnumerateAccounts,
             kGiveActiveAccount,
-            kSign,
+            kSignMessage,
+            kSignTransaction,
         }
 
         public enum Helper
@@ -139,8 +141,10 @@ namespace Hoard
                 case MessageId.kGiveActiveAccount:
                     Debug.WriteLine("Invalid message");
                     return true;
-                case MessageId.kSign:
-                    return Msg_Sign(reader, sd);
+                case MessageId.kSignMessage:
+                    return Msg_SignMessage(reader, sd);
+                case MessageId.kSignTransaction:
+                    return Msg_SignTransaction(reader, sd);
                 default:
                     Debug.WriteLine("Invalid message id [" + id.ToString() + "]");
                     return true;
@@ -186,7 +190,14 @@ namespace Hoard
 	    }
 
         //
-        protected bool Msg_Sign(BinaryReader reader, SocketData sd)
+        protected bool Msg_SignMessage(BinaryReader reader, SocketData sd)
+        {
+            reader.Read(sd.ReceivedSignature, 0, (int)Helper.kSignature);
+            return true;
+        }
+
+        //
+        protected bool Msg_SignTransaction(BinaryReader reader, SocketData sd)
         {
             reader.Read(sd.ReceivedSignature, 0, (int)Helper.kSignature);
             return true;
@@ -359,12 +370,11 @@ namespace Hoard
 
         public Task<string> SignMessage(byte[] input, AccountInfo signature)
         {
-
             var signer = new Nethereum.Signer.EthereumMessageSigner();
             MemoryStream ms = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(ms);
             writer.Write(MessagePrefix);
-            writer.Write((UInt32)MessageId.kSign);
+            writer.Write((UInt32)MessageId.kSignMessage);
             writer.Write(signer.HashPrefixedMessage(input), 0, (int)Helper.kHash);
             Debug.Assert(((HoardAccount)signature).Owner != null);
             SocketData socketData = null;
@@ -378,8 +388,28 @@ namespace Hoard
             return Task.FromResult<string>("");
         }
 
-        public Task<string> SignTransaction(byte[] input, AccountInfo signature)
+        public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature)
         {
+            //MemoryStream ms = new MemoryStream();
+            //BinaryWriter writer = new BinaryWriter(ms);
+            //writer.Write(MessagePrefix);
+            //writer.Write((UInt32)MessageId.kSignTransaction);
+
+            //var decodedList = RLP.Decode(rlpEncodedTransaction);
+            //var decodedRlpCollection = (RLPCollection)decodedList[0];
+            //var data = decodedRlpCollection.ToBytes();
+            //writer.Write(signer.HashPrefixedMessage(input), 0, (int)Helper.kHash);
+
+            //Debug.Assert(((HoardAccount)signature).Owner != null);
+            //SocketData socketData = null;
+            //if (SignerClients.TryGetValue(((HoardAccount)signature).Owner, out socketData))
+            //{
+            //    socketData.ResponseEvent.Reset();
+            //    socketData.Socket.Send(ms.ToArray());
+            //    if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+            //        return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
+            //}
+            //return Task.FromResult<string>("");
             throw new NotImplementedException();
         }
     }
