@@ -34,6 +34,8 @@ namespace Hoard.HW.Trezor
 
         abstract public Task<bool> RequestAccounts(User user);
 
+        abstract public Task<bool> SetActiveAccount(User user, AccountInfo account);
+
         abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo);
 
         abstract public Task<string> SignMessage(byte[] message, AccountInfo accountInfo);
