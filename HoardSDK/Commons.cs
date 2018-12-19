@@ -93,6 +93,8 @@ namespace Hoard
         public abstract Task<string> SignTransaction(byte[] input);
 
         public abstract Task<string> SignMessage(byte[] input);
+
+        public abstract Task<AccountInfo> Activate(User user);
     }
 
     /// <summary>
@@ -112,15 +114,8 @@ namespace Hoard
 
         public bool SetActiveAccount(AccountInfo account)
         {
-            if (Accounts.Contains(account))
-            {
-                ActiveAccount = account;
-                return true;
-            }
-
-            System.Diagnostics.Debug.Fail("Invalid parameter. This account is not verified!");
-            
-            return false;
+            ActiveAccount = account.Activate(this).Result;
+            return ActiveAccount != null;
         }
     }
 

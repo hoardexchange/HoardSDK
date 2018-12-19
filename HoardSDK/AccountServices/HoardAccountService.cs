@@ -41,6 +41,7 @@ namespace Hoard
             public ManualResetEvent ResponseEvent = new ManualResetEvent(false);
             public WebSocket Socket = null;
             public User Owner = null;
+            public AccountInfo ActiveAccount = null;
 
             public SocketData()
             {
@@ -54,24 +55,27 @@ namespace Hoard
 
         public class HoardAccount : AccountInfo
         {
-            private HoardAccountService HoardSigner;
             public User Owner;
 
-            public HoardAccount(string name, string id, User user, HoardAccountService signer)
+            public HoardAccount(string name, string id, User user)
                 : base(name, new HoardID(System.Numerics.BigInteger.Zero))
             {
-                HoardSigner = signer;
                 Owner = user;
             }
 
             public override Task<string> SignTransaction(byte[] input)
             {
-                return HoardSigner.SignTransaction(input, this);
+                return HoardAccountService.SignTransactionInternal(input, this);
             }
 
             public override Task<string> SignMessage(byte[] input)
             {
-                return HoardSigner.SignMessage(input, this);
+                return HoardAccountService.SignMessageInternal(input, this);
+            }
+
+            public override Task<AccountInfo> Activate(User user)
+            {
+                return HoardAccountService.ActivateAccount(user, this);
             }
         }
 
@@ -80,8 +84,8 @@ namespace Hoard
         string ClientId = null;
         Dictionary<User, AuthToken> UserAuthTokens = new Dictionary<User, AuthToken>();        
         string SignerUrl = "";
-        Dictionary<User, SocketData> SignerClients = new Dictionary<User, SocketData>();
 
+        static Dictionary<User, SocketData> SignerClients = new Dictionary<User, SocketData>();
         static UInt32 MessagePrefix = 0xaabbccdd;
         static int MAX_WAIT_TIME_IN_MS = 20000;
 
@@ -186,7 +190,7 @@ namespace Hoard
                     string accountName = BitConverter.ToString(address).Replace("-", string.Empty).ToLower();
                     Debug.WriteLine("SignerAccountService: " + accountName + " received");
                     Debug.Assert(sd.Owner != null);
-                    AccountInfo accountInfo = new HoardAccount(sd.Owner.HoardId, accountName, sd.Owner, this);
+                    AccountInfo accountInfo = new HoardAccount(sd.Owner.HoardId, accountName, sd.Owner);
                     sd.Owner.Accounts.Add(accountInfo);
                 }
             }
@@ -217,7 +221,8 @@ namespace Hoard
             {
                 if(sd.Owner.Accounts[i].ID == hid)
                 {
-                    sd.Owner.SetActiveAccount(sd.Owner.Accounts[i]);
+                    sd.ActiveAccount = sd.Owner.Accounts[i];
+                    break;
                 }
             }
             return true;
@@ -342,30 +347,6 @@ namespace Hoard
             return false;
         }
 
-        public async Task<bool> SetActiveAccount(User user, AccountInfo account)
-        {
-            return await Task.Run(() =>
-            {
-                SocketData socketData = null;
-                if (!SignerClients.TryGetValue(user, out socketData))
-                {
-                    MemoryStream ms = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(ms);
-                    writer.Write(MessagePrefix);
-                    writer.Write((UInt32)MessageId.kSetActiveAccount);
-                    writer.Write(account.ID.ToHexByteArray());
-                    socketData.Owner = user;
-                    socketData.ResponseEvent.Reset();
-                    socketData.Socket.Send(ms.ToArray());
-                    if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            });
-        }
-
         private async Task<AuthToken> RequestAuthToken(User user)
         {
             string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
@@ -406,17 +387,27 @@ namespace Hoard
 
         public Task<string> SignMessage(byte[] input, AccountInfo signature)
         {
+            return SignMessageInternal(input, signature);
+        }
+
+        public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature)
+        {
+            return SignTransactionInternal(rlpEncodedTransaction, signature);
+        }
+
+        public static Task<string> SignMessageInternal(byte[] input, AccountInfo accountInfo)
+        {
             var signer = new Nethereum.Signer.EthereumMessageSigner();
             MemoryStream ms = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(ms);
             writer.Write(MessagePrefix);
             writer.Write((UInt32)MessageId.kSignMessage);
             writer.Write(signer.HashPrefixedMessage(input), 0, (int)Helper.kHash);
-            Debug.Assert(((HoardAccount)signature).Owner != null);
+            Debug.Assert(((HoardAccount)accountInfo).Owner != null);
             SocketData socketData = null;
-            if (SignerClients.TryGetValue(((HoardAccount)signature).Owner, out socketData))
+            if (SignerClients.TryGetValue(((HoardAccount)accountInfo).Owner, out socketData))
             {
-                socketData.Owner = ((HoardAccount)signature).Owner;
+                socketData.Owner = ((HoardAccount)accountInfo).Owner;
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
                 if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
@@ -425,7 +416,7 @@ namespace Hoard
             return Task.FromResult<string>("");
         }
 
-        public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature)
+        public static Task<string> SignTransactionInternal(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
         {
             //MemoryStream ms = new MemoryStream();
             //BinaryWriter writer = new BinaryWriter(ms);
@@ -449,6 +440,31 @@ namespace Hoard
             //}
             //return Task.FromResult<string>("");
             throw new NotImplementedException();
+        }
+
+        public static Task<AccountInfo> ActivateAccount(User user, AccountInfo account)
+        {
+            return Task.Run(() =>
+            {
+                SocketData socketData = null;
+                if (!SignerClients.TryGetValue(user, out socketData))
+                {
+                    MemoryStream ms = new MemoryStream();
+                    BinaryWriter writer = new BinaryWriter(ms);
+                    writer.Write(MessagePrefix);
+                    writer.Write((UInt32)MessageId.kSetActiveAccount);
+                    writer.Write(account.ID.ToHexByteArray());
+                    socketData.ActiveAccount = null;
+                    socketData.Owner = user;
+                    socketData.ResponseEvent.Reset();
+                    socketData.Socket.Send(ms.ToArray());
+                    if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+                    {
+                        return socketData.ActiveAccount;
+                    }
+                }
+                return null;
+            });
         }
     }
 }
