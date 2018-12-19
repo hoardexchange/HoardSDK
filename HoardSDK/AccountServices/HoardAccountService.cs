@@ -183,6 +183,7 @@ namespace Hoard
             UInt32 numAccounts = reader.ReadUInt32();
             if (numAccounts > 0)
             {
+                Int32 activeAccountIndex = reader.ReadInt32();
                 for (uint i = 0; i < numAccounts; i++)
                 {
                     byte[] address = new byte[(int)Helper.kAddressLength];
