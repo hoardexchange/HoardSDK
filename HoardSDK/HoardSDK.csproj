@@ -28,6 +28,12 @@
     <PostBuildEvent>
     </PostBuildEvent>
     <RootNamespace>Hoard</RootNamespace>
+    <AssemblyVersion>0.4.0.0</AssemblyVersion>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Copyright>Hoard A/S</Copyright>
+    <FileVersion>0.4.0.0</FileVersion>
+    <Description>Hoard game client SDK</Description>
+    <PackageTags>Hoard Blockchain Ethereum Game SDK</PackageTags>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
