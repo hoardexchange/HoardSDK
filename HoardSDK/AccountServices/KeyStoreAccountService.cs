@@ -74,6 +74,14 @@ namespace Hoard
             });
         }
 
+        public async Task<bool> SetActiveAccount(User user, AccountInfo account)
+        {
+            return await Task.Run(() =>
+            {
+                return user.SetActiveAccount(account);
+            });
+        }
+
         public Task<string> SignMessage(byte[] input, AccountInfo signature)
         {
             KeyStoreAccount ksa = signature as KeyStoreAccount;

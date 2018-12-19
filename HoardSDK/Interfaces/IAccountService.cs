@@ -20,6 +20,14 @@ namespace Hoard
         Task<bool> RequestAccounts(User user);
 
         /// <summary>
+        /// Set active accout for specified user
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="account"></param>
+        /// <returns></returns>
+        Task<bool> SetActiveAccount(User user, AccountInfo account);
+
+        /// <summary>
         /// Sings transaction with account signature
         /// </summary>
         /// <param name="rlpEncodedTransaction"></param>

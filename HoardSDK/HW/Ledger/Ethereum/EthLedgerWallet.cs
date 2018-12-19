@@ -48,6 +48,14 @@ namespace Hoard.HW.Ledger.Ethereum
             return false;
         }
 
+        public override async Task<bool> SetActiveAccount(User user, AccountInfo account)
+        {
+            return await Task.Run(() =>
+            {
+                return user.SetActiveAccount(account);
+            });
+        }
+
         public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
         {
             uint txLength = (uint)rlpEncodedTransaction.Length;
