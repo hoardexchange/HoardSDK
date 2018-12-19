@@ -208,7 +208,7 @@ namespace Hoard
                 {
                     Debug.Assert(activeAccountIndex >= 0 && activeAccountIndex < sd.Owner.Accounts.Count);
                     ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = true;
-                    sd.Owner.ChangeActiveAccount(sd.Owner.Accounts[activeAccountIndex]);
+                    sd.Owner.ChangeActiveAccount((HoardAccount)sd.Owner.Accounts[activeAccountIndex]);
                     ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = false;
                 }
             }
