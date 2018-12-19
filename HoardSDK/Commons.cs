@@ -112,7 +112,7 @@ namespace Hoard
             UserName = name;
         }
 
-        public bool SetActiveAccount(AccountInfo account)
+        public bool ChangeActiveAccount(AccountInfo account)
         {
             ActiveAccount = account.Activate(this).Result;
             return ActiveAccount != null;

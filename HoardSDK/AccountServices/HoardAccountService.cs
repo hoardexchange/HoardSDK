@@ -53,14 +53,16 @@ namespace Hoard
             }
         }
 
-        public class HoardAccount : AccountInfo
+        private class HoardAccount : AccountInfo
         {
             public User Owner;
+            public bool InternalSet = false;
 
             public HoardAccount(string name, string id, User user)
                 : base(name, new HoardID(System.Numerics.BigInteger.Zero))
             {
                 Owner = user;
+                InternalSet = false;
             }
 
             public override Task<string> SignTransaction(byte[] input)
@@ -75,7 +77,15 @@ namespace Hoard
 
             public override Task<AccountInfo> Activate(User user)
             {
-                return HoardAccountService.ActivateAccount(user, this);
+                if (InternalSet)
+                {
+                    return Task.Run(() =>
+                    {
+                        return (AccountInfo)this;
+                    });
+                }
+                else
+                    return HoardAccountService.ActivateAccount(user, this);
             }
         }
 
@@ -191,8 +201,15 @@ namespace Hoard
                     string accountName = BitConverter.ToString(address).Replace("-", string.Empty).ToLower();
                     Debug.WriteLine("SignerAccountService: " + accountName + " received");
                     Debug.Assert(sd.Owner != null);
-                    AccountInfo accountInfo = new HoardAccount(sd.Owner.HoardId, accountName, sd.Owner);
+                    HoardAccount accountInfo = new HoardAccount(sd.Owner.HoardId, accountName, sd.Owner);
                     sd.Owner.Accounts.Add(accountInfo);
+                }
+                if(activeAccountIndex > -1)
+                {
+                    Debug.Assert(activeAccountIndex >= 0 && activeAccountIndex < sd.Owner.Accounts.Count);
+                    ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = true;
+                    sd.Owner.ChangeActiveAccount(sd.Owner.Accounts[activeAccountIndex]);
+                    ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = false;
                 }
             }
             return true;
