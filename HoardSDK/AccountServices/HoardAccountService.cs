@@ -105,7 +105,7 @@ namespace Hoard
         string SignerUrl = "";
 
         static Dictionary<User, SocketData> SignerClients = new Dictionary<User, SocketData>();
-        static UInt32 MessagePrefix = 0xaabbccdd;
+        static UInt32 MessagePrefix = 0x00201801;
         static int MAX_WAIT_TIME_IN_MS = 20000;
 
         class ErrorResponse
@@ -150,11 +150,11 @@ namespace Hoard
             MemoryStream ms = new MemoryStream(msg);
             BinaryReader reader = new BinaryReader(ms);
             UInt32 prefix = reader.ReadUInt32();
-            if (prefix != MessagePrefix)
+            if ((prefix & 0x00ffffff) != MessagePrefix)
                 return true;
             MessageId id = (MessageId)reader.ReadUInt32();
-            UInt32 errorCode = reader.ReadUInt32();
-            if((ErrorCodes)errorCode != ErrorCodes.errOk)
+            byte errorCode = (prefix & 0xff000000) >> 24;
+            if ((ErrorCodes)errorCode != ErrorCodes.errOk)
                 Debug.WriteLine("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
             switch (id)
             {
