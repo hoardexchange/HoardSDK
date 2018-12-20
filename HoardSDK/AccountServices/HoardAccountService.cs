@@ -34,7 +34,16 @@ namespace Hoard
             kSignature = 65,
             kHash = 32
         }
- 
+
+        public enum ErrorCodes
+        {
+            errOk = 0,
+            errInvalidPassword,
+            errAccountNotFound,
+            errAuthenticationFailed,
+            errUnknown,
+        };
+
         public class SocketData
         {
             public byte[] ReceivedSignature = new byte[(int)Helper.kSignature];
@@ -144,6 +153,9 @@ namespace Hoard
             if (prefix != MessagePrefix)
                 return true;
             MessageId id = (MessageId)reader.ReadUInt32();
+            UInt32 errorCode = reader.ReadUInt32();
+            if((ErrorCodes)errorCode != ErrorCodes.errOk)
+                Debug.WriteLine("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
             switch (id)
             {
                 case MessageId.kInvalidMessage:
