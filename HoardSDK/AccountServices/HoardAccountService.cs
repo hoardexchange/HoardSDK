@@ -37,11 +37,12 @@ namespace Hoard
 
         public enum ErrorCodes
         {
-            errOk = 0,
-            errInvalidPassword,
-            errAccountNotFound,
-            errAuthenticationFailed,
-            errUnknown,
+            errOk = 0x0,
+            errInvalidPassword = 0x1,
+            errAccountNotFound = 0x2,
+            errAuthenticationFailed = 0x3,
+
+            errUnknown = 0xff,
         };
 
         public class SocketData
@@ -153,7 +154,7 @@ namespace Hoard
             if ((prefix & 0x00ffffff) != MessagePrefix)
                 return true;
             MessageId id = (MessageId)reader.ReadUInt32();
-            byte errorCode = (prefix & 0xff000000) >> 24;
+            UInt32 errorCode = (prefix & 0xff000000) >> 24;
             if ((ErrorCodes)errorCode != ErrorCodes.errOk)
                 Debug.WriteLine("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
             switch (id)
