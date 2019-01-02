@@ -366,8 +366,9 @@ namespace Hoard
                 writer.Write(MessagePrefix);
                 writer.Write((UInt32)MessageId.kAuthenticate);
                 writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
-                writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
-                writer.Write(StringToByteArray(password, (int)Helper.kTokenLength));
+                // Consider that password should not be transferred to signer
+                writer.Write(StringToByteArray(password, (int)Helper.kUserNameLength));
+                writer.Write(StringToByteArray(token.AccessToken, (int)Helper.kTokenLength));
                 socketData.Owner = user;
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
