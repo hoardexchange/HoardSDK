@@ -313,11 +313,12 @@ namespace Hoard
             //Do sth similar for Switch authentication
 
             AuthToken token = null;
+            string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
             //check if we have valid auth token
             if (!UserAuthTokens.TryGetValue(user, out token) || !token.IsValid())
             {
                 //none found ask for a new one
-                token = await RequestAuthToken(user);
+                token = await RequestAuthToken(user, password);
                 //store
                 if (token != null)
                     UserAuthTokens[user] = token;
@@ -365,7 +366,8 @@ namespace Hoard
                 writer.Write(MessagePrefix);
                 writer.Write((UInt32)MessageId.kAuthenticate);
                 writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
-                writer.Write(StringToByteArray(token.AccessToken, (int)Helper.kTokenLength));
+                writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
+                writer.Write(StringToByteArray(password, (int)Helper.kTokenLength));
                 socketData.Owner = user;
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
@@ -378,10 +380,8 @@ namespace Hoard
             return false;
         }
 
-        private async Task<AuthToken> RequestAuthToken(User user)
+        private async Task<AuthToken> RequestAuthToken(User user, string password)
         {
-            string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
-
             var tokenRequest = new RestRequest("/token", Method.POST);
             tokenRequest.AddParameter("grant_type", "password");
             tokenRequest.AddParameter("username", user.HoardId);
