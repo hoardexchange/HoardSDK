@@ -55,7 +55,7 @@ namespace Hoard
 
         public static implicit operator string(HoardID addr)
         {
-            return addr.Value.ToString();
+            return addr.Value.ToString("x");
         }
 
         public static implicit operator System.Numerics.BigInteger(HoardID addr)
