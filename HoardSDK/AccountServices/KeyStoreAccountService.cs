@@ -27,6 +27,11 @@ namespace Hoard
             {
                 return KeyStoreAccountService.SignMessage(input, PrivateKey);
             }
+
+            public override Task<AccountInfo> Activate(User user)
+            {
+                return KeyStoreAccountService.ActivateAccount(user, this);
+            }
         }
 
         private string AccountsDir = null;
@@ -59,6 +64,7 @@ namespace Hoard
         {
             return await Task.Run(() =>
             {
+                user.Accounts.Clear();
                 KeyStoreUtils.EnumerateAccounts(user.UserName, AccountsDir, (string accountId) =>
                 {
                     string password = UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
@@ -71,14 +77,6 @@ namespace Hoard
                     }
                 });
                 return user.Accounts.Count > 0;
-            });
-        }
-
-        public async Task<bool> SetActiveAccount(User user, AccountInfo account)
-        {
-            return await Task.Run(() =>
-            {
-                return user.SetActiveAccount(account);
             });
         }
 
@@ -131,6 +129,18 @@ namespace Hoard
 
                 signer.Sign(ecKey);
                 return signer.GetRLPEncoded().ToHex();
+            });
+        }
+
+        public static Task<AccountInfo> ActivateAccount(User user, AccountInfo account)
+        {
+            return Task.Run(() =>
+            {
+                if (user.Accounts.Contains(account))
+                {
+                    return account;
+                }
+                return null;
             });
         }
     }

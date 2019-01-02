@@ -55,7 +55,7 @@ namespace HoardTests.Fixtures
 
             KeyStoreAccountService service = new KeyStoreAccountService(new UserInputProviderFixture());
             AccountInfo mainAcc = await service.CreateAccount("default", user);
-            user.SetActiveAccount(mainAcc);
+            user.ChangeActiveAccount(mainAcc);
 
             return user;
         }

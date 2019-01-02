@@ -25,6 +25,11 @@ namespace Hoard.HW.Trezor.Ethereum
             {
                 return await Wallet.SignTransaction(input, this);
             }
+
+            public override async Task<AccountInfo> Activate(User user)
+            {
+                return await Wallet.ActivateAccount(user, this);
+            }
         }
         private KeyPath keyPath;
         private byte[] derivation;
@@ -46,14 +51,6 @@ namespace Hoard.HW.Trezor.Ethereum
             return true;
         }
 
-        public override async Task<bool> SetActiveAccount(User user, AccountInfo account)
-        {
-            return await Task.Run(() =>
-            {
-                return user.SetActiveAccount(account);
-            });
-        }
-
         public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
         {
             var output = await SendRequestAsync(EthSignTransaction.Request(indices, rlpEncodedTransaction));
@@ -64,6 +61,18 @@ namespace Hoard.HW.Trezor.Ethereum
         {
             var output = await SendRequestAsync(EthSignMessage.Request(indices, message));
             return EthSignMessage.GetRLPEncoded(output, message);
+        }
+
+        public override async Task<AccountInfo> ActivateAccount(User user, AccountInfo accountInfo)
+        {
+            return await Task.Run(() =>
+            {
+                if (user.Accounts.Contains(accountInfo))
+                {
+                    return accountInfo;
+                }
+                return null;
+            });
         }
     }
 }
