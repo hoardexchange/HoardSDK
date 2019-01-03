@@ -39,7 +39,7 @@ namespace Hoard
         /// </summary>
         public BC.BCComm BCComm { get; private set; } = null;
 
-        private Dictionary<GameID, List<IGameItemProvider>> Providers = new Dictionary<GameID, List<IGameItemProvider>>();
+        private Dictionary<GameID, IGameItemProvider> Providers = new Dictionary<GameID, IGameItemProvider>();
 
         /// <summary>
         /// Optimization to cancel beforefieldinit mark
@@ -78,8 +78,9 @@ namespace Hoard
         /// <returns></returns>
         public IGameItemProvider GetGameItemProvider(GameItem item)
         {
-            foreach (var p in Providers[item.Game])
+            if (Providers.ContainsKey(item.Game))
             {
+                IGameItemProvider p = Providers[item.Game];
                 if (p.GetItemTypes().Contains(item.Symbol))
                     return p;
             }
@@ -178,19 +179,13 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Register a connector for a particular game. Can register many connectors for a single gameID
+        /// Register a connector for a particular game. Can register only one connectors for a single gameID
         /// </summary>
         /// <param name="game"></param>
         /// <param name="conn"></param>
         public bool RegisterGame(GameID game, IGameItemProvider provider)
         {
-            //create pool
             if (!Providers.ContainsKey(game))
-            {
-                Providers.Add(game, new List<IGameItemProvider>());
-            }
-            //add provider to pool
-            if (!Providers[game].Contains(provider))
             {
                 //register this game in BC (this is a must for every game)
                 //TODO: should we asume that all games should have a SecureProvider as BCGameItemProvider?
@@ -203,7 +198,7 @@ namespace Hoard
                 {
                     if (provider.Connect().Result)
                     {
-                        Providers[game].Add(provider);
+                        Providers.Add(game,provider);
                         return true;
                     }
                 }
@@ -389,11 +384,8 @@ namespace Hoard
             List<GameItem> items = new List<GameItem>();
             if (Providers.ContainsKey(gameID))
             {
-                var list = Providers[gameID];
-                foreach (IGameItemProvider c in list)
-                {
-                    items.AddRange(await c.GetPlayerItems(account).ConfigureAwait(false));
-                }
+                IGameItemProvider c = Providers[gameID];
+                items.AddRange(await c.GetPlayerItems(account).ConfigureAwait(false));
             }
             return items.ToArray();
         }
@@ -424,10 +416,8 @@ namespace Hoard
             List<GameItem> items = new List<GameItem>();
             foreach(var p in Providers)
             {
-                foreach (IGameItemProvider provider in p.Value)
-                {
-                    items.AddRange(await provider.GetItems(gameItemsParams).ConfigureAwait(false));
-                }
+                IGameItemProvider provider = p.Value;
+                items.AddRange(await provider.GetItems(gameItemsParams).ConfigureAwait(false));
             }
             return items.ToArray();
         }
