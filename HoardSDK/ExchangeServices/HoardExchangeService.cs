@@ -29,6 +29,7 @@ namespace Hoard.ExchangeServices
 
                 return true;
             }
+            System.Diagnostics.Trace.TraceError($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
             return false;
         }
 

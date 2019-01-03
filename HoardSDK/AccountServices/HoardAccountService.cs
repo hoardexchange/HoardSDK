@@ -156,18 +156,18 @@ namespace Hoard
             MessageId id = (MessageId)reader.ReadUInt32();
             UInt32 errorCode = (prefix & 0xff000000) >> 24;
             if ((ErrorCodes)errorCode != ErrorCodes.errOk)
-                Debug.WriteLine("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
+                Trace.TraceInformation("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
             switch (id)
             {
                 case MessageId.kInvalidMessage:
-                    Debug.WriteLine("Invalid message");
+                    Trace.TraceInformation("Invalid message");
                     return true;
                 case MessageId.kAuthenticate:
                     return Msg_Authenticate(reader, sd);
                 case MessageId.kEnumerateAccounts:
                     return Msg_EnumerateAccounts(reader, sd);
                 case MessageId.kGiveActiveAccount:
-                    Debug.WriteLine("Invalid message");
+                    Trace.TraceInformation("Invalid message");
                     return true;
                 case MessageId.kSignMessage:
                     return Msg_SignMessage(reader, sd);
@@ -176,7 +176,7 @@ namespace Hoard
                 case MessageId.kSetActiveAccount:
                     return Msg_SetActiveAccount(reader, sd);
                 default:
-                    Debug.WriteLine("Invalid message id [" + id.ToString() + "]");
+                    Trace.TraceInformation("Invalid message id [" + id.ToString() + "]");
                     return true;
             }
         }
@@ -184,10 +184,10 @@ namespace Hoard
         //
         protected bool Msg_Authenticate(BinaryReader reader, SocketData sd)
         {
-            UInt32 userAuthenticated = reader.ReadUInt32();
+            uint userAuthenticated = reader.ReadUInt32();
             if (userAuthenticated != 0)
             {
-                Debug.WriteLine("Authentication confirmed by signer");
+                Trace.TraceInformation("Authentication confirmed by signer");
                 MemoryStream ms = new MemoryStream();
                 BinaryWriter writer = new BinaryWriter(ms);
                 writer.Write(MessagePrefix);
@@ -196,23 +196,23 @@ namespace Hoard
                 return false;
             }
             else
-                Debug.WriteLine("[WARNING] Authentication not confirmed by signer!");
+                Trace.TraceWarning("Authentication not confirmed by signer!");
             return true;
         }
 
         //
         protected bool Msg_EnumerateAccounts(BinaryReader reader, SocketData sd)
         {
-            UInt32 numAccounts = reader.ReadUInt32();
+            uint numAccounts = reader.ReadUInt32();
             if (numAccounts > 0)
             {
-                Int32 activeAccountIndex = reader.ReadInt32();
+                int activeAccountIndex = reader.ReadInt32();
                 for (uint i = 0; i < numAccounts; i++)
                 {
                     byte[] address = new byte[(int)Helper.kAddressLength];
                     reader.Read(address, 0, (int)Helper.kAddressLength);
                     string accountName = BitConverter.ToString(address).Replace("-", string.Empty).ToLower();
-                    Debug.WriteLine("SignerAccountService: " + accountName + " received");
+                    Trace.TraceInformation("SignerAccountService: " + accountName + " received");
                     Debug.Assert(sd.Owner != null);
                     HoardAccount accountInfo = new HoardAccount(sd.Owner.HoardId, accountName, sd.Owner);
                     sd.Owner.Accounts.Add(accountInfo);
@@ -298,7 +298,10 @@ namespace Hoard
         public async Task<bool> RequestAccounts(User user)
         {
             if (user.HoardId == "")
+            {
+                Trace.TraceError($"Invalid user: {user.HoardId}!");
                 return false;
+            }
 
             //connect to account server using REST
             //server asks for auth token from HoardAuthService
@@ -337,23 +340,23 @@ namespace Hoard
                     socketData.Socket = new WebSocket(SignerUrl, "internal-hoard-protocol");
                     socketData.Socket.OnMessage += (sender, e) =>
                     {
-                        Debug.WriteLine("Message received: " + e.Data);
+                        Trace.TraceInformation("Message received: " + e.Data);
                         if (ProcessMessage(e.RawData, socketData))
                             socketData.ResponseEvent.Set();
                     };
                     socketData.Socket.OnOpen += (sender, e) =>
                     {
-                        Debug.WriteLine("Connection established");
+                        Trace.TraceInformation("Connection established");
                         socketData.ResponseEvent.Set();
                     };
                     socketData.Socket.OnClose += (sender, e) =>
                     {
-                        Debug.WriteLine("Connection closed");
+                        Trace.TraceInformation("Connection closed");
                         socketData.ResponseEvent.Set();
                     };
                     socketData.Socket.OnError += (sender, e) =>
                     {
-                        Debug.WriteLine("Connection error!");
+                        Trace.TraceError("Connection error!");
                         socketData.ResponseEvent.Set();
                     };
                     SignerClients[user] = socketData;
@@ -364,7 +367,7 @@ namespace Hoard
                 MemoryStream ms = new MemoryStream();
                 BinaryWriter writer = new BinaryWriter(ms);
                 writer.Write(MessagePrefix);
-                writer.Write((UInt32)MessageId.kAuthenticate);
+                writer.Write((uint)MessageId.kAuthenticate);
                 writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
                 // Consider that password should not be transferred to signer
                 writer.Write(StringToByteArray(password, (int)Helper.kUserNameLength));
@@ -377,7 +380,7 @@ namespace Hoard
                     return true;
                 }
             }
-
+            Trace.TraceError("No valid token received!");
             return false;
         }
 
@@ -411,7 +414,7 @@ namespace Hoard
                     ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(tokenResponse.Content);
                     errorMsg += ", error: " + errorResponse.error;
                 }
-                System.Diagnostics.Trace.TraceInformation(errorMsg);
+                Trace.TraceError(errorMsg);
             }
 
             return null;

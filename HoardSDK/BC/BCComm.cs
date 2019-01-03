@@ -41,7 +41,7 @@ namespace Hoard.BC
             }
             catch(Exception ex)
             {
-                Trace.Fail(ex.Message);
+                Trace.Fail(ex.ToString());
                 return new Tuple<bool, string>(false, ex.Message);
             }
         }
@@ -106,6 +106,7 @@ namespace Hoard.BC
         {
             if (gameContracts.ContainsKey(game))
             {
+                Trace.TraceWarning("Game already registered!");
                 return true;
             }
 
@@ -124,7 +125,7 @@ namespace Hoard.BC
                 gameContracts.Add(game, gameContract);
                 return true;
             }
-
+            Trace.TraceError($"Game is not registered in Hoard Game Center: game = {game.ID}!");
             return false;
         }
 
@@ -204,6 +205,7 @@ namespace Hoard.BC
                     return await hrdContract.Transfer(from, to, amount);
                 }
             }
+            Trace.TraceError("Cannot get proper Hoard Token contract!");
             return false;
         }
 

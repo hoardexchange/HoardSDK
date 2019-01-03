@@ -217,9 +217,9 @@ SOFTWARE.
                         JObject jObject = JObject.Load(reader);
                         return jObject.ToObject<Dictionary<string, object>>();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        throw new Exception("Request parameters can only be an associative array, list or null.");
+                        throw new Exception("Request parameters can only be an associative array, list or null.", ex);
                     }
                 case JsonToken.StartArray:
                     return JArray.Load(reader).ToObject<object[]>(serializer);

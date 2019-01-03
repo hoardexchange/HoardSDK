@@ -55,7 +55,10 @@ namespace Hoard.GameItemProviders
                 var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
 
                 if (response.ErrorException != null)
+                {
+                    System.Diagnostics.Trace.TraceError(response.ErrorException.ToString());
                     return false;
+                }
                 
                 string challengeToken = response.Content;
                 challengeToken = challengeToken.Substring(2);
@@ -80,13 +83,16 @@ namespace Hoard.GameItemProviders
                 }).Result;
 
                 if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
+                {
+                    System.Diagnostics.Trace.TraceError($"Failed to log in with response: {responseLogin.Content}!");
                     return false;
+                }
 
                 SessionKey = response.Content;
 
                 return true;
             }
-
+            System.Diagnostics.Trace.TraceError($"Not a proper game url: {Game.Url}!");            
             return false;            
         }
 
@@ -253,6 +259,7 @@ namespace Hoard.GameItemProviders
             {
                 return SecureProvider.Transfer(addressFrom, addressTo, item, amount);
             }
+            System.Diagnostics.Trace.TraceError("Invalid Client or SecureProvider!");
             return new Task<bool>(()=> { return false; });
         }
 

@@ -22,14 +22,14 @@ namespace HoardTests.CryptKittyTests
 
             if (hoard.DefaultGame != GameID.kInvalidID)
             {
-                Debug.WriteLine("\tName: " + hoard.DefaultGame.Name);
-                Debug.WriteLine("\tBackend Url: " + hoard.DefaultGame.Url);
-                Debug.WriteLine("\tGameID: " + hoard.DefaultGame.ID);
+                Trace.TraceInformation("\tName: " + hoard.DefaultGame.Name);
+                Trace.TraceInformation("\tBackend Url: " + hoard.DefaultGame.Url);
+                Trace.TraceInformation("\tGameID: " + hoard.DefaultGame.ID);
             }
 
             //Hoard.PlayerID myId = new PlayerID("0x5d0774af3a8f7656dc61bcf30e383056275911b7","");
             //Assert.True(myId != PlayerID.kInvalidID, "ERROR: Invalid player ID!");
-            //Debug.WriteLine(string.Format("Current player is: {0}", myId.ID));
+            //Trace.TraceInformation(string.Format("Current player is: {0}", myId.ID));
 
             GameID myGame = new GameID("mygame");
 
@@ -37,7 +37,7 @@ namespace HoardTests.CryptKittyTests
 
             GameItem[] items = hoard.GetPlayerItems(hoardFixture.UserIDs[0], myGame).Result;
             
-            Debug.WriteLine("Shutting down HOARD...");
+            Trace.TraceInformation("Shutting down HOARD...");
             Assert.True(hoard.Shutdown());
         }
     }

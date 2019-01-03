@@ -45,7 +45,7 @@ namespace Hoard.Utils
             if (accountsFiles.Length == 0)
                 return null;
             string fileName = accountsFiles[0];
-            System.Diagnostics.Trace.WriteLine(string.Format("Loading account {0}", fileName), "INFO");
+            System.Diagnostics.Trace.TraceInformation(string.Format("Loading account {0}", fileName), "INFO");
 
             string json = File.ReadAllText(fileName);
 

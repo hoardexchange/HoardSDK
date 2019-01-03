@@ -21,7 +21,10 @@ namespace Hoard.ExchangeServices
         {
             ExchangeContract = BCComm.GetGameExchangeContractAsync().Result;
             if (ExchangeContract == null)
+            {
+                System.Diagnostics.Trace.TraceError("Cannot get proper GameExchange contract!");
                 return false;
+            }
             return true;
         }
 
@@ -126,10 +129,11 @@ namespace Hoard.ExchangeServices
                 {
                     return await gameItemProvider.Transfer(account.ID, ExchangeContract.Address, item, amount);
                 }
+                System.Diagnostics.Trace.TraceWarning($"Cannot find GameItemProvider for item: {item.Symbol}!");
             }
             catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
-                // TODO: log invalid transaction
+                System.Diagnostics.Trace.TraceError(ex.ToString());
             }
             return false;
         }
@@ -157,9 +161,9 @@ namespace Hoard.ExchangeServices
             }
             catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
-                // TODO: log invalid withdraw
+                System.Diagnostics.Trace.TraceError(ex.ToString());
+                return false;
             }
-            return false;
         }
 
         public async Task<bool> CancelOrder(AccountInfo account, Order order)

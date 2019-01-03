@@ -133,6 +133,8 @@ namespace Hoard
             if (!result.Item1)
                 return false;
 
+            Trace.TraceInformation(result.Item2);
+
             DefaultGame = Options.Game;
 
             //our default GameItemProvider
@@ -313,8 +315,9 @@ namespace Hoard
             {
                 return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(account.ID).Result));
             }
-            catch(Exception)
+            catch(Exception ex)
             {
+                Trace.TraceError(ex.ToString());
                 return 0;
             }
         }
@@ -330,8 +333,9 @@ namespace Hoard
             {
                 return BCComm.GetHRDAddressAsync().Result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Trace.TraceError(ex.ToString());
                 return "0x0";
             }
         }
@@ -347,8 +351,9 @@ namespace Hoard
             {
                 return BCComm.GetHRDAmountAsync(info.ID).Result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Trace.TraceError(ex.ToString());
                 return 0;
             }
         }

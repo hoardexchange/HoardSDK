@@ -50,32 +50,32 @@ namespace HoardTests
 
             if (HoardService.DefaultGame != GameID.kInvalidID)
             {
-                Debug.WriteLine("\tName: " + HoardService.DefaultGame.Name);
-                Debug.WriteLine("\tBackend Url: " + HoardService.DefaultGame.Url);
-                Debug.WriteLine("\tGameID: " + HoardService.DefaultGame.ID);
+                Trace.TraceInformation("\tName: " + HoardService.DefaultGame.Name);
+                Trace.TraceInformation("\tBackend Url: " + HoardService.DefaultGame.Url);
+                Trace.TraceInformation("\tGameID: " + HoardService.DefaultGame.ID);
             }
 
-            Debug.WriteLine("Getting Hoard games...");
+            Trace.TraceInformation("Getting Hoard games...");
 
             GameID[] games = HoardService.QueryHoardGames().Result;
 
-            Debug.WriteLine(string.Format("Found {0} Hoard games.", games.Length));
+            Trace.TraceInformation(string.Format("Found {0} Hoard games.", games.Length));
 
             foreach (GameID game in games)
             {
                 //Register hoard provider for this gam
-                Debug.WriteLine(string.Format("Registering Hoard game {0}", game.Name));
+                Trace.TraceInformation(string.Format("Registering Hoard game {0}", game.Name));
                 HoardService.RegisterHoardGame(game);
 
-                Debug.WriteLine(string.Format("Getting player items for game {0}", game.Name));
+                Trace.TraceInformation(string.Format("Getting player items for game {0}", game.Name));
                 GameItem[] items = HoardService.GetPlayerItems(hoardFixture.UserIDs[0], game).Result;
 
-                Debug.WriteLine(string.Format("Found {0} items.", items.Length));
+                Trace.TraceInformation(string.Format("Found {0} items.", items.Length));
                 foreach (GameItem gi in items)
                 {
                     //assume we need to populate properties
                     //TODO: if properties is not null we would need to compare state with some cached data and if there is mismatch update too
-                    Debug.WriteLine(string.Format("Getting properties for item {0}:{1}...", gi.Symbol, gi.State));
+                    Trace.TraceInformation(string.Format("Getting properties for item {0}:{1}...", gi.Symbol, gi.State));
                     if (gi.Properties == null)
                         HoardService.FetchItemProperties(gi);
                     //TODO: enumerate properties...
@@ -87,10 +87,10 @@ namespace HoardTests
             if (exchange != null)
             {
                 var orders = exchange.ListOrders(null, null, null).Result;
-                Debug.WriteLine(string.Format("Found {0} exchange orders.", orders.Length));
+                Trace.TraceInformation(string.Format("Found {0} exchange orders.", orders.Length));
                 foreach (Order order in orders)
                 {
-                    Debug.WriteLine(string.Format("Order: Buy {0} {1} for {2} {3}.",
+                    Trace.TraceInformation(string.Format("Order: Buy {0} {1} for {2} {3}.",
                         order.amountGive,
                         order.gameItemGive.Symbol,
                         order.amountGet,
@@ -107,7 +107,7 @@ namespace HoardTests
                 }*/
             }
 
-            Debug.WriteLine("Shutting down HOARD...");
+            Trace.TraceInformation("Shutting down HOARD...");
 
             HoardService.Shutdown();
         }
