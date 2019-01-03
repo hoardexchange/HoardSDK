@@ -25,7 +25,7 @@ namespace HoardIPC
                 byte[] headerBuffer = new byte[PipeHelper.HeaderChunkSize];
                 while (pipeServer.IsRunning)
                 {
-                    System.Threading.Thread.Sleep(0);
+                    Thread.Sleep(0);
                     try
                     {
                         if (pipeServer.NamedPipeServer.IsConnected == false)
@@ -62,8 +62,9 @@ namespace HoardIPC
                         }
                         //
                     }
-                    catch (IOException)
+                    catch (IOException ex)
                     {
+                        Trace.TraceError(ex.ToString());
                     }
                 }
                 pipeServer.IsCLosed = true;
@@ -91,7 +92,7 @@ namespace HoardIPC
             NamedPipeServer.Close();
             while (!IsCLosed)
             {
-                System.Threading.Thread.Sleep(1);
+                Thread.Sleep(1);
             }
             if (NamedPipeServer.IsConnected)
                 NamedPipeServer.Disconnect();

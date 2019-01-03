@@ -134,14 +134,15 @@ namespace Hoard
                 return false;
 
             Trace.TraceInformation(result.Item2);
+            
+            //our default GameItemProvider
+            if (Options.Game != GameID.kInvalidID)
+            {
+                if (!RegisterHoardGame(DefaultGame))
+                    return false;
+            }
 
             DefaultGame = Options.Game;
-
-            //our default GameItemProvider
-            if (DefaultGame != GameID.kInvalidID)
-            {
-                RegisterHoardGame(DefaultGame);
-            }
 
             //init exchange service
             IExchangeService exchange = new HoardExchangeService(this);
@@ -200,10 +201,14 @@ namespace Hoard
                 {
                     if (provider.Connect().Result)
                     {
-                        Providers.Add(game,provider);
+                        Providers.Add(game, provider);
                         return true;
                     }
                 }
+            }
+            else
+            {
+                Trace.TraceError($"Game {game.ID} already registered!");
             }
             return false;
         }
