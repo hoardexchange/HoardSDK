@@ -190,7 +190,7 @@ namespace Hoard.BC
             return null;
         }
 
-        public async Task<bool> TransferHRDAsync(string from, string to, ulong amount)
+        public async Task<bool> TransferHRDAsync(AccountInfo from, string to, BigInteger amount)
         {
             string hoardTokenAddress = await gameCenter.GetHoardTokenAddressAsync();
             if (hoardTokenAddress != null)
@@ -241,9 +241,7 @@ namespace Hoard.BC
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             string data = function.GetData(functionInput);
-            BigInteger gasPrice = BigInteger.Zero;
-            var trans = new Nethereum.Signer.Transaction(function.ContractAddress,
-                BigInteger.Zero, nonce, gasPrice, gas.Value, data);
+            var trans = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, BigInteger.Zero, gas.Value, data);
             string encoded = account.SignTransaction(trans.GetRLPEncodedRaw()).Result;
             if (encoded == null)
             {

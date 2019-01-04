@@ -1,5 +1,6 @@
 ﻿using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
+using Nethereum.RPC.Eth.Transactions;
 using Nethereum.RPC.NonceServices;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
@@ -42,24 +43,11 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<BigInteger>(address);
         }
 
-        public async Task<bool> Transfer(string from, string to, ulong amount)
+        public async Task<bool> Transfer(AccountInfo from, string to, BigInteger amount)
         {
             var function = GetFunctionTransfer();
-            var gas = await function.EstimateGasAsync(
-                from,
-                new Nethereum.Hex.HexTypes.HexBigInteger(3000000),
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                to,
-                amount);
-
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(
-                from,
-                gas,
-                new Nethereum.Hex.HexTypes.HexBigInteger(0),
-                null,
-                to,
-                amount);
+            object[] functionInput = { to.Substring(2), amount };
+            var receipt = await BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;
         }
     }
