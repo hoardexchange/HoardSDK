@@ -370,7 +370,7 @@ namespace Hoard
                 writer.Write((uint)MessageId.kAuthenticate);
                 writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
                 // Consider that password should not be transferred to signer
-                writer.Write(StringToByteArray(password, (int)Helper.kUserNameLength));
+                //writer.Write(StringToByteArray(password, (int)Helper.kUserNameLength));
                 writer.Write(StringToByteArray(token.AccessToken, (int)Helper.kTokenLength));
                 socketData.Owner = user;
                 socketData.ResponseEvent.Reset();
