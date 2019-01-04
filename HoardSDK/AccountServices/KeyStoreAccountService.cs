@@ -52,7 +52,7 @@ namespace Hoard
 
             string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
 
-            Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, name, password, AccountsDir);
+            Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, password, AccountsDir);
             
             AccountInfo accountInfo = new KeyStoreAccount(name, new HoardID(accountTuple.Item1), accountTuple.Item2);
             user.Accounts.Add(accountInfo);
@@ -65,14 +65,12 @@ namespace Hoard
             return await Task.Run(() =>
             {
                 user.Accounts.Clear();
-                KeyStoreUtils.EnumerateAccounts(user.UserName, AccountsDir, (string accountId) =>
+                KeyStoreUtils.EnumerateAccounts(user, AccountsDir, (string filename) =>
                 {
-                    string password = UserInputProvider.RequestInput(user, eUserInputType.kPassword, accountId).Result;
-                    Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user.UserName, accountId, password, AccountsDir);
-
+                    Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user, UserInputProvider, filename, AccountsDir);
                     if (accountTuple != null)
                     {
-                        AccountInfo accountInfo = new KeyStoreAccount(accountId, new HoardID(accountTuple.Item1), accountTuple.Item2);
+                        AccountInfo accountInfo = new KeyStoreAccount(accountTuple.Item1, new HoardID(accountTuple.Item1), accountTuple.Item2);
                         user.Accounts.Add(accountInfo);
                     }
                 });
