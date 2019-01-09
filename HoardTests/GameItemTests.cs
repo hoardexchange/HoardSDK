@@ -144,7 +144,7 @@ namespace HoardTests
         [Fact]
         public void UploadDownloadState()
         {
-            GameItem swordItem = new GameItem(new GameID("test"), "TM721", null);
+            GameItem swordItem = new GameItem(GameID.FromName("test"), "TM721", null);
             swordItem.Properties = new SwordProperties(10, 5, 20);
 
             GameItem[] items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol).Result;

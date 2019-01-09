@@ -28,11 +28,11 @@ namespace HoardTests
             GameID[] games = HoardService.QueryHoardGames().Result;
             Assert.NotEmpty(games);
 
-            GameID gameID = new GameID("12345");
+            GameID gameID = GameID.FromName("12345");
             Assert.DoesNotContain(gameID, games);
             Assert.False(HoardService.RegisterHoardGame(gameID));
 
-            gameID = new GameID("2c3257614189ee907c819a4c92b04c6b9e6e9346051563e780d3c302e67e76b1");
+            gameID = new GameID(System.Numerics.BigInteger.Parse("2c3257614189ee907c819a4c92b04c6b9e6e9346051563e780d3c302e67e76b1"));
             Assert.Contains(gameID, games);
             Assert.True(HoardService.RegisterHoardGame(gameID));
 

@@ -31,7 +31,7 @@ namespace HoardTests.CryptKittyTests
             //Assert.True(myId != PlayerID.kInvalidID, "ERROR: Invalid player ID!");
             //Trace.TraceInformation(string.Format("Current player is: {0}", myId.ID));
 
-            GameID myGame = new GameID("mygame");
+            GameID myGame = GameID.FromName("mygame");
 
             hoard.RegisterGame(myGame, new CKGameItemProvider(myGame));
 

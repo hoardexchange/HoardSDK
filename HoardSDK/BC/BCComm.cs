@@ -147,7 +147,7 @@ namespace Hoard.BC
             GameID[] games = new GameID[count];
             for (ulong i = 0; i < count; ++i)
             {
-                string gameID = (await gameCenter.GetGameIdByIndexAsync(i)).ToString("x");
+                BigInteger gameID = (await gameCenter.GetGameIdByIndexAsync(i));
                 string gameAddress = await gameCenter.GetGameContractAsync(gameID);
                 GameID game = new GameID(gameID);                
                 GameContract gameContract = new GameContract(web, gameAddress);
@@ -160,7 +160,7 @@ namespace Hoard.BC
             return games;
         }
 
-        public async Task<bool> GetGameExistsAsync(string gameID)
+        public async Task<bool> GetGameExistsAsync(BigInteger gameID)
         {
             return await gameCenter.GetGameExistsAsync(gameID);
         }

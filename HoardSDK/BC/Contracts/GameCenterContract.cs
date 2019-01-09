@@ -1,5 +1,6 @@
 ﻿using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
+using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using System.Numerics;
@@ -101,7 +102,7 @@ namespace Hoard.BC.Contracts
         /// </summary>
         /// <param name="gameID"></param>
         /// <returns></returns>
-        public Task<string> GetGameContractAsync(string gameID)
+        public Task<string> GetGameContractAsync(BigInteger gameID)
         {
             var function = GetFunctionGetGameContract();
             return function.CallAsync<string>(gameID);
@@ -128,7 +129,7 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<ulong>();
         }
 
-        public Task<bool> GetGameExistsAsync(string gameID)
+        public Task<bool> GetGameExistsAsync(BigInteger gameID)
         {
             var function = GetFunctionGameExists();
             return function.CallAsync<bool>(gameID);

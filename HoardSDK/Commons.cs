@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -119,26 +120,56 @@ namespace Hoard
         }
     }
 
+    class BigIntegerHexConverter : System.ComponentModel.TypeConverter
+    {
+        public override object ConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, System.Type destinationType)
+        {
+            if (destinationType == typeof(string))
+            {
+                return ((BigInteger)value).ToString("x");
+            }
+            return base.ConvertTo(context, culture, value, destinationType);
+        }
+    }
+
     /// <summary>
     /// Game identifier.
     /// </summary>
     public class GameID : IEquatable<GameID>
     {
-        public string ID { get; set; } = null;
+        [System.ComponentModel.TypeConverter(typeof(BigIntegerHexConverter))]
+        public BigInteger ID { get; set; }
         public string Name { get; set; }
         public string Url { get; set; }
         public string GameOwner { get; set; }
 
-        public static GameID kInvalidID { get; private set; } = new GameID(null);
+        public static GameID kInvalidID { get; private set; } = new GameID(BigInteger.Zero);
 
-        public GameID(string id)
+        public GameID(BigInteger id)
         {
+            System.Diagnostics.Trace.Assert(id < (BigInteger.One << 256));
             ID = id;
         }
 
         public override int GetHashCode()
         {
             return ID.GetHashCode();
+        }
+
+        public static GameID FromName(string name)
+        {
+            var sha3 = new Org.BouncyCastle.Crypto.Digests.KeccakDigest(256);
+            byte[] hashb = new byte[sha3.GetDigestSize()];
+            byte[] value = System.Text.Encoding.UTF8.GetBytes(name);
+            sha3.Reset();
+            sha3.BlockUpdate(value, 0, value.Length);
+            sha3.DoFinal(hashb, 0);
+            var v = new System.Numerics.BigInteger(hashb.Reverse().ToArray());
+            if (v.Sign<0)
+            {
+                v = v + (BigInteger.One << 256);
+            }
+            return new GameID(v);
         }
 
         public bool Equals(GameID other)
@@ -162,6 +193,11 @@ namespace Hoard
                 return false;
             else
                 return Equals(gameObj);
+        }
+
+        public override string ToString()
+        {
+            return ID.ToString("x");
         }
 
         public static bool operator ==(GameID game1, GameID game2)

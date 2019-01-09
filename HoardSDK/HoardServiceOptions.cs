@@ -72,7 +72,7 @@ namespace Hoard
             }
             else
             {
-                Game = new GameID(cfg.GameID);
+                Game = new GameID(System.Numerics.BigInteger.Parse(cfg.GameID));
             }
 
             if (!string.IsNullOrEmpty(cfg.ExchangeServiceUrl))
