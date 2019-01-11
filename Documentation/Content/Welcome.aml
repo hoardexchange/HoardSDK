@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<topic id="39a138b6-d12e-4143-9073-32bcaa4d62cd" revisionNumber="1">
+	<developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+		<introduction>
+			<para>Hoard API documentation pages</para>
+		</introduction>
+
+		<section>
+			<title>Getting Started</title>
+			<content>
+				<para>Welcome to Hoard SDK documentation pages. This document provides a complete Hoard API documentation.
+        Before you start using the SDK please check Hoard Knowledge Base where you can find full Hoard Platform specification,
+        environment setup guide and usage examples.</para>      
+			</content>
+		</section>
+
+    <section>
+      <title>Working with the SDK</title>
+      <content>
+        <para>
+          To get started, add a HoardSDK package reference to your project.
+        </para>
+        <list class="bullet">
+          <listItem>
+            <para>If it is a standalone C# project we recommend using nuget package that is the easiest setup method.</para>
+          </listItem>
+          <listItem>
+            <para>
+              For projects like Unity3D where you don't have nuget support,
+              you can put all HoardSDK libraries (dll files) into plugins directory of your Unity3D project and Unity3D will automatically
+              create proper references.
+            </para>
+          </listItem>
+          <listItem>
+            <para>
+              Or you can always manualy reference needed parts of HoardSDK to your project.
+            </para>
+          </listItem>
+        </list>
+
+        <para>
+          Please check our tutorials and examples section to get more information on how to use HoardSDK.
+        </para>
+
+      </content>
+    </section>
+
+		<relatedTopics>
+			<link xlink:href="eb47262f-67aa-433a-ac46-8d2642ebddff" />
+		</relatedTopics>
+	</developerConceptualDocument>
+</topic>
