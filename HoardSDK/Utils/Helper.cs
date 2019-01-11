@@ -1,4 +1,5 @@
 ﻿using Nethereum.RLP;
+using Org.BouncyCastle.Crypto.Digests;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -26,16 +27,14 @@ namespace Hoard.Utils
             return result.ToString();
         }
 
-        public static string SHA256HexHashString(string StringIn)
+        public static string Keccak256HexHashString(string StringIn)
         {
-            string hashString;
-            using (var sha256 = SHA256Managed.Create())
-            {
-                var hash = sha256.ComputeHash(Encoding.Default.GetBytes(StringIn));
-                hashString = ToHex(hash, false);
-            }
-
-            return hashString;
+            var sha3 = new KeccakDigest(256);
+            byte[] hash = new byte[sha3.GetDigestSize()];
+            byte[] value = Encoding.Default.GetBytes(StringIn);
+            sha3.BlockUpdate(value, 0, value.Length);
+            sha3.DoFinal(hash, 0);
+            return ToHex(hash, false);
         }
 
         internal static byte[][] ToBytes(this RLPCollection collection)

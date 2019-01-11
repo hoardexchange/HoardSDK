@@ -13,7 +13,7 @@ namespace Hoard.Utils
     {
         public static void EnumerateAccounts(User user, string accountsDir, Action<string> enumFunc)
         {
-            string hashedName = Helper.SHA256HexHashString(user.UserName);
+            string hashedName = Helper.Keccak256HexHashString(user.UserName);
             string path = Path.Combine(accountsDir, hashedName);
 
             System.Diagnostics.Trace.TraceInformation(string.Format("Loading accounts from path: {0}", path));
@@ -41,7 +41,7 @@ namespace Hoard.Utils
 
         public static Tuple<string, string> LoadAccount(User user, IUserInputProvider userInputProvider, string filename, string accountsDir)
         {
-            string hashedName = Helper.SHA256HexHashString(user.UserName);
+            string hashedName = Helper.Keccak256HexHashString(user.UserName);
             var accountsFiles = Directory.GetFiles(Path.Combine(accountsDir, hashedName), filename);
             if (accountsFiles.Length == 0)
                 return null;
@@ -60,7 +60,7 @@ namespace Hoard.Utils
 
         public static Tuple<string, string> CreateAccount(User user, string password, string accountsDir)
         {
-            string hashedName = Helper.SHA256HexHashString(user.UserName);
+            string hashedName = Helper.Keccak256HexHashString(user.UserName);
             string path = Path.Combine(accountsDir, hashedName);
             //generate new secure random key
             var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
