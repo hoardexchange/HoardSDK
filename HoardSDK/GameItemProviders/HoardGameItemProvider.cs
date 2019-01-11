@@ -27,13 +27,21 @@ namespace Hoard.GameItemProviders
         /// <summary>
         /// Cached list of all supported item types as returned from server
         /// </summary>
-        private List<string> ItemTypes = null;
+        private string[] ItemTypes = null;
 
+        /// <summary>
+        /// Creates new instance of Hoard GameItem provider for a particular game.
+        /// This type of provider uses a GameServer as a proxy between blockchain and game client.
+        /// </summary>
+        /// <param name="game">GameID with valid GameServer URL</param>
         public HoardGameItemProvider(GameID game)
         {
             Game = game;
         }
 
+        /// <summary>
+        /// disconnects from game server
+        /// </summary>
         public void Shutdown()
         {
         }
@@ -122,12 +130,14 @@ namespace Hoard.GameItemProviders
             public List<string> types = null;
         }
 
+        /// <inheritdoc/>
         public string[] GetItemTypes()
         {
-            if (ItemTypes == null)
+            if (ItemTypes != null)
             {
-                //try to grab from server
+                return ItemTypes;
             }
+
             if (Client != null)
             {
                 var request = new RestRequest("item_types/", Method.GET);
@@ -136,14 +146,14 @@ namespace Hoard.GameItemProviders
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     var responseDeserialized = JsonConvert.DeserializeObject<itemTypesResponse>(response.Content);
-                    return responseDeserialized.types.ToArray();
+                    ItemTypes = responseDeserialized.types.ToArray();
                 }
             }
-            if (SecureProvider != null)
+            if ((ItemTypes == null) && (SecureProvider != null))
             {
-                return SecureProvider.GetItemTypes();
+                ItemTypes = SecureProvider.GetItemTypes();
             }
-            return null;
+            return ItemTypes;
         }
 
         private static byte[] ToByteArray(string value)
@@ -163,6 +173,7 @@ namespace Hoard.GameItemProviders
             public List<Dictionary<string,string>> items = null;
         }
 
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
         {
             if (Client != null)
@@ -182,6 +193,7 @@ namespace Hoard.GameItemProviders
             return null;
         }
 
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
         {
             if (Client != null)
@@ -201,6 +213,7 @@ namespace Hoard.GameItemProviders
             return null;
         }
 
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
             if (Client != null)
@@ -248,6 +261,7 @@ namespace Hoard.GameItemProviders
             return items;
         }
 
+        /// <inheritdoc/>
         public Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
         {
             if (Client != null)
@@ -263,6 +277,10 @@ namespace Hoard.GameItemProviders
             return new Task<bool>(()=> { return false; });
         }
 
+        /// <summary>
+        /// Connects to Hoard Game Server
+        /// </summary>
+        /// <returns>true if connection has been established, false otherwise</returns>
         public async Task<bool> Connect()
         {
             bool connected = false;

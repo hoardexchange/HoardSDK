@@ -111,16 +111,37 @@ namespace Hoard
     }
 
     /// <summary>
-    /// Representation of Game Item description retrieved from Hoard Platform
+    /// Descriptor of Game Item retrieved from Hoard Platform
     /// </summary>
     public class GameItem
     {
+        /// <summary>
+        /// Game this item belongs to
+        /// </summary>
         public GameID Game { get; private set; }
+        /// <summary>
+        /// Symbol(type) of this game item
+        /// </summary>
         public string Symbol { get; private set; }
+        /// <summary>
+        /// State of item (arbitrary value)
+        /// </summary>
         public byte[] State { get; set; }
+        /// <summary>
+        /// Metadata contain implementation specific data
+        /// </summary>
         public IGameItemMetadata Metadata { get; set; } = null;
+        /// <summary>
+        /// Properties of this item (<see cref="IItemPropertyProvider"/>)
+        /// </summary>
         public ItemProperties Properties { get; set; } = null;
 
+        /// <summary>
+        /// Creates new instance of GameItem descriptor
+        /// </summary>
+        /// <param name="game"></param>
+        /// <param name="symbol"></param>
+        /// <param name="metadata"></param>
         public GameItem(GameID game, string symbol, IGameItemMetadata metadata)
         {
             Game = game;

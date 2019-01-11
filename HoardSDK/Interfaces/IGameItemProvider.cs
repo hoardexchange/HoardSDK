@@ -5,13 +5,25 @@ using System.Threading.Tasks;
 namespace Hoard
 {
     /// <summary>
-    /// Game items params used by IGameItemProvider.GetItems 
+    /// Game items params used for filtering queries by IGameItemProvider.GetItems 
     /// </summary>
     public class GameItemsParams
     {
+        /// <summary>
+        /// public address of player
+        /// </summary>
         public string PlayerAddress = null;
+        /// <summary>
+        /// address of GameItem contract (type of GameITem)
+        /// </summary>
         public string ContractAddress = null;
+        /// <summary>
+        /// TODO: what is it used for???
+        /// </summary>
         public BigInteger Amount = BigInteger.Zero;
+        /// <summary>
+        /// TokenID to query (for ERC721 tokens only)
+        /// </summary>
         public string TokenId = null;
     }
 
