@@ -12,8 +12,8 @@ namespace Hoard
         {
             public string PrivateKey = null;
 
-            public KeyStoreAccount(string name, HoardID id, string key)
-                :base(name,id)
+            public KeyStoreAccount(string name, HoardID id, string key, User user)
+                :base(name, id, user)
             {
                 PrivateKey = key;
             }
@@ -28,9 +28,9 @@ namespace Hoard
                 return KeyStoreAccountService.SignMessage(input, PrivateKey);
             }
 
-            public override Task<AccountInfo> Activate(User user)
+            public override Task<AccountInfo> Activate()
             {
-                return KeyStoreAccountService.ActivateAccount(user, this);
+                return KeyStoreAccountService.ActivateAccount(Owner, this);
             }
         }
 
@@ -54,7 +54,7 @@ namespace Hoard
 
             Tuple<string, string> accountTuple = KeyStoreUtils.CreateAccount(user, password, AccountsDir);
             
-            AccountInfo accountInfo = new KeyStoreAccount(name, new HoardID(accountTuple.Item1), accountTuple.Item2);
+            AccountInfo accountInfo = new KeyStoreAccount(name, new HoardID(accountTuple.Item1), accountTuple.Item2, user);
             user.Accounts.Add(accountInfo);
 
             return accountInfo;
@@ -70,7 +70,7 @@ namespace Hoard
                     Tuple<string, string> accountTuple = KeyStoreUtils.LoadAccount(user, UserInputProvider, filename, AccountsDir);
                     if (accountTuple != null)
                     {
-                        AccountInfo accountInfo = new KeyStoreAccount(accountTuple.Item1, new HoardID(accountTuple.Item1), accountTuple.Item2);
+                        AccountInfo accountInfo = new KeyStoreAccount(accountTuple.Item1, new HoardID(accountTuple.Item1), accountTuple.Item2, user);
                         user.Accounts.Add(accountInfo);
                     }
                 });

@@ -138,7 +138,7 @@ namespace Hoard
             //our default GameItemProvider
             if (Options.Game != GameID.kInvalidID)
             {
-                if (!RegisterHoardGame(DefaultGame))
+                if (!RegisterHoardGame(Options.Game))
                     return false;
             }
 

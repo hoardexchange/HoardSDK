@@ -65,11 +65,10 @@ namespace Hoard
 
         private class HoardAccount : AccountInfo
         {
-            public User Owner;
             public bool InternalSet = false;
 
             public HoardAccount(string name, string id, User user)
-                : base(name, new HoardID(System.Numerics.BigInteger.Zero))
+                : base(name, new HoardID(id), user)
             {
                 Owner = user;
                 InternalSet = false;
@@ -85,7 +84,7 @@ namespace Hoard
                 return HoardAccountService.SignMessageInternal(input, this);
             }
 
-            public override Task<AccountInfo> Activate(User user)
+            public override Task<AccountInfo> Activate()
             {
                 if (InternalSet)
                 {
@@ -95,7 +94,7 @@ namespace Hoard
                     });
                 }
                 else
-                    return HoardAccountService.ActivateAccount(user, this);
+                    return HoardAccountService.ActivateAccount(Owner, this);
             }
         }
 
@@ -135,7 +134,7 @@ namespace Hoard
 
         byte[] StringToByteArray(string str, int length)
         {
-            return Encoding.ASCII.GetBytes(str.PadRight(length, ' '));
+            return Encoding.ASCII.GetBytes(str.PadRight(length, '\0'));
         }
 
         public HoardAccountService(string url, string signerUrl, string clientId, IUserInputProvider userInputProvider)
@@ -143,7 +142,7 @@ namespace Hoard
             UserInputProvider = userInputProvider;
             ClientId = clientId;
             AuthClient = new RestClient(url);
-            SignerUrl = url;
+            SignerUrl = signerUrl;
         }
 
         protected bool ProcessMessage(byte[] msg, SocketData sd)
@@ -368,7 +367,7 @@ namespace Hoard
                 BinaryWriter writer = new BinaryWriter(ms);
                 writer.Write(MessagePrefix);
                 writer.Write((uint)MessageId.kAuthenticate);
-                writer.Write(StringToByteArray(user.UserName, (int)Helper.kUserNameLength));
+                writer.Write(StringToByteArray(user.HoardId, (int)Helper.kUserNameLength));
                 // Consider that password should not be transferred to signer
                 //writer.Write(StringToByteArray(password, (int)Helper.kUserNameLength));
                 writer.Write(StringToByteArray(token.AccessToken, (int)Helper.kTokenLength));

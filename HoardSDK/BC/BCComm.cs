@@ -71,9 +71,16 @@ namespace Hoard.BC
             return new BigInteger(0);
         }
 
-        public GameItemContract GetGameItemContract(GameID game, string contractAddress, Type contractType)
+        public GameItemContract GetGameItemContract(GameID game, string contractAddress, Type contractType, string abi = "")
         {
-            return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress);
+            if (abi == "")
+            {
+                return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress);
+            }
+            else
+            {
+                return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress, abi);
+            }
         }
 
         public TContract GetContract<TContract>(string contractAddress)

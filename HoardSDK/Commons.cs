@@ -84,18 +84,20 @@ namespace Hoard
     {
         public HoardID ID { get; private set; } = null;
         public string Name { get; private set; } = null;
+        public User Owner;
 
-        public AccountInfo(string name, HoardID id)
+        public AccountInfo(string name, HoardID id, User user)
         {
             Name = name;
             ID = id;
+            Owner = user;
         }
 
         public abstract Task<string> SignTransaction(byte[] input);
 
         public abstract Task<string> SignMessage(byte[] input);
 
-        public abstract Task<AccountInfo> Activate(User user);
+        public abstract Task<AccountInfo> Activate();
     }
 
     /// <summary>
@@ -108,14 +110,15 @@ namespace Hoard
         public List<AccountInfo> Accounts = new List<AccountInfo>();
         public AccountInfo ActiveAccount { get; private set; } = null;
 
-        public User(string name)
+        public User(string name, string hoardId = "")
         {
             UserName = name;
+            HoardId = hoardId;
         }
 
         public bool ChangeActiveAccount(AccountInfo account)
         {
-            ActiveAccount = account.Activate(this).Result;
+            ActiveAccount = account.Activate().Result;
             return ActiveAccount != null;
         }
     }

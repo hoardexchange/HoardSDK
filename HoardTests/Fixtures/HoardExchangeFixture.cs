@@ -127,11 +127,11 @@ namespace HoardTests.Fixtures
             var users = new List<User>();
 
             users.Add(new User("user0"));
-            users[0].Accounts.Add(new KeyStoreAccount("keystore", new HoardID("0xdc457d26e6c34ed3c3db13e9af63709869bc3565"), "0x779cd70609f0637ecf7449611b261411b281ee912456153d3fbdf762a8b21670"));
+            users[0].Accounts.Add(new KeyStoreAccount("keystore", new HoardID("0xdc457d26e6c34ed3c3db13e9af63709869bc3565"), "0x779cd70609f0637ecf7449611b261411b281ee912456153d3fbdf762a8b21670", users[0]));
             users[0].ChangeActiveAccount(users[0].Accounts[0]);
 
             users.Add(new User("user1"));
-            users[1].Accounts.Add(new KeyStoreAccount("keystore", new HoardID("0x1488c9ccd72b710339c393be5fd4aca8c8b5563f"), "0x63eacbf4503767f13c7ecdbf9b65d702913ce3d711e8386d71b8f2a2053c2b85"));
+            users[1].Accounts.Add(new KeyStoreAccount("keystore", new HoardID("0x1488c9ccd72b710339c393be5fd4aca8c8b5563f"), "0x63eacbf4503767f13c7ecdbf9b65d702913ce3d711e8386d71b8f2a2053c2b85", users[1]));
             users[1].ChangeActiveAccount(users[1].Accounts[0]);
 
             return users.ToArray();
