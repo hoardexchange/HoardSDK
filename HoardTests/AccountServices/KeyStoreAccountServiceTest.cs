@@ -65,7 +65,7 @@ namespace HoardTests.AccountServices
             tx = new RLPSigner(rlpEncoded.HexToByteArray(), txData.Length);
             var account = new HoardID(EthECKey.RecoverFromSignature(tx.Signature, tx.RawHash).GetPublicAddress());
             Assert.Equal(user.Accounts[0].ID, account);
-            Assert.Equal(new HoardID(tx.Data[3].ToHex()), to);
+            Assert.Equal(new HoardID(tx.Data[3].ToHex(true)), to);
         }
     }
 }
