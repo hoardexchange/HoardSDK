@@ -168,7 +168,7 @@ namespace Hoard
         /// <summary>
         /// Default account. If not specified this account will be used as default for all user operations.
         /// </summary>
-        public AccountInfo DefaultAccount { get; private set; } = null;
+        public AccountInfo ActiveAccount { get; private set; } = null;
 
         /// <summary>
         /// Basic constructor
@@ -185,10 +185,10 @@ namespace Hoard
         /// </summary>
         /// <param name="account"></param>
         /// <returns></returns>
-        public async Task<bool> ChangeDefaultAccount(AccountInfo account)
+        public async Task<bool> ChangeActiveAccount(AccountInfo account)
         {
-            DefaultAccount = await account.Activate();
-            return DefaultAccount != null;
+            ActiveAccount = await account.Activate();
+            return ActiveAccount != null;
         }
     }
 

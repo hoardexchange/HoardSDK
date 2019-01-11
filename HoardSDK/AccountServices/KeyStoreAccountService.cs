@@ -84,7 +84,7 @@ namespace Hoard
         /// <param name="name">name of account</param>
         /// <param name="privateKey">private key of account</param>
         /// <returns></returns>
-        public static AccountInfo CreateAccount(string name, string privateKey, User user)
+        public static AccountInfo CreateAccountDirect(string name, string privateKey, User user)
         {
             var ecKey = new Nethereum.Signer.EthECKey(privateKey);
 
