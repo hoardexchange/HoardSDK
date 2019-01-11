@@ -29,7 +29,7 @@ namespace HoardTests.AccountServices
         {
             signer = new KeyStoreAccountService(new UserInputProviderFixture());
             user = new User("KeyStoreUser");
-            user.ChangeActiveAccount(signer.CreateAccount("KeyStoreAccount", user).Result);
+            user.ChangeActiveAccount(signer.CreateAccount("KeyStoreAccount", user).Result).Wait();
         }
 
         [Fact]
