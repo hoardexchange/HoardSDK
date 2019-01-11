@@ -6,16 +6,26 @@ using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
 {
-    //TODO: comment it!
+    /// <summary>
+    /// Hoard exchange contract used for order management and making trades
+    /// </summary>
     public class ExchangeContract
-    {
-        public const string ABI = HoardABIConfig.HoardExchangeABI;
+    { 
+        private const string ABI = HoardABIConfig.HoardExchangeABI;
 
         private readonly Web3 web3;
         private Contract contract;
 
+        /// <summary>
+        /// Address of this contract
+        /// </summary>
         public string Address { get { return contract.Address; } }
 
+        /// <summary>
+        /// Creates new ExchnageContract instance
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">eth address of this contract</param>
         public ExchangeContract(Web3 web3, string address)
         {
             this.web3 = web3;
@@ -72,6 +82,16 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("cancelOrderERC721");
         }
 
+        /// <summary>
+        /// Creates a trade order for an ERC223 tokens in currency expressed in ERC233 tokens
+        /// </summary>
+        /// <param name="from">seller account</param>
+        /// <param name="tokenGet">type of currency</param>
+        /// <param name="amountGet">price in given currency</param>
+        /// <param name="tokenGive">type of token to sell</param>
+        /// <param name="amountGive">amount of tokens to sell</param>
+        /// <param name="blockTimeDuration">expiration time of order in block number</param>
+        /// <returns>true if order has been created, false otherwise</returns>
         public async Task<bool> Order(
             AccountInfo from,
             string tokenGet,
@@ -90,6 +110,16 @@ namespace Hoard.BC.Contracts
             return receipt.Status.Value == 1;
         }
 
+        /// <summary>
+        /// Creates a trade order for an ERC721 tokens in currency expressed in ERC233 tokens
+        /// </summary>
+        /// <param name="from">seller account</param>
+        /// <param name="tokenGet">currency type</param>
+        /// <param name="amountGet">price in currency</param>
+        /// <param name="tokenGive">type of token to sell</param>
+        /// <param name="tokenId">identifier of given token to sell (which item to sell)</param>
+        /// <param name="blockTimeDuration">expiration time of order in block number</param>
+        /// <returns>true if order has been created, false otherwise</returns>
         public async Task<bool> OrderERC721(
             AccountInfo from,
             string tokenGet,
@@ -108,6 +138,19 @@ namespace Hoard.BC.Contracts
             return receipt.Status.Value == 1;
         }
 
+        /// <summary>
+        /// Consumes an order and 
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="tokenGet"></param>
+        /// <param name="amountGet"></param>
+        /// <param name="tokenGive"></param>
+        /// <param name="amountGive"></param>
+        /// <param name="expires"></param>
+        /// <param name="nonce"></param>
+        /// <param name="orderOwner"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
         public async Task<bool> Trade(
             AccountInfo from,
             string tokenGet,

@@ -15,8 +15,14 @@ namespace Hoard
     /// </summary>
     public sealed class HoardService
     {
+        /// <summary>
+        /// Singleton instance
+        /// </summary>
         public static readonly HoardService Instance = new HoardService();
 
+        /// <summary>
+        /// Initialization options.
+        /// </summary>
         public HoardServiceOptions Options { get; private set; } = null;
 
         /// <summary>
@@ -56,7 +62,8 @@ namespace Hoard
         /// <summary>
         /// Request game item transfer to player.
         /// </summary>
-        /// <param name="recipient">Transfer address.</param>
+        /// <param name="sender">Transfer address of sender.</param>
+        /// <param name="recipient">Transfer address of recipient.</param>
         /// <param name="item">Game item to be transfered.</param>
         /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
@@ -138,7 +145,7 @@ namespace Hoard
             //our default GameItemProvider
             if (Options.Game != GameID.kInvalidID)
             {
-                if (!RegisterHoardGame(DefaultGame))
+                if (!RegisterHoardGame(Options.Game))
                     return false;
             }
 
@@ -155,7 +162,7 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Shutdown hoard service.
+        /// Shutdown Hoard service.
         /// </summary>
         public bool Shutdown()
         {
@@ -182,10 +189,10 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Register a connector for a particular game. Can register only one connectors for a single gameID
+        /// Register a provider for a particular game. Can register only one provider for a single gameID
         /// </summary>
         /// <param name="game"></param>
-        /// <param name="conn"></param>
+        /// <param name="provider"></param>
         public bool RegisterGame(GameID game, IGameItemProvider provider)
         {
             if (!Providers.ContainsKey(game))
@@ -297,7 +304,7 @@ namespace Hoard
         /// <param name="game"></param>
         public bool GetGameExists(GameID game)
         {
-            return BCComm.GetGameExistsAsync(game.ID).Result;
+            return BCComm.GetGameExists(game.ID).Result;
         }
 
         /// <summary>
@@ -312,13 +319,13 @@ namespace Hoard
         /// <summary>
         /// Returns the ethers owned by the player.
         /// </summary>
-        /// <param name="playerID"></param>
+        /// <param name="account">Account to query</param>
         /// <returns></returns>
-        public float GetBalance(AccountInfo account)
+        public async Task<float> GetBalance(AccountInfo account)
         {
             try
             {
-                return Decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(BCComm.GetBalance(account.ID).Result));
+                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetETHBalance(account.ID)));
             }
             catch(Exception ex)
             {
@@ -328,15 +335,14 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Returns the hoard tokens contract address.
+        /// Returns the Hoard tokens contract address.
         /// </summary>
-        /// <param></param>
         /// <returns></returns>
-        public string GetHRDAddress()
+        public async Task<string> GetHRDAddress()
         {
             try
             {
-                return BCComm.GetHRDAddressAsync().Result;
+                return await BCComm.GetHRDAddress();
             }
             catch (Exception ex)
             {
@@ -346,15 +352,15 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Returns the hoard tokens amount owned by the player.
+        /// Returns the Hoard tokens amount owned by the player.
         /// </summary>
-        /// <param name="playerID"></param>
+        /// <param name="account">Account to query</param>
         /// <returns></returns>
-        public BigInteger GetHRDAmount(AccountInfo info)
+        public async Task<BigInteger> GetHRDAmount(AccountInfo account)
         {
             try
             {
-                return BCComm.GetHRDAmountAsync(info.ID).Result;
+                return await BCComm.GetHRDBalance(account.ID);
             }
             catch (Exception ex)
             {

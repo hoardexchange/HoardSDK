@@ -5,7 +5,10 @@ using System.Text;
 
 namespace Hoard.Utils
 {
-    public static class Helper
+    /// <summary>
+    /// Utiltity and extension class.
+    /// </summary>
+    internal static class Helper
     {
         public static TResult GetPropertyValue<TResult>(this object t, string propertyName)
         {
@@ -29,7 +32,7 @@ namespace Hoard.Utils
         public static string SHA256HexHashString(string StringIn)
         {
             string hashString;
-            using (var sha256 = SHA256Managed.Create())
+            using (var sha256 = SHA256.Create())
             {
                 var hash = sha256.ComputeHash(Encoding.Default.GetBytes(StringIn));
                 hashString = ToHex(hash, false);

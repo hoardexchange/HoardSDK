@@ -44,7 +44,7 @@ namespace HoardTests
         public void Deposit()
         {
             //ERC223
-            AccountInfo account = users[0].ActiveAccount;
+            AccountInfo account = users[0].DefaultAccount;
             var success = BCExchangeService.Deposit(account, items[1], 1).Result;
             Assert.True(success);
 
@@ -52,7 +52,7 @@ namespace HoardTests
             success = BCExchangeService.Deposit(account, items[1], 1).Result;
             Assert.False(success);
 
-            account = users[1].ActiveAccount;
+            account = users[1].DefaultAccount;
             success = BCExchangeService.Deposit(account, items[0], 1000).Result;
             Assert.True(success);
 
@@ -64,7 +64,7 @@ namespace HoardTests
         [Fact, TestPriority(2)]
         public void Order()
         {
-            AccountInfo account = users[0].ActiveAccount;
+            AccountInfo account = users[0].DefaultAccount;
 
             //ERC223
             items[0].Metadata.Set<BigInteger>("Balance", 20);
@@ -73,7 +73,7 @@ namespace HoardTests
 
             Thread.Sleep(3000);
 
-            var orders = ListOrders(items[0], items[1], users[0].ActiveAccount);
+            var orders = ListOrders(items[0], items[1], users[0].DefaultAccount);
             Assert.NotEmpty(orders);
 
             //ERC721
@@ -83,17 +83,17 @@ namespace HoardTests
 
             Thread.Sleep(3000);
 
-            orders = ListOrders(items[0], items[2], users[0].ActiveAccount);
+            orders = ListOrders(items[0], items[2], users[0].DefaultAccount);
             Assert.NotEmpty(orders);
         }
 
         [Fact, TestPriority(3)]
         public void Trade()
         {
-            AccountInfo account = users[1].ActiveAccount;
+            AccountInfo account = users[1].DefaultAccount;
 
             //ERC223
-            var orders = ListOrders(items[0], items[1], users[0].ActiveAccount);
+            var orders = ListOrders(items[0], items[1], users[0].DefaultAccount);
             Assert.NotEmpty(orders);
 
             orders[0].amount = orders[0].amountGet / 2;
@@ -109,7 +109,7 @@ namespace HoardTests
             Assert.False(success);
 
             //ERC721
-            orders = ListOrders(items[0], items[2], users[0].ActiveAccount);
+            orders = ListOrders(items[0], items[2], users[0].DefaultAccount);
             Assert.NotEmpty(orders);
 
             orders[0].amount = orders[0].amountGet / 2;
@@ -125,7 +125,7 @@ namespace HoardTests
         public void Withdraw()
         {
             //ERC721
-            AccountInfo account = users[1].ActiveAccount;
+            AccountInfo account = users[1].DefaultAccount;
             var success = BCExchangeService.Withdraw(account, items[2]).Result;
             Assert.True(success);
 
@@ -137,7 +137,7 @@ namespace HoardTests
             success = BCExchangeService.Withdraw(account, items[1]).Result;
             Assert.True(success);
 
-            account = users[0].ActiveAccount;
+            account = users[0].DefaultAccount;
 
             items[0].Metadata.Set<BigInteger>("Balance", 40);
             success = BCExchangeService.Withdraw(account, items[0]).Result;
@@ -153,7 +153,7 @@ namespace HoardTests
         [Fact, TestPriority(5)]
         public void CancelOrder()
         {
-            AccountInfo account  = users[1].ActiveAccount;
+            AccountInfo account  = users[1].DefaultAccount;
 
             //ERC223
             items[0].Metadata.Set<BigInteger>("Balance", 20);
@@ -167,7 +167,7 @@ namespace HoardTests
 
             Thread.Sleep(3000);
 
-            var orders = ListOrders(items[0], items[1], users[1].ActiveAccount);
+            var orders = ListOrders(items[0], items[1], users[1].DefaultAccount);
             Assert.True(orders.Length == 2);
 
             success = BCExchangeService.CancelOrder(account, orders[0]).Result;
@@ -182,10 +182,10 @@ namespace HoardTests
 
             Thread.Sleep(3000);
 
-            orders = ListOrders(items[0], items[1], users[1].ActiveAccount);
+            orders = ListOrders(items[0], items[1], users[1].DefaultAccount);
             Assert.True(orders.Length == 1);
 
-            orders = ListOrders(items[0], items[2], users[1].ActiveAccount);
+            orders = ListOrders(items[0], items[2], users[1].DefaultAccount);
             Assert.True(orders.Length == 1);
 
             success = BCExchangeService.CancelOrder(account, orders[0]).Result;
@@ -193,7 +193,7 @@ namespace HoardTests
 
             Thread.Sleep(3000);
             
-            orders = ListOrders(items[0], items[2], users[1].ActiveAccount);
+            orders = ListOrders(items[0], items[2], users[1].DefaultAccount);
             Assert.True(orders.Length == 0);
         }
 

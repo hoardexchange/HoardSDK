@@ -4,6 +4,9 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 
+/// <summary>
+/// Main HoardSDK namespace.
+/// </summary>
 namespace Hoard
 {
     /// <summary>
@@ -11,19 +14,23 @@ namespace Hoard
     /// </summary>
     public class HoardID
     {
-        System.Numerics.BigInteger Value;
+        private BigInteger Value;
 
+        /// <summary>
+        /// Constructor from string
+        /// </summary>
+        /// <param name="value">a properly formed string representing a 160bit big integer </param>
         public HoardID(string value)
         {
-            if (string.IsNullOrEmpty(value))
-                throw new ArgumentException("Value cannot be an empty string!");
+            if (!Nethereum.Util.AddressUtil.Current.IsValidEthereumAddressHexFormat(value))
+                throw new ArgumentException($"Value {value} is not a valid address!");
             if (value.StartsWith("0x"))
                 value = value.Substring(2);
 
-            System.Numerics.BigInteger bigValue = System.Numerics.BigInteger.Parse(value, System.Globalization.NumberStyles.AllowHexSpecifier);
+            BigInteger bigValue = BigInteger.Parse(value, System.Globalization.NumberStyles.AllowHexSpecifier);
 
             //validity check
-            System.Numerics.BigInteger maxUValue = System.Numerics.BigInteger.Pow(2, 160) - 1;
+            BigInteger maxUValue = BigInteger.Pow(2, 160) - 1;
 
             if (bigValue > maxUValue) throw new ArgumentOutOfRangeException(nameof(value),
                 $"HoardID integer must not exceed maximum value for int20: {maxUValue}. Current value is: {value}");
@@ -31,10 +38,14 @@ namespace Hoard
             Value = bigValue;            
         }
 
-        public HoardID(System.Numerics.BigInteger value)
+        /// <summary>
+        /// Constructor from BigInteger
+        /// </summary>
+        /// <param name="value">a proper 160bit value</param>
+        public HoardID(BigInteger value)
         {
             //validity check
-            System.Numerics.BigInteger maxUValue = System.Numerics.BigInteger.Pow(2, 160) - 1;
+            BigInteger maxUValue = BigInteger.Pow(2, 160) - 1;
 
             if (value > maxUValue) throw new ArgumentOutOfRangeException(nameof(value),
                 $"HoardID integer must not exceed maximum value for int20: {maxUValue}. Current value is: {value}");
@@ -47,6 +58,10 @@ namespace Hoard
             return Value.ToString("x");
         }
 
+        /// <summary>
+        /// Returns hex byte representation of this object
+        /// </summary>
+        /// <returns></returns>
         public byte[] ToHexByteArray()
         {
             if (BitConverter.IsLittleEndian)
@@ -54,12 +69,20 @@ namespace Hoard
             return Value.ToByteArray();
         }
 
+        /// <summary>
+        /// Default cast string operator
+        /// </summary>
+        /// <param name="addr"></param>
         public static implicit operator string(HoardID addr)
         {
-            return addr.Value.ToString("x");
+            return addr.ToString();
         }
 
-        public static implicit operator System.Numerics.BigInteger(HoardID addr)
+        /// <summary>
+        /// Defulat cast operator to BigInteger
+        /// </summary>
+        /// <param name="addr"></param>
+        public static implicit operator BigInteger(HoardID addr)
         {
             return addr.Value;
         }
@@ -82,19 +105,45 @@ namespace Hoard
     /// </summary>
     public abstract class AccountInfo
     {
+        /// <summary>
+        /// HoardID of this account (public address)
+        /// </summary>
         public HoardID ID { get; private set; } = null;
+        /// <summary>
+        /// Name of this account (for convenience)
+        /// </summary>
         public string Name { get; private set; } = null;
 
+        /// <summary>
+        /// Basic constructor of account
+        /// </summary>
+        /// <param name="name">Name</param>
+        /// <param name="id">Identifier (public address)</param>
         public AccountInfo(string name, HoardID id)
         {
             Name = name;
             ID = id;
         }
 
+        /// <summary>
+        /// Sign any transaction with account
+        /// </summary>
+        /// <param name="input">input arguments</param>
+        /// <returns>signed transaction string</returns>
         public abstract Task<string> SignTransaction(byte[] input);
 
+        /// <summary>
+        /// Sign any message with account
+        /// </summary>
+        /// <param name="input">input arguments</param>
+        /// <returns>signed message</returns>
         public abstract Task<string> SignMessage(byte[] input);
 
+        /// <summary>
+        /// Makes this account active one.
+        /// </summary>
+        /// <param name="user">Owner of account</param>
+        /// <returns></returns>
         public abstract Task<AccountInfo> Activate(User user);
     }
 
@@ -103,24 +152,45 @@ namespace Hoard
     /// </summary>
     public class User
     {
+        /// <summary>
+        /// Name of user
+        /// </summary>
         public string UserName { get; private set; } = "";
+        /// <summary>
+        /// HoardId (public address) of Hoard user
+        /// </summary>
         public string HoardId { get; internal set; } = "";
+        /// <summary>
+        /// List of user accounts (that hold ownership data)
+        /// </summary>
         public List<AccountInfo> Accounts = new List<AccountInfo>();
-        public AccountInfo ActiveAccount { get; private set; } = null;
+        /// <summary>
+        /// Default account. If not specified this account will be used as default for all user operations.
+        /// </summary>
+        public AccountInfo DefaultAccount { get; private set; } = null;
 
+        /// <summary>
+        /// Basic constructor
+        /// </summary>
+        /// <param name="name">User name</param>
         public User(string name)
         {
             UserName = name;
         }
 
-        public bool ChangeActiveAccount(AccountInfo account)
+        /// <summary>
+        /// Sets default account for user
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns></returns>
+        public async Task<bool> ChangeDefaultAccount(AccountInfo account)
         {
-            ActiveAccount = account.Activate(this).Result;
-            return ActiveAccount != null;
+            DefaultAccount = await account.Activate(this);
+            return DefaultAccount != null;
         }
     }
 
-    class BigIntegerHexConverter : System.ComponentModel.TypeConverter
+    internal class BigIntegerHexConverter : System.ComponentModel.TypeConverter
     {
         public override object ConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, System.Type destinationType)
         {
@@ -137,14 +207,33 @@ namespace Hoard
     /// </summary>
     public class GameID : IEquatable<GameID>
     {
+        /// <summary>
+        /// Unique ID of the game (256 hash made from name)
+        /// </summary>
         [System.ComponentModel.TypeConverter(typeof(BigIntegerHexConverter))]
         public BigInteger ID { get; set; }
+        /// <summary>
+        /// User friendly name of the game
+        /// </summary>
         public string Name { get; set; }
+        /// <summary>
+        /// Url of game server
+        /// </summary>
         public string Url { get; set; }
+        /// <summary>
+        /// Owner of the game
+        /// </summary>
         public string GameOwner { get; set; }
 
+        /// <summary>
+        /// Invalid value
+        /// </summary>
         public static GameID kInvalidID { get; private set; } = new GameID(BigInteger.Zero);
 
+        /// <summary>
+        /// Default constructor from 256 big integer
+        /// </summary>
+        /// <param name="id">256 big integer</param>
         public GameID(BigInteger id)
         {
             System.Diagnostics.Trace.Assert(id < (BigInteger.One << 256));
@@ -156,6 +245,11 @@ namespace Hoard
             return ID.GetHashCode();
         }
 
+        /// <summary>
+        /// Creates a proper GameID from name (calculates proper ID)
+        /// </summary>
+        /// <param name="name">User friendly name of the game</param>
+        /// <returns>GameID object</returns>
         public static GameID FromName(string name)
         {
             var sha3 = new Org.BouncyCastle.Crypto.Digests.KeccakDigest(256);
@@ -167,11 +261,18 @@ namespace Hoard
             var v = new System.Numerics.BigInteger(hashb.Reverse().ToArray());
             if (v.Sign<0)
             {
-                v = v + (BigInteger.One << 256);
+                v = v + (BigInteger.One << 256);//make it always positive
             }
-            return new GameID(v);
+            GameID game = new GameID(v);
+            game.Name = name;
+            return game;
         }
 
+        /// <summary>
+        /// Check if other is same (compares IDs)
+        /// </summary>
+        /// <param name="other">object to compare to</param>
+        /// <returns>true if other has same ID, false otherwise</returns>
         public bool Equals(GameID other)
         {
             if (other == null)
@@ -183,7 +284,7 @@ namespace Hoard
                 return false;
         }
 
-        public override bool Equals(Object obj)
+        public override bool Equals(object obj)
         {
             if (obj == null)
                 return false;
@@ -200,18 +301,30 @@ namespace Hoard
             return ID.ToString("x");
         }
 
+        /// <summary>
+        /// Checks equality of two games
+        /// </summary>
+        /// <param name="game1"></param>
+        /// <param name="game2"></param>
+        /// <returns>true if both are the same, false otherwise</returns>
         public static bool operator ==(GameID game1, GameID game2)
         {
             if (((object)game1) == null || ((object)game2) == null)
-                return object.Equals(game1, game2);
+                return Equals(game1, game2);
 
             return game1.Equals(game2);
         }
 
+        /// <summary>
+        /// Checks inequality of two games
+        /// </summary>
+        /// <param name="game1"></param>
+        /// <param name="game2"></param>
+        /// <returns>true if both are different, false otherwise</returns>
         public static bool operator !=(GameID game1, GameID game2)
         {
             if (((object)game1) == null || ((object)game2) == null)
-                return !object.Equals(game1, game2);
+                return !Equals(game1, game2);
 
             return !(game1.Equals(game2));
         }

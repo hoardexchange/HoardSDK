@@ -12,12 +12,21 @@ namespace Hoard
         public object Value;
         public string Type;
 
+        /// <summary>
+        /// Basic constructor
+        /// </summary>
+        /// <param name="value">value of property</param>
+        /// <param name="type">type of property</param>
         public ItemProperty(object value, string type)
         {
             Value = value;
             Type = type;
         }
 
+        /// <summary>
+        /// Returns type of stored Value object
+        /// </summary>
+        /// <returns></returns>
         public new Type GetType()
         {
             if(Type.Equals("int16"))
@@ -44,8 +53,16 @@ namespace Hoard
         }
     }
 
+    /// <summary>
+    /// Defines properties of a Game Item
+    /// </summary>
     public class ItemProperties : Dictionary<string, ItemProperty>
     {
+        /// <summary>
+        /// Returns ItemProperty by its key
+        /// </summary>
+        /// <param name="name">dictionary key</param>
+        /// <returns></returns>
         public ItemProperty GetItemProperty(string name)
         {
             if(ContainsKey(name))
@@ -55,6 +72,12 @@ namespace Hoard
             return null;
         }
 
+        /// <summary>
+        /// Adds new Item property
+        /// </summary>
+        /// <param name="name">dictionary key</param>
+        /// <param name="value">value</param>
+        /// <param name="type">type of stored object</param>
         public void Add(string name, object value, string type)
         {
             this[name] = new ItemProperty(value, type);
@@ -71,6 +94,9 @@ namespace Hoard
         void Set<TResult>(string name, TResult value);
     }
 
+    /// <summary>
+    /// Basic implementation of IGameItemMetadata returning ItemProperties
+    /// </summary>
     public abstract class BaseGameItemMetadata : IGameItemMetadata
     {
         public TResult Get<TResult>(string name)

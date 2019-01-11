@@ -19,7 +19,7 @@ namespace Hoard.ExchangeServices
 
         public bool Init()
         {
-            ExchangeContract = BCComm.GetGameExchangeContractAsync().Result;
+            ExchangeContract = BCComm.GetHoardExchangeContract().Result;
             if (ExchangeContract == null)
             {
                 System.Diagnostics.Trace.TraceError("Cannot get proper GameExchange contract!");

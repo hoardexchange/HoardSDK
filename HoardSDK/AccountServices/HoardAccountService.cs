@@ -5,7 +5,6 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Nethereum.RLP;
 using Newtonsoft.Json;
 using RestSharp;
 using WebSocketSharp;
@@ -45,7 +44,7 @@ namespace Hoard
             errUnknown = 0xff,
         };
 
-        public class SocketData
+        protected class SocketData
         {
             public byte[] ReceivedSignature = new byte[(int)Helper.kSignature];
             public ManualResetEvent ResponseEvent = new ManualResetEvent(false);
@@ -221,7 +220,7 @@ namespace Hoard
                 {
                     Debug.Assert(activeAccountIndex >= 0 && activeAccountIndex < sd.Owner.Accounts.Count);
                     ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = true;
-                    sd.Owner.ChangeActiveAccount((HoardAccount)sd.Owner.Accounts[activeAccountIndex]);
+                    sd.Owner.ChangeDefaultAccount((HoardAccount)sd.Owner.Accounts[activeAccountIndex]);
                     ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = false;
                 }
             }
@@ -436,7 +435,7 @@ namespace Hoard
             MemoryStream ms = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(ms);
             writer.Write(MessagePrefix);
-            writer.Write((UInt32)MessageId.kSignMessage);
+            writer.Write((uint)MessageId.kSignMessage);
             writer.Write(signer.HashPrefixedMessage(input), 0, (int)Helper.kHash);
             Debug.Assert(((HoardAccount)accountInfo).Owner != null);
             SocketData socketData = null;

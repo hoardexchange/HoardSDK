@@ -6,37 +6,69 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
+    /// <summary>
+    /// Account service working with locally stored keys (on the device).
+    /// </summary>
     public class KeyStoreAccountService : IAccountService
     {
-        public class KeyStoreAccount : AccountInfo
+        /// <summary>
+        /// Implementation of AccountInfo that has a direct access to account private key.
+        /// </summary>
+        private class KeyStoreAccount : AccountInfo
         {
             public string PrivateKey = null;
 
+            /// <summary>
+            /// Creates a new KeyStoreAccount.
+            /// </summary>
+            /// <param name="name">Name of account</param>
+            /// <param name="id">identifier (public address)</param>
+            /// <param name="key">private key</param>
             public KeyStoreAccount(string name, HoardID id, string key)
                 :base(name,id)
             {
                 PrivateKey = key;
             }
 
+            /// <summary>
+            /// Sign transaction with the private key
+            /// </summary>
+            /// <param name="input">input arguments</param>
+            /// <returns>signed transaction string</returns>
             public override Task<string> SignTransaction(byte[] input)
             {
                 return KeyStoreAccountService.SignTransaction(input,PrivateKey);
             }
 
+            /// <summary>
+            /// Sign message with the private key
+            /// </summary>
+            /// <param name="input">input arguments</param>
+            /// <returns>signed message string</returns>
             public override Task<string> SignMessage(byte[] input)
             {
                 return KeyStoreAccountService.SignMessage(input, PrivateKey);
             }
 
+            /// <summary>
+            /// Activates account (currently not used)
+            /// </summary>
+            /// <param name="user"></param>
+            /// <returns></returns>
             public override Task<AccountInfo> Activate(User user)
             {
                 return KeyStoreAccountService.ActivateAccount(user, this);
             }
         }
 
-        private string AccountsDir = null;
-        private IUserInputProvider UserInputProvider = null;
+        private readonly string AccountsDir = null;
+        private readonly IUserInputProvider UserInputProvider = null;
 
+        /// <summary>
+        /// Creates new account service instance
+        /// </summary>
+        /// <param name="userInputProvider">input provider</param>
+        /// <param name="accountsDir">folder path where keystore files are stored</param>
         public KeyStoreAccountService(IUserInputProvider userInputProvider, string accountsDir = null)
         {
             UserInputProvider = userInputProvider;
@@ -46,6 +78,27 @@ namespace Hoard
                 AccountsDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Hoard", "accounts");
         }
 
+        /// <summary>
+        /// Helper function to create AccountInfo object based on privateKey
+        /// </summary>
+        /// <param name="name">name of account</param>
+        /// <param name="privateKey">private key of account</param>
+        /// <returns></returns>
+        public static AccountInfo CreateAccount(string name, string privateKey)
+        {
+            var ecKey = new Nethereum.Signer.EthECKey(privateKey);
+
+            AccountInfo accountInfo = new KeyStoreAccount(name, new HoardID(ecKey.GetPublicAddress()), privateKey);
+
+            return accountInfo;
+        }
+
+        /// <summary>
+        /// Creates new account for user with given name
+        /// </summary>
+        /// <param name="name">name of account </param>
+        /// <param name="user">owner of account</param>
+        /// <returns>new account</returns>
         public async Task<AccountInfo> CreateAccount(string name, User user)
         {
             System.Diagnostics.Trace.TraceInformation("Generating user account.");
@@ -60,6 +113,12 @@ namespace Hoard
             return accountInfo;
         }
 
+        /// <summary>
+        /// Retrieves all accounts stored in account folder for particular user.
+        /// Found accounts will be stored in User object.
+        /// </summary>
+        /// <param name="user">user to retrieve accounts for</param>
+        /// <returns>true if at least one account has been properly loaded</returns>
         public async Task<bool> RequestAccounts(User user)
         {
             return await Task.Run(() =>
@@ -78,6 +137,12 @@ namespace Hoard
             });
         }
 
+        /// <summary>
+        /// Sings a message with given account
+        /// </summary>
+        /// <param name="input">message input arguments</param>
+        /// <param name="signature">signing account</param>
+        /// <returns></returns>
         public Task<string> SignMessage(byte[] input, AccountInfo signature)
         {
             KeyStoreAccount ksa = signature as KeyStoreAccount;

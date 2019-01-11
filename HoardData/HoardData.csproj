@@ -46,6 +46,7 @@
     <Compile Include="DataStorageBackend.cs" />
     <Compile Include="DataStorageUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Result.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HoardSDK\HoardSDK.csproj">

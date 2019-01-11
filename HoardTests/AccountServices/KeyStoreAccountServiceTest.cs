@@ -29,7 +29,7 @@ namespace HoardTests.AccountServices
         {
             signer = new KeyStoreAccountService(new UserInputProviderFixture());
             user = new User("KeyStoreUser");
-            user.ChangeActiveAccount(signer.CreateAccount("KeyStoreAccount", user).Result);
+            user.ChangeDefaultAccount(signer.CreateAccount("KeyStoreAccount", user).Result);
         }
 
         [Fact]
@@ -37,7 +37,7 @@ namespace HoardTests.AccountServices
         public async Task SignMessage()
         {
             var message = "Hello world";
-            var signature = await signer.SignMessage(message.ToBytesForRLPEncoding(), user.ActiveAccount);
+            var signature = await signer.SignMessage(message.ToBytesForRLPEncoding(), user.DefaultAccount);
             
             var msgSigner = new EthereumMessageSigner();
             var addressRec = new HoardID(msgSigner.EncodeUTF8AndEcRecover(message, signature));
@@ -58,7 +58,7 @@ namespace HoardTests.AccountServices
             var txData = new byte[][] { nonce, gasPrice, startGas, to.ToHexByteArray(), value, data };
             var tx = new RLPSigner(txData);
 
-            var rlpEncoded = await signer.SignTransaction(tx.GetRLPEncodedRaw(), user.ActiveAccount);
+            var rlpEncoded = await signer.SignTransaction(tx.GetRLPEncodedRaw(), user.DefaultAccount);
             Assert.True(rlpEncoded != null);
             Assert.True(rlpEncoded.Length > 0);
 
