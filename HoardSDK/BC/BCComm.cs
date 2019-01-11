@@ -100,9 +100,16 @@ namespace Hoard.BC
         /// <param name="contractAddress"></param>
         /// <param name="contractType"></param>
         /// <returns></returns>
-        public GameItemContract GetGameItemContract(GameID game, string contractAddress, Type contractType)
+        public GameItemContract GetGameItemContract(GameID game, string contractAddress, Type contractType, string abi = "")
         {
-            return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress);
+            if (abi == "")
+            {
+                return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress);
+            }
+            else
+            {
+                return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress, abi);
+            }
         }
 
         /// <summary>

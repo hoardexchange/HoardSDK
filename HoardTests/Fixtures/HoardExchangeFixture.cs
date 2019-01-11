@@ -126,11 +126,11 @@ namespace HoardTests.Fixtures
             var users = new List<User>();
 
             users.Add(new User("user0"));
-            users[0].Accounts.Add(KeyStoreAccountService.CreateAccount("keystore", "0x779cd70609f0637ecf7449611b261411b281ee912456153d3fbdf762a8b21670"));
+            users[0].Accounts.Add(KeyStoreAccountService.CreateAccount("keystore", "0x779cd70609f0637ecf7449611b261411b281ee912456153d3fbdf762a8b21670", users[0]));
             Assert.True(users[0].ChangeDefaultAccount(users[0].Accounts[0]).Result);
 
             users.Add(new User("user1"));
-            users[1].Accounts.Add(KeyStoreAccountService.CreateAccount("keystore", "0x63eacbf4503767f13c7ecdbf9b65d702913ce3d711e8386d71b8f2a2053c2b85"));
+            users[1].Accounts.Add(KeyStoreAccountService.CreateAccount("keystore", "0x63eacbf4503767f13c7ecdbf9b65d702913ce3d711e8386d71b8f2a2053c2b85", users[1]));
             Assert.True(users[1].ChangeDefaultAccount(users[1].Accounts[0]).Result);
 
             return users.ToArray();

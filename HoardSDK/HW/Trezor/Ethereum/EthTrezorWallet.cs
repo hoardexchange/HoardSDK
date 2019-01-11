@@ -10,8 +10,8 @@ namespace Hoard.HW.Trezor.Ethereum
         {
             private EthTrezorWallet Wallet;
 
-            public HDWalletAccountInfo(string name, HoardID id, EthTrezorWallet wallet)
-                : base(name, id)
+            public HDWalletAccountInfo(string name, HoardID id, EthTrezorWallet wallet, User user)
+                : base(name, id, user)
             {
                 Wallet = wallet;
             }
@@ -26,9 +26,9 @@ namespace Hoard.HW.Trezor.Ethereum
                 return await Wallet.SignTransaction(input, this);
             }
 
-            public override async Task<AccountInfo> Activate(User user)
+            public override async Task<AccountInfo> Activate()
             {
-                return await Wallet.ActivateAccount(user, this);
+                return await Wallet.ActivateAccount(Owner, this);
             }
         }
         private KeyPath keyPath;
@@ -47,7 +47,7 @@ namespace Hoard.HW.Trezor.Ethereum
         {
             var output = await SendRequestAsync(EthGetAddress.Request(indices));
             var address = new HoardID(EthGetAddress.GetAddress(output));
-            user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this));
+            user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this, user));
             return true;
         }
 

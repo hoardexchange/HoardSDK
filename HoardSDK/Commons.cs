@@ -113,16 +113,18 @@ namespace Hoard
         /// Name of this account (for convenience)
         /// </summary>
         public string Name { get; private set; } = null;
+        public User Owner;
 
         /// <summary>
         /// Basic constructor of account
         /// </summary>
         /// <param name="name">Name</param>
         /// <param name="id">Identifier (public address)</param>
-        public AccountInfo(string name, HoardID id)
+        public AccountInfo(string name, HoardID id, User user)
         {
             Name = name;
             ID = id;
+            Owner = user;
         }
 
         /// <summary>
@@ -142,9 +144,8 @@ namespace Hoard
         /// <summary>
         /// Makes this account active one.
         /// </summary>
-        /// <param name="user">Owner of account</param>
         /// <returns></returns>
-        public abstract Task<AccountInfo> Activate(User user);
+        public abstract Task<AccountInfo> Activate();
     }
 
     /// <summary>
@@ -173,9 +174,10 @@ namespace Hoard
         /// Basic constructor
         /// </summary>
         /// <param name="name">User name</param>
-        public User(string name)
+        public User(string name, string hoardId = "")
         {
             UserName = name;
+            HoardId = hoardId;
         }
 
         /// <summary>
@@ -185,7 +187,7 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> ChangeDefaultAccount(AccountInfo account)
         {
-            DefaultAccount = await account.Activate(this);
+            DefaultAccount = await account.Activate();
             return DefaultAccount != null;
         }
     }

@@ -60,6 +60,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("balanceOf");
         }
 
+        private Function GetFunctionOwner()
+        {
+            return contract.GetFunction("owner");
+        }
+
         private Function GetFunctionSymbol()
         {
             return contract.GetFunction("symbol");
@@ -94,6 +99,12 @@ namespace Hoard.BC.Contracts
         public Task<string> GetSymbol()
         {
             var function = GetFunctionSymbol();
+            return function.CallAsync<string>();
+        }
+
+        public Task<string> GetOwner()
+        {
+            var function = GetFunctionOwner();
             return function.CallAsync<string>();
         }
 
