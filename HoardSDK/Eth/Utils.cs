@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Hoard.Eth
 {
-    public class Utils
+    internal class Utils
     {
         public const string EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -41,19 +41,6 @@ namespace Hoard.Eth
             }
 
             return nonce;
-        }
-
-        static public string Sign(string msg, string privateKey)
-        {
-            var dataBytes = Encoding.ASCII.GetBytes(msg);
-
-            var signer = new Nethereum.Signer.EthereumMessageSigner();
-
-            var ecKey = new Nethereum.Signer.EthECKey(privateKey);
-
-            var signature = signer.Sign(dataBytes, ecKey);
-
-            return signature;
         }
     }
 }

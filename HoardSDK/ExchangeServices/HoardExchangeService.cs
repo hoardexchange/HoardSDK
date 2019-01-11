@@ -15,9 +15,8 @@ namespace Hoard.ExchangeServices
             Hoard = hoard;
         }
 
-        // Setup exchange backend client. 
-        // Note: Lets assume it connects on its own, independently from item providers.
-        public bool Init()
+        /// <inheritdoc/>
+        public async Task<bool> Init()
         {
             if (Uri.IsWellFormedUriString(Hoard.Options.ExchangeServiceUrl, UriKind.Absolute))
             {
@@ -33,16 +32,19 @@ namespace Hoard.ExchangeServices
             return false;
         }
 
+        /// <inheritdoc/>
         public void Shutdown()
         {
             Client = null;
         }
 
+        /// <inheritdoc/>
         public Task<bool> Deposit(AccountInfo account, GameItem item, ulong amount)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc/>
         public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
         {
             var jsonStr = await GetJson(
@@ -77,16 +79,19 @@ namespace Hoard.ExchangeServices
             return new Order[0];
         }
 
+        /// <inheritdoc/>
         public Task<bool> Order(AccountInfo account, GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc/>
         public Task<bool> Trade(AccountInfo account, Order order)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc/>
         public Task<bool> Withdraw(AccountInfo account, GameItem item)
         {
             throw new NotImplementedException();

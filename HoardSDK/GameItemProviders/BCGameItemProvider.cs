@@ -13,13 +13,28 @@ namespace Hoard.GameItemProviders
     /// </summary>
     public class BCGameItemProvider : IGameItemProvider
     {
+        /// <summary>
+        /// Blockchain communication interface
+        /// </summary>
         protected BCComm BCComm = null;
-        protected Dictionary<string, GameItemContract> itemContracts = new Dictionary<string, GameItemContract>();
+        /// <summary>
+        /// List of registered GameItem contracts
+        /// </summary>
+        protected Dictionary<string, GameItemContract> ItemContracts = new Dictionary<string, GameItemContract>();
+
         private ContractInterfaceID supportsInterfaceWithLookup = new ContractInterfaceID("0x01ffc9a7", typeof(SupportsInterfaceWithLookupContract));
         private List<ContractInterfaceID> interfaceIDs = new List<ContractInterfaceID>();
 
+        /// <summary>
+        /// Game identifier (only items for thi game will be proccessed)
+        /// </summary>
         public GameID Game { get; private set; }
 
+        /// <summary>
+        /// Creates new instance of BCGameItemProvider for a particular game using supplied blockchain communication interfase
+        /// </summary>
+        /// <param name="game"></param>
+        /// <param name="comm"></param>
         public BCGameItemProvider(GameID game, BCComm comm)
         {
             Game = game;
@@ -31,31 +46,35 @@ namespace Hoard.GameItemProviders
 
         #region IGameItemProvider interface implementation
 
+        /// <inheritdoc/>
         public string[] GetItemTypes()
         {
-            return itemContracts.Keys.ToArray();
+            return ItemContracts.Keys.ToArray();
         }
 
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
         {
             List<GameItem> items = new List<GameItem>();
-            foreach (var contract in itemContracts.Values)
+            foreach (var contract in ItemContracts.Values)
             {
                 items.AddRange(await contract.GetGameItems(account));
             }
             return items.ToArray();
         }
 
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
         {
             List<GameItem> items = new List<GameItem>();
-            if (itemContracts.ContainsKey(itemType))
+            if (ItemContracts.ContainsKey(itemType))
             {
-                items.AddRange(await itemContracts[itemType].GetGameItems(account));
+                items.AddRange(await ItemContracts[itemType].GetGameItems(account));
             }
             return items.ToArray();
         }
 
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
             List<GameItem> items = new List<GameItem>();
@@ -67,15 +86,17 @@ namespace Hoard.GameItemProviders
             return items.ToArray();
         }
 
+        /// <inheritdoc/>
         public Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
         {
-            GameItemContract gameItemContract = itemContracts[item.Symbol];
+            GameItemContract gameItemContract = ItemContracts[item.Symbol];
             return gameItemContract.Transfer(addressFrom, addressTo, item, amount);
         }
 
+        /// <inheritdoc/>
         public async Task<bool> Connect()
         {
-            itemContracts.Clear();
+            ItemContracts.Clear();
             return await RegisterHoardGameContracts();
         }
         #endregion
@@ -114,9 +135,9 @@ namespace Hoard.GameItemProviders
 
         private void RegisterGameItemContract(string symbol, GameItemContract contract)
         {
-            System.Diagnostics.Debug.Assert(!itemContracts.ContainsKey(symbol),
+            System.Diagnostics.Debug.Assert(!ItemContracts.ContainsKey(symbol),
                 string.Format("ERROR: contract with this symbol has been already regisered for Game: '{0}' with ID {1}",Game.Name,Game.ID));
-            itemContracts.Add(symbol, contract);
+            ItemContracts.Add(symbol, contract);
         }
 
         private async Task<GameItemContract> GetGameItemContractByInterface(string contractAddress)

@@ -34,17 +34,19 @@ namespace Hoard
         /// <summary>
         /// Returns all items belonging to a particular player
         /// </summary>
-        /// <param name="playerID"></param>
+        /// <param name="account"></param>
         /// <returns></returns>
         Task<GameItem[]> GetPlayerItems(AccountInfo account);
+
         /// <summary>
         /// Returns all items belonging to a particular player with given type
         /// </summary>
-        /// <param name="playerID"></param>
+        /// <param name="account"></param>
         /// <param name="itemType"></param>
         /// <returns></returns>
         Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType);
 
+        /// <summary>
         /// Retrieve all items matching given parameters
         /// </summary>
         /// <param name="gameItemsParams"></param>
@@ -54,10 +56,10 @@ namespace Hoard
         /// <summary>
         /// Changes ownership of an item, sending it to new owner
         /// </summary>
-        /// <param name="addressFrom"></param>
-        /// <param name="addressTo"></param>
-        /// <param name="item"></param>
-        /// <param name="amount"></param>
+        /// <param name="addressFrom">sender address</param>
+        /// <param name="addressTo">receiver address</param>
+        /// <param name="item">item to transfer</param>
+        /// <param name="amount">amount of itmes to transfer (for NFT it must be equal to 1)</param>
         /// <returns></returns>
         Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount);
 

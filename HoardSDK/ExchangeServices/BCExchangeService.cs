@@ -17,9 +17,10 @@ namespace Hoard.ExchangeServices
             BCComm = hoard.BCComm;
         }
 
-        public bool Init()
+        /// <inheritdoc/>
+        public async Task<bool> Init()
         {
-            ExchangeContract = BCComm.GetHoardExchangeContract().Result;
+            ExchangeContract = await BCComm.GetHoardExchangeContract();
             if (ExchangeContract == null)
             {
                 System.Diagnostics.Trace.TraceError("Cannot get proper GameExchange contract!");
@@ -28,6 +29,7 @@ namespace Hoard.ExchangeServices
             return true;
         }
 
+        /// <inheritdoc/>
         public void Shutdown()
         {
             ExchangeContract = null;
@@ -56,12 +58,14 @@ namespace Hoard.ExchangeServices
             }
         }
 
+        /// <inheritdoc/>
         public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
         {
             // FIXME: is it possible to get orders directly from bc?
             return new Order[0];
         }
 
+        /// <inheritdoc/>
         public async Task<bool> Trade(AccountInfo account, Order order)
         {
             if (order.gameItemGive.Metadata is ERC223GameItemContract.Metadata)
@@ -94,6 +98,7 @@ namespace Hoard.ExchangeServices
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc/>
         public async Task<bool> Order(AccountInfo account, GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
         {
             if (giveItem.Metadata is ERC223GameItemContract.Metadata)
@@ -120,6 +125,7 @@ namespace Hoard.ExchangeServices
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc/>
         public async Task<bool> Deposit(AccountInfo account, GameItem item, ulong amount)
         {
             try
@@ -138,6 +144,7 @@ namespace Hoard.ExchangeServices
             return false;
         }
 
+        /// <inheritdoc/>
         public async Task<bool> Withdraw(AccountInfo account, GameItem item)
         {
             try
@@ -166,6 +173,12 @@ namespace Hoard.ExchangeServices
             }
         }
 
+        /// <summary>
+        /// Cancels existing order
+        /// </summary>
+        /// <param name="account">creator of order</param>
+        /// <param name="order">order to cancel</param>
+        /// <returns>true if operation succeeded, flase otherwise</returns>
         public async Task<bool> CancelOrder(AccountInfo account, Order order)
         {
             if (order.gameItemGive.Metadata is ERC223GameItemContract.Metadata)

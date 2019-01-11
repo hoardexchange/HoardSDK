@@ -100,7 +100,7 @@ namespace HoardTests
 
         public bool UpdateItemState(GameItem gameItem, AccountInfo account)
         {
-            ERC721GameItemMockContract contract = (ERC721GameItemMockContract)BCComm.GetGameItemContract(gameItem.Game, itemContracts[gameItem.Symbol].Address, typeof(ERC721GameItemMockContract));
+            ERC721GameItemMockContract contract = (ERC721GameItemMockContract)BCComm.GetGameItemContract(gameItem.Game, ItemContracts[gameItem.Symbol].Address, typeof(ERC721GameItemMockContract));
             if (contract != null)
             {
                 contract.SetTokenState(((ERC721GameItemContract.Metadata)gameItem.Metadata).ItemId, gameItem.State, account).Wait();

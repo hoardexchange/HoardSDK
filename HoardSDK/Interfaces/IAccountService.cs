@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace Hoard
 {
+    /// <summary>
+    /// Service for managing user accounts. 
+    /// </summary>
     public interface IAccountService
     {
         /// <summary>

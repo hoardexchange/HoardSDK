@@ -153,7 +153,7 @@ namespace Hoard
 
             //init exchange service
             IExchangeService exchange = new HoardExchangeService(this);
-            if (exchange.Init())
+            if (exchange.Init().Result)
             {
                 ExchangeService = exchange;
             }
