@@ -36,7 +36,7 @@
     <PackageTags>Hoard Blockchain Ethereum Game SDK</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>d:\HoardSDK\HoardCsSDK\HoardSDK\HoardSDK.xml</DocumentationFile>
+    <DocumentationFile>HoardSDK.xml</DocumentationFile>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
