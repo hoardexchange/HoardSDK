@@ -133,7 +133,7 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<byte[]>();
         }
 
-        public abstract Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount);
+        public abstract Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount);
 
         public abstract Task<GameItem[]> GetGameItems(AccountInfo info);
 
@@ -183,12 +183,12 @@ namespace Hoard.BC.Contracts
         }
 
         /// <inheritdoc/>
-        public override async Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
+        public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
         {
             var function = GetFunctionTransfer();
-            var gas = await function.EstimateGasAsync(addressFrom, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), addressTo, amount);
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(addressFrom, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, addressTo, amount);
+            System.Numerics.BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
+            object[] functionInput = { addressTo.Substring(2), amount };
+            var receipt = await Hoard.BC.BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;
         }
 
@@ -286,13 +286,12 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<BigInteger>(index);
         }
 
-        public override async Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
+        public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
         {
             var function = GetFunctionTransfer();
-            BigInteger tokenId = (item.Metadata as Metadata).ItemId;
-            var gas = await function.EstimateGasAsync(addressFrom, new Nethereum.Hex.HexTypes.HexBigInteger(500000), new Nethereum.Hex.HexTypes.HexBigInteger(0), addressFrom, addressTo, tokenId);
-            gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-            var receipt = await function.SendTransactionAndWaitForReceiptAsync(addressFrom, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, addressFrom, addressTo, tokenId);
+            System.Numerics.BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
+            object[] functionInput = { from.ID.ToString(), addressTo.Substring(2), tokenId };
+            var receipt = await Hoard.BC.BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;
         }
 

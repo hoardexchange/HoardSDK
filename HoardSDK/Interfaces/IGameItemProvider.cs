@@ -73,7 +73,7 @@ namespace Hoard
         /// <param name="item">item to transfer</param>
         /// <param name="amount">amount of itmes to transfer (for NFT it must be equal to 1)</param>
         /// <returns></returns>
-        Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount);
+        Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount);
 
         /// <summary>
         /// Initializes provider (connects to backend)
