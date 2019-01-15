@@ -49,21 +49,22 @@
     <CopyrightText>Hoard S/A 2019</CopyrightText>
     <NamespaceSummaries>
       <NamespaceSummaryItem name="(global)" isDocumented="True" xmlns="" />
-<NamespaceSummaryItem name="Hoard" isDocumented="True" xmlns="">Root namespace containing basic classes and interface used in HoardSDK</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.BC" isDocumented="True" xmlns="">Blockchain utilities are store here.</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.BC.Contracts" isDocumented="True" xmlns="">All Ethereum contracts supported by HoardSDK.</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.DistributedStorage" isDocumented="True" xmlns="">Classes for working with distributed storage like IPFS or SWARM</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.Eth" isDocumented="True" xmlns="" />
-<NamespaceSummaryItem name="Hoard.ExchangeServices" isDocumented="True" xmlns="">Hoard Exchange services and interfaces</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.GameItemProviders" isDocumented="True" xmlns="">Default providers for accessing GameItems (directly from blockchain or through GameServer)</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.HW" isDocumented="True" xmlns="">Basic interfaces and tools to work with hardware wallets</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.HW.Ledger" isDocumented="True" xmlns="" />
-<NamespaceSummaryItem name="Hoard.HW.Ledger.Ethereum" isDocumented="True" xmlns="" />
-<NamespaceSummaryItem name="Hoard.HW.Trezor" isDocumented="True" xmlns="" />
-<NamespaceSummaryItem name="Hoard.HW.Trezor.Ethereum" isDocumented="True" xmlns="" />
-<NamespaceSummaryItem name="Hoard.ItemPropertyProviders" isDocumented="True" xmlns="">Default providers for accessing GameItem properties</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.Utils" isDocumented="True" xmlns="">Utilities used throughout the whole HoardSDK</NamespaceSummaryItem>
-<NamespaceSummaryItem name="Hoard.Utils.Base58Check" isDocumented="True" xmlns="" /></NamespaceSummaries>
+      <NamespaceSummaryItem name="Hoard" isDocumented="True" xmlns="">Root namespace containing basic classes and interface used in HoardSDK</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.BC" isDocumented="True" xmlns="">Blockchain utilities are store here.</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.BC.Contracts" isDocumented="True" xmlns="">All Ethereum contracts supported by HoardSDK.</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.DistributedStorage" isDocumented="True" xmlns="">Classes for working with distributed storage like IPFS or SWARM</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.Eth" isDocumented="True" xmlns="" />
+      <NamespaceSummaryItem name="Hoard.ExchangeServices" isDocumented="True" xmlns="">Hoard Exchange services and interfaces</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.GameItemProviders" isDocumented="True" xmlns="">Default providers for accessing GameItems (directly from blockchain or through GameServer)</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.HW" isDocumented="True" xmlns="">Basic interfaces and tools to work with hardware wallets</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.HW.Ledger" isDocumented="True" xmlns="" />
+      <NamespaceSummaryItem name="Hoard.HW.Ledger.Ethereum" isDocumented="True" xmlns="" />
+      <NamespaceSummaryItem name="Hoard.HW.Trezor" isDocumented="True" xmlns="" />
+      <NamespaceSummaryItem name="Hoard.HW.Trezor.Ethereum" isDocumented="True" xmlns="" />
+      <NamespaceSummaryItem name="Hoard.ItemPropertyProviders" isDocumented="True" xmlns="">Default providers for accessing GameItem properties</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.Utils" isDocumented="True" xmlns="">Utilities used throughout the whole HoardSDK</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="Hoard.Utils.Base58Check" isDocumented="True" xmlns="" />
+    </NamespaceSummaries>
   </PropertyGroup>
   <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform
 			 the build.  The others are optional common platform types that may appear. -->
