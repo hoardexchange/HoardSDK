@@ -119,7 +119,7 @@ namespace HoardTests.CryptKittyTests
         }
 
 
-        public Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
+        public Task<bool> Transfer(AccountInfo addressFrom, string addressTo, GameItem item, BigInteger amount)
         {
             throw new NotImplementedException();
         }

@@ -403,6 +403,10 @@ namespace Hoard
                 IGameItemProvider c = Providers[gameID];
                 items.AddRange(await c.GetPlayerItems(account).ConfigureAwait(false));
             }
+            else
+            {
+                Trace.TraceWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
+            }
             return items.ToArray();
         }
 
