@@ -262,7 +262,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
+        public Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
         {
             if (Client != null)
             {
@@ -271,7 +271,7 @@ namespace Hoard.GameItemProviders
             }
             if (SecureProvider != null)
             {
-                return SecureProvider.Transfer(addressFrom, addressTo, item, amount);
+                return SecureProvider.Transfer(from, addressTo, item, amount);
             }
             System.Diagnostics.Trace.TraceError("Invalid Client or SecureProvider!");
             return new Task<bool>(()=> { return false; });

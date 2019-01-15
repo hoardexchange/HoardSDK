@@ -67,12 +67,12 @@ namespace Hoard
         /// <param name="item">Game item to be transfered.</param>
         /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
-        public async Task<bool> RequestGameItemTransfer(AccountInfo sender, AccountInfo recipient, GameItem item, ulong amount)
+        public async Task<bool> RequestGameItemTransfer(AccountInfo sender, AccountInfo recipient, GameItem item, BigInteger amount)
         {
             IGameItemProvider gameItemProvider = GetGameItemProvider(item);
             if (gameItemProvider != null && sender != null && recipient != null)
             {
-                return await gameItemProvider.Transfer(sender.ID, recipient.ID, item, amount);
+                return await gameItemProvider.Transfer(sender, recipient.ID, item, amount);
             }
 
             return false;

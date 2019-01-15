@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using RestSharp;
 using System;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Hoard.ExchangeServices
@@ -39,7 +40,7 @@ namespace Hoard.ExchangeServices
         }
 
         /// <inheritdoc/>
-        public Task<bool> Deposit(AccountInfo account, GameItem item, ulong amount)
+        public Task<bool> Deposit(AccountInfo account, GameItem item, BigInteger amount)
         {
             throw new NotImplementedException();
         }

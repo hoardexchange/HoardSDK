@@ -126,14 +126,14 @@ namespace Hoard.ExchangeServices
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Deposit(AccountInfo account, GameItem item, ulong amount)
+        public async Task<bool> Deposit(AccountInfo account, GameItem item, BigInteger amount)
         {
             try
             {
                 IGameItemProvider gameItemProvider = Hoard.GetGameItemProvider(item);
                 if (gameItemProvider != null)
                 {
-                    return await gameItemProvider.Transfer(account.ID, ExchangeContract.Address, item, amount);
+                    return await gameItemProvider.Transfer(account, ExchangeContract.Address, item, amount);
                 }
                 System.Diagnostics.Trace.TraceWarning($"Cannot find GameItemProvider for item: {item.Symbol}!");
             }

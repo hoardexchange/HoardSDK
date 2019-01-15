@@ -3,6 +3,7 @@ using Hoard.BC.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -87,10 +88,10 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public Task<bool> Transfer(string addressFrom, string addressTo, GameItem item, ulong amount)
+        public Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
         {
             GameItemContract gameItemContract = ItemContracts[item.Symbol];
-            return gameItemContract.Transfer(addressFrom, addressTo, item, amount);
+            return gameItemContract.Transfer(from, addressTo, item, amount);
         }
 
         /// <inheritdoc/>

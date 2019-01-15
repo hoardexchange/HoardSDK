@@ -1,4 +1,5 @@
 ﻿using Hoard.ExchangeServices;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -30,7 +31,7 @@ namespace Hoard
         /// <param name="item">Item to sell</param>
         /// <param name="amount">amount of Items to sell (for NFT it must be 1)</param>
         /// <returns></returns>
-        Task<bool> Deposit(AccountInfo account, GameItem item, ulong amount);
+        Task<bool> Deposit(AccountInfo account, GameItem item, BigInteger amount);
 
         /// <summary>
         /// Creates a trade order for tokens in currency expressed in ERC233 tokens
