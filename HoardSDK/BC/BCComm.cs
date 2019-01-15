@@ -217,8 +217,9 @@ namespace Hoard.BC
                 GameID game = new GameID(gameID);                
                 GameContract gameContract = new GameContract(web, gameAddress);
                 string url = await gameContract.GetGameServerURLAsync();
+                game.GameDevName = await gameContract.GetDevName();
                 game.Name = await gameContract.GetName();
-                    game.GameOwner = await gameContract.GetOwner();
+                game.GameOwner = await gameContract.GetOwner();
                 game.Url = !url.StartsWith("http") ? "http://" + url : url;
                 games[i] = game;
             }
