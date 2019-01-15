@@ -34,9 +34,10 @@
     <FileVersion>0.5.0.0</FileVersion>
     <Description>Hoard game client SDK</Description>
     <PackageTags>Hoard Blockchain Ethereum Game SDK</PackageTags>
+    <PackageReleaseNotes>First alpha release of HoardSDK library for communication with Hoard Platfom</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>d:\HoardSDK\HoardCsSDK\HoardSDK\HoardSDK.xml</DocumentationFile>
+    <DocumentationFile>HoardSDK.xml</DocumentationFile>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

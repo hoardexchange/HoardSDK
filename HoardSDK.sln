@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardSDK", "HoardSDK\HoardSDK.csproj", "{C9517A0E-EC39-4E8B-951A-6CFC4A7C76E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HoardSDK", "HoardSDK\HoardSDK.csproj", "{C9517A0E-EC39-4E8B-951A-6CFC4A7C76E3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardTest", "HoardTest\HoardTest.csproj", "{6D48DD53-E139-402E-BF6D-6F06587D46BB}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardTests", "HoardTests\HoardTests.csproj", "{BFDAB57F-7382-4B78-9806-0B87476D5DDC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardIPC", "HoardIPC\HoardIPC.csproj", "{FE24A95C-3BDC-4046-BFA8-E72EF0B6FD24}"
+EndProject
+Project("{7CF6DF6D-3B04-46F8-A40B-537D21BCA0B4}") = "HoardSDKDocumentation", "Documentation\HoardSDKDocumentation.shfbproj", "{D733BF8F-732F-45F2-8036-ED305DAEA7F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +85,17 @@ Global
 		{FE24A95C-3BDC-4046-BFA8-E72EF0B6FD24}.Release|x64.Build.0 = Release|Any CPU
 		{FE24A95C-3BDC-4046-BFA8-E72EF0B6FD24}.Release|x86.ActiveCfg = Release|Any CPU
 		{FE24A95C-3BDC-4046-BFA8-E72EF0B6FD24}.Release|x86.Build.0 = Release|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Debug|x64.Build.0 = Debug|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Debug|x86.Build.0 = Debug|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|x64.ActiveCfg = Release|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|x64.Build.0 = Release|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|x86.ActiveCfg = Release|Any CPU
+		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
