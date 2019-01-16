@@ -74,6 +74,7 @@
     <Compile Include="RpcModel\LegacyRpcModel.cs" />
     <Compile Include="TestCaseOrdering\PriorityOrderer.cs" />
     <Compile Include="TestCaseOrdering\TestPriorityAttribute.cs" />
+    <Compile Include="U256StorageTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
