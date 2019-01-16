@@ -19,6 +19,7 @@ namespace Hoard
         public string ExchangeServiceUrl;
         public string HoardAuthServiceUrl;
         public string HoardAuthServiceClientId;
+        public string AccountsDir;
 
         public static HoardServiceConfig Load(string path = null)
         {
