@@ -110,6 +110,9 @@ namespace Hoard
         /// Name of this account (for convenience)
         /// </summary>
         public string Name { get; private set; } = null;
+        /// <summary>
+        /// Owner of this account
+        /// </summary>
         public User Owner;
 
         /// <summary>
@@ -161,7 +164,7 @@ namespace Hoard
         /// <summary>
         /// List of user accounts (that hold ownership data)
         /// </summary>
-        public List<AccountInfo> Accounts = new List<AccountInfo>();
+        public List<AccountInfo> Accounts { get; private set; } = new List<AccountInfo>();
         /// <summary>
         /// Default account. If not specified this account will be used as default for all user operations.
         /// </summary>

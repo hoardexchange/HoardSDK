@@ -93,7 +93,7 @@ namespace Hoard
                     });
                 }
                 else
-                    return HoardAccountService.ActivateAccount(Owner, this);
+                    return HoardAccountService.ActivateAccount(this);
             }
         }
 
@@ -219,7 +219,7 @@ namespace Hoard
                 {
                     Debug.Assert(activeAccountIndex >= 0 && activeAccountIndex < sd.Owner.Accounts.Count);
                     ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = true;
-                    sd.Owner.ChangeActiveAccount((HoardAccount)sd.Owner.Accounts[activeAccountIndex]);
+                    sd.Owner.ChangeActiveAccount((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).Wait();
                     ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = false;
                 }
             }
@@ -475,12 +475,13 @@ namespace Hoard
             throw new NotImplementedException();
         }
 
-        public static Task<AccountInfo> ActivateAccount(User user, AccountInfo account)
+        public static Task<AccountInfo> ActivateAccount(AccountInfo account)
         {
+            Trace.Assert(account != null);
             return Task.Run(() =>
             {
                 SocketData socketData = null;
-                if (!SignerClients.TryGetValue(user, out socketData))
+                if (!SignerClients.TryGetValue(account.Owner, out socketData))
                 {
                     MemoryStream ms = new MemoryStream();
                     BinaryWriter writer = new BinaryWriter(ms);
@@ -488,7 +489,7 @@ namespace Hoard
                     writer.Write((UInt32)MessageId.kSetActiveAccount);
                     writer.Write(account.ID.ToHexByteArray());
                     socketData.ActiveAccount = null;
-                    socketData.Owner = user;
+                    socketData.Owner = account.Owner;
                     socketData.ResponseEvent.Reset();
                     socketData.Socket.Send(ms.ToArray());
                     if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))

@@ -2,6 +2,7 @@
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -23,6 +24,7 @@ namespace Hoard
             /// </summary>
             /// <param name="name">Name of account</param>
             /// <param name="id">identifier (public address)</param>
+            /// <param name="user">owner of account</param>
             /// <param name="key">private key</param>
             public KeyStoreAccount(string name, HoardID id, string key, User user)
                 :base(name, id, user)
@@ -53,11 +55,10 @@ namespace Hoard
             /// <summary>
             /// Activates account (currently not used)
             /// </summary>
-            /// <param name="user"></param>
             /// <returns></returns>
             public override Task<AccountInfo> Activate()
             {
-                return KeyStoreAccountService.ActivateAccount(Owner, this);
+                return KeyStoreAccountService.ActivateAccount(this);
             }
         }
 
@@ -83,6 +84,7 @@ namespace Hoard
         /// </summary>
         /// <param name="name">name of account</param>
         /// <param name="privateKey">private key of account</param>
+        /// <param name="user">owner of created account</param>
         /// <returns></returns>
         public static AccountInfo CreateAccountDirect(string name, string privateKey, User user)
         {
@@ -155,6 +157,12 @@ namespace Hoard
             return SignMessage(input, ksa.PrivateKey);
         }
 
+        /// <summary>
+        /// Handy function to sign any transaction with given account
+        /// </summary>
+        /// <param name="rlpEncodedTransaction">transaction input encoded in RLP format</param>
+        /// <param name="signature">account that signs transaction</param>
+        /// <returns></returns>
         public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature)
         {
             KeyStoreAccount ksa = signature as KeyStoreAccount;
@@ -167,6 +175,12 @@ namespace Hoard
             return SignTransaction(rlpEncodedTransaction, ksa.PrivateKey);
         }
 
+        /// <summary>
+        /// Handy function to sign any message with given private key
+        /// </summary>
+        /// <param name="input">input to sign</param>
+        /// <param name="privKey">key to sign message with</param>
+        /// <returns></returns>
         public static Task<string> SignMessage(byte[] input, string privKey)
         {
             //CPU-bound
@@ -178,6 +192,12 @@ namespace Hoard
             });
         }
 
+        /// <summary>
+        /// Handy function to sign any transaction with given private key
+        /// </summary>
+        /// <param name="rlpEncodedTransaction">transaction input encoded in RLP format</param>
+        /// <param name="privKey">key that signs transaction</param>
+        /// <returns></returns>
         public static Task<string> SignTransaction(byte[] rlpEncodedTransaction, string privKey)
         {
             //CPU-bound
@@ -195,11 +215,18 @@ namespace Hoard
             });
         }
 
-        public static Task<AccountInfo> ActivateAccount(User user, AccountInfo account)
+        /// <summary>
+        /// Activate account for given user.
+        /// </summary>
+        /// <param name="account">Account to make active</param>
+        /// <returns></returns>
+        public static Task<AccountInfo> ActivateAccount(AccountInfo account)
         {
+            Trace.Assert(account != null);
             return Task.Run(() =>
             {
-                if (user.Accounts.Contains(account))
+                //TODO: this code is awkward
+                if (account.Owner.Accounts.Contains(account))
                 {
                     return account;
                 }

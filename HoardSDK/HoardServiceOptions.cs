@@ -61,8 +61,16 @@ namespace Hoard
         public string HoardAuthServiceClientId { get; set; } = "HoardTestAuthClient";
         //public IUserInputProvider UserInputProvider { get; set; } = null;
 
+        /// <summary>
+        /// Creates a new options object with default values
+        /// </summary>
         public HoardServiceOptions() { }
 
+        /// <summary>
+        /// Creates new options objects with values parsed from string configuration data
+        /// </summary>
+        /// <param name="cfg">configuration file</param>
+        /// <param name="rpcClient"></param>
         public HoardServiceOptions(HoardServiceConfig cfg, Nethereum.JsonRpc.Client.IClient rpcClient)
         {
             if (string.IsNullOrEmpty(cfg.GameID))
@@ -72,7 +80,7 @@ namespace Hoard
             }
             else
             {
-                Game = new GameID(System.Numerics.BigInteger.Parse(cfg.GameID));
+                Game = new GameID(System.Numerics.BigInteger.Parse(cfg.GameID, System.Globalization.NumberStyles.HexNumber));
             }
 
             if (!string.IsNullOrEmpty(cfg.ExchangeServiceUrl))
