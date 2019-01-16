@@ -60,6 +60,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("name");
         }
 
+        private Function GetFunctionDevName()
+        {
+            return contract.GetFunction("devName");
+        }
+
         private Function GetFunctionOwner()
         {
             return contract.GetFunction("owner");
@@ -109,6 +114,12 @@ namespace Hoard.BC.Contracts
         public Task<string> GetName()
         {
             var function = GetFunctionName();
+            return function.CallAsync<string>();
+        }
+
+        public Task<string> GetDevName()
+        {
+            var function = GetFunctionDevName();
             return function.CallAsync<string>();
         }
 
