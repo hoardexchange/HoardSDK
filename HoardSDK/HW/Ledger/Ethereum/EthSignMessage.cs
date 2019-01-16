@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Hoard.HW.Ledger.Ethereum
 {
-    public static class EthSignMessage
+    internal static class EthSignMessage
     {
         public static byte[] Request(byte[] derivation, byte[] messageChunk, bool firstBlock = true)
         {

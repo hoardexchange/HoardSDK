@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace Hoard.HW.Trezor
 {
-
     public abstract class TrezorWallet : IAccountService
     {
         public static readonly string AccountInfoName = "TrezorWallet";
@@ -224,7 +223,7 @@ namespace Hoard.HW.Trezor
             return response;
         }
 
-        protected Type GetContractType(MessageType messageType)
+        private Type GetContractType(MessageType messageType)
         {
             switch (messageType)
             {

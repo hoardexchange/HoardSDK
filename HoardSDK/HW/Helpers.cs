@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Hoard.HW
 {
-    public static class Helpers
+    internal static class Helpers
     {
         public static async Task<IHidDevice> GetHIDDeviceAsync(DeviceInfo[] deviceInfo, UsageSpecification[] usageSpecification)
         {

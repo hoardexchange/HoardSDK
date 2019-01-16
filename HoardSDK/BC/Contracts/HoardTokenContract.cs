@@ -12,7 +12,7 @@ namespace Hoard.BC.Contracts
     /// <summary>
     /// Hoard Game contract with list of all supported game item types (other contracts)
     /// </summary>
-    public class HoardTokenContract
+    internal class HoardTokenContract
     {
         public const string ABI = HoardABIConfig.ERC223TokenMockABI;
 

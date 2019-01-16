@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Hoard
 {
@@ -12,15 +8,43 @@ namespace Hoard
     [System.Serializable]
     public class HoardServiceConfig
     {
+        /// <summary>
+        /// Game identifier in the form of hex BigInteger
+        /// </summary>
         public string GameID;
+        /// <summary>
+        /// URL of GameServer
+        /// </summary>
         public string GameBackendUrl;
+        /// <summary>
+        /// URL of network access client (localhost or testnet main access client URL)
+        /// </summary>
         public string ClientUrl;
+        /// <summary>
+        /// The address of main Hoard Game Center contract
+        /// </summary>
         public string GameCenterContract;
+        /// <summary>
+        /// URL of Hoard Exchange services
+        /// </summary>
         public string ExchangeServiceUrl;
+        /// <summary>
+        /// URL of Hoard authentication services [Optional]
+        /// TODO: move this to provider specific settings
+        /// </summary>
         public string HoardAuthServiceUrl;
+        /// ID of game client for authentication purposes [Optional]
+        /// /// TODO: move this to provider specific settings
         public string HoardAuthServiceClientId;
+        /// Default directory with key store (for KeyStoreAccountProvider)
+        /// TODO: move this to provider specific settings
         public string AccountsDir;
 
+        /// <summary>
+        /// Loads configuration from path on disk
+        /// </summary>
+        /// <param name="path">path where configration file is kept (hoardConfig.cfg)</param>
+        /// <returns>new configuration object</returns>
         public static HoardServiceConfig Load(string path = null)
         {
             string defaultPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Hoard", "hoardConfig.json");
@@ -42,6 +66,11 @@ namespace Hoard
             return config;
         }
 
+        /// <summary>
+        /// Loads configuration from supplied text stream
+        /// </summary>
+        /// <param name="data">JSON string representing configuration</param>
+        /// <returns>new configuration object</returns>
         public static HoardServiceConfig LoadFromStream(string data)
         {
             HoardServiceConfig config = Newtonsoft.Json.JsonConvert.DeserializeObject<HoardServiceConfig>(data);
@@ -54,13 +83,30 @@ namespace Hoard
     /// </summary>
     public class HoardServiceOptions
     {
+        /// <summary>
+        /// Game identifier
+        /// </summary>
         public GameID Game { get; set; } = GameID.kInvalidID;
+        /// <summary>
+        /// Rpc client - accessor for the Hoard network
+        /// </summary>
         public Nethereum.JsonRpc.Client.IClient RpcClient { get; set; } = null;        
+        /// <summary>
+        /// Address of Hoard Game Contract
+        /// </summary>
         public string GameCenterContract { get; set; } = "";
+        /// <summary>
+        /// URL of Hoard Exchange service
+        /// </summary>
         public string ExchangeServiceUrl { get; set; } = "http://localhost:8000";
+        /// <summary>
+        /// URL of Hoard authentication services [Optional]
+        /// TODO: move this to provider specific settings
+        /// </summary>
         public string HoardAuthServiceUrl { get; set; } = "http://localhost:8081";
+        /// ID of game client for authentication purposes [Optional]
+        /// /// TODO: move this to provider specific settings
         public string HoardAuthServiceClientId { get; set; } = "HoardTestAuthClient";
-        //public IUserInputProvider UserInputProvider { get; set; } = null;
 
         /// <summary>
         /// Creates a new options object with default values

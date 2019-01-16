@@ -1,6 +1,6 @@
 ﻿namespace Hoard.HW.Ledger.Ethereum
 {
-    public class EthConstants
+    internal class EthConstants
     {
         public const byte EMPTY = 0x00;
         public const byte CLA = 0xe0;

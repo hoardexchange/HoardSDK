@@ -1,9 +1,4 @@
-﻿using Hid.Net;
-using Hoard.HW.Ledger.Ethereum;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Hoard.HW.Ledger.Ethereum;
 using System.Threading.Tasks;
 
 namespace Hoard.HW.Ledger

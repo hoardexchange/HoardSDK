@@ -99,6 +99,7 @@ namespace Hoard.BC
         /// <param name="game"></param>
         /// <param name="contractAddress"></param>
         /// <param name="contractType"></param>
+        /// <param name="abi">[optional] creates contract with a particular abi</param>
         /// <returns></returns>
         public GameItemContract GetGameItemContract(GameID game, string contractAddress, Type contractType, string abi = "")
         {

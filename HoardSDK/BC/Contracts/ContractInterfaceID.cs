@@ -23,9 +23,10 @@ namespace Hoard.BC.Contracts
         public Type ContractType { get; }
 
         /// <summary>
-        /// 
+        /// Creates a new instance of contract
         /// </summary>
         /// <param name="interfaceID">interfaceID 4 bytes represented in hex</param>
+        /// <param name="contractType">target type of the the contract that implements given interfaceID</param>
         public ContractInterfaceID(string interfaceID, Type contractType)
         {
             InterfaceID = BitConverter.GetBytes(Convert.ToUInt32(interfaceID, 16));

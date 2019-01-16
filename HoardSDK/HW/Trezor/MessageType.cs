@@ -1,7 +1,7 @@
 ﻿namespace Hoard.HW.Trezor
 {
     [ProtoBuf.ProtoContract()]
-    public enum MessageType
+    internal enum MessageType
     {
         [ProtoBuf.ProtoEnum(Name = @"MessageType_Initialize")]
         MessageTypeInitializeRequest = 0,

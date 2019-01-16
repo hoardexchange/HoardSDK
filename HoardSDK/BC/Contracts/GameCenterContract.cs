@@ -111,7 +111,7 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Returns game id address by index
         /// </summary>
-        /// <param name="gameID"></param>
+        /// <param name="index">index of the game</param>
         /// <returns></returns>
         public Task<BigInteger> GetGameIdByIndexAsync(ulong index)
         {

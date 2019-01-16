@@ -11,13 +11,23 @@ namespace Hoard.BC.Contracts
     /// </summary>
     public class GameContract
     {
+        /// <summary>
+        /// Application Binary Interface for a contract
+        /// </summary>
         public const string ABI = HoardABIConfig.HoardGameABI;
+        /// <summary>
+        /// ETH address of this contract
+        /// </summary>
+        public string Address { get { return contract.Address; } }
 
         private readonly Web3 web3;
         private Contract contract;
 
-        public string Address { get { return contract.Address; } }
-
+        /// <summary>
+        /// Creates new Game contract
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">address of this contract (u160)</param>
         public GameContract(Web3 web3, string address)
         {
             this.web3 = web3;
@@ -49,12 +59,6 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("itemContractMap");
         }
 
-        //FIXME?
-        //private Function GetFunctionPayoutPlayerReward()
-        //{
-        //    return contract.GetFunction("payoutPlayerReward");
-        //}
-
         private Function GetFunctionName()
         {
             return contract.GetFunction("name");
@@ -70,12 +74,22 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("owner");
         }
 
+        /// <summary>
+        /// Returns Game Server URL stored within contract
+        /// </summary>
+        /// <returns></returns>
         public Task<string> GetGameServerURLAsync()
         {
             var function = GetFunctionGameSrvURL();
             return function.CallAsync<string>();
         }
 
+        /// <summary>
+        /// Sets new Game Server URL in contract
+        /// </summary>
+        /// <param name="url">new URL of Game Server</param>
+        /// <param name="account">signer account</param>
+        /// <returns>receipt of the transaction</returns>
         public async Task<TransactionReceipt> SetGameServerURLAsync(string url, AccountInfo account)
         {
             var function = GetFunctionSetGameSrvURL();
@@ -83,46 +97,62 @@ namespace Hoard.BC.Contracts
             return await BCComm.EvaluateOnBC(web3, account, function, url);
         }
 
+        /// <summary>
+        /// Returns number of GameItems supported natively by this game
+        /// </summary>
+        /// <returns></returns>
         public Task<ulong> GetGameItemContractCountAsync()
         {
             var function = GetFunctionNextItemIndex();
             return function.CallAsync<ulong>();
         }
         
+        /// <summary>
+        /// Returns GameItem ID based on index
+        /// </summary>
+        /// <param name="gameIdx">index of GameItem</param>
+        /// <returns></returns>
         public Task<BigInteger> GetGameItemIdByIndexAsync(ulong gameIdx)
         {
             var function = GetFunctionGetItemIdByIndex();
             return function.CallAsync<BigInteger>(gameIdx);
         }
 
-        public Task<string> GetGameItemContractAsync(BigInteger gameId)
+        /// <summary>
+        /// Get address of Game Item contract
+        /// </summary>
+        /// <param name="gameItemId">ID of the game item. <see cref="GetGameItemIdByIndexAsync(ulong)"/></param>
+        /// <returns></returns>
+        public Task<string> GetGameItemContractAsync(BigInteger gameItemId)
         {
             var function = GetFunctionGetItemContract();
-            return function.CallAsync<string>(gameId);
+            return function.CallAsync<string>(gameItemId);
         }
 
-        //FIXME?
-        //public async Task<bool> PayoutPlayerReward(string tokenAddress, ulong amount, string from)
-        //{
-        //    var function = GetFunctionPayoutPlayerReward();
-        //    var gas = await function.EstimateGasAsync(from, new Nethereum.Hex.HexTypes.HexBigInteger(100000), new Nethereum.Hex.HexTypes.HexBigInteger(0), tokenAddress, amount);
-        //    gas = new Nethereum.Hex.HexTypes.HexBigInteger(gas.Value * 2);
-        //    var receipt = await function.SendTransactionAndWaitForReceiptAsync(from, gas, new Nethereum.Hex.HexTypes.HexBigInteger(0), null, tokenAddress, amount);
-        //    return receipt.Status.Value == 1;
-        //}
-
+        /// <summary>
+        /// Returns full name of this game
+        /// </summary>
+        /// <returns></returns>
         public Task<string> GetName()
         {
             var function = GetFunctionName();
             return function.CallAsync<string>();
         }
 
+        /// <summary>
+        /// Returns developer inner name of this game (ID is based on this name)
+        /// </summary>
+        /// <returns></returns>
         public Task<string> GetDevName()
         {
             var function = GetFunctionDevName();
             return function.CallAsync<string>();
         }
 
+        /// <summary>
+        /// Returns owner account of this game (address)
+        /// </summary>
+        /// <returns></returns>
         public Task<string> GetOwner()
         {
             var function = GetFunctionOwner();

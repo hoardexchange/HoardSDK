@@ -382,7 +382,7 @@ namespace Hoard
         /// <summary>
         /// Returns all Game Items owned by player in default game (one passed in options to Initialize method).
         /// </summary>
-        /// <param name="playerID"></param>
+        /// <param name="user">user which game items to return</param>
         /// <returns></returns>
         public async Task<GameItem[]> GetPlayerItems(User user)
         {

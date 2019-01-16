@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Hoard.BC.Contracts
 {
     /// <summary>
-    /// ERC165
+    /// Contract that supports ERC165 interface (for dynamic interface lookup)
     /// </summary>
     public class SupportsInterfaceWithLookupContract
     {

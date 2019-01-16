@@ -50,6 +50,7 @@ namespace Hoard
             Value = value;
         }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             return Value.ToString("x");
@@ -84,6 +85,7 @@ namespace Hoard
             return addr.Value;
         }
 
+        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             if (obj is HoardID)
@@ -91,6 +93,7 @@ namespace Hoard
             return base.Equals(obj);
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return Value.GetHashCode();
@@ -120,6 +123,7 @@ namespace Hoard
         /// </summary>
         /// <param name="name">Name</param>
         /// <param name="id">Identifier (public address)</param>
+        /// <param name="user">Owner of account</param>
         public AccountInfo(string name, HoardID id, User user)
         {
             Name = name;
@@ -174,6 +178,7 @@ namespace Hoard
         /// Basic constructor
         /// </summary>
         /// <param name="name">User name</param>
+        /// <param name="hoardId">TODO: specify!!</param>
         public User(string name, string hoardId = "")
         {
             UserName = name;
@@ -246,6 +251,7 @@ namespace Hoard
             ID = id;
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return ID.GetHashCode();
@@ -290,6 +296,7 @@ namespace Hoard
                 return false;
         }
 
+        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             if (obj == null)
@@ -302,6 +309,7 @@ namespace Hoard
                 return Equals(gameObj);
         }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             return ID.ToString("x");

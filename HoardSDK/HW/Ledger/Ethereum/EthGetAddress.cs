@@ -4,7 +4,7 @@ using Nethereum.Hex.HexConvertors.Extensions;
 
 namespace Hoard.HW.Ledger.Ethereum
 {
-    public static class EthGetAddress
+    internal static class EthGetAddress
     {
         public static byte[] Request(byte[] derivation, bool display = false, bool useChainCode = false)
         {

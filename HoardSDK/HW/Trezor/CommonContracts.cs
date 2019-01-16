@@ -1,7 +1,7 @@
 ﻿namespace Hoard.HW.Trezor
 {
     [ProtoBuf.ProtoContract()]
-    public class Failure : ProtoBuf.IExtensible
+    internal class Failure : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -323,7 +323,7 @@
     }
 
     [ProtoBuf.ProtoContract()]
-    public class InitializeRequest : ProtoBuf.IExtensible
+    internal class InitializeRequest : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -347,7 +347,7 @@
     }
 
     [ProtoBuf.ProtoContract()]
-    public class PinMatrixAck : ProtoBuf.IExtensible
+    internal class PinMatrixAck : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -359,7 +359,7 @@
     }
 
     [ProtoBuf.ProtoContract()]
-    public class PinMatrixRequest : ProtoBuf.IExtensible
+    internal class PinMatrixRequest : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -390,7 +390,7 @@
     }
 
     [ProtoBuf.ProtoContract()]
-    public class ButtonRequest : ProtoBuf.IExtensible
+    internal class ButtonRequest : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -456,7 +456,7 @@
     }
 
     [ProtoBuf.ProtoContract()]
-    public class ButtonAck : ProtoBuf.IExtensible
+    internal class ButtonAck : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)

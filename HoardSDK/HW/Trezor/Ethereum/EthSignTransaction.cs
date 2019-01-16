@@ -6,7 +6,7 @@ using Nethereum.Signer;
 namespace Hoard.HW.Trezor.Ethereum
 {
     [ProtoBuf.ProtoContract()]
-    public class EthSignTransactionRequest : ProtoBuf.IExtensible
+    internal class EthSignTransactionRequest : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -78,7 +78,7 @@ namespace Hoard.HW.Trezor.Ethereum
     }
 
     [ProtoBuf.ProtoContract()]
-    public class EthSignTransactionResponse : ProtoBuf.IExtensible
+    internal class EthSignTransactionResponse : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -115,7 +115,7 @@ namespace Hoard.HW.Trezor.Ethereum
         public void ResetSignatureS() => SignatureS = null;
     }
 
-    public static class EthSignTransaction
+    internal static class EthSignTransaction
     {
         public static object Request(uint[] indices, byte[] rlpEncodedTransaction)
         {

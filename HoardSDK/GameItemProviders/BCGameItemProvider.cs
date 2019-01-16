@@ -129,6 +129,11 @@ namespace Hoard.GameItemProviders
             return false;
         }
 
+        /// <summary>
+        /// Registers new contract interface with particular type
+        /// </summary>
+        /// <param name="interfaceID">identifier of the registered interface</param>
+        /// <param name="contractType">The type of constructed contracts</param>
         public void RegisterContractInterfaceID(string interfaceID, Type contractType)
         {
             interfaceIDs.Add(new ContractInterfaceID(interfaceID, contractType));

@@ -15,7 +15,11 @@ namespace Hoard.GameItemProviders
     /// </summary>
     public class HoardGameItemProvider : IGameItemProvider
     {
+        /// <summary>
+        /// The game which manages provided Items
+        /// </summary>
         public GameID Game { get; private set; }
+
         /// <summary>
         /// Secure provider used for validation but also in case server is down. Should be set to sth reliable like BCGameItemProvider.
         /// </summary>

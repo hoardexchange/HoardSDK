@@ -3,7 +3,7 @@
 namespace Hoard.HW.Trezor.Ethereum
 {
     [ProtoBuf.ProtoContract()]
-    public class EthSignMessageRequest : ProtoBuf.IExtensible
+    internal class EthSignMessageRequest : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -18,7 +18,7 @@ namespace Hoard.HW.Trezor.Ethereum
     }
 
     [ProtoBuf.ProtoContract()]
-    public class EthSignMessageResponse : ProtoBuf.IExtensible
+    internal class EthSignMessageResponse : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
@@ -35,7 +35,7 @@ namespace Hoard.HW.Trezor.Ethereum
         public void ResetSignature() => Signature = null;
     }
 
-    public static class EthSignMessage
+    internal static class EthSignMessage
     {
         public static object Request(uint[] indices, byte[] message)
         {

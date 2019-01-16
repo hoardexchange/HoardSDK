@@ -4,7 +4,10 @@ using System.Threading.Tasks;
 
 namespace Hoard.HW.Trezor.Ethereum
 {
-    public class EthTrezorWallet : TrezorWallet
+    /// <summary>
+    /// Implementation of TrezorWallet class with ethereum compatible signing methods
+    /// </summary>
+    internal class EthTrezorWallet : TrezorWallet
     {
         private class HDWalletAccountInfo : AccountInfo
         {
