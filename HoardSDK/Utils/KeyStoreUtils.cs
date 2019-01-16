@@ -5,8 +5,17 @@ using System.IO;
 
 namespace Hoard.Utils
 {
+    /// <summary>
+    /// Utilitites for key store management
+    /// </summary>
     public class KeyStoreUtils
     {
+        /// <summary>
+        /// Iterates through all accounts in specified folder
+        /// </summary>
+        /// <param name="user">User whose accounts to iterate</param>
+        /// <param name="accountsDir">folder with key store data</param>
+        /// <param name="enumFunc">action to call for each account</param>
         public static void EnumerateAccounts(User user, string accountsDir, Action<string> enumFunc)
         {
             string hashedName = Helper.Keccak256HexHashString(user.UserName);
@@ -35,6 +44,14 @@ namespace Hoard.Utils
             }
         }
 
+        /// <summary>
+        /// Loads account information for the user
+        /// </summary>
+        /// <param name="user">User to load account for</param>
+        /// <param name="userInputProvider">Provider with user credentials</param>
+        /// <param name="filename">filename of the file with account to load</param>
+        /// <param name="accountsDir">folder where the key store files are stored</param>
+        /// <returns>pair of public/private keys making an account</returns>
         public static Tuple<string, string> LoadAccount(User user, IUserInputProvider userInputProvider, string filename, string accountsDir)
         {
             string hashedName = Helper.Keccak256HexHashString(user.UserName);
@@ -54,6 +71,13 @@ namespace Hoard.Utils
             return new Tuple<string, string>(account.Address, account.PrivateKey);
         }
 
+        /// <summary>
+        /// Create new account for user.
+        /// </summary>
+        /// <param name="user">User for which to create account</param>
+        /// <param name="password">Password for encrypting the account</param>
+        /// <param name="accountsDir">folder where to store key store data</param>
+        /// <returns></returns>
         public static Tuple<string, string> CreateAccount(User user, string password, string accountsDir)
         {
             string hashedName = Helper.Keccak256HexHashString(user.UserName);

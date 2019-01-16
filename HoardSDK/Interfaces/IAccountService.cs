@@ -11,6 +11,7 @@ namespace Hoard
         /// <summary>
         /// Create new account for User
         /// </summary>
+        /// <param name="name">name of new account</param>
         /// <param name="user">user to create account for</param>
         /// <returns>new account and also binds to the user</returns>
         Task<AccountInfo> CreateAccount(string name, User user);

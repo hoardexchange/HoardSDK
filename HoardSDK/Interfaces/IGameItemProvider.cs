@@ -68,7 +68,7 @@ namespace Hoard
         /// <summary>
         /// Changes ownership of an item, sending it to new owner
         /// </summary>
-        /// <param name="addressFrom">sender address</param>
+        /// <param name="from">sender account</param>
         /// <param name="addressTo">receiver address</param>
         /// <param name="item">item to transfer</param>
         /// <param name="amount">amount of itmes to transfer (for NFT it must be equal to 1)</param>

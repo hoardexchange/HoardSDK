@@ -9,7 +9,13 @@ namespace Hoard
     /// </summary>
     public class ItemProperty
     {
+        /// <summary>
+        /// Value of this property
+        /// </summary>
         public object Value;
+        /// <summary>
+        /// Type of this property
+        /// </summary>
         public string Type;
 
         /// <summary>
@@ -89,8 +95,20 @@ namespace Hoard
     /// </summary>
     public interface IGameItemMetadata
     {
+        /// <summary>
+        /// Generic Getter for property by name
+        /// </summary>
+        /// <typeparam name="TResult">Type of this property</typeparam>
+        /// <param name="name">name of the property</param>
+        /// <returns></returns>
         TResult Get<TResult>(string name);
 
+        /// <summary>
+        /// Generic setter for a property
+        /// </summary>
+        /// <typeparam name="TResult">Type of the property</typeparam>
+        /// <param name="name">name of the property</param>
+        /// <param name="value">Value of the property to set</param>
         void Set<TResult>(string name, TResult value);
     }
 
@@ -99,11 +117,13 @@ namespace Hoard
     /// </summary>
     public abstract class BaseGameItemMetadata : IGameItemMetadata
     {
+        /// <inheritdoc/>
         public TResult Get<TResult>(string name)
         {
             return this.GetPropertyValue<TResult>(name);
         }
 
+        /// <inheritdoc/>
         public void Set<TResult>(string name, TResult value)
         {
             this.SetPropertyValue<TResult>(name, value);
