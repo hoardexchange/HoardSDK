@@ -103,7 +103,7 @@ namespace Hoard
         /// <returns>new account</returns>
         public async Task<AccountInfo> CreateAccount(string name, User user)
         {
-            System.Diagnostics.Trace.TraceInformation("Generating user account.");
+            Trace.TraceInformation("Generating user account.");
 
             string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
 

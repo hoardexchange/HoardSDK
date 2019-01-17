@@ -90,12 +90,12 @@ namespace Hoard.Utils
                 Directory.CreateDirectory(path);
             }
 
-            string accountFile = CreateAccountUTCFile(ecKey, password, path);
+            string accountFile = CreateAccountKeyStoreFile(ecKey, password, path);
 
             return new Tuple<string, string>(ecKey.GetPublicAddress(), ecKey.GetPrivateKey());
         }
 
-        private static string CreateAccountUTCFile(Nethereum.Signer.EthECKey ecKey, string password, string path)
+        private static string CreateAccountKeyStoreFile(Nethereum.Signer.EthECKey ecKey, string password, string path)
         {
             //Get the public address (derivied from the public key)
             var address = ecKey.GetPublicAddress();
