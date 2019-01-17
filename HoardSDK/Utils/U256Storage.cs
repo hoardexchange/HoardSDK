@@ -26,7 +26,7 @@ namespace Hoard.Utils
             MaxStorageSize  = 256,
         }
 
-        private BigInteger Bunch = new BigInteger();
+        private BigInteger Bunch;
         private int ActualPackingShift;
         private int ActualUnpackingShift;
 
@@ -37,22 +37,12 @@ namespace Hoard.Utils
         /// <summary>
         /// Item state storage constructor
         /// </summary>
-        public U256Storage()
+        /// <param state="state"> the state we want to modify </param>
+        public U256Storage(ref BigInteger state)
         {
-            Bunch = BigInteger.Zero;
+            Bunch = state;
             ActualPackingShift = 0;
             ActualUnpackingShift = 0;
-        }
-
-        /// <summary>
-        /// Item state storage creator
-        /// </summary>
-        /// <param state="value"> initial item state </param>
-        static public U256Storage Create(BigInteger state)
-        {
-            U256Storage storage = new U256Storage();
-            storage.Bunch = state;
-            return storage;
         }
 
         /// <summary>

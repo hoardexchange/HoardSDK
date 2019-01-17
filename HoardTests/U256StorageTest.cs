@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
@@ -28,7 +29,8 @@ namespace HoardTests
             const bool b4 = true;
             const UInt32 u32_2 = 0xaaffccff;
 
-            Hoard.Utils.U256Storage u256Storage = new Hoard.Utils.U256Storage();
+            BigInteger state = new BigInteger();
+            Hoard.Utils.U256Storage u256Storage = new Hoard.Utils.U256Storage(ref state);
             u256Storage.PackBool(b1);
             u256Storage.PackUInt8(u8_1);
             u256Storage.PackUInt8(u8_2);
@@ -43,7 +45,6 @@ namespace HoardTests
             Assert.Equal(u256Storage.UnpackBool(), b1);
             Assert.Equal(u256Storage.UnpackUInt8(), u8_1);
             Assert.Equal(u256Storage.UnpackUInt8(), u8_2);
-
             Assert.Equal(u256Storage.UnpackUInt64(), u64_1);
             Assert.Equal(u256Storage.UnpackUInt16(), u16_1);
             Assert.Equal(u256Storage.UnpackUInt32(), u32_1);
