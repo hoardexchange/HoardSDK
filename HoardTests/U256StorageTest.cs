@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Hoard.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -29,8 +30,8 @@ namespace HoardTests
             const bool b4 = true;
             const UInt32 u32_2 = 0xaaffccff;
 
-            BigInteger state = new BigInteger();
-            Hoard.Utils.U256Storage u256Storage = new Hoard.Utils.U256Storage(ref state);
+            Reference<BigInteger> state = new Reference<BigInteger>(new BigInteger());
+            U256Storage u256Storage = new Hoard.Utils.U256Storage(state);
             u256Storage.PackBool(b1);
             u256Storage.PackUInt8(u8_1);
             u256Storage.PackUInt8(u8_2);

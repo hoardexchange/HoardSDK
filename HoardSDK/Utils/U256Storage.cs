@@ -11,6 +11,25 @@ using System.Text;
 namespace Hoard.Utils
 {
     /// <summary>
+    /// Reference class
+    /// </summary>
+    public class Reference<T> where T : struct
+    {
+        /// <summary>
+        /// constructor
+        /// </summary>
+        public Reference(T t)
+        {
+            Value = t;
+        }
+
+        /// <summary>
+        /// value
+        /// </summary>
+        public T Value { get; set; }
+    }
+
+    /// <summary>
     /// Item state storage
     /// </summary>
     public class U256Storage
@@ -26,7 +45,7 @@ namespace Hoard.Utils
             MaxStorageSize  = 256,
         }
 
-        private BigInteger Bunch;
+        private Reference<BigInteger> Bunch;
         private int ActualPackingShift;
         private int ActualUnpackingShift;
 
@@ -38,7 +57,7 @@ namespace Hoard.Utils
         /// Item state storage constructor
         /// </summary>
         /// <param state="state"> the state we want to modify </param>
-        public U256Storage(ref BigInteger state)
+        public U256Storage(Reference<BigInteger> state)
         {
             Bunch = state;
             ActualPackingShift = 0;
@@ -60,7 +79,7 @@ namespace Hoard.Utils
         /// <param state="value"> value </param>
         public void PackUInt8(byte value)
         {
-            Bunch |= new BigInteger(value) << ActualPackingShift;
+            Bunch.Value |= new BigInteger(value) << ActualPackingShift;
             ActualPackingShift += (int)DataSize.UInt8;
             Debug.Assert(ActualPackingShift <= (int)DataSize.MaxStorageSize);
 #if ENABLE_U256STORAGE_VALIDATION
@@ -74,7 +93,7 @@ namespace Hoard.Utils
         /// <param state="value"> value </param>
         public void PackUInt16(UInt16 value)
         {
-            Bunch |= new BigInteger(value) << ActualPackingShift;
+            Bunch.Value |= new BigInteger(value) << ActualPackingShift;
             ActualPackingShift += (int)DataSize.UInt16;
             Debug.Assert(ActualPackingShift <= (int)DataSize.MaxStorageSize);
 #if ENABLE_U256STORAGE_VALIDATION
@@ -88,7 +107,7 @@ namespace Hoard.Utils
         /// <param state="value"> value </param>
         public void PackUInt32(UInt32 value)
         {
-            Bunch |= new BigInteger(value) << ActualPackingShift;
+            Bunch.Value |= new BigInteger(value) << ActualPackingShift;
             ActualPackingShift += (int)DataSize.UInt32;
             Debug.Assert(ActualPackingShift <= (int)DataSize.MaxStorageSize);
 #if ENABLE_U256STORAGE_VALIDATION
@@ -102,7 +121,7 @@ namespace Hoard.Utils
         /// <param state="value"> value </param>
         public void PackUInt64(UInt64 value)
         {
-            Bunch |= new BigInteger(value) << ActualPackingShift;
+            Bunch.Value |= new BigInteger(value) << ActualPackingShift;
             ActualPackingShift += (int)DataSize.UInt64;
             Debug.Assert(ActualPackingShift <= (int)DataSize.MaxStorageSize);
 #if ENABLE_U256STORAGE_VALIDATION
@@ -131,7 +150,7 @@ namespace Hoard.Utils
             Debug.Assert(DataList[0] == DataSize.UInt8);
             DataList.RemoveAt(0);
 #endif
-            byte value = (byte)((Bunch >> ActualUnpackingShift) & 0xff);
+            byte value = (byte)((Bunch.Value >> ActualUnpackingShift) & 0xff);
             ActualUnpackingShift += (int)DataSize.UInt8;
             Debug.Assert(ActualUnpackingShift <= (int)DataSize.MaxStorageSize);
             return value;
@@ -148,7 +167,7 @@ namespace Hoard.Utils
             Debug.Assert(DataList[0] == DataSize.UInt16);
             DataList.RemoveAt(0);
 #endif
-            UInt16 value = (UInt16)((Bunch >> ActualUnpackingShift) & 0xffff);
+            UInt16 value = (UInt16)((Bunch.Value >> ActualUnpackingShift) & 0xffff);
             ActualUnpackingShift += (int)DataSize.UInt16;
             Debug.Assert(ActualUnpackingShift <= (int)DataSize.MaxStorageSize);
             return value;
@@ -165,7 +184,7 @@ namespace Hoard.Utils
             Debug.Assert(DataList[0] == DataSize.UInt32);
             DataList.RemoveAt(0);
 #endif
-            UInt32 value = (UInt32)((Bunch >> ActualUnpackingShift) & 0xffffffff);
+            UInt32 value = (UInt32)((Bunch.Value >> ActualUnpackingShift) & 0xffffffff);
             ActualUnpackingShift += (int)DataSize.UInt32;
             Debug.Assert(ActualUnpackingShift <= (int)DataSize.MaxStorageSize);
             return value;
@@ -182,7 +201,7 @@ namespace Hoard.Utils
             Debug.Assert(DataList[0] == DataSize.UInt64);
             DataList.RemoveAt(0);
 #endif
-            UInt64 value = (UInt64)((Bunch >> ActualUnpackingShift) & 0xffffffffffffffff);
+            UInt64 value = (UInt64)((Bunch.Value >> ActualUnpackingShift) & 0xffffffffffffffff);
             ActualUnpackingShift += (int)DataSize.UInt64;
             Debug.Assert(ActualUnpackingShift <= (int)DataSize.MaxStorageSize);
             return value;
