@@ -30,29 +30,44 @@ namespace HoardTests
             const bool b4 = true;
             const UInt32 u32_2 = 0xaaffccff;
 
-            Reference<BigInteger> state = new Reference<BigInteger>(new BigInteger());
-            U256Storage u256Storage = new Hoard.Utils.U256Storage(state);
-            u256Storage.PackBool(b1);
-            u256Storage.PackUInt8(u8_1);
-            u256Storage.PackUInt8(u8_2);
-            u256Storage.PackUInt64(u64_1);
-            u256Storage.PackUInt16(u16_1);
-            u256Storage.PackUInt32(u32_1);
-            u256Storage.PackBool(b2);
-            u256Storage.PackBool(b3);
-            u256Storage.PackBool(b4);
-            u256Storage.PackUInt32(u32_2);
+            U256StoragePacker u256StoragePacker = new Hoard.Utils.U256StoragePacker();
+            u256StoragePacker.PackBool(b1);
+            u256StoragePacker.PackUInt8(u8_1);
+            u256StoragePacker.PackUInt8(u8_2);
+            u256StoragePacker.PackUInt64(u64_1);
+            u256StoragePacker.PackUInt16(u16_1);
+            u256StoragePacker.PackUInt32(u32_1);
+            u256StoragePacker.PackBool(b2);
+            u256StoragePacker.PackBool(b3);
+            u256StoragePacker.PackBool(b4);
+            u256StoragePacker.PackUInt32(u32_2);
+            u256StoragePacker.ExportToFile(@"state.json");
 
-            Assert.Equal(u256Storage.UnpackBool(), b1);
-            Assert.Equal(u256Storage.UnpackUInt8(), u8_1);
-            Assert.Equal(u256Storage.UnpackUInt8(), u8_2);
-            Assert.Equal(u256Storage.UnpackUInt64(), u64_1);
-            Assert.Equal(u256Storage.UnpackUInt16(), u16_1);
-            Assert.Equal(u256Storage.UnpackUInt32(), u32_1);
-            Assert.Equal(u256Storage.UnpackBool(), b2);
-            Assert.Equal(u256Storage.UnpackBool(), b3);
-            Assert.Equal(u256Storage.UnpackBool(), b4);
-            Assert.Equal(u256Storage.UnpackUInt32(), u32_2);
+            U256StorageUnpacker u256StorageUnpacker = new Hoard.Utils.U256StorageUnpacker(u256StoragePacker.State);
+            Assert.Equal(u256StorageUnpacker.UnpackBool(), b1);
+            Assert.Equal(u256StorageUnpacker.UnpackUInt8(), u8_1);
+            Assert.Equal(u256StorageUnpacker.UnpackUInt8(), u8_2);
+            Assert.Equal(u256StorageUnpacker.UnpackUInt64(), u64_1);
+            Assert.Equal(u256StorageUnpacker.UnpackUInt16(), u16_1);
+            Assert.Equal(u256StorageUnpacker.UnpackUInt32(), u32_1);
+            Assert.Equal(u256StorageUnpacker.UnpackBool(), b2);
+            Assert.Equal(u256StorageUnpacker.UnpackBool(), b3);
+            Assert.Equal(u256StorageUnpacker.UnpackBool(), b4);
+            Assert.Equal(u256StorageUnpacker.UnpackUInt32(), u32_2);
+
+            BigInteger state2 = new BigInteger();
+            U256StorageUnpacker.ImportFromFile(@"state.json", ref state2);
+            U256StorageUnpacker u256StorageUnpacker2 = new Hoard.Utils.U256StorageUnpacker(state2);
+            Assert.Equal(u256StorageUnpacker2.UnpackBool(), b1);
+            Assert.Equal(u256StorageUnpacker2.UnpackUInt8(), u8_1);
+            Assert.Equal(u256StorageUnpacker2.UnpackUInt8(), u8_2);
+            Assert.Equal(u256StorageUnpacker2.UnpackUInt64(), u64_1);
+            Assert.Equal(u256StorageUnpacker2.UnpackUInt16(), u16_1);
+            Assert.Equal(u256StorageUnpacker2.UnpackUInt32(), u32_1);
+            Assert.Equal(u256StorageUnpacker2.UnpackBool(), b2);
+            Assert.Equal(u256StorageUnpacker2.UnpackBool(), b3);
+            Assert.Equal(u256StorageUnpacker2.UnpackBool(), b4);
+            Assert.Equal(u256StorageUnpacker2.UnpackUInt32(), u32_2);
         }
     }
 }
