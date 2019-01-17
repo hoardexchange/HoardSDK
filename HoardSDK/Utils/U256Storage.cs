@@ -1,8 +1,4 @@
-﻿#if DEBUG
-#define ENABLE_U256STORAGE_VALIDATION
-#endif
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
@@ -49,10 +45,6 @@ namespace Hoard.Utils
         private int ActualPackingShift;
         private int ActualUnpackingShift;
 
-#if ENABLE_U256STORAGE_VALIDATION
-        private List<DataSize> DataList = new List<DataSize>();
-#endif
-
         /// <summary>
         /// Item state storage constructor
         /// </summary>
@@ -82,9 +74,6 @@ namespace Hoard.Utils
             Bunch.Value |= new BigInteger(value) << ActualPackingShift;
             ActualPackingShift += (int)DataSize.UInt8;
             Debug.Assert(ActualPackingShift <= (int)DataSize.MaxStorageSize);
-#if ENABLE_U256STORAGE_VALIDATION
-            DataList.Add(DataSize.UInt8);
-#endif
         }
 
         /// <summary>
@@ -96,9 +85,6 @@ namespace Hoard.Utils
             Bunch.Value |= new BigInteger(value) << ActualPackingShift;
             ActualPackingShift += (int)DataSize.UInt16;
             Debug.Assert(ActualPackingShift <= (int)DataSize.MaxStorageSize);
-#if ENABLE_U256STORAGE_VALIDATION
-            DataList.Add(DataSize.UInt16);
-#endif
         }
 
         /// <summary>
@@ -110,9 +96,6 @@ namespace Hoard.Utils
             Bunch.Value |= new BigInteger(value) << ActualPackingShift;
             ActualPackingShift += (int)DataSize.UInt32;
             Debug.Assert(ActualPackingShift <= (int)DataSize.MaxStorageSize);
-#if ENABLE_U256STORAGE_VALIDATION
-            DataList.Add(DataSize.UInt32);
-#endif
         }
 
         /// <summary>
@@ -124,9 +107,6 @@ namespace Hoard.Utils
             Bunch.Value |= new BigInteger(value) << ActualPackingShift;
             ActualPackingShift += (int)DataSize.UInt64;
             Debug.Assert(ActualPackingShift <= (int)DataSize.MaxStorageSize);
-#if ENABLE_U256STORAGE_VALIDATION
-            DataList.Add(DataSize.UInt64);
-#endif
         }
 
         /// <summary>
@@ -145,11 +125,6 @@ namespace Hoard.Utils
         /// <returns></returns>
         public byte UnpackUInt8()
         {
-#if ENABLE_U256STORAGE_VALIDATION
-            Debug.Assert(DataList.Count > 0);
-            Debug.Assert(DataList[0] == DataSize.UInt8);
-            DataList.RemoveAt(0);
-#endif
             byte value = (byte)((Bunch.Value >> ActualUnpackingShift) & 0xff);
             ActualUnpackingShift += (int)DataSize.UInt8;
             Debug.Assert(ActualUnpackingShift <= (int)DataSize.MaxStorageSize);
@@ -162,11 +137,6 @@ namespace Hoard.Utils
         /// <returns></returns>
         public UInt16 UnpackUInt16()
         {
-#if ENABLE_U256STORAGE_VALIDATION
-            Debug.Assert(DataList.Count > 0);
-            Debug.Assert(DataList[0] == DataSize.UInt16);
-            DataList.RemoveAt(0);
-#endif
             UInt16 value = (UInt16)((Bunch.Value >> ActualUnpackingShift) & 0xffff);
             ActualUnpackingShift += (int)DataSize.UInt16;
             Debug.Assert(ActualUnpackingShift <= (int)DataSize.MaxStorageSize);
@@ -179,11 +149,6 @@ namespace Hoard.Utils
         /// <returns></returns>
         public UInt32 UnpackUInt32()
         {
-#if ENABLE_U256STORAGE_VALIDATION
-            Debug.Assert(DataList.Count > 0);
-            Debug.Assert(DataList[0] == DataSize.UInt32);
-            DataList.RemoveAt(0);
-#endif
             UInt32 value = (UInt32)((Bunch.Value >> ActualUnpackingShift) & 0xffffffff);
             ActualUnpackingShift += (int)DataSize.UInt32;
             Debug.Assert(ActualUnpackingShift <= (int)DataSize.MaxStorageSize);
@@ -196,11 +161,6 @@ namespace Hoard.Utils
         /// <returns></returns>
         public UInt64 UnpackUInt64()
         {
-#if ENABLE_U256STORAGE_VALIDATION
-            Debug.Assert(DataList.Count > 0);
-            Debug.Assert(DataList[0] == DataSize.UInt64);
-            DataList.RemoveAt(0);
-#endif
             UInt64 value = (UInt64)((Bunch.Value >> ActualUnpackingShift) & 0xffffffffffffffff);
             ActualUnpackingShift += (int)DataSize.UInt64;
             Debug.Assert(ActualUnpackingShift <= (int)DataSize.MaxStorageSize);
