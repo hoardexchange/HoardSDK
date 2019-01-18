@@ -13,12 +13,30 @@ namespace Hoard.Utils
     /// </summary>
     public enum U256StorageDataType
     {
+        /// <summary>
+        /// unsigned short integer
+        /// </summary>
         UInt16 = 0,
+        /// <summary>
+        /// unsigned 32bit integer
+        /// </summary>
         UInt32,
+        /// <summary>
+        /// unsigned 64bit integer
+        /// </summary>
         UInt64,
+        /// <summary>
+        /// Bool
+        /// </summary>
         Bool,
+        /// <summary>
+        /// Single byte
+        /// </summary>
         Byte,
 
+        /// <summary>
+        /// Maximum count of supported types
+        /// </summary>
         MaxStorageSize = 256,
     }
 
@@ -27,9 +45,18 @@ namespace Hoard.Utils
     /// </summary>
     public struct U256StorageDescription
     {
-        public U256StorageDataType type;
-        public int size;
-        public object value;
+        /// <summary>
+        /// Type of the value
+        /// </summary>
+        public U256StorageDataType Type;
+        /// <summary>
+        /// Size in bytes of this value
+        /// </summary>
+        public int Size;
+        /// <summary>
+        /// Stored value
+        /// </summary>
+        public object Value;
     }
 
     /// <summary>
@@ -75,9 +102,9 @@ namespace Hoard.Utils
             Debug.Assert(ActualShift <= (int)U256StorageDataType.MaxStorageSize);
 
             U256StorageDescription desc = new U256StorageDescription();
-            desc.type = U256StorageDataType.Byte;
-            desc.size = 8;
-            desc.value = value;
+            desc.Type = U256StorageDataType.Byte;
+            desc.Size = 8;
+            desc.Value = value;
             Variables.Add(desc);
         }
 
@@ -92,9 +119,9 @@ namespace Hoard.Utils
             Debug.Assert(ActualShift <= (int)U256StorageDataType.MaxStorageSize);
 
             U256StorageDescription desc = new U256StorageDescription();
-            desc.type = U256StorageDataType.UInt16;
-            desc.size = 16;
-            desc.value = value;
+            desc.Type = U256StorageDataType.UInt16;
+            desc.Size = 16;
+            desc.Value = value;
             Variables.Add(desc);
         }
 
@@ -109,9 +136,9 @@ namespace Hoard.Utils
             Debug.Assert(ActualShift <= (int)U256StorageDataType.MaxStorageSize);
 
             U256StorageDescription desc = new U256StorageDescription();
-            desc.type = U256StorageDataType.UInt32;
-            desc.size = 32;
-            desc.value = value;
+            desc.Type = U256StorageDataType.UInt32;
+            desc.Size = 32;
+            desc.Value = value;
             Variables.Add(desc);
         }
 
@@ -126,9 +153,9 @@ namespace Hoard.Utils
             Debug.Assert(ActualShift <= (int)U256StorageDataType.MaxStorageSize);
 
             U256StorageDescription desc = new U256StorageDescription();
-            desc.type = U256StorageDataType.UInt64;
-            desc.size = 64;
-            desc.value = value;
+            desc.Type = U256StorageDataType.UInt64;
+            desc.Size = 64;
+            desc.Value = value;
             Variables.Add(desc);
         }
 
@@ -143,9 +170,9 @@ namespace Hoard.Utils
             Debug.Assert(ActualShift <= (int)U256StorageDataType.MaxStorageSize);
 
             U256StorageDescription desc = new U256StorageDescription();
-            desc.type = U256StorageDataType.Bool;
-            desc.size = 8;
-            desc.value = value;
+            desc.Type = U256StorageDataType.Bool;
+            desc.Size = 8;
+            desc.Value = value;
             Variables.Add(desc);
         }
 
@@ -261,28 +288,28 @@ namespace Hoard.Utils
                 int shift = 0;
                 foreach (U256StorageDescription desc in variables)
                 {
-                    switch (desc.size)
+                    switch (desc.Size)
                     {
                         case 8:
-                            if (desc.type == U256StorageDataType.Bool)
-                                state |= new BigInteger(Convert.ToByte((byte)((bool)desc.value == true ? 0xff : 0x00))) << shift;
+                            if (desc.Type == U256StorageDataType.Bool)
+                                state |= new BigInteger(Convert.ToByte((byte)((bool)desc.Value == true ? 0xff : 0x00))) << shift;
                             else
-                                state |= new BigInteger(Convert.ToByte(desc.value)) << shift;
+                                state |= new BigInteger(Convert.ToByte(desc.Value)) << shift;
                             break;
                         case 16:
-                            state |= new BigInteger(Convert.ToUInt16(desc.value)) << shift;
+                            state |= new BigInteger(Convert.ToUInt16(desc.Value)) << shift;
                             break;
                         case 32:
-                            state |= new BigInteger(Convert.ToUInt32(desc.value)) << shift;
+                            state |= new BigInteger(Convert.ToUInt32(desc.Value)) << shift;
                             break;
                         case 64:
-                            state |= (BigInteger)desc.value << shift;
+                            state |= (BigInteger)desc.Value << shift;
                             break;
                         default:
                             Debug.Assert(false);
                             break;
                     }
-                    shift += (int)desc.size;
+                    shift += (int)desc.Size;
                     Debug.Assert(shift <= (int)U256StorageDataType.MaxStorageSize);
                 }
                 return true;

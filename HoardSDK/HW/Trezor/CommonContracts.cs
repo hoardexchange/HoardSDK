@@ -63,7 +63,7 @@
     }
 
     [ProtoBuf.ProtoContract()]
-    public class Features : ProtoBuf.IExtensible
+    internal class Features : ProtoBuf.IExtensible
     {
         private ProtoBuf.IExtension __pbn__extensionData;
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)

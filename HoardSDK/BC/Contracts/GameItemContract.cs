@@ -12,13 +12,30 @@ namespace Hoard.BC.Contracts
     /// </summary>
     public class SupportsInterfaceWithLookupContract
     {
+        /// <summary>
+        /// web3 access interface
+        /// </summary>
         protected readonly Web3 web3;
+        /// <summary>
+        /// Instance of ethereum contract
+        /// </summary>
         protected Contract contract;
 
+        /// <summary>
+        /// Address of this contract
+        /// </summary>
         public string Address { get { return contract.Address; } }
 
+        /// <summary>
+        /// ABI of the contract
+        /// </summary>
         public const string ABI = HoardABIConfig.SupportsInterfaceWithLookupABI;
 
+        /// <summary>
+        /// Creates new instance of contract that supports interface lookups (ERC165)
+        /// </summary>
+        /// <param name="web3">web3 accessor</param>
+        /// <param name="address">ethereum address of the contract</param>
         public SupportsInterfaceWithLookupContract(Web3 web3, string address)
         {
             this.web3 = web3;
@@ -30,6 +47,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("supportsInterface");
         }
 
+        /// <summary>
+        /// Checks if this contract supports given interface
+        /// </summary>
+        /// <param name="interfaceId">Identifier of the interface to check</param>
+        /// <returns></returns>
         public Task<bool> SupportsInterface(byte[] interfaceId)
         {
             var function = GetFunctionSupportsInterface();
@@ -42,12 +64,31 @@ namespace Hoard.BC.Contracts
     /// </summary>
     public abstract class GameItemContract
     {
+        /// <summary>
+        /// Game that manages this Game Item
+        /// </summary>
         protected GameID Game { get; private set; }
+        /// <summary>
+        /// web3 access interface
+        /// </summary>
         protected readonly Web3 web3;
+        /// <summary>
+        /// Ethereum contract
+        /// </summary>
         protected Contract contract;
 
+        /// <summary>
+        /// Ethereum address of the contract
+        /// </summary>
         public string Address { get { return contract.Address; } }
 
+        /// <summary>
+        /// Creates new instance of the contract representing Game Item
+        /// </summary>
+        /// <param name="game">Game that manages this item</param>
+        /// <param name="web3">web3 accessor</param>
+        /// <param name="address">ethereum address of the contract</param>
+        /// <param name="abi">ABI of the contract</param>
         public GameItemContract(GameID game, Web3 web3, string address, string abi)
         {
             this.web3 = web3;
@@ -90,53 +131,100 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("tokenStateType");
         }
 
+        /// <summary>
+        /// Returns total amount of items given account owns
+        /// </summary>
+        /// <param name="address">Account address of the owner</param>
+        /// <returns></returns>
         public Task<BigInteger> GetBalanceOf(string address)
         {
             var function = GetFunctionBalanceOf();
             return function.CallAsync<BigInteger>(address);
         }
 
+        /// <summary>
+        /// Returns symbol of this item (type of the item)
+        /// </summary>
+        /// <returns></returns>
         public Task<string> GetSymbol()
         {
             var function = GetFunctionSymbol();
             return function.CallAsync<string>();
         }
 
+        /// <summary>
+        /// Returns owner address of the contract
+        /// </summary>
+        /// <returns></returns>
         public Task<string> GetOwner()
         {
             var function = GetFunctionOwner();
             return function.CallAsync<string>();
         }
 
+        /// <summary>
+        /// Returns name of this item
+        /// </summary>
+        /// <returns></returns>
         public Task<string> GetName()
         {
             var function = GetFunctionName();
             return function.CallAsync<string>();
         }
 
-        // FIXME: should be BigInteger
-        public Task<ulong> GetTotalSupply()
+        /// <summary>
+        /// Returns total amount of all minted items represented by this contract
+        /// </summary>
+        /// <returns></returns>
+        public Task<BigInteger> GetTotalSupply()
         {
             var function = GetFunctionTotalSupply();
-            return function.CallAsync<ulong>();
+            return function.CallAsync<BigInteger>();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public Task<string> GetItemType()
         {
             var function = GetFunctionItemType();
             return function.CallAsync<string>();
         }
 
+        /// <summary>
+        /// Returns type of the Item State (IPFS hash, SWARM hash, compound U256 state, etc.)
+        /// </summary>
+        /// <returns></returns>
         public Task<byte[]> GetTokenStateType()
         {
             var function = GetFunctionTokenStateType();
             return function.CallAsync<byte[]>();
         }
 
+        /// <summary>
+        /// Transfers <paramref name="item"/> from account <paramref name="from"/> to <paramref name="addressTo"/>
+        /// in given <paramref name="amount"/>
+        /// </summary>
+        /// <param name="from">Account of the sender</param>
+        /// <param name="addressTo">destination account address</param>
+        /// <param name="item">Item to transfer</param>
+        /// <param name="amount">Amount of items to transfer</param>
+        /// <returns></returns>
         public abstract Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount);
 
+        /// <summary>
+        /// Returns all Game Items owned by Account <paramref name="info"/>
+        /// </summary>
+        /// <param name="info">Owner account</param>
+        /// <returns></returns>
         public abstract Task<GameItem[]> GetGameItems(AccountInfo info);
 
+        /// <summary>
+        /// Returns specific Game Item based on query parameters
+        /// </summary>
+        /// <param name="gameItemsParams">query parameters</param>
+        /// <returns></returns>
         public abstract Task<GameItem> GetGameItem(GameItemsParams gameItemsParams);
     }
 
@@ -145,12 +233,30 @@ namespace Hoard.BC.Contracts
     /// </summary>
     public class ERC223GameItemContract : GameItemContract
     {
+        /// <summary>
+        /// Metadata of ERC223 Game Item contract
+        /// </summary>
         public class Metadata : BaseGameItemMetadata
         {
+            /// <summary>
+            /// State of this item
+            /// </summary>
             public string State { get; set; }
+            /// <summary>
+            /// Ethereum address of the owner
+            /// </summary>
             public string OwnerAddress { get; set; }
+            /// <summary>
+            /// Total balance of this item (how many of these items owner has)
+            /// </summary>
             public BigInteger Balance { get; set; }
 
+            /// <summary>
+            /// Creates new instance of metadata object
+            /// </summary>
+            /// <param name="state">state of thi item</param>
+            /// <param name="ownerAddress">address of the item owner</param>
+            /// <param name="balance">total amount of owned instances</param>
             public Metadata(string state, string ownerAddress, BigInteger balance)
             {
                 State = state;
@@ -159,11 +265,30 @@ namespace Hoard.BC.Contracts
             }
         }
 
+        /// <summary>
+        /// Identifier of ERC223GameItem interface
+        /// </summary>
         public const string InterfaceID = "0x5713b3c1";
 
+        /// <summary>
+        /// Base ABI of the contract
+        /// </summary>
         public const string ABI = HoardABIConfig.ERC223TokenABI;
 
+        /// <summary>
+        /// Creates new instance of the contract object
+        /// </summary>
+        /// <param name="game">Game that manages these items</param>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">ethereum address of the contract</param>
         public ERC223GameItemContract(GameID game, Web3 web3, string address) : base(game, web3, address, ABI) { }
+        /// <summary>
+        /// Creates new instance of the contract object
+        /// </summary>
+        /// <param name="game">Game that manages these items</param>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">ethereum address of the contract</param>
+        /// <param name="abi">new ABI to override</param>
         public ERC223GameItemContract(GameID game, Web3 web3, string address, string abi) : base(game, web3, address, abi) { }
 
         private Function GetFunctionTransfer()
@@ -176,6 +301,10 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("tokenState");
         }
 
+        /// <summary>
+        /// Returns state of this Item
+        /// </summary>
+        /// <returns></returns>
         public Task<byte[]> GetTokenState()
         {
             var function = GetFunctionTokenState();
@@ -221,11 +350,25 @@ namespace Hoard.BC.Contracts
     /// </summary>
     public class ERC721GameItemContract : GameItemContract
     {
+        /// <summary>
+        /// Inner data of ERC721 Game Item (for internal use)
+        /// </summary>
         public class Metadata : BaseGameItemMetadata
         {
+            /// <summary>
+            /// Owner of the item
+            /// </summary>
             public string OwnerAddress { get; set; }
+            /// <summary>
+            /// Identifier of the item
+            /// </summary>
             public BigInteger ItemId { get; set; }
 
+            /// <summary>
+            /// Creates new instance of the metadata object
+            /// </summary>
+            /// <param name="ownerAddress">Owner address</param>
+            /// <param name="itemID">Identifier of Item</param>
             public Metadata(string ownerAddress, BigInteger itemID)
             {
                 OwnerAddress = ownerAddress;
@@ -233,11 +376,31 @@ namespace Hoard.BC.Contracts
             }
         }
 
+        /// <summary>
+        /// ERC721GameItem interface identifier
+        /// </summary>
         public const string InterfaceID = "0x80ac58cd";
 
+        /// <summary>
+        /// base ABI of this contract
+        /// </summary>
         public const string ABI = HoardABIConfig.ERC721TokenABI;
 
+        /// <summary>
+        /// Creates new instance of ERC721 GameItem contract
+        /// </summary>
+        /// <param name="game">Managing game</param>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">contract address</param>
         public ERC721GameItemContract(GameID game, Web3 web3, string address) : base(game, web3, address, ABI) { }
+
+        /// <summary>
+        /// Creates new instance of ERC721 GameItem contract
+        /// </summary>
+        /// <param name="game">Managing game</param>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">contract address</param>
+        /// <param name="abi">new ABI to override</param>
         public ERC721GameItemContract(GameID game, Web3 web3, string address, string abi) : base(game, web3, address, abi) { }
 
         private Function GetFunctionTransfer()
@@ -260,41 +423,74 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("exists");
         }
 
-        // FIXME: itemID should be BigInteger
+        /// <summary>
+        /// REturns state of a particular token
+        /// </summary>
+        /// <param name="itemID">identifier of the item</param>
+        /// <returns></returns>
         public Task<byte[]> GetTokenState(BigInteger itemID)
         {
             Function function = GetFunctionTokenState();
             return function.CallAsync<byte[]>(itemID);
         }
 
+        /// <summary>
+        /// Checks if item with given identifier exists
+        /// </summary>
+        /// <param name="itemID">identifier of the item</param>
+        /// <returns></returns>
         public Task<bool> Exists(BigInteger itemID)
         {
             Function function = GetFunctionExists();
             return function.CallAsync<bool>(itemID);
         }
 
-        // FIXME: should be BigInteger
-        public Task<BigInteger> TokenOfOwnerByIndex(string owner, ulong index)
+        /// <summary>
+        /// Returns Item owned by owner by its ordinal number
+        /// </summary>
+        /// <param name="owner">owner address of the item</param>
+        /// <param name="index">ordinal number</param>
+        /// <returns></returns>
+        public Task<BigInteger> TokenOfOwnerByIndex(string owner, BigInteger index)
         {
             Function function = GetFunctionTokenOfOwnerByIndex();
             return function.CallAsync<BigInteger>(owner, index);
         }
 
-        public Task<BigInteger> OwnerOf(BigInteger index)
+        /// <summary>
+        /// Returns owner address of the item
+        /// </summary>
+        /// <param name="itemID">item identifier</param>
+        /// <returns></returns>
+        public Task<BigInteger> OwnerOf(BigInteger itemID)
         {
             Function function = contract.GetFunction("ownerOf");
-            return function.CallAsync<BigInteger>(index);
+            return function.CallAsync<BigInteger>(itemID);
         }
 
+        /// <summary>
+        /// Transfers <paramref name="amount"/> of <paramref name="item"/> from account <paramref name="from"/>
+        /// to address <paramref name="addressTo"/>
+        /// </summary>
+        /// <param name="from">Account of items owner</param>
+        /// <param name="addressTo">address of destination account</param>
+        /// <param name="item">item to transfer</param>
+        /// <param name="amount">amount of items to transfer</param>
+        /// <returns></returns>
         public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
         {
             var function = GetFunctionTransfer();
-            System.Numerics.BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
+            BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
             object[] functionInput = { from.ID.ToString(), addressTo.Substring(2), tokenId };
-            var receipt = await Hoard.BC.BCComm.EvaluateOnBC(web3, from, function, functionInput);
+            var receipt = await BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;
         }
 
+        /// <summary>
+        /// REturns all items owned by <paramref name="info"/>
+        /// </summary>
+        /// <param name="info">Owners's account</param>
+        /// <returns></returns>
         public override async Task<GameItem[]> GetGameItems(AccountInfo info)
         {
             BigInteger itemBalance = await GetBalanceOf(info.ID);
@@ -316,6 +512,11 @@ namespace Hoard.BC.Contracts
             return items;
         }
 
+        /// <summary>
+        /// Returns particular Item based on query parameters
+        /// </summary>
+        /// <param name="gameItemsParams">query parameters</param>
+        /// <returns></returns>
         public override async Task<GameItem> GetGameItem(GameItemsParams gameItemsParams)
         {
             var id = BigInteger.Parse(gameItemsParams.TokenId, NumberStyles.AllowHexSpecifier);

@@ -22,8 +22,8 @@ namespace HoardTests.AccountServices
             }
         }
 
-        IAccountService signer;
-        User user;
+        //IAccountService signer;
+        //User user;
 
         public HoardAccountServiceTest()
         {

@@ -4,13 +4,22 @@ using System.Linq;
 
 namespace Hoard.HW
 {
+    /// <summary>
+    /// Helper class with a set of known derivation paths used to obtain wallets from hardware wallets
+    /// </summary>
     public static class DerivationPath
     {
+        /// <summary>
+        /// Main path for Trezor and Ledger wallets
+        /// </summary>
         public static string BIP44 { get { return "m/44'/60'/0'/0"; } }
-        public static string BIP44LedgerLegacy { get { return "m/44'/60'/0'"; } } //legacy ledger path
+        /// <summary>
+        /// Legacy path for Ledger wallet (use BIP44 instead of this one)
+        /// </summary>
+        public static string BIP44LedgerLegacy { get { return "m/44'/60'/0'"; } }
     }
 
-    public class KeyPath
+    internal class KeyPath
     {
         public uint[] Indices { get; private set; }
 

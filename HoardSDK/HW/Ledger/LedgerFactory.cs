@@ -3,9 +3,12 @@ using System.Threading.Tasks;
 
 namespace Hoard.HW.Ledger
 {
+    /// <summary>
+    /// Factory class for acquiring instances of Ledger Hardware Wallets
+    /// </summary>
     public static class LedgerFactory
     {
-        public static DeviceInfo[] DeviceInfo = new DeviceInfo[]
+        private static DeviceInfo[] DeviceInfo = new DeviceInfo[]
         {
             new DeviceInfo(0x2c97, 0x0000, "HIDBlue"),
             new DeviceInfo(0x2c97, 0x0001, "HIDNanoS"),

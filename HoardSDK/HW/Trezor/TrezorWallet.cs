@@ -15,7 +15,7 @@ namespace Hoard.HW.Trezor
 
         public IHidDevice HIDDevice { get; }
         public string DerivationPath { get; }
-        public Features Features { get; private set; }
+        internal Features Features { get; private set; }
 
         private SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
         private object lastRequest;
@@ -188,7 +188,7 @@ namespace Hoard.HW.Trezor
             return Helpers.ProtoBufDeserialize(GetContractType(messageType), allData.ToArray());
         }
 
-        public async Task<object> SendRequestAsync(object request)
+        internal async Task<object> SendRequestAsync(object request)
         {
             await _lock.WaitAsync();
 
@@ -202,7 +202,7 @@ namespace Hoard.HW.Trezor
             }
         }
 
-        public async Task<object> SendRequestAsyncNoLock(object request)
+        internal async Task<object> SendRequestAsyncNoLock(object request)
         {
             await WriteRequestAsync(request);
             var response = await ReadResponseAsync();

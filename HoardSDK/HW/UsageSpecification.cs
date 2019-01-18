@@ -1,6 +1,6 @@
 ﻿namespace Hoard.HW
 {
-    public class UsageSpecification
+    internal class UsageSpecification
     {
         public ushort Usage { get; }
         public ushort UsagePage { get; }

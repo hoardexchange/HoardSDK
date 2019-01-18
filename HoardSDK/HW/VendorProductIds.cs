@@ -1,6 +1,6 @@
 ﻿namespace Hoard.HW
 {
-    public class DeviceInfo
+    internal class DeviceInfo
     {
         public int VendorId { get; }
         public int ProductId { get; }
