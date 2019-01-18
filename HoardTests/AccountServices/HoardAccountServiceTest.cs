@@ -32,7 +32,7 @@ namespace HoardTests.AccountServices
             //signer = new HoardAccountService("http://localhost:8081", "wss://localhost:8082", "HoardTestAuthClient", new UserInputProviderFixture());
             //if (hoardAccountServiceTestUser == null)
             //{
-            //    hoardAccountServiceTestUser = new User("rafal.wydra@gmail.com", "rafal.wydra@gmail.com");
+            //    hoardAccountServiceTestUser = new User("hoard", "hoard@hoard.com");
             //    bool res = signer.RequestAccounts(hoardAccountServiceTestUser).Result;
             //}
         }
