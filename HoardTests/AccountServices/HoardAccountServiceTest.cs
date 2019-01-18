@@ -61,7 +61,7 @@ namespace HoardTests.AccountServices
             //var txData = new byte[][] { nonce, gasPrice, startGas, to.ToHexByteArray(), value, data };
             //var tx = new RLPSigner(txData);
             //var signature = await signer.SignTransaction(tx.GetRLPEncodedRaw(), hoardAccountServiceTestUser.ActiveAccount);
-            //EthECDSASignature sig = Helper.ExtractEcdsaSignature(signature);
+            //EthECDSASignature sig = Nethereum.Signer.MessageSigner.ExtractEcdsaSignature(signature);
             //var addressRec = new HoardID(EthECKey.RecoverFromSignature(sig, tx.RawHash).GetPublicAddress());
             //Assert.Equal(hoardAccountServiceTestUser.ActiveAccount.ID, addressRec);
         }
