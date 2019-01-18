@@ -57,6 +57,7 @@ namespace HoardTests
             Assert.True(success);
 
             //ERC721
+            account = users[0].ActiveAccount;
             success = BCExchangeService.Deposit(account, items[2], 1).Result;
             Assert.True(success);
         }

@@ -111,7 +111,7 @@ namespace HoardTests.CryptKittyTests
         {
             BigInteger tokenBigInt = new BigInteger(Encoding.Unicode.GetBytes(tokenId));
 
-            ERC721GameItemContract contract =  HoardService.Instance.BCComm.GetContract<ERC721GameItemContract>("0x06012c8cf97BEaD5deAe237070F9587f8E7A266d");
+            ERC721GameItemContract contract =  ((Hoard.BC.BCComm)HoardService.Instance.BCComm).GetContract<ERC721GameItemContract>("0x06012c8cf97BEaD5deAe237070F9587f8E7A266d");
 
             BigInteger owner = await contract.OwnerOf(tokenBigInt);
             

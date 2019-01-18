@@ -1,4 +1,5 @@
 using Hoard.BC.Contracts;
+using Hoard.Interfaces;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
@@ -18,11 +19,13 @@ namespace Hoard.BC
     /// Utility class for Blockchain communication.
     /// Uses Nethereum library.
     /// </summary>
-    public class BCComm
+    public class BCComm : IBCComm
     {
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         private Dictionary<GameID, GameContract> gameContracts = new Dictionary<GameID, GameContract>();
+
+        private static string HRDAddress = null;
 
         /// <summary>
         /// Creates BCComm object.
@@ -40,7 +43,7 @@ namespace Hoard.BC
         /// Connects to blockchain using the JsonRpc client and performs a handshake
         /// </summary>
         /// <returns>a pair of [bool result, string return infromation] received from client</returns>
-        public async Task<Tuple<bool,string>> Connect()
+        public virtual async Task<Tuple<bool,string>> Connect()
         {
             var ver = new Nethereum.RPC.Web3.Web3ClientVersion(web.Client);
             try
@@ -59,7 +62,7 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="account">account to query</param>
         /// <returns></returns>
-        public async Task<BigInteger> GetETHBalance(HoardID account)
+        public virtual async Task<BigInteger> GetBalance(HoardID account)
         {
             var ver = new Nethereum.RPC.Eth.EthGetBalance(web.Client);
             return (await ver.SendRequestAsync(account)).Value;
@@ -71,7 +74,11 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<string> GetHRDAddress()
         {
-            return await gameCenter.GetHoardTokenAddressAsync();
+            if (HRDAddress == null)
+            {
+                HRDAddress = await gameCenter.GetHoardTokenAddressAsync();
+            }
+            return HRDAddress;
         }
 
         /// <summary>
@@ -79,7 +86,7 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="account">account to query</param>
         /// <returns></returns>
-        public async Task<BigInteger> GetHRDBalance(HoardID account)
+        public virtual async Task<BigInteger> GetHRDBalance(HoardID account)
         {
             string hrdAddress = await GetHRDAddress();
             if (hrdAddress != null)
@@ -272,7 +279,7 @@ namespace Hoard.BC
         /// <param name="to">receiver account</param>
         /// <param name="amount">amount to send</param>
         /// <returns>true if transfer was successful, false otherwise</returns>
-        public async Task<bool> TransferHRD(AccountInfo from, string to, BigInteger amount)
+        public virtual async Task<bool> TransferHRD(AccountInfo from, string to, BigInteger amount)
         {
             string hoardTokenAddress = await gameCenter.GetHoardTokenAddressAsync();
             if (hoardTokenAddress != null)

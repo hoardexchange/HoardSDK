@@ -1,5 +1,6 @@
 ﻿using Hoard.ExchangeServices;
 using Hoard.GameItemProviders;
+using Hoard.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -43,7 +44,7 @@ namespace Hoard
         /// <summary>
         /// Communication channel with block chain.
         /// </summary>
-        public BC.BCComm BCComm { get; private set; } = null;
+        public IBCComm BCComm { get; private set; } = null;
 
         private Dictionary<GameID, IGameItemProvider> Providers = new Dictionary<GameID, IGameItemProvider>();
 
@@ -325,7 +326,7 @@ namespace Hoard
         {
             try
             {
-                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetETHBalance(account.ID)));
+                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetBalance(account.ID)));
             }
             catch(Exception ex)
             {
