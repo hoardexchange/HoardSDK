@@ -36,7 +36,9 @@ namespace Hoard.ExchangeServices
             return true;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Destroys this instance
+        /// </summary>
         public void Shutdown()
         {
             ExchangeContract = null;

@@ -40,7 +40,9 @@ namespace Hoard.ExchangeServices
             return false;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Destroys this instance
+        /// </summary>
         public void Shutdown()
         {
             Client = null;

@@ -27,7 +27,8 @@
       <Argument Key="maxVersionParts" Value="" xmlns="" />
     </TransformComponentArguments>
     <DocumentationSources>
-      <DocumentationSource sourceFile="..\HoardSDK\HoardSDK.csproj" xmlns="" />
+      <DocumentationSource sourceFile="..\HoardSDK\bin\Release\net461\HoardSDK.dll" />
+      <DocumentationSource sourceFile="..\HoardSDK\bin\Release\net461\HoardSDK.xml" />
     </DocumentationSources>
     <HelpFileFormat>HtmlHelp1</HelpFileFormat>
     <SyntaxFilters>C#</SyntaxFilters>
@@ -100,13 +101,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="icons\Help.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HoardSDK\HoardSDK.csproj">
-      <Name>HoardSDK</Name>
-      <Project>{c9517a0e-ec39-4e8b-951a-6cfc4a7c76e3}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <!-- Import the SHFB build targets -->
   <Import Project="$(SHFBROOT)\SandcastleHelpFileBuilder.targets" />
