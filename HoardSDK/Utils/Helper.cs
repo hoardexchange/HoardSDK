@@ -1,5 +1,8 @@
-﻿using Nethereum.RLP;
+﻿using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.RLP;
+using Nethereum.Signer;
 using Org.BouncyCastle.Crypto.Digests;
+using System;
 using System.Linq;
 using System.Text;
 
@@ -37,6 +40,24 @@ namespace Hoard.Utils
             sha3.BlockUpdate(value, 0, value.Length);
             sha3.DoFinal(hash, 0);
             return ToHex(hash, false);
+        }
+
+        public static EthECDSASignature ExtractEcdsaSignature(string signature)
+        {
+            var signatureArray = signature.HexToByteArray();
+
+            var v = signatureArray[64];
+
+            if ((v == 0) || (v == 1))
+                v = (byte)(v + 27);
+
+            var r = new byte[32];
+            Array.Copy(signatureArray, r, 32);
+            var s = new byte[32];
+            Array.Copy(signatureArray, 32, s, 0, 32);
+
+            var ecdaSignature = EthECDSASignatureFactory.FromComponents(r, s, v);
+            return ecdaSignature;
         }
 
         internal static byte[][] ToBytes(this RLPCollection collection)

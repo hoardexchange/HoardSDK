@@ -5,9 +5,11 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Nethereum.RLP;
 using Newtonsoft.Json;
 using RestSharp;
 using WebSocketSharp;
+using Hoard.Utils;
 
 namespace Hoard
 {
@@ -212,7 +214,7 @@ namespace Hoard
                     string accountName = BitConverter.ToString(address).Replace("-", string.Empty).ToLower();
                     Trace.TraceInformation("SignerAccountService: " + accountName + " received");
                     Debug.Assert(sd.Owner != null);
-                    HoardAccount accountInfo = new HoardAccount(sd.Owner.HoardId, accountName, sd.Owner);
+                    HoardAccount accountInfo = new HoardAccount(sd.Owner.HoardId, "0x" + accountName, sd.Owner);
                     sd.Owner.Accounts.Add(accountInfo);
                 }
                 if(activeAccountIndex > -1)
@@ -451,28 +453,27 @@ namespace Hoard
 
         public static Task<string> SignTransactionInternal(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
         {
-            //MemoryStream ms = new MemoryStream();
-            //BinaryWriter writer = new BinaryWriter(ms);
-            //writer.Write(MessagePrefix);
-            //writer.Write((UInt32)MessageId.kSignTransaction);
+            MemoryStream ms = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(ms);
+            writer.Write(MessagePrefix);
+            writer.Write((UInt32)MessageId.kSignTransaction);
+            var decodedList = RLP.Decode(rlpEncodedTransaction);
+            var decodedRlpCollection = (RLPCollection)decodedList[0];
+            var data = decodedRlpCollection.ToBytes();
+            var signer = new Nethereum.Signer.RLPSigner(data);
+            writer.Write(signer.RawHash, 0, (int)Helper.kHash);
 
-            //var decodedList = RLP.Decode(rlpEncodedTransaction);
-            //var decodedRlpCollection = (RLPCollection)decodedList[0];
-            //var data = decodedRlpCollection.ToBytes();
-            //writer.Write(signer.HashPrefixedMessage(input), 0, (int)Helper.kHash);
-
-            //Debug.Assert(((HoardAccount)signature).Owner != null);
-            //SocketData socketData = null;
-            //if (SignerClients.TryGetValue(((HoardAccount)signature).Owner, out socketData))
-            //{
-            //    socketData.Owner = ((HoardAccount)signature).Owner;
-            //    socketData.ResponseEvent.Reset();
-            //    socketData.Socket.Send(ms.ToArray());
-            //    if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
-            //        return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
-            //}
-            //return Task.FromResult<string>("");
-            throw new NotImplementedException();
+            Debug.Assert(((HoardAccount)accountInfo).Owner != null);
+            SocketData socketData = null;
+            if (SignerClients.TryGetValue(((HoardAccount)accountInfo).Owner, out socketData))
+            {
+                socketData.Owner = ((HoardAccount)accountInfo).Owner;
+                socketData.ResponseEvent.Reset();
+                socketData.Socket.Send(ms.ToArray());
+                if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+                    return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
+            }
+            return Task.FromResult<string>("");
         }
 
         public static Task<AccountInfo> ActivateAccount(AccountInfo account)
