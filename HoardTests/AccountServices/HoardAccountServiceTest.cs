@@ -52,18 +52,18 @@ namespace HoardTests.AccountServices
         [Trait("Category", "Unit")]
         public async Task SignTransaction()
         {
-            //HoardID to = new HoardID("0x4bc1EF56d94c766A49153A102096E56fAE2004e1");
-            //var nonce = 324.ToBytesForRLPEncoding();
-            //var gasPrice = 10000000000000.ToBytesForRLPEncoding();
-            //var startGas = 21000.ToBytesForRLPEncoding();
-            //var value = 10000.ToBytesForRLPEncoding();
-            //var data = "".HexToByteArray();
-            //var txData = new byte[][] { nonce, gasPrice, startGas, to.ToHexByteArray(), value, data };
-            //var tx = new RLPSigner(txData);
-            //var signature = await signer.SignTransaction(tx.GetRLPEncodedRaw(), hoardAccountServiceTestUser.ActiveAccount);
-            //EthECDSASignature sig = Helper.ExtractEcdsaSignature(signature);
-            //var addressRec = new HoardID(EthECKey.RecoverFromSignature(sig, tx.RawHash).GetPublicAddress());
-            //Assert.Equal(hoardAccountServiceTestUser.ActiveAccount.ID, addressRec);
+            HoardID to = new HoardID("0x4bc1EF56d94c766A49153A102096E56fAE2004e1");
+            var nonce = 324.ToBytesForRLPEncoding();
+            var gasPrice = 10000000000000.ToBytesForRLPEncoding();
+            var startGas = 21000.ToBytesForRLPEncoding();
+            var value = 10000.ToBytesForRLPEncoding();
+            var data = "".HexToByteArray();
+            var txData = new byte[][] { nonce, gasPrice, startGas, to.ToHexByteArray(), value, data };
+            var tx = new RLPSigner(txData);
+            var signature = await signer.SignTransaction(tx.GetRLPEncodedRaw(), hoardAccountServiceTestUser.ActiveAccount);
+            EthECDSASignature sig = Nethereum.Signer.MessageSigner.ExtractEcdsaSignature(signature);
+            var addressRec = new HoardID(EthECKey.RecoverFromSignature(sig, tx.RawHash).GetPublicAddress());
+            Assert.Equal(hoardAccountServiceTestUser.ActiveAccount.ID, addressRec);
         }
     }
 }
