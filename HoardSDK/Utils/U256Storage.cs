@@ -280,7 +280,7 @@ namespace Hoard.Utils
                             break;
                         default:
                             Debug.Assert(false);
-                            break;
+                            return false;
                     }
                     shift += (int)desc.size;
                     Debug.Assert(shift <= (int)U256StorageDataType.MaxStorageSize);
