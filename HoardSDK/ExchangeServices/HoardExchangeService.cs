@@ -6,11 +6,18 @@ using System.Threading.Tasks;
 
 namespace Hoard.ExchangeServices
 {
+    /// <summary>
+    /// Implementation of IExchangeService that communicates with Hoard Exchange services
+    /// </summary>
     public class HoardExchangeService : IExchangeService
     {
         private HoardService Hoard = null;
         private RestClient Client = null;
 
+        /// <summary>
+        /// Creates new instance of <see cref="HoardExchangeService"/>
+        /// </summary>
+        /// <param name="hoard">Hoard service</param>
         public HoardExchangeService(HoardService hoard)
         {
             Hoard = hoard;
