@@ -37,6 +37,7 @@
     <PackageTags>Hoard Blockchain Ethereum Game SDK</PackageTags>
     <PackageReleaseNotes>First alpha release of HoardSDK library for communication with Hoard Platfom</PackageReleaseNotes>
     <Version>0.5$(VersionSuffix)</Version>
+    <PackageIconUrl>https://avatars1.githubusercontent.com/u/29191487?s%3D200%26v%3D4</PackageIconUrl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile>HoardSDK.xml</DocumentationFile>
