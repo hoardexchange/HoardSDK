@@ -5,16 +5,24 @@ using System.Threading.Tasks;
 
 namespace Hoard.DistributedStorage
 {
+    /// <summary>
+    /// Access to Swarm data base
+    /// </summary>
     public class SwarmClient : IDistributedStorageClient
     {
         private RestClient client = null;
 
+        /// <summary>
+        /// Creates new instance of Swarm data base client
+        /// </summary>
+        /// <param name="baseUrl">client access point</param>
         public SwarmClient(string baseUrl)
         {
             client = new RestClient(baseUrl);
             client.AutomaticDecompression = false;
         }
 
+        /// <inheritdoc/>
         public async Task<byte[]> DownloadBytesAsync(byte[] address)
         {
             RestRequest downloadRequest = new RestRequest("/bzz:/" + address + "/file", Method.GET);
@@ -22,6 +30,7 @@ namespace Hoard.DistributedStorage
             return (await client.ExecuteGetTaskAsync<byte[]>(downloadRequest)).Data;
         }
 
+        /// <inheritdoc/>
         public async Task<byte[]> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/bzz:/", Method.POST);

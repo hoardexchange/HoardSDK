@@ -8,9 +8,12 @@ using System.Threading.Tasks;
 
 namespace Hoard.DistributedStorage
 {
+    /// <summary>
+    /// Access to IPFS data base
+    /// </summary>
     public class IPFSClient : IDistributedStorageClient
     {
-        public class UploadResponse
+        private class UploadResponse
         {
             public string Name { get; set; }
             public string Hash { get; set; }
@@ -22,6 +25,13 @@ namespace Hoard.DistributedStorage
         private byte fnCode;
         private byte digestSize;
 
+        /// <summary>
+        /// Creates new instance of IPFS data base client
+        /// </summary>
+        /// <param name="uploadClientUrl">upload access point</param>
+        /// <param name="downloadClientUrl">dwonload access point</param>
+        /// <param name="fnCode">IPFS client configuration param</param>
+        /// <param name="digestSize">IPFS client configuration param</param>
         public IPFSClient(string uploadClientUrl = "http://localhost:5001", string downloadClientUrl = "http://localhost:8080", 
                             byte fnCode = 18, byte digestSize = 32)
         {
@@ -35,6 +45,7 @@ namespace Hoard.DistributedStorage
             this.digestSize = digestSize;
         }
         
+        /// <inheritdoc/>
         public async Task<byte[]> DownloadBytesAsync(byte[] address)
         {
             byte[] bytes = new byte[digestSize + 2];
@@ -57,6 +68,7 @@ namespace Hoard.DistributedStorage
             return response.RawBytes;
         }
 
+        /// <inheritdoc/>
         public async Task<byte[]> UploadAsync(byte[] data)
         {
             RestRequest request = new RestRequest("/api/v0/add", Method.POST);
