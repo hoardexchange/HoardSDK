@@ -12,11 +12,11 @@ namespace Hoard.HW
         /// <summary>
         /// Main path for Trezor and Ledger wallets
         /// </summary>
-        public static string BIP44 { get { return "m/44'/60'/0'/0"; } }
+        public const string BIP44 = "m/44'/60'/0'/0";
         /// <summary>
         /// Legacy path for Ledger wallet (use BIP44 instead of this one)
         /// </summary>
-        public static string BIP44LedgerLegacy { get { return "m/44'/60'/0'"; } }
+        public const string BIP44LedgerLegacy = "m/44'/60'/0'";
     }
 
     internal class KeyPath

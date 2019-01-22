@@ -20,7 +20,12 @@ namespace Hoard.HW.Ledger
             new UsageSpecification(0xffa0, 0x01)
         };
 
-        public static async Task<LedgerWallet> GetLedgerWalletAsync(string derivationPath)
+        /// <summary>
+        /// Creates a wallet instance based on derivationPath (name)
+        /// </summary>
+        /// <param name="derivationPath">path to get specific wallet (usually DerivationPath.BIP44)</param>
+        /// <returns></returns>
+        public static async Task<LedgerWallet> GetLedgerWalletAsync(string derivationPath = DerivationPath.BIP44)
         {
             var hidDevice = await Helpers.GetHIDDeviceAsync(DeviceInfo, UsageSpecification);
             if (hidDevice != null)

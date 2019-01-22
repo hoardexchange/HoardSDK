@@ -2,7 +2,7 @@
 
 namespace Hoard.HW.Ledger
 {
-    public class APDU
+    internal class APDU
     {
         public struct OutputData
         {

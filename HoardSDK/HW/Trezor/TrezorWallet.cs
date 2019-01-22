@@ -7,13 +7,25 @@ using System.Threading.Tasks;
 
 namespace Hoard.HW.Trezor
 {
+    /// <summary>
+    /// Base class for TrezorWallet access. Implements IAccountService
+    /// </summary>
     public abstract class TrezorWallet : IAccountService
     {
-        public static readonly string AccountInfoName = "TrezorWallet";
+        /// <summary>
+        /// Name of this Wallet type
+        /// </summary>
+        public const string AccountInfoName = "TrezorWallet";
 
         private const int FirstChunkResponseIdx = 9;
 
+        /// <summary>
+        /// HID device accessor
+        /// </summary>
         public IHidDevice HIDDevice { get; }
+        /// <summary>
+        /// Path name for this wallet
+        /// </summary>
         public string DerivationPath { get; }
         internal Features Features { get; private set; }
 
@@ -22,23 +34,43 @@ namespace Hoard.HW.Trezor
 
         private IUserInputProvider pinInputProvider;
 
-        public TrezorWallet(IHidDevice hidDevice, string derivationPath, IUserInputProvider _pinInputProvider)
+        /// <summary>
+        /// Creates new instance of LedgerWallet base class
+        /// </summary>
+        /// <param name="hidDevice">HID device accessor</param>
+        /// <param name="derivationPath">path name for specific wallet</param>
+        /// <param name="_pinInputProvider">provider for PIN</param>
+        protected TrezorWallet(IHidDevice hidDevice, string derivationPath, IUserInputProvider _pinInputProvider)
         {
             HIDDevice = hidDevice;
             DerivationPath = derivationPath;
             pinInputProvider = _pinInputProvider;
         }
 
+        /// <ineritdoc/>
         public async Task<AccountInfo> CreateAccount(string name, User user) { return null; }
 
+        /// <ineritdoc/>
         abstract public Task<bool> RequestAccounts(User user);
 
+        /// <ineritdoc/>
         abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo);
 
+        /// <ineritdoc/>
         abstract public Task<string> SignMessage(byte[] message, AccountInfo accountInfo);
 
+        /// <summary>
+        /// Activates specific account for given user
+        /// </summary>
+        /// <param name="user">owner of the account</param>
+        /// <param name="account">account to activate</param>
+        /// <returns></returns>
         abstract public Task<AccountInfo> ActivateAccount(User user, AccountInfo account);
 
+        /// <summary>
+        /// Initializes the wallet. Call this when first using Trezor device.
+        /// </summary>
+        /// <returns></returns>
         public async Task InitializeAsync()
         {
             var response = await SendRequestAsync(new InitializeRequest());
@@ -48,6 +80,11 @@ namespace Hoard.HW.Trezor
             }
         }
 
+        /// <summary>
+        /// Sends current request with given PIN.
+        /// </summary>
+        /// <param name="pin">PIN to send request with</param>
+        /// <returns>response of request if PIN correct, throws InvalidPIN exception otherwise</returns>
         protected async Task<object> PinMatrixAckAsync(string pin)
         {
             var response = await SendRequestAsyncNoLock(new PinMatrixAck { Pin = pin });
@@ -58,6 +95,10 @@ namespace Hoard.HW.Trezor
             return response;
         }
 
+        /// <summary>
+        /// Sends current request with button acknowledgment
+        /// </summary>
+        /// <returns></returns>
         protected async Task<object> ButtonAckAsync()
         {
             var response = await SendRequestAsyncNoLock(new ButtonAck());
@@ -69,13 +110,17 @@ namespace Hoard.HW.Trezor
             return response;
         }
 
-        //-------------------------
+        /// <summary>
+        /// Returns MessageType from string name
+        /// </summary>
+        /// <param name="messageTypeString">string name of MessageType value</param>
+        /// <returns>Parsed MessageType value or throws ArgumentException if argument is not correct</returns>
         protected object GetEnumValue(string messageTypeString)
         {
             var isValid = Enum.TryParse(messageTypeString, out MessageType messageType);
             if (!isValid)
             {
-                throw new Exception($"{messageTypeString} is not a valid MessageType");
+                throw new ArgumentException($"{messageTypeString} is not a valid MessageType");
             }
 
             return messageType;
