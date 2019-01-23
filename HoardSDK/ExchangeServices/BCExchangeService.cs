@@ -5,12 +5,19 @@ using System.Threading.Tasks;
 
 namespace Hoard.ExchangeServices
 {
+    /// <summary>
+    /// Implementation of IExchangeService that directly communicates with blockchain data
+    /// </summary>
     public class BCExchangeService : IExchangeService
     {
         private HoardService Hoard = null;
         private BC.BCComm BCComm = null;
         private ExchangeContract ExchangeContract = null;
 
+        /// <summary>
+        /// Creates new instance of <see cref="BCExchangeService"/>
+        /// </summary>
+        /// <param name="hoard">Hoard service</param>
         public BCExchangeService(HoardService hoard)
         {
             Hoard = hoard;
@@ -29,7 +36,9 @@ namespace Hoard.ExchangeServices
             return true;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Destroys this instance
+        /// </summary>
         public void Shutdown()
         {
             ExchangeContract = null;

@@ -13,7 +13,7 @@
 		<copyright>$copyright$</copyright>
 		<tags>Hoard Blockchain Ethereum Game SDK</tags>
 		<dependencies>
-			<group targetFramework=".NETStandard2.0">
+			<group targetFramework="netstandard2.0">
 				<dependency id="Hid.Net" version="1.4.1" exclude="Build,Analyzers" />
 				<dependency id="Hoard.NethereumCore" version="3.1.0" exclude="Build,Analyzers" />
 				<dependency id="Newtonsoft.Json" version="12.0.1" exclude="Build,Analyzers" />
@@ -21,6 +21,15 @@
 				<dependency id="RestSharp" version="106.5.4" exclude="Build,Analyzers" />
 				<dependency id="protobuf-net" version="2.4.0" exclude="Build,Analyzers" />
 				<dependency id="websocketsharp.core" version="1.0.0" exclude="Build,Analyzers" />
+			</group>
+			<group targetFramework="net461">
+				<dependency id="Hid.Net" version="1.4.1" exclude="Build,Analyzers" />
+				<dependency id="Hoard.NethereumCore" version="3.1.0" exclude="Build,Analyzers" />
+				<dependency id="Newtonsoft.Json" version="12.0.1" exclude="Build,Analyzers" />
+				<dependency id="Portable.BouncyCastle" version="1.8.4" exclude="Build,Analyzers" />
+				<dependency id="RestSharp" version="106.5.4" exclude="Build,Analyzers" />
+				<dependency id="protobuf-net" version="2.4.0" exclude="Build,Analyzers" />
+				<dependency id="WebSocketSharp" version="1.0.3-rc11" exclude="Build,Analyzers" />
 			</group>
 		</dependencies>
 	</metadata>

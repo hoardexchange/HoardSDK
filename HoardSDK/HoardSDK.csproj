@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Hid.Net">
       <Version>1.4.1</Version>
     </PackageReference>
     <PackageReference Include="Hoard.NethereumCore">
-      <Version>3.1.0</Version>
+      <Version>3.1.55</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>12.0.1</Version>
@@ -22,7 +22,8 @@
     <PackageReference Include="RestSharp">
       <Version>106.5.4</Version>
     </PackageReference>
-    <PackageReference Include="websocketsharp.core" Version="1.0.0" />
+    <PackageReference Include="websocketsharp.core" Version="1.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" Condition="'$(TargetFramework)' == 'net461'" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>
@@ -35,6 +36,8 @@
     <Description>Hoard game client SDK</Description>
     <PackageTags>Hoard Blockchain Ethereum Game SDK</PackageTags>
     <PackageReleaseNotes>First alpha release of HoardSDK library for communication with Hoard Platfom</PackageReleaseNotes>
+    <Version>0.5$(VersionSuffix)</Version>
+    <PackageIconUrl>https://avatars1.githubusercontent.com/u/29191487?s%3D200%26v%3D4</PackageIconUrl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile>HoardSDK.xml</DocumentationFile>

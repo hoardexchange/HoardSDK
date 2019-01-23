@@ -7,32 +7,60 @@ using static Hoard.HW.Ledger.APDU;
 
 namespace Hoard.HW.Ledger
 {
+    /// <summary>
+    /// Base class for LedgerWallet access. Implements IAccountService
+    /// </summary>
     public abstract class LedgerWallet : IAccountService
     {
-        public static readonly string AccountInfoName = "LedgerWallet";
+        /// <summary>
+        /// Name of this Wallet type
+        /// </summary>
+        public const string AccountInfoName = "LedgerWallet";
 
+        /// <summary>
+        /// HID device accessor
+        /// </summary>
         public IHidDevice HIDDevice { get; }
+        /// <summary>
+        /// Path name for this wallet
+        /// </summary>
         public string DerivationPath { get; }
+
         private SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
         private const int DEFAULT_CHANNEL = 0x0101;
         private const int LEDGER_HID_PACKET_SIZE = 64;
         private const int TAG_APDU = 0x05;
 
-        public LedgerWallet(IHidDevice hidDevice, string derivationPath)
+        /// <summary>
+        /// Creates new instance of LedgerWallet base class
+        /// </summary>
+        /// <param name="hidDevice">HID device accessor</param>
+        /// <param name="derivationPath">path name for specific wallet</param>
+        protected LedgerWallet(IHidDevice hidDevice, string derivationPath)
         {
             HIDDevice = hidDevice;
             DerivationPath = derivationPath;
         }
 
+        /// <ineritdoc/>
         public async Task<AccountInfo> CreateAccount(string name, User user) { return null; }
 
+        /// <ineritdoc/>
         abstract public Task<bool> RequestAccounts(User user);
 
+        /// <ineritdoc/>
         abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo);
 
+        /// <ineritdoc/>
         abstract public Task<string> SignMessage(byte[] message, AccountInfo accountInfo);
 
+        /// <summary>
+        /// Activates specific account for given user
+        /// </summary>
+        /// <param name="user">owner of the account</param>
+        /// <param name="account">account to activate</param>
+        /// <returns></returns>
         abstract public Task<AccountInfo> ActivateAccount(User user, AccountInfo account);
 
         //-------------------------
@@ -166,7 +194,7 @@ namespace Hoard.HW.Ledger
             }
         }
 
-        public async Task<OutputData> SendRequestAsync(byte[] apduRequest)
+        internal async Task<OutputData> SendRequestAsync(byte[] apduRequest)
         {
             await _lock.WaitAsync();
 
@@ -183,11 +211,21 @@ namespace Hoard.HW.Ledger
             }
         }
 
+        /// <summary>
+        /// Checks if given code is a success
+        /// </summary>
+        /// <param name="code">code to check</param>
+        /// <returns>true if code is a successful operation, false otherwise</returns>
         protected static bool IsSuccess(int code)
         {
             return (code == 0x9000);
         }
 
+        /// <summary>
+        /// Returns a descriptive message of given result code
+        /// </summary>
+        /// <param name="code">code to get description for</param>
+        /// <returns></returns>
         protected static string GetStatusMessage(int code)
         {
             switch (code)

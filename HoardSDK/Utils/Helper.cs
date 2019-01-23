@@ -1,5 +1,8 @@
-﻿using Nethereum.RLP;
+﻿using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.RLP;
+using Nethereum.Signer;
 using Org.BouncyCastle.Crypto.Digests;
+using System;
 using System.Linq;
 using System.Text;
 
