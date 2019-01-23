@@ -315,7 +315,6 @@ namespace Hoard.BC.Contracts
         public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
         {
             var function = GetFunctionTransfer();
-            System.Numerics.BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
             object[] functionInput = { addressTo.Substring(2), amount };
             var receipt = await Hoard.BC.BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;

@@ -1,14 +1,13 @@
-﻿using Hoard.BC.Plasma;
+﻿using Hoard.BC.Contracts;
+using Hoard.BC.Plasma;
+using Hoard.Interfaces;
 using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.JsonRpc.Client;
-using Nethereum.RLP;
 using Nethereum.Signer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -16,27 +15,30 @@ using System.Threading.Tasks;
 
 namespace Hoard.BC
 {
-    public class PlasmaComm : BCComm
+    // TODO Plasma comm should inherit from bccomm
+    public class PlasmaComm : IBCComm
     {
         private static string ETH_CURRENCY_ADDRESS = "0x0000000000000000000000000000000000000000";
-        private static string NULL_SIGNATURE = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-        private static BigInteger U256_MAX_VALUE = BigInteger.Pow(2, 256);
         private static UInt16 MAX_INPUTS = 2;
         private static UInt16 MAX_OUTPUTS = 2;
 
         private RestClient childChainClient = null;
         private RestClient watcherClient = null;
 
+        private BCComm bcComm = null;
+
         /// <summary>
         /// Creates PlasmaComm object.
         /// </summary>
-        /// <param name="ethClient">JsonRpc client implementation</param>
+        /// <param name="bcComm"></param>
         /// <param name="childChainUrl">Childchain rest client</param>
         /// <param name="watcherUrl">Watcher rest client</param>
         /// <param name="gameCenterContract">game center contract address</param>
-        public PlasmaComm(IClient ethClient, string childChainUrl, string watcherUrl, string gameCenterContract)
-            : base(ethClient, gameCenterContract)
+        public PlasmaComm(BCComm _bcComm, string childChainUrl, string watcherUrl)
+        // : base(ethClient, gameCenterContract)
         {
+            bcComm = _bcComm;
+
             if (Uri.IsWellFormedUriString(childChainUrl, UriKind.Absolute))
             {
                 childChainClient = new RestClient(childChainUrl);
@@ -56,143 +58,109 @@ namespace Hoard.BC
             }
         }
 
-        //Connect
+        /// <summary>
+        /// Connects to blockchain using the JsonRpc client and performs a handshake
+        /// </summary>
+        /// <returns>a pair of [bool result, string return infromation] received from client</returns>
+        public virtual async Task<Tuple<bool, string>> Connect()
+        {
+            return await bcComm.Connect();
+        }
 
-        public override async Task<BigInteger> GetBalance(HoardID account)
+        public async Task<BigInteger> GetBalance(HoardID account)
         {
             return await GetBalance(account, ETH_CURRENCY_ADDRESS);
         }
 
-        public override async Task<BigInteger> GetHRDBalance(HoardID account)
+        public async Task<BigInteger> GetHRDBalance(HoardID account)
         {
-            var hrdCurrencyAddress = await GetHRDAddress();
-            return await GetBalance(account, hrdCurrencyAddress);
+            return await GetBalance(account, await GetHRDAddress());
         }
 
-        public override async Task<bool> TransferHRD(AccountInfo from, string toAddress, BigInteger amount)
+        /// <summary>
+        /// Retrieves HRD token address from game center
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> GetHRDAddress()
         {
-            //TODO do we really use that function anywhere?
-            return false;
+            return await bcComm.GetHRDAddress();
         }
 
-        public async Task<bool> Transfer(AccountInfo fromAccount, string toAddress, string currencySymbol, BigInteger amount)
-        {
-            Debug.Assert(fromAccount != null);
-
-            var inputUtxos = await GetInputUtxos(fromAccount.ID, currencySymbol, amount);
-            if (inputUtxos != null)
-            {
-                var encodedTransaction = await CreateTransaction(inputUtxos, fromAccount, toAddress, amount);
-
-                var data = JObject.Parse(string.Format("{{ \"transaction\" : \"{0}\" }}", encodedTransaction));
-                var responseString = await SendRequestPost(childChainClient, "transaction.submit", data);
-
-                if (IsResponseSuccess(responseString))
-                {
-                    var receipt = JsonConvert.DeserializeObject<TransactionReceipt>(GetResponseData(responseString));
-
-                    TransactionData transaction = null;
-                    transaction = await GetTransaction(receipt.TxHash);
-                    while (transaction == null)
-                    {
-                        Thread.Sleep(1000);
-                        transaction = await GetTransaction(receipt.TxHash);
-                    }
-
-                    return true;
-                }
-            }
-
-            //TODO no sufficient funds
-            throw new NotImplementedException();
-        }
-
-        protected async Task<BigInteger> GetBalance(HoardID account, string currencySymbol)
+        public async Task<List<TokenData>> GetTokensData(HoardID account)
         {
             var data = JObject.Parse(string.Format("{{ \"address\" : \"{0}\" }}", account.ToString()));
             var responseString = await SendRequestPost(watcherClient, "account.get_balance", data);
 
             if (IsResponseSuccess(responseString))
             {
-                var balances = JsonConvert.DeserializeObject<List<BalanceData>>(GetResponseData(responseString));
-                foreach (var balance in balances)
-                {
-                    if (balance.Currency == currencySymbol.RemoveHexPrefix())
-                    {
-                        return balance.Amount;
-                    }
-                }
-
-                return 0;
+                return JsonConvert.DeserializeObject<List<TokenData>>(GetResponseData(responseString));
             }
 
             //TODO
             throw new NotImplementedException();
         }
 
-        protected async Task<List<UTXOData>> GetInputUtxos(HoardID account, string currencySymbol, BigInteger amount)
+        public async Task<List<TokenData>> GetTokensData(HoardID account, string currency)
         {
-            var utxos = await GetUtxos(account, currencySymbol);
-            utxos.RemoveAll(x => x.Amount == 0);
-            utxos.Insert(0, new UTXOData(new BigInteger(0)));
+            var data = JObject.Parse(string.Format("{{ \"address\" : \"{0}\", \"currency\" : \"{1}\" }}", account.ToString(), currency));
+            var responseString = await SendRequestPost(watcherClient, "account.get_balance", data);
 
-            var sortedUtxos = utxos.OrderBy(x => x.Amount).ToArray();
-
-            var sortedUtxosCount = (UInt32)sortedUtxos.Count();
-            if (sortedUtxosCount > 1)
+            if (IsResponseSuccess(responseString))
             {
-                // find single utxo or pair of utxos closest to given amount
-                if (sortedUtxos[sortedUtxosCount - 1].Amount + sortedUtxos[sortedUtxosCount - 2].Amount >= amount)
-                {
-                    UInt32 resultIdxL = 0, resultIdxR = 0;
-                    UInt32 idxL = 0, idxR = sortedUtxosCount;
-                    var diff = U256_MAX_VALUE;
-
-                    while (idxR > idxL)
-                    {
-                        var utxoSum = sortedUtxos[idxL].Amount + sortedUtxos[idxR].Amount;
-                        if (utxoSum >= amount && utxoSum - amount < diff)
-                        {
-                            resultIdxL = idxL;
-                            resultIdxR = idxR;
-                            diff = utxoSum - amount;
-                        }
-
-                        if (utxoSum > amount)
-                        {
-                            idxR--;
-                        }
-                        else
-                        {
-                            idxL++;
-                        }
-                    }
-
-                    Debug.Assert(sortedUtxos[resultIdxL].Amount + sortedUtxos[resultIdxR].Amount >= amount);
-
-                    if (resultIdxL > 0)
-                        return new List<UTXOData>() { sortedUtxos[resultIdxL], sortedUtxos[resultIdxR] };
-                    return new List<UTXOData>() { sortedUtxos[resultIdxR] };
-
-                }
-                else
-                {
-                    var sum = new BigInteger(0);
-                    utxos.ForEach(x => sum += x.Amount);
-
-                    if (sum >= amount)
-                    {
-                        //TODO merge utxos and check if it is possible to find pair of utxo that is greater or equal than given amount
-                        throw new NotImplementedException();
-                    }
-                }
+                return JsonConvert.DeserializeObject<List<TokenData>>(GetResponseData(responseString));
             }
 
-            // no sufficient funds
-            return null;
+            //TODO
+            throw new NotImplementedException();
         }
 
-        protected async Task<List<UTXOData>> GetUtxos(HoardID account, string currencySymbol)
+        public async Task<bool> TransferHRD(AccountInfo from, string toAddress, BigInteger amount)
+        {
+            //TODO do we really use that function anywhere?
+            return false;
+        }
+
+        public async Task<bool> SubmitTransaction(string signedTransaction)
+        {
+            var data = JObject.Parse(string.Format("{{ \"transaction\" : \"{0}\" }}", signedTransaction));
+            var responseString = await SendRequestPost(childChainClient, "transaction.submit", data);
+
+            if (IsResponseSuccess(responseString))
+            {
+                var receipt = JsonConvert.DeserializeObject<TransactionReceipt>(GetResponseData(responseString));
+
+                TransactionData transaction = null;
+                transaction = await GetTransaction(receipt.TxHash);
+                while (transaction == null)
+                {
+                    Thread.Sleep(1000);
+                    transaction = await GetTransaction(receipt.TxHash);
+                }
+
+                return true;
+            }
+
+            //TODO no sufficient funds
+            throw new NotImplementedException();
+        }
+
+        public async Task<byte[]> GetTokenState(HoardID account, string currencySymbol, BigInteger tokenId)
+        {
+            //TODO not implemented in plasma
+            throw new NotImplementedException();
+        }
+
+        protected async Task<BigInteger> GetBalance(HoardID account, string currencySymbol)
+        {
+            var balances = await GetTokensData(account);
+            var utxoData = balances.FirstOrDefault(x => x.Currency == currencySymbol.RemoveHexPrefix());
+
+            if (utxoData != null)
+                return utxoData.Amount;
+            return 0;
+        }
+
+        public async Task<List<UTXOData>> GetUtxos(HoardID account, string currency)
         {
             var data = JObject.Parse(string.Format("{{ \"address\" : \"{0}\" }}", account.ToString()));
             var responseString = await SendRequestPost(watcherClient, "account.get_utxos", data);
@@ -200,9 +168,18 @@ namespace Hoard.BC
             if (IsResponseSuccess(responseString))
             {
                 var result = new List<UTXOData>();
-                var utxos = JsonConvert.DeserializeObject<List<UTXOData>>(GetResponseData(responseString));
 
-                return utxos.Where(x => x.Currency == currencySymbol).ToList();
+                var jsonUtxos = JsonConvert.DeserializeObject<List<string>>(GetResponseData(responseString));
+                foreach (var jsonUtxo in jsonUtxos)
+                {
+                    var utxo = UTXODataFactory.Deserialize(jsonUtxo);
+                    if (utxo.Currency == currency)
+                    {
+                        result.Add(utxo);
+                    }
+                }
+
+                return result;
             }
 
             //TODO
@@ -223,60 +200,51 @@ namespace Hoard.BC
             throw new NotImplementedException();
         }
 
-        protected async Task<string> CreateTransaction(List<UTXOData> inputUtxos, AccountInfo fromAccount, string toAddress, BigInteger amount)
-        {
-            Debug.Assert(inputUtxos.Count <= 2);
+        //protected async Task<List<byte[]>> CreateTransaction(List<UTXOData> inputUtxos, AccountInfo fromAccount, string toAddress, BigInteger amount)
+        //{
+        //    Debug.Assert(inputUtxos.Count <= 2);
 
-            // create transaction data
-            var txData = new List<byte[]>();
-            for(UInt16 i = 0; i < MAX_INPUTS; ++i)
-            {
-                if (i < inputUtxos.Count())
-                {
-                    // cannot mix currencies
-                    Debug.Assert(inputUtxos[0].Currency == inputUtxos[i].Currency);
+        //     create transaction data
+        //    var txData = new List<byte[]>();
+        //    for(UInt16 i = 0; i < MAX_INPUTS; ++i)
+        //    {
+        //        if (i < inputUtxos.Count())
+        //        {
+        //             cannot mix currencies
+        //            Debug.Assert(inputUtxos[0].Currency == inputUtxos[i].Currency);
 
-                    txData.Add(inputUtxos[i].BlkNum.ToBytesForRLPEncoding());
-                    txData.Add(inputUtxos[i].TxIndex.ToBytesForRLPEncoding());
-                    txData.Add(inputUtxos[i].OIndex.ToBytesForRLPEncoding());
-                }
-                else
-                {
-                    txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-                    txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-                    txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-                }
-            }
+        //            txData.Add(inputUtxos[i].BlkNum.ToBytesForRLPEncoding());
+        //            txData.Add(inputUtxos[i].TxIndex.ToBytesForRLPEncoding());
+        //            txData.Add(inputUtxos[i].OIndex.ToBytesForRLPEncoding());
+        //        }
+        //        else
+        //        {
+        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
+        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
+        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
+        //        }
+        //    }
 
-            txData.Add(inputUtxos[0].Currency.HexToByteArray());
+        //    txData.Add(inputUtxos[0].Currency.HexToByteArray());
 
-            txData.Add(toAddress.HexToByteArray());
-            txData.Add(amount.ToBytesForRLPEncoding());
+        //    txData.Add(toAddress.HexToByteArray());
+        //    txData.Add(amount.ToBytesForRLPEncoding());
 
-            var sum = new BigInteger(0);
-            inputUtxos.ForEach(x => sum += x.Amount);
-            if (sum > amount)
-            {
-                txData.Add(fromAccount.ID.ToHexByteArray());
-                txData.Add((sum - amount).ToBytesForRLPEncoding());
-            }
-            else
-            {
-                txData.Add("0x0000000000000000000000000000000000000000".HexToByteArray());
-                txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-            }
+        //    var sum = new BigInteger(0);
+        //    inputUtxos.ForEach(x => sum += x.Amount);
+        //    if (sum > amount)
+        //    {
+        //        txData.Add(fromAccount.ID.ToHexByteArray());
+        //        txData.Add((sum - amount).ToBytesForRLPEncoding());
+        //    }
+        //    else
+        //    {
+        //        txData.Add("0x0000000000000000000000000000000000000000".HexToByteArray());
+        //        txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
+        //    }
 
-            // sign transaction
-            var tx = new RLPSigner(txData.ToArray());
-            var signature = await fromAccount.SignTransaction(tx.GetRLPEncodedRaw());
-
-            txData.Add(signature.HexToByteArray());
-            txData.Add(NULL_SIGNATURE.HexToByteArray());
-
-            tx = new RLPSigner(txData.ToArray());
-
-            return tx.GetRLPEncodedRaw().ToHex().ToLower(); ;
-        }
+        //    return txData;
+        //}
 
         private async Task<string> SendRequestPost(RestClient client, string method, object data)
         {
@@ -308,6 +276,56 @@ namespace Hoard.BC
             string data = "";
             result.TryGetValue("data", out data);
             return data;
+        }
+
+        public async Task<bool> RegisterHoardGame(GameID game)
+        {
+            return await bcComm.RegisterHoardGame(game);
+        }
+
+        public void UnregisterHoardGame(GameID game)
+        {
+            bcComm.UnregisterHoardGame(game);
+        }
+
+        public GameID[] GetRegisteredHoardGames()
+        {
+            return bcComm.GetRegisteredHoardGames();
+        }
+
+        public async Task<GameID[]> GetHoardGames()
+        {
+            return await bcComm.GetHoardGames();
+        }
+
+        public async Task<bool> GetGameExists(BigInteger gameID)
+        {
+            return await bcComm.GetGameExists(gameID);
+        }
+
+        public async Task<string> GetHoardExchangeContractAddress()
+        {
+            return await bcComm.GetHoardExchangeContractAddress();
+        }
+
+        public GameItemAdapter GetGameItemAdater(GameID game, GameItemContract contract)
+        {
+            if (contract is ERC223GameItemContract)
+                return (GameItemAdapter)Activator.CreateInstance(typeof(ERC223GameItemAdapter), this, game, contract);
+            else if (contract is ERC721GameItemContract)
+                return (GameItemAdapter)Activator.CreateInstance(typeof(ERC721GameItemAdapter), this, game, contract);
+
+            throw new NotSupportedException();
+        }
+
+        public GameItemContract GetGameItemContract(GameID game, string contractAddress, Type contractType, string abi = "")
+        {
+            return bcComm.GetGameItemContract(game, contractAddress, contractType, abi);
+        }
+
+        public async Task<string[]> GetGameItemContracts(GameID game)
+        {
+            return await GetGameItemContracts(game);
         }
     }
 }
