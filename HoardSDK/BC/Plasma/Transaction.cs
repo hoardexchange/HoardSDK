@@ -7,19 +7,25 @@ using System.Threading.Tasks;
 
 namespace Hoard.BC.Plasma
 {
+    /// <summary>
+    /// Plasma transaction
+    /// </summary>
     public class Transaction
     {
-        private static string NULL_SIGNATURE = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+        /// <summary>
+        /// Null signature
+        /// </summary>
+        public static string NULL_SIGNATURE = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
         /// <summary>
         /// Mapping currency (address) to list of UTXOs
         /// </summary>
-        private Dictionary<string, List<UTXOData>> inputs;
+        private Dictionary<string, List<UTXOData>> inputs = new Dictionary<string, List<UTXOData>>();
 
         /// <summary>
         /// Mapping currency (address) to list of UTXOs
         /// </summary>
-        private Dictionary<string, BigInteger> outputs;
+        private Dictionary<string, BigInteger> outputs = new Dictionary<string, BigInteger>();
 
         /// <summary>
         /// Adds input to transaction
@@ -55,17 +61,20 @@ namespace Hoard.BC.Plasma
         public async Task<string> Sign(AccountInfo fromAccount)
         {
             var txData = PrepareTransactionData();
+            var encodedData = RLPEncoder.EncodeData(txData.ToArray());
+            return await fromAccount.SignTransaction(encodedData);
+        }
 
-            var signer = new RLPSigner(txData.ToArray());
-
-            var signature = await fromAccount.SignTransaction(signer.GetRLPEncodedRaw());
-
-            txData.Add(signature.HexToByteArray());
-            txData.Add(NULL_SIGNATURE.HexToByteArray());
-            
-            signer = new RLPSigner(txData.ToArray());
-
-            return signer.GetRLPEncodedRaw().ToHex().ToLower();
+        /// <summary>
+        /// Build RLP encoded signed transaction
+        /// </summary>
+        /// <param name="signatures">list of signatures</param>
+        /// <returns>RLP encoded signed transaction</returns>
+        public string GetRLPEncoded(List<string> signatures)
+        {
+            var txData = PrepareTransactionData();
+            signatures.ForEach(signature => txData.Add(signature.HexToByteArray()));
+            return RLPEncoder.EncodeData(txData.ToArray()).ToHex().ToLower();
         }
 
         /// <summary>

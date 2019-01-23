@@ -8,25 +8,41 @@ using System.Threading.Tasks;
 
 namespace Hoard.BC.Plasma
 {
+    /// <summary>
+    /// Base Hoard game item adapter (extends game item contract behaviour to use childchain)
+    /// </summary>
     public abstract class GameItemAdapter
     {
         /// <summary>
-        /// Game that manages this Game Item
+        /// Game that manages this game item adapter
         /// </summary>
         protected GameID game { get; private set; }
 
         /// <summary>
-        /// Ethereum contract
+        /// Ethereum game item contract contract
         /// </summary>
         protected GameItemContract contract;
 
+        /// <summary>
+        /// Communication channel with child chain (plasma)
+        /// </summary>
         protected PlasmaComm plasmaComm;
 
+        /// <summary>
+        /// Returns symbol of this item (type of the item)
+        /// </summary>
+        /// <returns></returns>
         public async Task<string> GetSymbol()
         {
             return await contract.GetSymbol();
         }
 
+        /// <summary>
+        /// Constructor of base game item adapter
+        /// </summary>
+        /// <param name="_plasmaComm">plasma communication</param>
+        /// <param name="_game">game that manages these items</param>
+        /// <param name="_contract">ethereum game item contract</param>
         public GameItemAdapter(PlasmaComm _plasmaComm, GameID _game, GameItemContract _contract)
         {
             contract = _contract;
@@ -53,13 +69,25 @@ namespace Hoard.BC.Plasma
         public abstract Task<GameItem[]> GetGameItems(AccountInfo info);
     }
 
+    /// <summary>
+    /// ERC223 game item adapter using childchain
+    /// </summary>
     public class ERC223GameItemAdapter : GameItemAdapter
     {
+        private TransactionBuilder txBuilder = new TransactionBuilder();
+
+        /// <summary>
+        /// Constructor of erc223 game item adapter
+        /// </summary>
+        /// <param name="_plasmaComm">plasma communication</param>
+        /// <param name="_game">game that manages these items</param>
+        /// <param name="_contract">ethereum game item contract</param>
         public ERC223GameItemAdapter(PlasmaComm _plasmaComm, GameID _game, GameItemContract _contract)
             : base(_plasmaComm, _game, _contract)
         {
         }
 
+        /// <inheritdoc/>
         public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem gameItem, BigInteger amount)
         {
             Debug.Assert(gameItem.Metadata is ERC223GameItemContract.Metadata);
@@ -71,15 +99,10 @@ namespace Hoard.BC.Plasma
                 var currencyAddress = metadata.OwnerAddress;
 
                 var utxos = await plasmaComm.GetUtxos(from.ID, currencyAddress);
-                var inputUtxos = ERC223UTXOData.FindInputs(from.ID, amount, utxos);
+                var inputUtxos = ERC223UTXOData.FindInputs(utxos, amount);
                 if (inputUtxos != null)
                 {
-                    var tx = new Transaction();
-                    inputUtxos.ForEach(x => tx.AddInput(x));
-                    tx.AddOutput(addressTo, amount);
-                    var signedTransaction = await tx.Sign(from);
-
-                    //var encodedTransaction = await ERC223UTXOData.CreateTransaction(from, addressTo, amount, inputUtxos);
+                    var signedTransaction = await txBuilder.BuildERC223Transaction(from, addressTo, inputUtxos, amount);
                     return await plasmaComm.SubmitTransaction(signedTransaction);
                 }
             }
@@ -87,6 +110,7 @@ namespace Hoard.BC.Plasma
             return false;
         }
 
+        /// <inheritdoc/>
         public override async Task<GameItem[]> GetGameItems(AccountInfo account)
         {
             var items = new List<GameItem>();
@@ -104,35 +128,45 @@ namespace Hoard.BC.Plasma
         }
     }
 
+    /// <summary>
+    /// ERC721 game item adapter using childchain
+    /// </summary>
     public class ERC721GameItemAdapter : GameItemAdapter
     {
+        private TransactionBuilder txBuilder = new TransactionBuilder();
+
+        /// <summary>
+        /// Constructor of erc721 game item adapter
+        /// </summary>
+        /// <param name="_plasmaComm">plasma communication</param>
+        /// <param name="_game">game that manages these items</param>
+        /// <param name="_contract">ethereum game item contract</param>
         public ERC721GameItemAdapter(PlasmaComm _plasmaComm, GameID _game, GameItemContract _contract)
             : base(_plasmaComm, _game, _contract)
         {
         }
 
-        public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
+        /// <inheritdoc/>
+        public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem gameItem, BigInteger amount)
         {
-            var tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
-            var currencyAddress = (item.Metadata as ERC721GameItemContract.Metadata).OwnerAddress;
+            Debug.Assert(gameItem.Metadata is ERC721GameItemContract.Metadata);
+
+            var tokenId = (gameItem.Metadata as ERC721GameItemContract.Metadata).ItemId;
+            var currencyAddress = (gameItem.Metadata as ERC721GameItemContract.Metadata).OwnerAddress;
 
             var utxos = await plasmaComm.GetUtxos(from.ID, currencyAddress);
             var erc721Utxos = utxos.OfType<ERC721UTXOData>().ToList();
 
-            var erc721Utxo = (erc721Utxos.Where(x => x.TokenIds.Contains(tokenId)).Select(x => x)).FirstOrDefault();
-            if (erc721Utxo != null)
+            if (erc721Utxos != null)
             {
-                var tx = new Transaction();
-                tx.AddInput(erc721Utxo);
-                tx.AddOutput(addressTo, tokenId);
-                var signedTransaction = await tx.Sign(from);
-
+                var signedTransaction = await txBuilder.BuildERC721Transaction(from, addressTo, erc721Utxos, tokenId);
                 return await plasmaComm.SubmitTransaction(signedTransaction);
             }
 
             return false;
         }
 
+        /// <inheritdoc/>
         public override async Task<GameItem[]> GetGameItems(AccountInfo account)
         {
             var items = new List<GameItem>();
@@ -144,7 +178,7 @@ namespace Hoard.BC.Plasma
                 ERC721GameItemContract.Metadata meta = new ERC721GameItemContract.Metadata(contract.Address, tokensData[i].TokenId);
                 GameItem item = new GameItem(game, symbol, meta);
                 
-                item.State = await plasmaComm.GetTokenState(account.ID, contract.Address, tokensData[i].TokenId);
+                item.State = await plasmaComm.GetTokenState(contract.Address, tokensData[i].TokenId);
 
                 items.Add(item);
             }

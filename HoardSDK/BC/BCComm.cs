@@ -43,7 +43,7 @@ namespace Hoard.BC
         /// Connects to blockchain using the JsonRpc client and performs a handshake
         /// </summary>
         /// <returns>a pair of [bool result, string return infromation] received from client</returns>
-        public virtual async Task<Tuple<bool,string>> Connect()
+        public async Task<Tuple<bool,string>> Connect()
         {
             var ver = new Nethereum.RPC.Web3.Web3ClientVersion(web.Client);
             try
@@ -57,12 +57,8 @@ namespace Hoard.BC
             }
         }
 
-        /// <summary>
-        /// Returns ETH balance of given account
-        /// </summary>
-        /// <param name="account">account to query</param>
-        /// <returns></returns>
-        public virtual async Task<BigInteger> GetBalance(HoardID account)
+        /// <inheritdoc/>
+        public async Task<BigInteger> GetBalance(HoardID account)
         {
             var ver = new Nethereum.RPC.Eth.EthGetBalance(web.Client);
             return (await ver.SendRequestAsync(account)).Value;
@@ -81,12 +77,8 @@ namespace Hoard.BC
             return HRDAddress;
         }
 
-        /// <summary>
-        /// Returns HRD balance of given account
-        /// </summary>
-        /// <param name="account">account to query</param>
-        /// <returns></returns>
-        public virtual async Task<BigInteger> GetHRDBalance(HoardID account)
+        /// <inheritdoc/>
+        public async Task<BigInteger> GetHRDBalance(HoardID account)
         {
             string hrdAddress = await GetHRDAddress();
             if (hrdAddress != null)
@@ -157,12 +149,7 @@ namespace Hoard.BC
             return null;
         }
 
-        /// <summary>
-        /// Registers existing Hoard game. This game must exist on Hoard platform.
-        /// This function performs initial setup of game contract.
-        /// </summary>
-        /// <param name="game">[in/out] game object must contain valid ID. Other fields will be retrieved from platform</param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task<bool> RegisterHoardGame(GameID game)
         {
             if (gameContracts.ContainsKey(game))
@@ -190,19 +177,13 @@ namespace Hoard.BC
             return false;
         }
 
-        /// <summary>
-        /// Removes game from system. Call when you are finished with using that game
-        /// </summary>
-        /// <param name="game">game to unregister</param>
+        /// <inheritdoc/>
         public void UnregisterHoardGame(GameID game)
         {
             gameContracts.Remove(game);
         }
 
-        /// <summary>
-        /// Returns all registered games (using RegisterHoardGame)
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public GameID[] GetRegisteredHoardGames()
         {
             GameID[] games = new GameID[gameContracts.Count];
@@ -210,10 +191,7 @@ namespace Hoard.BC
             return games;
         }
 
-        /// <summary>
-        /// Retrieves all Hoard games registered on the platform.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task<GameID[]> GetHoardGames()
         {
             ulong count = await gameCenter.GetGameCount();
@@ -234,20 +212,13 @@ namespace Hoard.BC
             return games;
         }
 
-        /// <summary>
-        /// Checks if game is registered on Hoard Platform
-        /// </summary>
-        /// <param name="gameID">game ID to check</param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task<bool> GetGameExists(BigInteger gameID)
         {
             return await gameCenter.GetGameExistsAsync(gameID);
         }
 
-        /// <summary>
-        /// Returns address of Hoard exchange contract
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task<string> GetHoardExchangeContractAddress()
         {
             return await gameCenter.GetExchangeAddressAsync();
@@ -279,7 +250,7 @@ namespace Hoard.BC
         /// <param name="to">receiver account</param>
         /// <param name="amount">amount to send</param>
         /// <returns>true if transfer was successful, false otherwise</returns>
-        public virtual async Task<bool> TransferHRD(AccountInfo from, string to, BigInteger amount)
+        public async Task<bool> TransferHRD(AccountInfo from, string to, BigInteger amount)
         {
             string hoardTokenAddress = await gameCenter.GetHoardTokenAddressAsync();
             if (hoardTokenAddress != null)
