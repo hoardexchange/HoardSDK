@@ -198,6 +198,34 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        {
+            if (Client != null)
+            {
+                throw new NotImplementedException();
+            }
+            if (SecureProvider != null)
+            {
+                return await SecureProvider.GetPlayerItems(account, itemType, firstItemIndex, itemsToGather).ConfigureAwait(false);
+            }
+            return null;
+        }
+
+        /// <inheritdoc/>
+        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        {
+            if (Client != null)
+            {
+                throw new NotImplementedException();
+            }
+            if (SecureProvider != null)
+            {
+                return await SecureProvider.GetPlayerItemsAmount(account, itemType).ConfigureAwait(false);
+            }
+            return await Task.FromResult<ulong>(0);
+        }
+
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
         {
             if (Client != null)
