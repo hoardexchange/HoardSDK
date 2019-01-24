@@ -66,7 +66,14 @@ namespace Hoard.BC.Plasma
         /// </summary>
         /// <param name="info">Owner account</param>
         /// <returns></returns>
-        public abstract Task<GameItem[]> GetGameItems(AccountInfo info);
+        public abstract Task<GameItem[]> GetGameItems(HoardID info);
+
+        /// <summary>
+        /// Returns total amount of items given account owns
+        /// </summary>
+        /// <param name="address">Account address of the owner</param>
+        /// <returns></returns>
+        public abstract Task<BigInteger> GetBalanceOf(HoardID address);
     }
 
     /// <summary>
@@ -111,10 +118,10 @@ namespace Hoard.BC.Plasma
         }
 
         /// <inheritdoc/>
-        public override async Task<GameItem[]> GetGameItems(AccountInfo account)
+        public override async Task<GameItem[]> GetGameItems(HoardID address)
         {
             var items = new List<GameItem>();
-            var tokensData = await plasmaComm.GetTokensData(account.ID, contract.Address);
+            var tokensData = await plasmaComm.GetTokensData(address, contract.Address);
 
             string symbol = await contract.GetSymbol();
             string state = BitConverter.ToString(await (contract as ERC223GameItemContract).GetTokenState());
@@ -125,6 +132,13 @@ namespace Hoard.BC.Plasma
             }
 
             return items.ToArray();
+        }
+
+        /// <inheritdoc/>
+        public override async Task<BigInteger> GetBalanceOf(HoardID address)
+        {
+            var tokensData = await plasmaComm.GetTokensData(address, contract.Address);
+            return tokensData.Count;
         }
     }
 
@@ -167,10 +181,10 @@ namespace Hoard.BC.Plasma
         }
 
         /// <inheritdoc/>
-        public override async Task<GameItem[]> GetGameItems(AccountInfo account)
+        public override async Task<GameItem[]> GetGameItems(HoardID address)
         {
             var items = new List<GameItem>();
-            var tokensData = await plasmaComm.GetTokensData(account.ID, contract.Address);
+            var tokensData = await plasmaComm.GetTokensData(address, contract.Address);
 
             string symbol = await contract.GetSymbol();
             for (int i = 0; i < tokensData.Count; ++i)
@@ -184,6 +198,13 @@ namespace Hoard.BC.Plasma
             }
 
             return items.ToArray();
+        }
+
+        /// <inheritdoc/>
+        public override async Task<BigInteger> GetBalanceOf(HoardID address)
+        {
+            var tokensData = await plasmaComm.GetTokensData(address, contract.Address);
+            return tokensData.Count;
         }
     }
 }

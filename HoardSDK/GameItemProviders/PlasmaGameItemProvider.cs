@@ -50,6 +50,7 @@ namespace Hoard.GameItemProviders
             return await RegisterHoardGameContracts();
         }
 
+        /// <inheritdoc/>
         public Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
             throw new NotImplementedException();
@@ -61,29 +62,49 @@ namespace Hoard.GameItemProviders
             return GameItemAdapters.Keys.ToArray();
         }
 
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
         {
             List<GameItem> items = new List<GameItem>();
             foreach (var proxy in GameItemAdapters.Values)
             {
-                items.AddRange(await proxy.GetGameItems(account));
+                items.AddRange(await proxy.GetGameItems(account.ID));
             }
             return items.ToArray();
         }
 
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
         {
             List<GameItem> items = new List<GameItem>();
             if (GameItemAdapters.ContainsKey(itemType))
             {
-                items.AddRange(await GameItemAdapters[itemType].GetGameItems(account));
+                items.AddRange(await GameItemAdapters[itemType].GetGameItems(account.ID));
             }
             return items.ToArray();
         }
 
+        /// <inheritdoc/>
         public async Task<bool> Transfer(AccountInfo addressFrom, string addressTo, GameItem item, BigInteger amount)
         {
             return await GameItemAdapters[item.Symbol].Transfer(addressFrom, addressTo, item, amount);
+        }
+
+        /// <inheritdoc/>
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc/>
+        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        {
+            if (GameItemAdapters.ContainsKey(itemType))
+            {
+                return (ulong)(await GameItemAdapters[itemType].GetBalanceOf(account.ID));
+            }
+
+            return 0;
         }
 
         /// <summary>
