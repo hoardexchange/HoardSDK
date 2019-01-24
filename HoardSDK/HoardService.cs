@@ -97,6 +97,21 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Return GameItem types for specyfied game
+        /// </summary>
+        /// <param name="game"></param>
+        /// <returns></returns>
+        public string[] GetGameItemTypes(GameID game)
+        {
+            if (Providers.ContainsKey(game))
+            {
+                IGameItemProvider p = Providers[game];
+                return p.GetItemTypes();
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Check if player is signed in.
         /// </summary>
         /// <param name="user">Player to be checked.</param>
@@ -291,26 +306,28 @@ namespace Hoard
         #endregion
 
         /// <summary>
-        /// Queries Hoard Platforms for all registered games.
+        /// Queries Hoard Platform for all games existing on the platform (not only in HoardService).
+        /// Use carefully as it might take a while and return a long list of games.
+        /// TODO: split this method into 2 methods: GetCount, QueryGames(index_from, index_to)
         /// </summary>
-        /// <returns></returns>
-        public async Task<GameID[]> QueryHoardGames()
+        /// <returns>An array of game identifiers</returns>
+        public async Task<GameID[]> GetAllHoardGames()
         {
             //for now we only support asking BC directly, but in future we might have some Hoard servers with caching
             return await BCComm.GetHoardGames();
         }
 
         /// <summary>
-        /// Check if game exists
+        /// Check if game exists on the Hoard Platform.
         /// </summary>
         /// <param name="game"></param>
-        public bool GetGameExists(GameID game)
+        public async Task<bool> GetGameExists(GameID game)
         {
-            return BCComm.GetGameExists(game.ID).Result;
+            return await BCComm.GetGameExists(game.ID);
         }
 
         /// <summary>
-        /// Return all registered game.
+        /// Return all registered games in HoardService.
         /// </summary>
         /// <returns></returns>
         public GameID[] GetRegisteredHoardGames()
@@ -410,6 +427,47 @@ namespace Hoard
                 Trace.TraceWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
             }
             return items.ToArray();
+        }
+
+        /// <summary>
+        /// Returns all Game Items owned by player's subaccount in particular game
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="gameID"></param>
+        /// <param name="firstItemIndex">Start index for items pack</param>
+        /// <param name="itemsToGather">Number of items to gather</param>
+        /// <param name="itemType">Item type</param>
+        /// <returns></returns>
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, GameID gameID, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        {
+            List<GameItem> items = new List<GameItem>();
+            if (Providers.ContainsKey(gameID))
+            {
+                IGameItemProvider c = Providers[gameID];
+                items.AddRange(await c.GetPlayerItems(account, itemType, firstItemIndex, itemsToGather).ConfigureAwait(false));
+            }
+            else
+            {
+                Trace.TraceWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
+            }
+            return items.ToArray();
+        }
+
+        /// <summary>
+        /// Returns amount of all items of the specified type belonging to a particular player with given type
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="gameID"></param>
+        /// <param name="itemType">Item type</param>
+        /// <returns></returns>
+        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, GameID gameID, string itemType)
+        {
+            if (Providers.ContainsKey(gameID))
+            {
+                IGameItemProvider c = Providers[gameID];
+                return await c.GetPlayerItemsAmount(account, itemType).ConfigureAwait(false);
+            }
+            return await Task.FromResult<ulong>(0);
         }
 
         /// <summary>

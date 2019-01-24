@@ -100,6 +100,7 @@ namespace Hoard.BC.Contracts
             BigInteger amountGive,
             ulong blockTimeDuration)
         {
+            // FIXME: should NOT take nonce from web3
             var nonceService = new InMemoryNonceService(from.ID, web3.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
             var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
@@ -128,6 +129,7 @@ namespace Hoard.BC.Contracts
             BigInteger tokenId,
             ulong blockTimeDuration)
         {
+            // FIXME: should NOT take nonce from web3
             var nonceService =  new InMemoryNonceService(from.ID, web3.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
             var blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();

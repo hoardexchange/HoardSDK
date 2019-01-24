@@ -118,6 +118,16 @@ namespace HoardTests.CryptKittyTests
             return (player.ID == owner.ToString());
         }
 
+        public Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        {
+            throw new NotImplementedException();
+        }
+
 
         public Task<bool> Transfer(AccountInfo addressFrom, string addressTo, GameItem item, BigInteger amount)
         {

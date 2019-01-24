@@ -127,7 +127,7 @@ namespace HoardTests
 
             hoardFixture.Initialize(HoardGameTestName);
 
-            GameID[] games = hoardFixture.HoardService.QueryHoardGames().Result;
+            GameID[] games = hoardFixture.HoardService.GetAllHoardGames().Result;
             Assert.NotEmpty(games);
 
             GameID game = games[0];

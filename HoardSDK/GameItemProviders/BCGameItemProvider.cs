@@ -66,6 +66,27 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        {
+            List<GameItem> items = new List<GameItem>();
+            if (ItemContracts.ContainsKey(itemType))
+            {
+                items.AddRange(await ItemContracts[itemType].GetGameItems(account, firstItemIndex, itemsToGather));
+            }
+            return items.ToArray();
+        }
+
+        /// <inheritdoc/>
+        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        {
+            if (ItemContracts.ContainsKey(itemType))
+            {
+                return (ulong)(await ItemContracts[itemType].GetBalanceOf(account.ID).ConfigureAwait(false));
+            }
+            return await Task.FromResult<ulong>(0);
+        }
+
+        /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
         {
             List<GameItem> items = new List<GameItem>();

@@ -25,14 +25,14 @@ namespace HoardTests
             hoardFixture.Initialize(HoardGameTestName);
             HoardService = hoardFixture.HoardService;
 
-            GameID[] games = HoardService.QueryHoardGames().Result;
+            GameID[] games = HoardService.GetAllHoardGames().Result;
             Assert.NotEmpty(games);
 
             GameID gameID = GameID.FromName("12345");
             Assert.DoesNotContain(gameID, games);
             Assert.False(HoardService.RegisterHoardGame(gameID));
 
-            gameID = new GameID(System.Numerics.BigInteger.Parse("2c3257614189ee907c819a4c92b04c6b9e6e9346051563e780d3c302e67e76b1"));
+            gameID = new GameID(System.Numerics.BigInteger.Parse("2c3257614189ee907c819a4c92b04c6b9e6e9346051563e780d3c302e67e76b1", System.Globalization.NumberStyles.AllowHexSpecifier));
             Assert.Contains(gameID, games);
             Assert.True(HoardService.RegisterHoardGame(gameID));
 
@@ -57,7 +57,7 @@ namespace HoardTests
 
             Trace.TraceInformation("Getting Hoard games...");
 
-            GameID[] games = HoardService.QueryHoardGames().Result;
+            GameID[] games = HoardService.GetAllHoardGames().Result;
 
             Trace.TraceInformation(string.Format("Found {0} Hoard games.", games.Length));
 

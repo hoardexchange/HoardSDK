@@ -1,6 +1,8 @@
 ﻿using Nethereum.Contracts;
 using Nethereum.Web3;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -221,6 +223,15 @@ namespace Hoard.BC.Contracts
         public abstract Task<GameItem[]> GetGameItems(AccountInfo info);
 
         /// <summary>
+        /// Returns all Game Items owned by Account <paramref name="info"/>
+        /// </summary>
+        /// <param name="info">Owner account</param>
+        /// <param name="firstItemIndex">Start index for items pack</param>
+        /// <param name="itemsToGather">Number of items to gather</param>
+        /// <returns></returns>
+        public abstract Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex, ulong itemsToGather);
+
+        /// <summary>
         /// Returns specific Game Item based on query parameters
         /// </summary>
         /// <param name="gameItemsParams">query parameters</param>
@@ -336,6 +347,12 @@ namespace Hoard.BC.Contracts
         }
 
         /// <inheritdoc/>
+        public override async Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex = 0, ulong itemsToGather = 0)
+        {
+            return await GetGameItems(info);
+        }
+
+        /// <inheritdoc/>
         public override async Task<GameItem> GetGameItem(GameItemsParams gameItemsParams)
         {
             string state = BitConverter.ToString(await GetTokenState());
@@ -412,9 +429,19 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("tokenState");
         }
 
+        private Function GetFunctionTokenStateArray()
+        {
+            return contract.GetFunction("tokenStateArray");
+        }
+
         private Function GetFunctionTokenOfOwnerByIndex()
         {
             return contract.GetFunction("tokenOfOwnerByIndex");
+        }
+
+        private Function GetFunctionTokensOfOwnerByIndices()
+        {
+            return contract.GetFunction("tokensOfOwnerByIndices");
         }
 
         private Function GetFunctionExists()
@@ -423,7 +450,7 @@ namespace Hoard.BC.Contracts
         }
 
         /// <summary>
-        /// REturns state of a particular token
+        /// Returns state of a particular token
         /// </summary>
         /// <param name="itemID">identifier of the item</param>
         /// <returns></returns>
@@ -431,6 +458,17 @@ namespace Hoard.BC.Contracts
         {
             Function function = GetFunctionTokenState();
             return function.CallAsync<byte[]>(itemID);
+        }
+
+        /// <summary>
+        /// Returns states of a particular pack of tokens
+        /// </summary>
+        /// <param name="itemIDs">identifiers of the items</param>
+        /// <returns></returns>
+        public Task<List<byte[]>> GetTokenStateArray(BigInteger[] itemIDs)
+        {
+            Function function = GetFunctionTokenStateArray();
+            return function.CallAsync<List<byte[]>>(itemIDs);
         }
 
         /// <summary>
@@ -450,10 +488,23 @@ namespace Hoard.BC.Contracts
         /// <param name="owner">owner address of the item</param>
         /// <param name="index">ordinal number</param>
         /// <returns></returns>
-        public Task<BigInteger> TokenOfOwnerByIndex(string owner, BigInteger index)
+        public Task<BigInteger> TokenOfOwnerByIndex(string owner, ulong index)
         {
             Function function = GetFunctionTokenOfOwnerByIndex();
             return function.CallAsync<BigInteger>(owner, index);
+        }
+
+        /// <summary>
+        /// Returns a pack of Items owned by owner by their ordinal number
+        /// </summary>
+        /// <param name="owner">owner address of the item</param>
+        /// <param name="firstItemIndex">Start index for items pack</param>
+        /// <param name="itemsToGather">Number of items to gather</param>
+        /// <returns></returns>
+        public Task<List<BigInteger>> TokensOfOwnerByIndices(string owner, ulong firstItemIndex, ulong itemsToGather)
+        {
+            Function function = GetFunctionTokensOfOwnerByIndices();
+            return function.CallAsync<List<BigInteger>>(owner, firstItemIndex, itemsToGather);
         }
 
         /// <summary>
@@ -486,7 +537,7 @@ namespace Hoard.BC.Contracts
         }
 
         /// <summary>
-        /// REturns all items owned by <paramref name="info"/>
+        /// Returns all items owned by <paramref name="info"/>
         /// </summary>
         /// <param name="info">Owners's account</param>
         /// <returns></returns>
@@ -508,6 +559,33 @@ namespace Hoard.BC.Contracts
                 items[i].State = await GetTokenState(id);
             }
 
+            return items;
+        }
+
+        /// <summary>
+        /// Returns a pack of items owned by <paramref name="info"/>
+        /// </summary>
+        /// <param name="firstItemIndex">Start index for items pack</param>
+        /// <param name="itemsToGather">Number of items to gather</param>
+        /// <param name="info">Owners's account</param>
+        /// <returns></returns>
+        public override async Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex, ulong itemsToGather)
+        {
+            BigInteger itemBalance = await GetBalanceOf(info.ID);
+            ulong count = (ulong)itemBalance;
+            if (firstItemIndex >= itemBalance)
+                return new GameItem[0];
+            List<BigInteger> ids = await TokensOfOwnerByIndices(info.ID, firstItemIndex, itemsToGather);
+            string symbol = await GetSymbol();
+            GameItem[] items = new GameItem[ids.Count];
+            List<byte[]> states = await GetTokenStateArray(ids.ToArray());
+            Debug.Assert(states.Count == ids.Count);
+            for (int i = 0; i < ids.Count; i++)
+            {
+                Metadata meta = new Metadata(Address, ids[i]);
+                items[i] = new GameItem(Game, symbol, meta);
+                items[i].State = states[i];
+            }
             return items;
         }
 
