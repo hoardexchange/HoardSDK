@@ -326,51 +326,5 @@ namespace Hoard.BC
             result.TryGetValue("data", out data);
             return data;
         }
-
-        //protected async Task<List<byte[]>> CreateTransaction(List<UTXOData> inputUtxos, AccountInfo fromAccount, string toAddress, BigInteger amount)
-        //{
-        //    Debug.Assert(inputUtxos.Count <= 2);
-
-        //     create transaction data
-        //    var txData = new List<byte[]>();
-        //    for(UInt16 i = 0; i < MAX_INPUTS; ++i)
-        //    {
-        //        if (i < inputUtxos.Count())
-        //        {
-        //             cannot mix currencies
-        //            Debug.Assert(inputUtxos[0].Currency == inputUtxos[i].Currency);
-
-        //            txData.Add(inputUtxos[i].BlkNum.ToBytesForRLPEncoding());
-        //            txData.Add(inputUtxos[i].TxIndex.ToBytesForRLPEncoding());
-        //            txData.Add(inputUtxos[i].OIndex.ToBytesForRLPEncoding());
-        //        }
-        //        else
-        //        {
-        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-        //        }
-        //    }
-
-        //    txData.Add(inputUtxos[0].Currency.HexToByteArray());
-
-        //    txData.Add(toAddress.HexToByteArray());
-        //    txData.Add(amount.ToBytesForRLPEncoding());
-
-        //    var sum = new BigInteger(0);
-        //    inputUtxos.ForEach(x => sum += x.Amount);
-        //    if (sum > amount)
-        //    {
-        //        txData.Add(fromAccount.ID.ToHexByteArray());
-        //        txData.Add((sum - amount).ToBytesForRLPEncoding());
-        //    }
-        //    else
-        //    {
-        //        txData.Add("0x0000000000000000000000000000000000000000".HexToByteArray());
-        //        txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-        //    }
-
-        //    return txData;
-        //}   
     }
 }

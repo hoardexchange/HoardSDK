@@ -1,4 +1,5 @@
-﻿using Hoard.ExchangeServices;
+﻿using Hoard.BC;
+using Hoard.ExchangeServices;
 using Hoard.GameItemProviders;
 using Hoard.Interfaces;
 using System;
@@ -136,7 +137,7 @@ namespace Hoard
             Options = options;
 
             //access point to block chain - a must have
-            BCComm = new BC.BCComm(Options.RpcClient, Options.GameCenterContract);
+            BCComm = BCCommFactory.Create(Options);
             Tuple<bool,string> result = BCComm.Connect().Result;
             if (!result.Item1)
                 return false;
@@ -335,22 +336,22 @@ namespace Hoard
             }
         }
 
-        /// <summary>
-        /// Returns the Hoard tokens contract address.
-        /// </summary>
-        /// <returns></returns>
-        public async Task<string> GetHRDAddress()
-        {
-            try
-            {
-                return await BCComm.GetHRDAddress();
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError(ex.ToString());
-                return "0x0";
-            }
-        }
+        ///// <summary>
+        ///// Returns the Hoard tokens contract address.
+        ///// </summary>
+        ///// <returns></returns>
+        //public async Task<string> GetHRDAddress()
+        //{
+        //    try
+        //    {
+        //        return await BCComm.GetHRDAddress();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Trace.TraceError(ex.ToString());
+        //        return "0x0";
+        //    }
+        //}
 
         /// <summary>
         /// Returns the Hoard tokens amount owned by the player.

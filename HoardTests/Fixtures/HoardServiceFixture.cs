@@ -63,7 +63,19 @@ namespace HoardTests.Fixtures
         public void InitializeFromConfig(string configPath = null)
         {
             HoardServiceConfig config = HoardServiceConfig.Load(configPath);
-            HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
+
+            BCClientOptions clientOpts = null;
+            if (config.BCClientConfig is EthereumClientConfig)
+            {
+                var clientUrl = (config.BCClientConfig as EthereumClientConfig).ClientUrl;
+                clientOpts = new EthereumClientOptions(new Nethereum.JsonRpc.Client.RpcClient(new Uri(clientUrl)));
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+
+            HoardServiceOptions options = new HoardServiceOptions(config, clientOpts);
 
             HoardService = HoardService.Instance;
 
@@ -85,7 +97,7 @@ namespace HoardTests.Fixtures
             options.GameCenterContract = data["hoard_game_center"]["contract_addr"];
             Assert.NotEmpty(options.GameCenterContract);
 
-            options.RpcClient = new Nethereum.JsonRpc.Client.RpcClient(new Uri(string.Format("http://{0}:{1}", data["network"]["host"], data["network"]["port"])));
+            options.BCClientOptions = new EthereumClientOptions(new Nethereum.JsonRpc.Client.RpcClient(new Uri(string.Format("http://{0}:{1}", data["network"]["host"], data["network"]["port"]))));
             
             HoardService = HoardService.Instance;
             
