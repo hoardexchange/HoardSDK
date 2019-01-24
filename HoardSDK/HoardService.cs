@@ -304,26 +304,28 @@ namespace Hoard
         #endregion
 
         /// <summary>
-        /// Queries Hoard Platforms for all registered games.
+        /// Queries Hoard Platform for all games existing on the platform (not only in HoardService).
+        /// Use carefully as it might take a while and return a long list of games.
+        /// TODO: split this method into 2 methods: GetCount, QueryGames(index_from, index_to)
         /// </summary>
-        /// <returns></returns>
-        public async Task<GameID[]> QueryHoardGames()
+        /// <returns>An array of game identifiers</returns>
+        public async Task<GameID[]> GetAllHoardGames()
         {
             //for now we only support asking BC directly, but in future we might have some Hoard servers with caching
             return await BCComm.GetHoardGames();
         }
 
         /// <summary>
-        /// Check if game exists
+        /// Check if game exists on the Hoard Platform.
         /// </summary>
         /// <param name="game"></param>
-        public bool GetGameExists(GameID game)
+        public async Task<bool> GetGameExists(GameID game)
         {
-            return BCComm.GetGameExists(game.ID).Result;
+            return await BCComm.GetGameExists(game.ID);
         }
 
         /// <summary>
-        /// Return all registered game.
+        /// Return all registered games in HoardService.
         /// </summary>
         /// <returns></returns>
         public GameID[] GetRegisteredHoardGames()

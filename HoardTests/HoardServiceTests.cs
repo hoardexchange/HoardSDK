@@ -25,7 +25,7 @@ namespace HoardTests
             hoardFixture.Initialize(HoardGameTestName);
             HoardService = hoardFixture.HoardService;
 
-            GameID[] games = HoardService.QueryHoardGames().Result;
+            GameID[] games = HoardService.GetAllHoardGames().Result;
             Assert.NotEmpty(games);
 
             GameID gameID = GameID.FromName("12345");
@@ -57,7 +57,7 @@ namespace HoardTests
 
             Trace.TraceInformation("Getting Hoard games...");
 
-            GameID[] games = HoardService.QueryHoardGames().Result;
+            GameID[] games = HoardService.GetAllHoardGames().Result;
 
             Trace.TraceInformation(string.Format("Found {0} Hoard games.", games.Length));
 

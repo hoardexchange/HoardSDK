@@ -41,7 +41,7 @@ namespace HoardTests.Fixtures
             HoardExchangeService = new HoardExchangeService(HoardService);
             HoardExchangeService.Init();
 
-            GameIDs = HoardService.QueryHoardGames().Result;
+            GameIDs = HoardService.GetAllHoardGames().Result;
             foreach (var game in GameIDs)
             {
                 HoardService.RegisterHoardGame(game);
