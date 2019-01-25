@@ -19,7 +19,10 @@ namespace Hoard.BC
     /// </summary>
     public class PlasmaComm : IBCComm
     {
-        private static string ETH_CURRENCY_ADDRESS = "0x0000000000000000000000000000000000000000";
+        /// <summary>
+        /// Zero address (160bits)
+        /// </summary>
+        public static string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
         private RestClient childChainClient = null;
         private RestClient watcherClient = null;
@@ -64,7 +67,7 @@ namespace Hoard.BC
         /// <inheritdoc/>
         public async Task<BigInteger> GetBalance(HoardID account)
         {
-            return await GetBalance(account, ETH_CURRENCY_ADDRESS);
+            return await GetBalance(account, ZERO_ADDRESS);
         }
 
         /// <inheritdoc/>

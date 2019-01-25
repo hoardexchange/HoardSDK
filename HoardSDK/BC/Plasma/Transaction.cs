@@ -1,6 +1,7 @@
 ﻿using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using Nethereum.Signer;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -18,39 +19,49 @@ namespace Hoard.BC.Plasma
         public static string NULL_SIGNATURE = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
         /// <summary>
-        /// Mapping currency (address) to list of UTXOs
+        /// List of transaction input UTXOs
         /// </summary>
-        private Dictionary<string, List<UTXOData>> inputs = new Dictionary<string, List<UTXOData>>();
+        private List<UTXOData> inputs = new List<UTXOData>();
 
         /// <summary>
-        /// Mapping currency (address) to list of UTXOs
+        /// List of transaction output data
         /// </summary>
-        private Dictionary<string, BigInteger> outputs = new Dictionary<string, BigInteger>();
+        private List<TransactionOutputData> outputs = new List<TransactionOutputData>();
+
+        /// <summary>
+        /// Gets a number of inputs
+        /// </summary>
+        /// <returns></returns>
+        public UInt32 GetInputCount()
+        {
+            return (UInt32)inputs.Count;
+        }
+
+        /// <summary>
+        /// Gets a number of outputs
+        /// </summary>
+        /// <returns></returns>
+        public UInt32 GetOutputCount()
+        {
+            return (UInt32)outputs.Count;
+        }
 
         /// <summary>
         /// Adds input to transaction
         /// </summary>
-        /// <param name="data">UTXO input data</param>
+        /// <param name="data">transaction UTXO input data</param>
         public void AddInput(UTXOData data)
         {
-            if (inputs.ContainsKey(data.Currency))
-            {
-                inputs[data.Currency].Add(data);
-            }
-            else
-            {
-                inputs.Add(data.Currency, new List<UTXOData>() { data });
-            }
+            inputs.Add(data);
         }
 
         /// <summary>
         /// Adds output to transaction
         /// </summary>
-        /// <param name="toAddress"></param>
-        /// <param name="data"></param>
-        public void AddOutput(string toAddress, BigInteger data/*, string currency*/)
+        /// <param name="data">transaction output data</param>
+        public void AddOutput(TransactionOutputData data)
         {
-            outputs.Add(toAddress, data);
+            outputs.Add(data);
         }
 
         /// <summary>
@@ -86,25 +97,19 @@ namespace Hoard.BC.Plasma
             var txData = new List<byte[]>();
             txData.Clear();
 
-            foreach (var input in inputs)
+#if TESUJI_PLASMA
+            foreach (var utxo in inputs)
             {
-                foreach (var utxo in input.Value)
-                {
-                    txData.Add(utxo.BlkNum.ToBytesForRLPEncoding());
-                    txData.Add(utxo.TxIndex.ToBytesForRLPEncoding());
-                    txData.Add(utxo.OIndex.ToBytesForRLPEncoding());
-                }
+                txData.AddRange(utxo.GetTxBytes());
             }
 
-            // FIXME it depends from plasma transaction api - it probably change in the future
-            //txData.Add(inputs.Currency.HexToByteArray());
-
+            txData.Add(inputs[0].Currency.HexToByteArray());
+            
             foreach (var output in outputs)
             {
-                txData.Add(output.Key.HexToByteArray());
-                txData.Add(output.Value.ToBytesForRLPEncoding());
+                txData.AddRange(output.GetTxBytes());
             }
-
+#endif
             return txData;
         }
     }

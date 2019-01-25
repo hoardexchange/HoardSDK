@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Nethereum.RLP;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -11,37 +12,58 @@ namespace Hoard.BC.Plasma
     /// <summary>
     /// Description of Plasma Unspent Transaction Output 
     /// </summary>
-    public abstract class UTXOData
+    public class UTXOData
     {
         /// <summary>
         /// Transaction index within the block
         /// </summary>
         [JsonProperty(propertyName: "txindex")]
-        public BigInteger TxIndex { get; private set; }
+        public BigInteger TxIndex { get; protected set; }
 
         /// <summary>
         /// Transaction hash
         /// </summary>
         [JsonProperty(propertyName: "txbytes")]
-        public string TxBytes { get; private set; }
+        public string TxBytes { get; protected set; }
 
         /// <summary>
         /// Transaction output index
         /// </summary>
         [JsonProperty(propertyName: "oindex")]
-        public BigInteger OIndex { get; private set; }
+        public BigInteger OIndex { get; protected set; }
 
         /// <summary>
         /// Currency of the transaction (all zeroes for ETH)
         /// </summary>
         [JsonProperty(propertyName: "currency")]
-        public string Currency { get; private set; }
+        public string Currency { get; protected set; }
 
         /// <summary>
         /// Block number
         /// </summary>
         [JsonProperty(propertyName: "blknum")]
-        public BigInteger BlkNum { get; private set; }
+        public BigInteger BlkNum { get; protected set; }
+
+        /// <summary>
+        /// Gets empty utxo
+        /// </summary>
+        public static UTXOData Empty
+        {
+            get
+            {
+                var utxoData = new UTXOData();
+                utxoData.BlkNum = BigInteger.Zero;
+                utxoData.TxIndex = BigInteger.Zero;
+                utxoData.OIndex = BigInteger.Zero;
+                return utxoData;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public virtual List<byte[]> GetTxBytes() { throw new NotSupportedException(); }
     }
 
     /// <summary>
@@ -55,7 +77,7 @@ namespace Hoard.BC.Plasma
         /// Amount of tokens
         /// </summary>
         [JsonProperty(propertyName: "amount")]
-        public BigInteger Amount { get; private set; }
+        public BigInteger Amount { get; protected set; }
 
         /// <summary>
         /// Finds optimal collection of UTXOs that amount sum is equal or greater than given target amount using selection algorithm
@@ -130,52 +152,18 @@ namespace Hoard.BC.Plasma
             return null;
         }
 
-        //static public List<byte[]> CreateTransaction(AccountInfo fromAccount, string toAddress, BigInteger amount, List<ERC223UTXOData> inputUtxos)
-        //{
-        //    Debug.Assert(inputUtxos != null);
-        //    Debug.Assert(inputUtxos.Count <= 2);
-
-        //    // create transaction data
-        //    var txData = new List<byte[]>();
-        //    for (UInt16 i = 0; i < 2/*MAX_INPUTS*/; ++i)
-        //    {
-        //        if (i < inputUtxos.Count())
-        //        {
-        //            // cannot mix currencies
-        //            Debug.Assert(inputUtxos[0].Currency == inputUtxos[i].Currency);
-
-        //            txData.Add(inputUtxos[i].BlkNum.ToBytesForRLPEncoding());
-        //            txData.Add(inputUtxos[i].TxIndex.ToBytesForRLPEncoding());
-        //            txData.Add(inputUtxos[i].OIndex.ToBytesForRLPEncoding());
-        //        }
-        //        else
-        //        {
-        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-        //            txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-        //        }
-        //    }
-
-        //    txData.Add(inputUtxos[0].Currency.HexToByteArray());
-
-        //    txData.Add(toAddress.HexToByteArray());
-        //    txData.Add(amount.ToBytesForRLPEncoding());
-
-        //    var sum = new BigInteger(0);
-        //    inputUtxos.ForEach(x => sum += x.Amount);
-        //    if (sum > amount)
-        //    {
-        //        txData.Add(fromAccount.ID.ToHexByteArray());
-        //        txData.Add((sum - amount).ToBytesForRLPEncoding());
-        //    }
-        //    else
-        //    {
-        //        txData.Add("0x0000000000000000000000000000000000000000".HexToByteArray());
-        //        txData.Add(BigInteger.Zero.ToBytesForRLPEncoding());
-        //    }
-
-        //    return txData;
-        //}
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override List<byte[]> GetTxBytes()
+        {
+            var data = new List<byte[]>();
+            data.Add(BlkNum.ToBytesForRLPEncoding());
+            data.Add(TxIndex.ToBytesForRLPEncoding());
+            data.Add(OIndex.ToBytesForRLPEncoding());
+            return data;
+        }
     }
 
     /// <summary>
@@ -187,7 +175,16 @@ namespace Hoard.BC.Plasma
         /// List of token ids
         /// </summary>
         [JsonProperty(propertyName: "tokenid")]
-        public List<BigInteger> TokenIds { get; private set; }
+        public List<BigInteger> TokenIds { get; protected set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override List<byte[]> GetTxBytes()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
