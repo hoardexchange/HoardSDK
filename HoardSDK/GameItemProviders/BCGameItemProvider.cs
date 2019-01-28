@@ -110,7 +110,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
+        public Task<bool> Transfer(AccountInfo from, HoardID addressTo, GameItem item, BigInteger amount)
         {
             GameItemContract gameItemContract = ItemContracts[item.Symbol];
             return gameItemContract.Transfer(from, addressTo, item, amount);

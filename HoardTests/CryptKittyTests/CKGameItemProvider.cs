@@ -129,7 +129,7 @@ namespace HoardTests.CryptKittyTests
         }
 
 
-        public Task<bool> Transfer(AccountInfo addressFrom, string addressTo, GameItem item, BigInteger amount)
+        public Task<bool> Transfer(AccountInfo addressFrom, HoardID addressTo, GameItem item, BigInteger amount)
         {
             throw new NotImplementedException();
         }

@@ -294,7 +294,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
+        public Task<bool> Transfer(AccountInfo from, HoardID addressTo, GameItem item, BigInteger amount)
         {
             if (Client != null)
             {

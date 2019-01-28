@@ -142,7 +142,7 @@ namespace Hoard.ExchangeServices
                 IGameItemProvider gameItemProvider = Hoard.GetGameItemProvider(item);
                 if (gameItemProvider != null)
                 {
-                    return await gameItemProvider.Transfer(account, ExchangeContract.Address, item, amount);
+                    return await gameItemProvider.Transfer(account, new HoardID(ExchangeContract.Address), item, amount);
                 }
                 System.Diagnostics.Trace.TraceWarning($"Cannot find GameItemProvider for item: {item.Symbol}!");
             }

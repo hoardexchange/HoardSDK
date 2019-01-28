@@ -97,7 +97,7 @@ namespace Hoard.BC.Plasma
             var txData = new List<byte[]>();
             txData.Clear();
 
-#if TESUJI_PLASMA
+            //TESUJI_PLASMA
             foreach (var utxo in inputs)
             {
                 txData.AddRange(utxo.GetTxBytes());
@@ -109,7 +109,8 @@ namespace Hoard.BC.Plasma
             {
                 txData.AddRange(output.GetTxBytes());
             }
-#endif
+            //TESUJI_PLASMA
+
             return txData;
         }
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Nethereum.Hex.HexConvertors.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -38,12 +39,12 @@ namespace Hoard.BC.Plasma
             
             tx.AddOutput(new ERC223TransactionOutputData(addressTo, inputUtxos[0].Currency, amount));
 
-#if TESUJI_PLASMA
+            //TESUJI_PLASMA
             const UInt32 maxInputs = 4;
             const UInt32 maxOutputs = 4;
 
-            Debug.Assert(tx.GetInputCount() <= maxInputs);
-            for(UInt32 i = tx.GetInputCount(); i <= maxInputs; ++i)
+            Debug.Assert(tx.GetInputCount() < maxInputs);
+            for(UInt32 i = tx.GetInputCount(); i < maxInputs; ++i)
             {
                 tx.AddInput(UTXOData.Empty);
             }
@@ -53,11 +54,12 @@ namespace Hoard.BC.Plasma
                 tx.AddOutput(new ERC223TransactionOutputData(from.ID, inputUtxos[0].Currency, sum - amount));
             }
 
-            for (UInt32 i = tx.GetOutputCount(); i <= maxOutputs; ++i)
+            for (UInt32 i = tx.GetOutputCount(); i < maxOutputs; ++i)
             {
                 tx.AddOutput(ERC223TransactionOutputData.Empty);
             }
-#endif
+            //TESUJI_PLASMA
+
             var signedTransaction = await tx.Sign(from);
 
             // FIXME: not sure if it won't change in Hoard version of Plasma
@@ -86,7 +88,7 @@ namespace Hoard.BC.Plasma
 
                 tx.AddOutput(new ERC721TransactionOutputData(addressTo, inputUtxos[0].Currency, new List<BigInteger>(){ tokenId }));
 
-#if TESUJI_PLASMA
+                //TESUJI_PLASMA
                 const UInt32 maxInputs = 4;
                 const UInt32 maxOutputs = 4;
 
@@ -106,12 +108,12 @@ namespace Hoard.BC.Plasma
                 {
                     tx.AddOutput(ERC721TransactionOutputData.Empty);
                 }
-#endif
+                //TESUJI_PLASMA
 
                 var signedTransaction = await tx.Sign(from);
 
                 // FIXME: not sure if it won't change in Hoard version of Plasma
-                return tx.GetRLPEncoded(new List<string>() { signedTransaction, Transaction.NULL_SIGNATURE });
+                return tx.GetRLPEncoded(new List<string>() { signedTransaction.EnsureHexPrefix(), Transaction.NULL_SIGNATURE });
             }
 
             return null;

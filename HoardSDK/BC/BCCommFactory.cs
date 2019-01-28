@@ -18,16 +18,12 @@ namespace Hoard.BC
         {
             if (options.BCClientOptions is PlasmaClientOptions)
             {
-                Debug.Assert(options.BCClientOptions is PlasmaClientOptions);
-
                 var clientOpts = options.BCClientOptions as PlasmaClientOptions;
                 var bcComm = new BCComm(clientOpts.RpcClient, options.GameCenterContract);
                 return new PlasmaComm(bcComm, clientOpts.ChildChainUrl, clientOpts.WatcherUrl);
             }
             else if (options.BCClientOptions is EthereumClientOptions)
             {
-                Debug.Assert(options.BCClientOptions is EthereumClientOptions);
-
                 var clientOpts = options.BCClientOptions as EthereumClientOptions;
                 return new BCComm(clientOpts.RpcClient, options.GameCenterContract);
             }

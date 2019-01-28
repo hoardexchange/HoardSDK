@@ -81,6 +81,7 @@ namespace Hoard.BC.Plasma
         {
             var data = new List<byte[]>();
             data.Add(Owner.HexToByteArray());
+            data.Add(Currency.HexToByteArray());
             data.Add(Amount.ToBytesForRLPEncoding());
             return data;
         }

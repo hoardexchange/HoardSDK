@@ -85,7 +85,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Transfer(AccountInfo addressFrom, string addressTo, GameItem item, BigInteger amount)
+        public async Task<bool> Transfer(AccountInfo addressFrom, HoardID addressTo, GameItem item, BigInteger amount)
         {
             return await GameItemAdapters[item.Symbol].Transfer(addressFrom, addressTo, item, amount);
         }
@@ -151,7 +151,7 @@ namespace Hoard.GameItemProviders
 
         private async Task<GameItemAdapter> GetGameItemAdapter(string contractAddress)
         {
-            SupportsInterfaceWithLookupContract interfaceContract = null; // plasmaComm.GetContract<SupportsInterfaceWithLookupContract>(contractAddress);
+            SupportsInterfaceWithLookupContract interfaceContract = plasmaComm.GetContract<SupportsInterfaceWithLookupContract>(contractAddress);
 
             ContractInterfaceID currentInterfaceId = null;
 

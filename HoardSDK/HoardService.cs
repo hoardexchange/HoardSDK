@@ -69,12 +69,12 @@ namespace Hoard
         /// <param name="item">Game item to be transfered.</param>
         /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
-        public async Task<bool> RequestGameItemTransfer(AccountInfo sender, AccountInfo recipient, GameItem item, BigInteger amount)
+        public async Task<bool> RequestGameItemTransfer(AccountInfo sender, HoardID recipient, GameItem item, BigInteger amount)
         {
             IGameItemProvider gameItemProvider = GetGameItemProvider(item);
             if (gameItemProvider != null && sender != null && recipient != null)
             {
-                return await gameItemProvider.Transfer(sender, recipient.ID, item, amount);
+                return await gameItemProvider.Transfer(sender, recipient, item, amount);
             }
 
             return false;
@@ -201,7 +201,8 @@ namespace Hoard
             //assumig this is a hoard game we can use a default hoard provider that connects to Hoard game server backend
             HoardGameItemProvider provider = new HoardGameItemProvider(game);
             //for security reasons (or fallback in case server is down) we will pass a BC provider
-            provider.SecureProvider = new BCGameItemProvider(game, BCComm);
+            provider.SecureProvider = GameItemProviderFactory.CreateSecureProvider(game, BCComm);
+
             return RegisterGame(game, provider);
         }
 
@@ -340,11 +341,12 @@ namespace Hoard
         /// </summary>
         /// <param name="account">Account to query</param>
         /// <returns></returns>
-        public async Task<float> GetBalance(AccountInfo account)
+        public async Task<BigInteger> GetBalance(HoardID account)
         {
             try
             {
-                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetBalance(account.ID)));
+                // TODO: eth returns balance in wei, plasma in ether - it should be unified
+                return await BCComm.GetBalance(account);
             }
             catch(Exception ex)
             {

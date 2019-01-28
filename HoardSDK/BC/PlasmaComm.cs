@@ -119,12 +119,15 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<List<TokenData>> GetTokensData(HoardID account)
         {
-            var data = JObject.Parse(string.Format("{{ \"address\" : \"{0}\" }}", account.ToString()));
+            var data = new JObject();
+            data.Add("address", account.ToString().EnsureHexPrefix());
+
             var responseString = await SendRequestPost(watcherClient, "account.get_balance", data);
 
             if (IsResponseSuccess(responseString))
             {
-                return JsonConvert.DeserializeObject<List<TokenData>>(GetResponseData(responseString));
+                var responseData = GetResponseData(responseString);
+                return JsonConvert.DeserializeObject<List<TokenData>>(responseData);
             }
 
             //TODO
@@ -139,7 +142,10 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<List<TokenData>> GetTokensData(HoardID account, string currency)
         {
-            var data = JObject.Parse(string.Format("{{ \"address\" : \"{0}\", \"currency\" : \"{1}\" }}", account.ToString(), currency));
+            var data = new JObject();
+            data.Add("address", account.ToString().EnsureHexPrefix());
+            data.Add("currency", currency.EnsureHexPrefix());
+
             var responseString = await SendRequestPost(watcherClient, "account.get_balance", data);
 
             if (IsResponseSuccess(responseString))
@@ -158,7 +164,9 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<bool> SubmitTransaction(string signedTransaction)
         {
-            var data = JObject.Parse(string.Format("{{ \"transaction\" : \"{0}\" }}", signedTransaction));
+            var data = new JObject();
+            data.Add("transaction", signedTransaction.EnsureHexPrefix());
+
             var responseString = await SendRequestPost(childChainClient, "transaction.submit", data);
 
             if (IsResponseSuccess(responseString))
@@ -201,7 +209,7 @@ namespace Hoard.BC
         protected async Task<BigInteger> GetBalance(HoardID account, string currency)
         {
             var balances = await GetTokensData(account);
-            var utxoData = balances.FirstOrDefault(x => x.Currency == currency.RemoveHexPrefix());
+            var utxoData = balances.FirstOrDefault(x => x.Currency.RemoveHexPrefix() == currency.RemoveHexPrefix());
 
             if (utxoData != null)
                 return utxoData.Amount;
@@ -216,17 +224,20 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<List<UTXOData>> GetUtxos(HoardID account, string currency)
         {
-            var data = JObject.Parse(string.Format("{{ \"address\" : \"{0}\" }}", account.ToString()));
+            var data = new JObject();
+            data.Add("address", account.ToString().EnsureHexPrefix());
+
             var responseString = await SendRequestPost(watcherClient, "account.get_utxos", data);
 
             if (IsResponseSuccess(responseString))
             {
                 var result = new List<UTXOData>();
 
-                var jsonUtxos = JsonConvert.DeserializeObject<List<string>>(GetResponseData(responseString));
-                foreach (var jsonUtxo in jsonUtxos)
+                var responseData = GetResponseData(responseString);
+                var utxos = JsonConvert.DeserializeObject<List<UTXOData>>(responseData);
+
+                foreach (var utxo in utxos)
                 {
-                    var utxo = UTXODataFactory.Deserialize(jsonUtxo);
                     if (utxo.Currency == currency)
                     {
                         result.Add(utxo);
@@ -247,7 +258,9 @@ namespace Hoard.BC
         /// <returns></returns>
         protected async Task<TransactionData> GetTransaction(BigInteger txId)
         {
-            var data = JObject.Parse(string.Format("{{ \"id\" : \"{0}\" }}", txId.ToString("x")));
+            var data = new JObject();
+            data.Add("id", txId.ToString("x"));
+
             var responseString = await SendRequestPost(watcherClient, "transaction.get", data);
 
             if (IsResponseSuccess(responseString))
@@ -273,6 +286,17 @@ namespace Hoard.BC
                 return (GameItemAdapter)Activator.CreateInstance(typeof(ERC721GameItemAdapter), this, game, contract);
 
             throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Helper function to get contract of a prticular type
+        /// </summary>
+        /// <typeparam name="TContract">type of contract</typeparam>
+        /// <param name="contractAddress">address of the contract</param>
+        /// <returns></returns>
+        public TContract GetContract<TContract>(string contractAddress)
+        {
+            return bcComm.GetContract<TContract>(contractAddress);
         }
 
         /// <summary>
@@ -302,8 +326,7 @@ namespace Hoard.BC
         {
             var request = new RestRequest(method, Method.POST);
             request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-            request.AddJsonBody(data);
-
+            request.AddParameter("application/json", data.ToString(), ParameterType.RequestBody);
             var response = await client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response.Content;
@@ -313,21 +336,26 @@ namespace Hoard.BC
         {
             if (!string.IsNullOrEmpty(responseString))
             {
-                var result = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseString);
+                var result = JObject.Parse(responseString);
 
-                string success = "false";
-                result.TryGetValue("success", out success);
-                return (success == "true");
+                if (result.ContainsKey("success"))
+                {
+                    JToken success;
+                    result.TryGetValue("success", out success);
+                    return (success.Value<bool>() == true);
+                }
             }
             return false;
         }
 
         private string GetResponseData(string responseString)
         {
-            var result = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseString);
-            string data = "";
-            result.TryGetValue("data", out data);
-            return data;
+            var result = JObject.Parse(responseString);
+            if (result.ContainsKey("data"))
+            {
+                return result.GetValue("data").ToString();
+            }
+            return "";
         }
     }
 }

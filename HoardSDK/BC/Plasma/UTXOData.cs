@@ -12,6 +12,7 @@ namespace Hoard.BC.Plasma
     /// <summary>
     /// Description of Plasma Unspent Transaction Output 
     /// </summary>
+    [JsonConverter(typeof(UTXOConverter))]
     public class UTXOData
     {
         /// <summary>
@@ -60,10 +61,17 @@ namespace Hoard.BC.Plasma
         }
 
         /// <summary>
-        /// 
+        /// Returns transaction input data
         /// </summary>
         /// <returns></returns>
-        public virtual List<byte[]> GetTxBytes() { throw new NotSupportedException(); }
+        public virtual List<byte[]> GetTxBytes()
+        {
+            var data = new List<byte[]>();
+            data.Add(BlkNum.ToBytesForRLPEncoding());
+            data.Add(TxIndex.ToBytesForRLPEncoding());
+            data.Add(OIndex.ToBytesForRLPEncoding());
+            return data;
+        }
     }
 
     /// <summary>
@@ -105,7 +113,7 @@ namespace Hoard.BC.Plasma
                 if (sortedERC223Utxos[utxosCount - 1].Amount + sortedERC223Utxos[utxosCount - 2].Amount >= targetAmount)
                 {
                     UInt32 resultIdxL = 0, resultIdxR = 0;
-                    UInt32 idxL = 0, idxR = utxosCount;
+                    UInt32 idxL = 0, idxR = utxosCount - 1;
                     var diff = U256_MAX_VALUE;
 
                     while (idxR > idxL)
@@ -151,19 +159,6 @@ namespace Hoard.BC.Plasma
             // no sufficient funds
             return null;
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public override List<byte[]> GetTxBytes()
-        {
-            var data = new List<byte[]>();
-            data.Add(BlkNum.ToBytesForRLPEncoding());
-            data.Add(TxIndex.ToBytesForRLPEncoding());
-            data.Add(OIndex.ToBytesForRLPEncoding());
-            return data;
-        }
     }
 
     /// <summary>
@@ -176,43 +171,38 @@ namespace Hoard.BC.Plasma
         /// </summary>
         [JsonProperty(propertyName: "tokenid")]
         public List<BigInteger> TokenIds { get; protected set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public override List<byte[]> GetTxBytes()
-        {
-            throw new NotImplementedException();
-        }
     }
 
-    /// <summary>
-    /// Factory of UTXO data
-    /// </summary>
-    public class UTXODataFactory
+    internal class UTXOConverter : JsonConverter
     {
-        /// <summary>
-        /// Based on json content it creates typed UTXOData (ERC223, ERC721)
-        /// </summary>
-        /// <param name="jsonData">json UTXO data</param>
-        /// <returns>typed UTXOData</returns>
-        public static UTXOData Deserialize(string jsonData)
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            JObject obj = JObject.Parse(jsonData);
-            if(obj["amount"] != null)
-            {
-                return JsonConvert.DeserializeObject<ERC223UTXOData>(jsonData);
-            }
-            else if(obj["tokenid"] != null)
-            {
-                return JsonConvert.DeserializeObject<ERC721UTXOData>(jsonData);
-            }
+            JToken jObject = JToken.ReadFrom(reader);
+
+            UTXOData result = null;
+            if (jObject["amount"] != null)
+                result = new ERC223UTXOData();
+            else if (jObject["tokenid"] != null)
+                result = new ERC721UTXOData();
             else
             {
                 //TODO not supported utxo format
                 throw new NotImplementedException();
             }
+
+            serializer.Populate(jObject.CreateReader(), result);
+
+            return result;
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            throw new NotImplementedException();
         }
     }
 }
