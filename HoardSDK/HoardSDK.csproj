@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net46</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Hid.Net">
       <Version>1.4.1</Version>
     </PackageReference>
     <PackageReference Include="Hoard.NethereumCore">
-      <Version>3.1.55</Version>
+      <Version>3.1.57</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>12.0.1</Version>
@@ -23,7 +23,7 @@
       <Version>106.5.4</Version>
     </PackageReference>
     <PackageReference Include="websocketsharp.core" Version="1.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" Condition="'$(TargetFramework)' == 'net461'" />
+    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" Condition="'$(TargetFramework)' == 'net46'" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>

@@ -11,6 +11,29 @@ namespace Hoard.Utils
     public class KeyStoreUtils
     {
         /// <summary>
+        /// Description for creating an account
+        /// </summary>
+        public class AccountDesc
+        {
+            public string Address;
+            public string PrivKey;
+            public string Name;
+
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            /// <param name="name">Account name</param>
+            /// <param name="address">Account public address</param>
+            /// <param name="privKey">Account decrypted private key</param>
+            public AccountDesc(string name, string address, string privKey)
+            {
+                Name = name;
+                Address = address;
+                PrivKey = privKey;
+            }
+        }
+
+        /// <summary>
         /// Iterates through all accounts in specified folder
         /// </summary>
         /// <param name="user">User whose accounts to iterate</param>
@@ -51,8 +74,8 @@ namespace Hoard.Utils
         /// <param name="userInputProvider">Provider with user credentials</param>
         /// <param name="filename">filename of the file with account to load</param>
         /// <param name="accountsDir">folder where the key store files are stored</param>
-        /// <returns>pair of public/private keys making an account</returns>
-        public static Tuple<string, string> LoadAccount(User user, IUserInputProvider userInputProvider, string filename, string accountsDir)
+        /// <returns>description making an account</returns>
+        public static AccountDesc LoadAccount(User user, IUserInputProvider userInputProvider, string filename, string accountsDir)
         {
             string hashedName = Helper.Keccak256HexHashString(user.UserName);
             var accountsFiles = Directory.GetFiles(Path.Combine(accountsDir, hashedName), filename);
@@ -66,19 +89,23 @@ namespace Hoard.Utils
                 return null;
             string address = details["address"].Value<string>();
             string password = userInputProvider.RequestInput(user, eUserInputType.kPassword, address).Result;
+            string name = "";
+            if (details["name"] != null)
+                name = details["name"].Value<string>();
             var account = Account.LoadFromKeyStore(json, password);
 
-            return new Tuple<string, string>(account.Address, account.PrivateKey);
+            return new AccountDesc(name, account.Address, account.PrivateKey);
         }
 
         /// <summary>
         /// Create new account for user.
         /// </summary>
         /// <param name="user">User for which to create account</param>
+        /// <param name="name">Name of new account</param>
         /// <param name="password">Password for encrypting the account</param>
         /// <param name="accountsDir">folder where to store key store data</param>
         /// <returns></returns>
-        public static Tuple<string, string> CreateAccount(User user, string password, string accountsDir)
+        public static Tuple<string, string> CreateAccount(User user, string name, string password, string accountsDir)
         {
             string hashedName = Helper.Keccak256HexHashString(user.UserName);
             string path = Path.Combine(accountsDir, hashedName);
@@ -90,12 +117,12 @@ namespace Hoard.Utils
                 Directory.CreateDirectory(path);
             }
 
-            string accountFile = CreateAccountKeyStoreFile(ecKey, password, path);
+            string accountFile = CreateAccountKeyStoreFile(ecKey, password, name, path);
 
             return new Tuple<string, string>(ecKey.GetPublicAddress(), ecKey.GetPrivateKey());
         }
 
-        private static string CreateAccountKeyStoreFile(Nethereum.Signer.EthECKey ecKey, string password, string path)
+        private static string CreateAccountKeyStoreFile(Nethereum.Signer.EthECKey ecKey, string password, string name, string path)
         {
             //Get the public address (derivied from the public key)
             var address = ecKey.GetPublicAddress();
@@ -106,6 +133,8 @@ namespace Hoard.Utils
             var keystoreJsonObject = JObject.Parse(encryptedKey);
             if (keystoreJsonObject == null)
                 return null;
+            keystoreJsonObject.Add("name", name);
+            encryptedKey = keystoreJsonObject.ToString();
             string id = keystoreJsonObject["id"].Value<string>();
             var fileName = id + ".keystore";
             //save the File

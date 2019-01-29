@@ -11,10 +11,19 @@ namespace Hoard.HW
     {
         /// <summary>
         /// Main path for Trezor and Ledger wallets
+        /// deconstruction:
+        /// 44 - BIP 44 Purpose
+        /// 60 - Ethereum's coin type (0x3c)
+        /// 00 - Account 0
+        /// 00 - Chain 0
         /// </summary>
         public const string BIP44 = "m/44'/60'/0'/0";
         /// <summary>
         /// Legacy path for Ledger wallet (use BIP44 instead of this one)
+        /// deconstruction:
+        /// 44 - BIP 44 Purpose
+        /// 60 - Ethereum's coin type (0x3c)
+        /// 00 - Account 0
         /// </summary>
         public const string BIP44LedgerLegacy = "m/44'/60'/0'";
     }
