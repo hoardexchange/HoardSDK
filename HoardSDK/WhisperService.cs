@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
+using WebSocketSharp;
 
 namespace Hoard
 {
@@ -17,7 +18,7 @@ namespace Hoard
         /// <summary>
         /// Criteria
         /// </summary>
-        public class MessageCriteria
+        public class SubscriptionCriteria
         {
             /// ID of symmetric key for message decryption
             public string symKeyID;
@@ -32,7 +33,7 @@ namespace Hoard
             public float minPow;
 
             /// (optional) Array of possible topics (or partial topics)
-            public string[] topic;
+            public string[] topics;
 
             /// (optional) Indicates if this filter allows processing of direct peer-to-peer messages (which are not to be forwarded any further, because they might be expired). 
             /// This might be the case in some very rare cases, e.g. if you intend to communicate to MailServers, etc
@@ -41,13 +42,13 @@ namespace Hoard
             /// <summary>
             /// Constructor
             /// </summary>
-            public MessageCriteria(string symKeyID, string privateKeyID, string sig, float minPow, string[] topic, bool allowP2P)
+            public SubscriptionCriteria(string symKeyID, string privateKeyID, string sig, float minPow, string[] topics, bool allowP2P)
             {
                 this.symKeyID = symKeyID;
                 this.privateKeyID = privateKeyID;
                 this.sig = sig;
                 this.minPow = minPow;
-                this.topic = topic;
+                this.topics = topics;
                 this.allowP2P = allowP2P;
             }
         }
@@ -56,7 +57,7 @@ namespace Hoard
         /// Message
         /// Either symKeyID or pubKey must be present. Can not be both
         /// </summary>
-        public class Message
+        public class MessageDesc
         {
             /// ID of symmetric key for message decryption
             public string symKeyID;
@@ -91,7 +92,7 @@ namespace Hoard
             /// <summary>
             /// Constructor
             /// </summary>
-            public Message(string symKeyID, string pubKey, string sig, int ttl, string topic, byte[] data, string padding, int powTime, float powTarget, string targetPeer)
+            public MessageDesc(string symKeyID, string pubKey, string sig, int ttl, string topic, byte[] data, string padding, int powTime, float powTarget, string targetPeer)
             {
                 this.symKeyID = symKeyID;
                 this.pubKey = pubKey;
@@ -106,6 +107,40 @@ namespace Hoard
             }
         }
 
+        /// <summary>
+        /// ReceivedData
+        /// Either symKeyID or pubKey must be present. Can not be both
+        /// </summary>
+        public class ReceivedData
+        {
+            /// Public key who signed this message.
+            public string sig;
+
+            /// Time-to-live in seconds
+            public int ttl;
+
+            /// Unix timestamp of the message generation
+            public float timestamp;
+
+            /// 4 Bytes: Message topic
+            public string topic;
+
+            /// Decrypted payload
+            public string payload;
+
+            /// Optional padding (byte array of arbitrary length)
+            public string padding;
+
+            /// Proof of work value
+            public float pow;
+
+            /// Hash of the enveloped message
+            public string hash;
+
+            /// recipient public key
+            public string recipientPublicKey;
+        }
+
         private string Url = "";
 
         static private string JsonVersion = "2.0";
@@ -118,7 +153,7 @@ namespace Hoard
         {
             Url = url;
         }
-
+        
         private bool BuildAndSendRequest(string function, JArray additionalParams, out string outMessage)
         {
             try
@@ -429,13 +464,14 @@ namespace Hoard
         /// Returns the ID of the newly created subscription.
         /// Either symKeyID or privateKeyID must be present. Can not be both
         /// </summary>
-        /// <param name="filters">Message filters</param>
+        /// <param name="filters">message filters</param>
+        /// <param name="id">identifier of function call. In case of Whisper must contain the value "messages"</param>
         /// This might be the case in some very rare cases, e.g. if you intend to communicate to MailServers, etc</param>
         /// <returns>subscription id</returns>
-        public string Subscribe(MessageCriteria filters)
+        public string Subscribe(SubscriptionCriteria filters, string id = "messages")
         {
-            //string json = "{\"jsonrpc\":\"2.0\",\"method\":\"shh_subscribe\",\"params\":[\"messages\", {\"topics\": ['0x5a4ea131', '0x11223344'], symKeyID: 'b874f3bbaf031214a567485b703a025cec27d26b2c4457d6b139e56ad8734cea', sig: '0x048229fb947363cf13bb9f9532e124f08840cd6287ecae6b537cda2947ec2b23dbdc3a07bdf7cd2bfb288c25c4d0d0461d91c719da736a22b7bebbcf912298d1e6',pow: 12.3(?)}],\"id\":1}";
             JArray jarrayObj = new JArray();
+            jarrayObj.Add(id);
             var outObject = (JObject)JToken.FromObject(filters);
             jarrayObj.Add(outObject);
             string outMessage = "";
@@ -464,7 +500,7 @@ namespace Hoard
         /// </summary>
         /// <param name="filters">Message filters</param>
         /// <returns>filter identifier</returns>
-        public string CreateNewMessageFilter(MessageCriteria filters)
+        public string CreateNewMessageFilter(SubscriptionCriteria filters)
         {
             JArray jarrayObj = new JArray();
             var outObject = (JObject)JToken.FromObject(filters);
@@ -495,14 +531,14 @@ namespace Hoard
         /// </summary>
         /// <param name="filterIdentifier">ID of filter that was created with shh_newMessageFilter</param>
         /// <returns>Array of messages</returns>
-        public List<MessageCriteria> ReceiveMessage(string filterIdentifier)
+        public List<ReceivedData> ReceiveMessage(string filterIdentifier)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(filterIdentifier);
             string outMessage = "";
             if (BuildAndSendRequest("shh_getFilterMessages", jarrayObj, out outMessage))
             {
-                return JsonConvert.DeserializeObject< List<MessageCriteria>>(outMessage);
+                return JsonConvert.DeserializeObject< List<ReceivedData>>(outMessage);
             }
             return null;
         }
@@ -512,7 +548,7 @@ namespace Hoard
         /// </summary>
         /// <param name="msg">Message</param>
         /// <returns>message hash</returns>
-        public string SendMessage(Message msg)
+        public string SendMessage(MessageDesc msg)
         {
             JArray jarrayObj = new JArray();
             var outObject = (JObject)JToken.FromObject(msg);
