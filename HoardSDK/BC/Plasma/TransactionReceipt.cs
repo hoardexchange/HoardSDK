@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Nethereum.Hex.HexTypes;
+using Newtonsoft.Json;
 using System.Numerics;
 
 namespace Hoard.BC.Plasma
@@ -17,13 +18,13 @@ namespace Hoard.BC.Plasma
         /// <summary>
         /// Transaction index in the block
         /// </summary>
-        [JsonProperty(propertyName: "tx_index")]
+        [JsonProperty(propertyName: "txindex")]
         public BigInteger TxIndex { get; private set; }
 
         /// <summary>
         /// Transaction hash
         /// </summary>
-        [JsonProperty(propertyName: "tx_hash")]
-        public BigInteger TxHash { get; private set; }
+        [JsonProperty(propertyName: "txhash")]
+        public HexBigInteger TxHash { get; private set; }
     }
 }

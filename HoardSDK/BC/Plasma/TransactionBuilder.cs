@@ -1,4 +1,5 @@
 ﻿using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Signer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -62,8 +63,12 @@ namespace Hoard.BC.Plasma
 
             var signedTransaction = await tx.Sign(from);
 
+            
+
+            
             // FIXME: not sure if it won't change in Hoard version of Plasma
-            return tx.GetRLPEncoded(new List<string>(){ signedTransaction, Transaction.NULL_SIGNATURE });
+            return tx.GetRLPEncoded(new List<string>() { signedTransaction, Transaction.NULL_SIGNATURE }).ToHex();
+
         }
 
         /// <summary>
@@ -113,7 +118,7 @@ namespace Hoard.BC.Plasma
                 var signedTransaction = await tx.Sign(from);
 
                 // FIXME: not sure if it won't change in Hoard version of Plasma
-                return tx.GetRLPEncoded(new List<string>() { signedTransaction.EnsureHexPrefix(), Transaction.NULL_SIGNATURE });
+                return tx.GetRLPEncoded(new List<string>() { signedTransaction.EnsureHexPrefix(), Transaction.NULL_SIGNATURE }).ToHex();
             }
 
             return null;

@@ -2,6 +2,8 @@
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using Nethereum.Signer;
+using Nethereum.Util;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -55,17 +57,33 @@ namespace HoardTests.AccountServices
             var value = 10000.ToBytesForRLPEncoding();
             var data = "".HexToByteArray();
 
-            var txData = new byte[][] { nonce, gasPrice, startGas, to.ToHexByteArray(), value, data };
-            var tx = new RLPSigner(txData);
+            var txEncoded = new List<byte[]>();
+            txEncoded.Add(RLP.EncodeElement(nonce));
+            txEncoded.Add(RLP.EncodeElement(gasPrice));
+            txEncoded.Add(RLP.EncodeElement(startGas));
+            txEncoded.Add(RLP.EncodeElement(to.ToHexByteArray()));
+            txEncoded.Add(RLP.EncodeElement(value));
+            txEncoded.Add(RLP.EncodeElement(data));
 
-            var rlpEncoded = await signer.SignTransaction(tx.GetRLPEncodedRaw(), user.ActiveAccount);
+            var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
+
+            var rlpEncoded = await signer.SignTransaction(rlpEncodedTransaction, user.ActiveAccount);
             Assert.True(rlpEncoded != null);
             Assert.True(rlpEncoded.Length > 0);
 
-            tx = new RLPSigner(rlpEncoded.HexToByteArray(), txData.Length);
-            var account = new HoardID(EthECKey.RecoverFromSignature(tx.Signature, tx.RawHash).GetPublicAddress());
+            var decodedRlpEncoded = RLP.Decode(rlpEncoded.HexToByteArray());
+            var decodedRlpCollection = (RLPCollection)decodedRlpEncoded[0];
+
+            var signature = EthECDSASignatureFactory.FromComponents(
+                decodedRlpCollection[2].RLPData,
+                decodedRlpCollection[3].RLPData,
+                decodedRlpCollection[1].RLPData
+            );
+
+            var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
+
+            var account = new HoardID(EthECKey.RecoverFromSignature(signature, rawHash).GetPublicAddress());
             Assert.Equal(user.Accounts[0].ID, account);
-            Assert.Equal(new HoardID(tx.Data[3].ToHex(true)), to);
         }
     }
 }

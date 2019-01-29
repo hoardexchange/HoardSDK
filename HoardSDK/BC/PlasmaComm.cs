@@ -2,6 +2,7 @@
 using Hoard.BC.Plasma;
 using Hoard.Interfaces;
 using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
@@ -171,7 +172,8 @@ namespace Hoard.BC
 
             if (IsResponseSuccess(responseString))
             {
-                var receipt = JsonConvert.DeserializeObject<TransactionReceipt>(GetResponseData(responseString));
+                var responseData = GetResponseData(responseString);
+                var receipt = JsonConvert.DeserializeObject<TransactionReceipt>(responseData);
 
                 TransactionData transaction = null;
                 transaction = await GetTransaction(receipt.TxHash);
@@ -256,10 +258,10 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="txId">transaction hash to query</param>
         /// <returns></returns>
-        protected async Task<TransactionData> GetTransaction(BigInteger txId)
+        protected async Task<TransactionData> GetTransaction(HexBigInteger txId)
         {
             var data = new JObject();
-            data.Add("id", txId.ToString("x"));
+            data.Add("id", txId.HexValue.EnsureHexPrefix());
 
             var responseString = await SendRequestPost(watcherClient, "transaction.get", data);
 

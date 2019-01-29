@@ -1,4 +1,5 @@
-﻿using Nethereum.Hex.HexConvertors.Extensions;
+﻿using Hoard.Utils;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using Nethereum.Signer;
 using System;
@@ -71,9 +72,20 @@ namespace Hoard.BC.Plasma
         /// <returns>signed transaction as string</returns>
         public async Task<string> Sign(AccountInfo fromAccount)
         {
-            var txData = PrepareTransactionData();
-            var encodedData = RLPEncoder.EncodeData(txData.ToArray());
-            return await fromAccount.SignTransaction(encodedData);
+            var encodedData = GetRLPEncoded();
+
+            var signedTransaction = await fromAccount.SignTransaction(encodedData);
+
+            var decodedList = RLP.Decode(signedTransaction.HexToByteArray());
+            var decodedRlpCollection = (RLPCollection)decodedList[0];
+
+            return EthECDSASignature.CreateStringSignature(
+                EthECDSASignatureFactory.FromComponents(
+                    decodedRlpCollection[2].RLPData, 
+                    decodedRlpCollection[3].RLPData, 
+                    decodedRlpCollection[1].RLPData
+                    )
+                );
         }
 
         /// <summary>
@@ -81,37 +93,33 @@ namespace Hoard.BC.Plasma
         /// </summary>
         /// <param name="signatures">list of signatures</param>
         /// <returns>RLP encoded signed transaction</returns>
-        public string GetRLPEncoded(List<string> signatures)
+        public byte[] GetRLPEncoded(List<string> signatures = null)
         {
-            var txData = PrepareTransactionData();
-            signatures.ForEach(signature => txData.Add(signature.HexToByteArray()));
-            return RLPEncoder.EncodeData(txData.ToArray()).ToHex().ToLower();
-        }
+            var rlpcollection = new List<byte[]>();
 
-        /// <summary>
-        /// Builds transaction object from provided inputs and outputs
-        /// </summary>
-        /// <returns>transaction object as bytes</returns>
-        protected List<byte[]> PrepareTransactionData()
-        {
-            var txData = new List<byte[]>();
-            txData.Clear();
+            if (signatures != null)
+            {
+                var rlpSignatures = new List<byte[]>();
+                signatures.ForEach(signature => rlpSignatures.Add(RLP.EncodeElement(signature.HexToByteArray())));
 
-            //TESUJI_PLASMA
+                rlpcollection.Add(RLP.EncodeList(rlpSignatures.ToArray()));
+            }
+
+            var rlpInputs = new List<byte[]>();
             foreach (var utxo in inputs)
             {
-                txData.AddRange(utxo.GetTxBytes());
+                rlpInputs.Add(RLP.EncodeList(utxo.GetRLPEncoded().ToArray()));
             }
+            rlpcollection.Add(RLP.EncodeList(rlpInputs.ToArray()));
 
-            txData.Add(inputs[0].Currency.HexToByteArray());
-            
+            var rlpOutputs = new List<byte[]>();
             foreach (var output in outputs)
             {
-                txData.AddRange(output.GetTxBytes());
+                rlpOutputs.Add(RLP.EncodeList(output.GetRLPEncoded().ToArray()));
             }
-            //TESUJI_PLASMA
+            rlpcollection.Add(RLP.EncodeList(rlpOutputs.ToArray()));
 
-            return txData;
+            return RLP.EncodeList(rlpcollection.ToArray());
         }
     }
 }

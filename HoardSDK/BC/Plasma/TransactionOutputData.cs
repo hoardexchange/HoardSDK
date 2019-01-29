@@ -36,7 +36,7 @@ namespace Hoard.BC.Plasma
         /// Returns data required by transaction
         /// </summary>
         /// <returns></returns>
-        public abstract List<byte[]> GetTxBytes();
+        public abstract List<byte[]> GetRLPEncoded();
     }
 
     /// <summary>
@@ -77,12 +77,12 @@ namespace Hoard.BC.Plasma
         }
 
         /// <inheritdoc/>
-        public override List<byte[]> GetTxBytes()
+        public override List<byte[]> GetRLPEncoded()
         {
             var data = new List<byte[]>();
-            data.Add(Owner.HexToByteArray());
-            data.Add(Currency.HexToByteArray());
-            data.Add(Amount.ToBytesForRLPEncoding());
+            data.Add(RLP.EncodeElement(Owner.HexToByteArray()));
+            data.Add(RLP.EncodeElement(Currency.HexToByteArray()));
+            data.Add(RLP.EncodeElement(Amount.ToBytesForRLPEncoding()));
             return data;
         }
     }
@@ -125,7 +125,7 @@ namespace Hoard.BC.Plasma
         }
 
         /// <inheritdoc/>
-        public override List<byte[]> GetTxBytes()
+        public override List<byte[]> GetRLPEncoded()
         {
             throw new NotImplementedException();
         }

@@ -64,12 +64,12 @@ namespace Hoard.BC.Plasma
         /// Returns transaction input data
         /// </summary>
         /// <returns></returns>
-        public virtual List<byte[]> GetTxBytes()
+        public virtual List<byte[]> GetRLPEncoded()
         {
             var data = new List<byte[]>();
-            data.Add(BlkNum.ToBytesForRLPEncoding());
-            data.Add(TxIndex.ToBytesForRLPEncoding());
-            data.Add(OIndex.ToBytesForRLPEncoding());
+            data.Add(RLP.EncodeElement(BlkNum.ToBytesForRLPEncoding()));
+            data.Add(RLP.EncodeElement(TxIndex.ToBytesForRLPEncoding()));
+            data.Add(RLP.EncodeElement(OIndex.ToBytesForRLPEncoding()));
             return data;
         }
     }
