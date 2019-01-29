@@ -13,9 +13,12 @@ using Hoard.Utils;
 
 namespace Hoard
 {
+    /// <summary>
+    /// HoardAccountService
+    /// </summary>
     public class HoardAccountService : IAccountService
     {
-        public enum MessageId
+        private enum MessageId
         {
             kUnknown = 0,
             kInvalidMessage,
@@ -27,7 +30,7 @@ namespace Hoard
             kSetActiveAccount,
         }
 
-        public enum Helper
+        private enum Helper
         {
             kUserNameLength = 64,
             kTokenLength = 256,
@@ -36,7 +39,7 @@ namespace Hoard
             kHash = 32
         }
 
-        public enum ErrorCodes
+        private enum ErrorCodes
         {
             errOk = 0x0,
             errInvalidPassword = 0x1,
@@ -46,7 +49,7 @@ namespace Hoard
             errUnknown = 0xff,
         };
 
-        protected class SocketData
+        private class SocketData
         {
             public byte[] ReceivedSignature = new byte[(int)Helper.kSignature];
             public ManualResetEvent ResponseEvent = new ManualResetEvent(false);
@@ -146,7 +149,7 @@ namespace Hoard
             SignerUrl = signerUrl;
         }
 
-        protected bool ProcessMessage(byte[] msg, SocketData sd)
+        private bool ProcessMessage(byte[] msg, SocketData sd)
         {
             MemoryStream ms = new MemoryStream(msg);
             BinaryReader reader = new BinaryReader(ms);
@@ -182,7 +185,7 @@ namespace Hoard
         }
 
         //
-        protected bool Msg_Authenticate(BinaryReader reader, SocketData sd)
+        private bool Msg_Authenticate(BinaryReader reader, SocketData sd)
         {
             uint userAuthenticated = reader.ReadUInt32();
             if (userAuthenticated != 0)
@@ -201,7 +204,7 @@ namespace Hoard
         }
 
         //
-        protected bool Msg_EnumerateAccounts(BinaryReader reader, SocketData sd)
+        private bool Msg_EnumerateAccounts(BinaryReader reader, SocketData sd)
         {
             uint numAccounts = reader.ReadUInt32();
             if (numAccounts > 0)
@@ -229,21 +232,21 @@ namespace Hoard
 	    }
 
         //
-        protected bool Msg_SignMessage(BinaryReader reader, SocketData sd)
+        private bool Msg_SignMessage(BinaryReader reader, SocketData sd)
         {
             reader.Read(sd.ReceivedSignature, 0, (int)Helper.kSignature);
             return true;
         }
 
         //
-        protected bool Msg_SignTransaction(BinaryReader reader, SocketData sd)
+        private bool Msg_SignTransaction(BinaryReader reader, SocketData sd)
         {
             reader.Read(sd.ReceivedSignature, 0, (int)Helper.kSignature);
             return true;
         }
 
         //
-        protected bool Msg_SetActiveAccount(BinaryReader reader, SocketData sd)
+        private bool Msg_SetActiveAccount(BinaryReader reader, SocketData sd)
         {
             byte[] id = new byte[(int)Helper.kAddressLength];
             reader.Read(id, 0, (int)Helper.kAddressLength);
