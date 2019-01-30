@@ -6,15 +6,32 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using WebSocketSharp;
 
 namespace Hoard
 {
+    /// Geth arguments 
+    /// --wsorigins="*" --ws --wsport "8546" --shh --rpc --rpcport "8545" --rpcapi personal,db,eth,net,web3,shh
+    
     /// <summary>
     /// Whisper interface
     /// </summary>
     public class WhisperService
     {
+        private static byte[] HexStringToByteArray(string s)
+        {
+            byte[] ab = new byte[s.Length >> 1];
+            for (int i = 0; i < s.Length; i++)
+            {
+                int b = s[i];
+                b = (b - '0') + ((('9' - b) >> 31) & -7);
+                ab[i >> 1] |= (byte)(b << 4 * ((i & 1) ^ 1));
+            }
+            return ab;
+        }
+
         /// <summary>
         /// Criteria
         /// </summary>
@@ -74,7 +91,7 @@ namespace Hoard
             /// 4 Bytes (mandatory when key is symmetric): Message topic
             public string topic;
 
-            /// Message data to be encrypted
+            /// Message data to be encrypted (hex string)
             public string payload;
 
             /// (optional): Optional padding (byte array of arbitrary length)
@@ -125,7 +142,7 @@ namespace Hoard
             /// 4 Bytes: Message topic
             public string topic;
 
-            /// Decrypted payload
+            /// Decrypted payload (hex string)
             public string payload;
 
             /// Optional padding (byte array of arbitrary length)
@@ -137,69 +154,138 @@ namespace Hoard
             /// Hash of the enveloped message
             public string hash;
 
-            /// recipient public key
+            /// Recipient public key
             public string recipientPublicKey;
+
+            /// Returns decoded message
+            public byte[] GetDecodedMessage()
+            {
+                return HexStringToByteArray(payload.Substring(2));
+            }
         }
 
-        private string Url = "";
+        private WebSocket WhisperClient = null;
+        private ManualResetEvent ResponseEvent = null;
+        private string Answer;
+        private string Error;
+        private bool IsConnected = false;
 
         static private string JsonVersion = "2.0";
         static private int JsonId = 1;
+
+        static private int MAX_WAIT_TIME_IN_MS = 30000;
 
         /// <summary>
         /// Constructor
         /// </summary>
         public WhisperService(string url)
         {
-            Url = url;
+            WhisperClient = new WebSocket(url);
+            ResponseEvent = new ManualResetEvent(false);
         }
-        
-        private bool BuildAndSendRequest(string function, JArray additionalParams, out string outMessage)
+
+        /// <summary>
+        /// Establishes connection
+        /// </summary>
+        public async Task<bool> Connect()
         {
-            try
+            return await Task.Run(() =>
             {
-                HttpWebRequest client = (HttpWebRequest)WebRequest.Create(Url);
-                client.ContentType = "application/json";
-                client.Method = "POST";
-                using (var streamWriter = new StreamWriter(client.GetRequestStream()))
+                WhisperClient.OnMessage += (sender, e) =>
+            {
+                Answer = "";
+                Error = "";
+                if (e.IsBinary)
                 {
-                    JObject jobj = new JObject();
-                    jobj.Add("jsonrpc", JsonVersion);
-                    jobj.Add("method", function);
-                    if (additionalParams != null)
-                    {
-                        jobj.Add("params", additionalParams);
-                    }
-                    jobj.Add("id", JsonId);
-                    streamWriter.Write(jobj.ToString());
+                    Trace.TraceInformation("Message received: " + e.RawData);
                 }
-
-                var httpResponse = (HttpWebResponse)client.GetResponse();
-                Debug.Assert(httpResponse.StatusCode == HttpStatusCode.OK);
-
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                else if (e.IsText)
                 {
+                    Trace.TraceInformation("Message received: " + e.Data);
                     JToken message = null;
-                    var result = streamReader.ReadToEnd();
-                    JObject json = JObject.Parse(result);
+                    JObject json = JObject.Parse(e.Data);
                     json.TryGetValue("error", out message);
                     if (message != null)
                     {
-                        outMessage = message.ToString();
-                        return false;
+                        Error = message.ToString();
                     }
                     else
                     {
                         json.TryGetValue("result", out message);
                         if (message != null)
                         {
-                            outMessage = message.ToString();
-                            return true;
+                            Answer = message.ToString();
                         }
                     }
+                    ResponseEvent.Set();
                 }
-                outMessage = "Unknown error";
-                return false;
+            };
+                WhisperClient.OnOpen += (sender, e) =>
+                {
+                    Trace.TraceInformation("Connection established");
+                    IsConnected = true;
+                    ResponseEvent.Set();
+                };
+                WhisperClient.OnClose += (sender, e) =>
+                {
+                    Trace.TraceInformation("Connection closed");
+                    IsConnected = false;
+                    ResponseEvent.Set();
+                };
+                WhisperClient.OnError += (sender, e) =>
+                {
+                    Trace.TraceError("Connection error!");
+                };
+                WhisperClient.Connect();
+                return true;
+            });
+        }
+
+        /// <summary>
+        /// Closes connection
+        /// </summary>
+        public async Task<bool> Close()
+        {
+            return await Task.Run(() =>
+            {
+                WhisperClient.Close();
+                return true;
+            });
+        }
+
+        private bool BuildAndSendRequest(string function, JArray additionalParams, out string outMessage)
+        {
+            try
+            {
+                ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
+                ResponseEvent.Reset();
+
+                if (IsConnected == false)
+                {
+                    outMessage = "Connection error!";
+                    return false;
+                }
+                
+                JObject jobj = new JObject();
+                jobj.Add("jsonrpc", JsonVersion);
+                jobj.Add("method", function);
+                if (additionalParams != null)
+                {
+                    jobj.Add("params", additionalParams);
+                }
+                jobj.Add("id", JsonId);
+                WhisperClient.Send(Encoding.ASCII.GetBytes(jobj.ToString()));
+                ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
+                if (Error != "")
+                {
+                    outMessage = Error;
+                    return false;
+                }
+                else
+                {
+                    outMessage = Answer;
+                    return true;
+                }
             }
             catch (Exception e)
             {
@@ -212,24 +298,30 @@ namespace Hoard
         /// Check connection
         /// </summary>
         /// <returns></returns>
-        public bool CheckConnection()
+        public async Task<bool> CheckConnection()
         {
-            string outMessage = "";
-            return BuildAndSendRequest("shh_info", null, out outMessage);
+            return await Task.Run(() =>
+            {
+                string outMessage = "";
+                return BuildAndSendRequest("shh_info", null, out outMessage);
+            });
         }
 
         /// <summary>
         /// Returns the current version number
         /// </summary>
         /// <returns>version number</returns>
-        public string CheckVersion()
+        public async Task<string> CheckVersion()
         {
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_version", null, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_version", null, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -238,12 +330,15 @@ namespace Hoard
         /// </summary>
         /// <param name="maxMessageSize">Message size in bytes</param>
         /// <returns></returns>
-        public bool SetMaxMessageSize(int maxMessageSize)
+        public async Task<bool> SetMaxMessageSize(int maxMessageSize)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(maxMessageSize);
-            string outMessage = "";
-            return BuildAndSendRequest("shh_setMaxMessageSize", null, out outMessage);
+            return await Task.Run(() =>
+            {
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(maxMessageSize);
+                string outMessage = "";
+                return BuildAndSendRequest("shh_setMaxMessageSize", null, out outMessage);
+            });
         }
 
         /// <summary>
@@ -251,12 +346,15 @@ namespace Hoard
         /// </summary>
         /// <param name="minPov">The new PoW requirement</param>
         /// <returns></returns>
-        public bool SetMinPov(float minPov)
+        public async Task<bool> SetMinPov(float minPov)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(minPov);
-            string outMessage = "";
-            return BuildAndSendRequest("shh_setMinPoW", null, out outMessage);
+            return await Task.Run(() =>
+            {
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(minPov);
+                string outMessage = "";
+                return BuildAndSendRequest("shh_setMinPoW", null, out outMessage);
+            });
         }
 
         /// <summary>
@@ -264,26 +362,32 @@ namespace Hoard
         /// </summary>
         /// <param name="enode">Enode of the trusted peer</param>
         /// <returns></returns>
-        public bool MarkTrustedPeer(string enode)
+        public async Task<bool> MarkTrustedPeer(string enode)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(enode);
-            string outMessage = "";
-            return BuildAndSendRequest("shh_markTrustedPeer", null, out outMessage);
+            return await Task.Run(() =>
+            {
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(enode);
+                string outMessage = "";
+                return BuildAndSendRequest("shh_markTrustedPeer", null, out outMessage);
+            });
         }
 
         /// <summary>
         /// Generates a new public and private key pair for message decryption and encryption
         /// </summary>
         /// <returns></returns>
-        public string GenerateKeyPair()
+        public async Task<string> GenerateKeyPair()
         {
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_newKeyPair", null, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_newKeyPair", null, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -291,12 +395,15 @@ namespace Hoard
         /// </summary>
         /// <param name="privKey">private key as HEX bytes</param>
         /// <returns></returns>
-        public bool AddPrivateKey(string privKey)
+        public async Task<bool> AddPrivateKey(string privKey)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(privKey);
-            string outMessage = "";
-            return BuildAndSendRequest("shh_addPrivateKey", null, out outMessage);
+            return await Task.Run(() =>
+            {
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(privKey);
+                string outMessage = "";
+                return BuildAndSendRequest("shh_addPrivateKey", null, out outMessage);
+            });
         }
 
         /// <summary>
@@ -304,12 +411,15 @@ namespace Hoard
         /// </summary>
         /// <param name="keyPairId">ID of key pair</param>
         /// <returns></returns>
-        public bool DeleteKeyPair(string keyPairId)
+        public async Task<bool> DeleteKeyPair(string keyPairId)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(keyPairId);
-            string outMessage = "";
-            return BuildAndSendRequest("shh_deleteKeyPair", jarrayObj, out outMessage);
+            return await Task.Run(() =>
+            {
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(keyPairId);
+                string outMessage = "";
+                return BuildAndSendRequest("shh_deleteKeyPair", jarrayObj, out outMessage);
+            });
         }
 
         /// <summary>
@@ -317,16 +427,19 @@ namespace Hoard
         /// </summary>
         /// <param name="keyPairId">ID of key pair</param>
         /// <returns></returns>
-        public bool HasKeyPair(string keyPairId)
+        public async Task<bool> HasKeyPair(string keyPairId)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(keyPairId);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_hasKeyPair", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return (outMessage.ToLower() == "true") ? true : false;
-            }
-            return false;
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(keyPairId);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_hasKeyPair", jarrayObj, out outMessage))
+                {
+                    return (outMessage.ToLower() == "true") ? true : false;
+                }
+                return false;
+            });
         }
 
         /// <summary>
@@ -334,16 +447,19 @@ namespace Hoard
         /// </summary>
         /// <param name="keyPairId">ID of key pair</param>
         /// <returns>public key</returns>
-        public string GetPublicKey(string keyPairId)
+        public async Task<string> GetPublicKey(string keyPairId)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(keyPairId);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_getPublicKey", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(keyPairId);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_getPublicKey", jarrayObj, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -351,16 +467,19 @@ namespace Hoard
         /// </summary>
         /// <param name="keyPairId">ID of key pair</param>
         /// <returns>private key</returns>
-        public string GetPrivateKey(string keyPairId)
+        public async Task<string> GetPrivateKey(string keyPairId)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(keyPairId);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_getPrivateKey", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(keyPairId);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_getPrivateKey", jarrayObj, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -368,14 +487,17 @@ namespace Hoard
         /// Can be used encrypting and decrypting messages where the key is known to both parties
         /// </summary>
         /// <returns>Key ID</returns>
-        public string GenerateSymetricKey()
+        public async Task<string> GenerateSymetricKey()
         {
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_newSymKey", null, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_newSymKey", null, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -383,16 +505,19 @@ namespace Hoard
         /// </summary>
         /// <param name="rawSymKey">The raw key for symmetric encryption as HEX bytes</param>
         /// <returns>Key ID</returns>
-        public string AddSymetricKey(string rawSymKey)
+        public async Task<string> AddSymetricKey(string rawSymKey)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(rawSymKey);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_addSymKey", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(rawSymKey);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_addSymKey", jarrayObj, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -400,16 +525,19 @@ namespace Hoard
         /// </summary>
         /// <param name="password">Password</param>
         /// <returns>Key ID</returns>
-        public string GenerateSymetricKeyFromPassword(string password)
+        public async Task<string> GenerateSymetricKeyFromPassword(string password)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(password);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_generateSymKeyFromPassword", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(password);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_generateSymKeyFromPassword", jarrayObj, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -417,16 +545,19 @@ namespace Hoard
         /// </summary>
         /// <param name="keyId">key ID</param>
         /// <returns></returns>
-        public bool HasSymetricKey(string keyId)
+        public async Task<bool> HasSymetricKey(string keyId)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(keyId);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_hasSymKey", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return (outMessage.ToLower() == "true") ? true : false;
-            }
-            return false;
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(keyId);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_hasSymKey", jarrayObj, out outMessage))
+                {
+                    return (outMessage.ToLower() == "true") ? true : false;
+                }
+                return false;
+            });
         }
 
         /// <summary>
@@ -434,16 +565,19 @@ namespace Hoard
         /// </summary>
         /// <param name="keyId">key ID</param>
         /// <returns>symetric key</returns>
-        public string GetSymetricKey(string keyId)
+        public async Task<string> GetSymetricKey(string keyId)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(keyId);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_getSymKey", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(keyId);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_getSymKey", jarrayObj, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -451,12 +585,15 @@ namespace Hoard
         /// </summary>
         /// <param name="keyId">key Id</param>
         /// <returns></returns>
-        public bool DeleteSymetricKey(string keyId)
+        public async Task<bool> DeleteSymetricKey(string keyId)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(keyId);
-            string outMessage = "";
-            return BuildAndSendRequest("shh_deleteSymKey", jarrayObj, out outMessage);
+            return await Task.Run(() =>
+            {
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(keyId);
+                string outMessage = "";
+                return BuildAndSendRequest("shh_deleteSymKey", jarrayObj, out outMessage);
+            });
         }
 
         /// <summary>
@@ -468,18 +605,21 @@ namespace Hoard
         /// <param name="id">identifier of function call. In case of Whisper must contain the value "messages"</param>
         /// This might be the case in some very rare cases, e.g. if you intend to communicate to MailServers, etc</param>
         /// <returns>subscription id</returns>
-        public string Subscribe(SubscriptionCriteria filters, string id = "messages")
+        public async Task<string> Subscribe(SubscriptionCriteria filters, string id = "messages")
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(id);
-            var outObject = (JObject)JToken.FromObject(filters);
-            jarrayObj.Add(outObject);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_subscribe", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(id);
+                var outObject = (JObject)JToken.FromObject(filters);
+                jarrayObj.Add(outObject);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_subscribe", jarrayObj, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -487,12 +627,15 @@ namespace Hoard
         /// </summary>
         /// <param name="subscriptionId">subscription ID</param>
         /// <returns></returns>
-        public bool Unsubscribe(string subscriptionId)
+        public async Task<bool> Unsubscribe(string subscriptionId)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(subscriptionId);
-            string outMessage = "";
-            return BuildAndSendRequest("shh_unsubscribe", jarrayObj, out outMessage);
+            return await Task.Run(() =>
+            {
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(subscriptionId);
+                string outMessage = "";
+                return BuildAndSendRequest("shh_unsubscribe", jarrayObj, out outMessage);
+            });
         }
 
         /// <summary>
@@ -500,17 +643,20 @@ namespace Hoard
         /// </summary>
         /// <param name="filters">Message filters</param>
         /// <returns>filter identifier</returns>
-        public string CreateNewMessageFilter(SubscriptionCriteria filters)
+        public async Task<string> CreateNewMessageFilter(SubscriptionCriteria filters)
         {
-            JArray jarrayObj = new JArray();
-            var outObject = (JObject)JToken.FromObject(filters);
-            jarrayObj.Add(outObject);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_newMessageFilter", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                JArray jarrayObj = new JArray();
+                var outObject = (JObject)JToken.FromObject(filters);
+                jarrayObj.Add(outObject);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_newMessageFilter", jarrayObj, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }
 
         /// <summary>
@@ -518,12 +664,15 @@ namespace Hoard
         /// </summary>
         /// <param name="filterIdentifier">filter identifier as returned when the filter was created</param>
         /// <returns></returns>
-        public bool DeleteMessageFilter(string filterIdentifier)
+        public async Task<bool> DeleteMessageFilter(string filterIdentifier)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(filterIdentifier);
-            string outMessage = "";
-            return BuildAndSendRequest("shh_deleteMessageFilter", jarrayObj, out outMessage);
+            return await Task.Run(() =>
+            {
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(filterIdentifier);
+                string outMessage = "";
+                return BuildAndSendRequest("shh_deleteMessageFilter", jarrayObj, out outMessage);
+            });
         }
 
         /// <summary>
@@ -531,16 +680,19 @@ namespace Hoard
         /// </summary>
         /// <param name="filterIdentifier">ID of filter that was created with shh_newMessageFilter</param>
         /// <returns>Array of messages</returns>
-        public List<ReceivedData> ReceiveMessage(string filterIdentifier)
+        public async Task<List<ReceivedData>> ReceiveMessage(string filterIdentifier)
         {
-            JArray jarrayObj = new JArray();
-            jarrayObj.Add(filterIdentifier);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_getFilterMessages", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return JsonConvert.DeserializeObject< List<ReceivedData>>(outMessage);
-            }
-            return null;
+                JArray jarrayObj = new JArray();
+                jarrayObj.Add(filterIdentifier);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_getFilterMessages", jarrayObj, out outMessage))
+                {
+                    return JsonConvert.DeserializeObject<List<ReceivedData>>(outMessage);
+                }
+                return null;
+            });
         }
 
         /// <summary>
@@ -548,17 +700,20 @@ namespace Hoard
         /// </summary>
         /// <param name="msg">Message</param>
         /// <returns>message hash</returns>
-        public string SendMessage(MessageDesc msg)
+        public async Task<string> SendMessage(MessageDesc msg)
         {
-            JArray jarrayObj = new JArray();
-            var outObject = (JObject)JToken.FromObject(msg);
-            jarrayObj.Add(outObject);
-            string outMessage = "";
-            if (BuildAndSendRequest("shh_post", jarrayObj, out outMessage))
+            return await Task.Run(() =>
             {
-                return outMessage;
-            }
-            return "";
+                JArray jarrayObj = new JArray();
+                var outObject = (JObject)JToken.FromObject(msg);
+                jarrayObj.Add(outObject);
+                string outMessage = "";
+                if (BuildAndSendRequest("shh_post", jarrayObj, out outMessage))
+                {
+                    return outMessage;
+                }
+                return "";
+            });
         }        
     }
 }
