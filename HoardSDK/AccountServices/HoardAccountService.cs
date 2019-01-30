@@ -343,9 +343,16 @@ namespace Hoard
                     socketData.Socket = new WebSocket(SignerUrl, "internal-hoard-protocol");
                     socketData.Socket.OnMessage += (sender, e) =>
                     {
-                        Trace.TraceInformation("Message received: " + e.Data);
-                        if (ProcessMessage(e.RawData, socketData))
-                            socketData.ResponseEvent.Set();
+                        if (e.IsBinary)
+                        {
+                            Trace.TraceInformation("Message received: " + e.RawData);
+                            if (ProcessMessage(e.RawData, socketData))
+                                socketData.ResponseEvent.Set();
+                        }
+                        else if (e.IsText)
+                        {
+                            Trace.TraceInformation("Message received: " + e.Data);
+                        }
                     };
                     socketData.Socket.OnOpen += (sender, e) =>
                     {

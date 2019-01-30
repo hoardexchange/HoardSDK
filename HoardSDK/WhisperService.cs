@@ -11,10 +11,7 @@ using System.Threading.Tasks;
 using WebSocketSharp;
 
 namespace Hoard
-{
-    /// Geth arguments 
-    /// --wsorigins="*" --ws --wsport "8546" --shh --rpc --rpcport "8545" --rpcapi personal,db,eth,net,web3,shh
-    
+{    
     /// <summary>
     /// Whisper interface
     /// </summary>
@@ -166,6 +163,7 @@ namespace Hoard
 
         private WebSocket WhisperClient = null;
         private ManualResetEvent ResponseEvent = null;
+        private ManualResetEvent ConnectionEvent = null;
         private string Answer;
         private string Error;
         private bool IsConnected = false;
@@ -182,6 +180,7 @@ namespace Hoard
         {
             WhisperClient = new WebSocket(url);
             ResponseEvent = new ManualResetEvent(false);
+            ConnectionEvent = new ManualResetEvent(false);
         }
 
         /// <summary>
@@ -191,65 +190,71 @@ namespace Hoard
         {
             return await Task.Run(() =>
             {
+                ConnectionEvent.Reset();
                 WhisperClient.OnMessage += (sender, e) =>
-            {
-                Answer = "";
-                Error = "";
-                if (e.IsBinary)
                 {
-                    Trace.TraceInformation("Message received: " + e.RawData);
-                }
-                else if (e.IsText)
-                {
-                    Trace.TraceInformation("Message received: " + e.Data);
-                    JToken message = null;
-                    JObject json = JObject.Parse(e.Data);
-                    json.TryGetValue("error", out message);
-                    if (message != null)
+                    Answer = "";
+                    Error = "";
+                    if (e.IsBinary)
                     {
-                        Error = message.ToString();
+                        Trace.TraceInformation("Message received: " + e.RawData);
                     }
-                    else
+                    else if (e.IsText)
                     {
-                        json.TryGetValue("result", out message);
+                        Trace.TraceInformation("Message received: " + e.Data);
+                        JToken message = null;
+                        JObject json = JObject.Parse(e.Data);
+                        json.TryGetValue("error", out message);
                         if (message != null)
                         {
-                            Answer = message.ToString();
+                            Error = message.ToString();
                         }
+                        else
+                        {
+                            json.TryGetValue("result", out message);
+                            if (message != null)
+                            {
+                                Answer = message.ToString();
+                            }
+                        }
+                        ResponseEvent.Set();
                     }
-                    ResponseEvent.Set();
-                }
-            };
+                };
                 WhisperClient.OnOpen += (sender, e) =>
                 {
                     Trace.TraceInformation("Connection established");
                     IsConnected = true;
                     ResponseEvent.Set();
+                    ConnectionEvent.Set();
                 };
                 WhisperClient.OnClose += (sender, e) =>
                 {
                     Trace.TraceInformation("Connection closed");
                     IsConnected = false;
                     ResponseEvent.Set();
+                    ConnectionEvent.Set();
                 };
                 WhisperClient.OnError += (sender, e) =>
                 {
                     Trace.TraceError("Connection error!");
                 };
                 WhisperClient.Connect();
-                return true;
+                if (ConnectionEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+                {
+                    return IsConnected;
+                }
+                return false;
             });
         }
 
         /// <summary>
         /// Closes connection
         /// </summary>
-        public async Task<bool> Close()
+        public async Task Close()
         {
-            return await Task.Run(() =>
+            await Task.Run(() =>
             {
                 WhisperClient.Close();
-                return true;
             });
         }
 
