@@ -10,6 +10,10 @@ using Xunit;
 
 namespace HoardTests.AccountTools
 {
+    /// <summary>
+    ///  geth parameters
+    ///  geth --identity "MyTestNetNode" --nodiscover --datadir "d:\hoard" --wsorigins="*" --ws --wsport "8546" --networkid 15 --shh --rpc --rpcport "8545" --rpcapi personal,db,eth,net,web3,shh console
+    /// </summary>
     public class AccountSynchronizerTest
     {
         public AccountSynchronizerTest()
@@ -34,26 +38,38 @@ namespace HoardTests.AccountTools
         [Trait("Category", "Unit")]
         public async Task TransferKey()
         {
-            //AccountSynchronizer AccountSync = new AccountSynchronizer("ws://localhost:8546");
-            //bool res = AccountSync.Initialize().Result;
-            //if(res)
+            //AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper("ws://localhost:8546");
+            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant("ws://localhost:8546");
+            //bool res = AccountSyncKeeper.Initialize().Result;
+            //res = AccountSyncApplicant.Initialize().Result;
+            //if (res)
             //{
-            //    string pin = AccountSync.GeneratePin();
-            //    string filterFrom = AccountSync.RegisterMessageFilterFrom(pin).Result;
-            //    string filterTo = AccountSync.RegisterMessageFilterTo(pin).Result;
-            //    string confirmationPin = AccountSync.GeneratePin();
-            //    string msg = AccountSync.SendConfirmationPin(pin, confirmationPin).Result;
+            //    string pin = AccountSyncKeeper.GeneratePin();
+            //    string filterFrom = AccountSyncKeeper.RegisterMessageFilter(pin).Result;
+            //    string filterTo = AccountSyncApplicant.RegisterMessageFilter(pin).Result;
+            //    string confirmationPin = AccountSyncApplicant.GeneratePin();
+            //    string msg = AccountSyncApplicant.SendConfirmationPin(pin, confirmationPin).Result;
             //    int i = 8;
             //    while (i > 0)
             //    {
-            //        res = AccountSync.Update(filterFrom).Result;
+            //        res = AccountSyncKeeper.Update(filterFrom).Result;
             //        i--;
             //    }
-
-            //    await AccountSync.UnregisterMessageFilterTo(filterTo);
-            //    await AccountSync.UnregisterMessageFilterFrom(filterFrom);
+            //    if (AccountSyncKeeper.ConfirmationPinReceived())
+            //    {
+            //        msg = AccountSyncKeeper.GenerateEncryptionKey(pin).Result;
+            //    }
+            //    i = 8;
+            //    while (i > 0)
+            //    {
+            //        res = AccountSyncApplicant.Update(filterTo).Result;
+            //        i--;
+            //    }
+            //    await AccountSyncApplicant.UnregisterMessageFilter(filterTo);
+            //    await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
             //}
-            //await AccountSync.Shutdown();
+            //await AccountSyncApplicant.Shutdown();
+            //await AccountSyncKeeper.Shutdown();
         }
     }
 }

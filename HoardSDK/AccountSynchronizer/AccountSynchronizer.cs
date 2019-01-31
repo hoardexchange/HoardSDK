@@ -34,6 +34,9 @@ namespace Hoard
             {
                 /// Confirmation Pin
                 ConfirmationPin = 0,
+
+                /// Encryption key generation
+                GenerateEncryptionKey,
             }
 
             /// Internal message id
@@ -48,10 +51,22 @@ namespace Hoard
 
         static private int MaxRange = 10;
 
-        private WhisperService WhisperService = null;
-        private string SymKeyIdFrom = "";
-        private string SymKeyIdTo = "";
-        private string ConfirmationPin = "";
+        /// <summary>
+        /// 
+        /// </summary>
+        protected WhisperService WhisperService = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected string SymKeyId = "";
+
+        /// Confirmation Pin
+        public string ConfirmationPin
+        {
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// Constructor
@@ -59,6 +74,7 @@ namespace Hoard
         public AccountSynchronizer(string url)
         {
             WhisperService = new WhisperService(url);
+            ConfirmationPin = "";
         }
 
         private bool IsFairRandom(byte number, byte range)
@@ -95,19 +111,32 @@ namespace Hoard
         /// <summary>
         /// Closes connection with geth
         /// </summary>
-        /// <returns></returns>
         public async Task Shutdown()
         {
             await WhisperService.Close();
         }
 
-        private byte[] BuildMessage(InternalData.InternalMessageId id, byte[] data)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected byte[] BuildMessage(InternalData.InternalMessageId id, byte[] data)
         {
             InternalData internalMsg = new InternalData();
             internalMsg.id = id;
             internalMsg.length = data.Length;
             internalMsg.data = Encoding.ASCII.GetString(data);
             return Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(internalMsg));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="internalMessage"></param>
+        protected virtual void OnTranslateMessage(InternalData internalMessage)
+        {
         }
 
         private void TranslateMessage(WhisperService.ReceivedData msg)
@@ -117,23 +146,26 @@ namespace Hoard
                 byte[] data = msg.GetDecodedMessage();
                 string textData = Encoding.ASCII.GetString(data);
                 InternalData internalMessage = JsonConvert.DeserializeObject<InternalData>(textData);
-                switch(internalMessage.id)
-                {
-                    case InternalData.InternalMessageId.ConfirmationPin:
-                        ConfirmationPin = internalMessage.data;
-                        break;
-                    default:
-                        break;
-                }
+                OnTranslateMessage(internalMessage);
             }
             catch(Exception e)
             {
             }
         }
 
-        private string ConvertPinToTopic(string pin)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pin"></param>
+        /// <returns></returns>
+        protected string ConvertPinToTopic(string pin)
         {
             return "0x" + pin;
+        }
+
+        ///
+        protected virtual void OnClear()
+        {
         }
 
         /// <summary>
@@ -142,6 +174,8 @@ namespace Hoard
         /// <returns></returns>
         public string GeneratePin()
         {
+            OnClear();
+
             int digitsToGenerate = 8;
             string pin = "";
             while (digitsToGenerate > 0)
@@ -153,66 +187,36 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Clears connection
+        /// Registers message filter generated from pin
         /// </summary>
-        public async Task<string> RegisterMessageFilterFrom(string pin)
+        /// <param name="pin">Pin</param>
+        /// <returns></returns>
+        public async Task<string> RegisterMessageFilter(string pin)
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(pin);
             SHA256 sha256 = new SHA256Managed();
             var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
-            SymKeyIdFrom = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.ASCII.GetString(hashedPin));
-            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyIdFrom, "", "", 2.01f, topic, false);
+            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.ASCII.GetString(hashedPin));
+            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, false);
             return await WhisperService.CreateNewMessageFilter(msgCriteria);
         }
 
         /// <summary>
-        /// Clears connection
+        /// Unregisters message filter
+        /// <param name="filter">Message filter</param>
         /// </summary>
-        public async Task UnregisterMessageFilterFrom(string filter)
+        public async Task UnregisterMessageFilter(string filter)
         {
             bool res = await WhisperService.DeleteMessageFilter(filter);
-            res = await WhisperService.DeleteSymetricKey(SymKeyIdFrom);
+            res = await WhisperService.DeleteSymetricKey(SymKeyId);
         }
 
         /// <summary>
-        /// Clears connection
+        /// Gathers messages
         /// </summary>
-        public async Task<string> RegisterMessageFilterTo(string pin)
-        {
-            string[] topic = new string[1];
-            topic[0] = ConvertPinToTopic(pin);
-            SHA256 sha256 = new SHA256Managed();
-            var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
-            SymKeyIdTo = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.ASCII.GetString(hashedPin));
-            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyIdTo, "", "", 2.01f, topic, false);
-            return await WhisperService.CreateNewMessageFilter(msgCriteria);
-        }
-
-        /// <summary>
-        /// Clears connection
-        /// </summary>
-        public async Task UnregisterMessageFilterTo(string filter)
-        {
-            bool res = await WhisperService.DeleteMessageFilter(filter);
-            res = await WhisperService.DeleteSymetricKey(SymKeyIdTo);
-        }
-
-        /// <summary>
-        /// Clears connection
-        /// </summary>
-        public async Task<string> SendConfirmationPin(string originalPin, string confirmationPin)
-        {
-            string[] topic = new string[1];
-            topic[0] = ConvertPinToTopic(originalPin);
-            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPin, Encoding.ASCII.GetBytes(confirmationPin));
-            WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyIdTo, "", "", 7, topic[0], data, "", 2, 2.01f, "");
-            return await WhisperService.SendMessage(msg);
-        }
-
-        /// <summary>
-        /// Clears connection
-        /// </summary>
+        /// <param name="filter">Message filter</param>
+        /// <returns></returns>
         public async Task<bool> Update(string filter)
         {
             List<WhisperService.ReceivedData> objects = await WhisperService.ReceiveMessage(filter);
@@ -221,22 +225,6 @@ namespace Hoard
                 TranslateMessage(obj);
             }
             return true;
-        }
-
-        /// <summary>
-        /// Clears connection
-        /// </summary>
-        public async Task<bool> TransferAccountFrom(string pin)
-        {
-            return false;
-        }
-
-        /// <summary>
-        /// Clears connection
-        /// </summary>
-        public async Task<bool> TransferAccountTo(string pin)
-        {
-            return false;
         }
 
         //public bool SendPin(string pin)
