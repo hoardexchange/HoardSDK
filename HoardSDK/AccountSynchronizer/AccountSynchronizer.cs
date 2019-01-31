@@ -284,14 +284,29 @@ namespace Hoard
         {
         }
 
+        private byte[] CalculateSeed(byte[] seed)
+        {
+            int val = 0;
+            for(int i = 0; i < seed.Length; i++)
+            {
+                val += seed[i];
+            }
+            val = val % 255;
+            byte[] newSeed = new byte[seed.Length + 1];
+            Array.Copy(seed, newSeed, seed.Length);
+            newSeed[seed.Length] = (byte)val;
+            return newSeed;
+        }
+
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        protected static EthECKey GenerateKey(byte[] seed)
+        protected EthECKey GenerateKey(byte[] seed)
         {
+            byte[] newSeed = CalculateSeed(seed);
             SecureRandom secureRandom = SecureRandom.GetInstance("SHA256PRNG", false);
-            secureRandom.SetSeed(seed);
+            secureRandom.SetSeed(newSeed);
             var gen = new ECKeyPairGenerator();
             var keyGenParam = new KeyGenerationParameters(secureRandom, 256);
             gen.Init(keyGenParam);
@@ -299,9 +314,6 @@ namespace Hoard
             var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
             if (privateBytes.Length != 32)
             {
-                byte[] newSeed = new byte[seed.Length + 1];
-                Array.Copy(seed, newSeed, seed.Length);
-                newSeed[seed.Length] = newSeed[seed.Length - 1];
                 return GenerateKey(newSeed);
             }
             return new EthECKey(privateBytes, true);
