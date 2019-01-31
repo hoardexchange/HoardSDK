@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Hoard
 {    
@@ -17,7 +18,12 @@ namespace Hoard
     /// </summary>
     public class WhisperService
     {
-        private static byte[] HexStringToByteArray(string s)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static byte[] HexStringToByteArray(string s)
         {
             byte[] ab = new byte[s.Length >> 1];
             for (int i = 0; i < s.Length; i++)
@@ -279,6 +285,7 @@ namespace Hoard
                     jobj.Add("params", additionalParams);
                 }
                 jobj.Add("id", JsonId);
+                byte[] b = Encoding.ASCII.GetBytes(jobj.ToString());
                 WhisperClient.Send(Encoding.ASCII.GetBytes(jobj.ToString()));
                 ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
                 if (Error != "")
@@ -342,7 +349,7 @@ namespace Hoard
                 JArray jarrayObj = new JArray();
                 jarrayObj.Add(maxMessageSize);
                 string outMessage = "";
-                return BuildAndSendRequest("shh_setMaxMessageSize", null, out outMessage);
+                return BuildAndSendRequest("shh_setMaxMessageSize", jarrayObj, out outMessage);
             });
         }
 
@@ -358,7 +365,7 @@ namespace Hoard
                 JArray jarrayObj = new JArray();
                 jarrayObj.Add(minPov);
                 string outMessage = "";
-                return BuildAndSendRequest("shh_setMinPoW", null, out outMessage);
+                return BuildAndSendRequest("shh_setMinPoW", jarrayObj, out outMessage);
             });
         }
 
@@ -374,7 +381,7 @@ namespace Hoard
                 JArray jarrayObj = new JArray();
                 jarrayObj.Add(enode);
                 string outMessage = "";
-                return BuildAndSendRequest("shh_markTrustedPeer", null, out outMessage);
+                return BuildAndSendRequest("shh_markTrustedPeer", jarrayObj, out outMessage);
             });
         }
 
@@ -407,7 +414,7 @@ namespace Hoard
                 JArray jarrayObj = new JArray();
                 jarrayObj.Add(privKey);
                 string outMessage = "";
-                return BuildAndSendRequest("shh_addPrivateKey", null, out outMessage);
+                return BuildAndSendRequest("shh_addPrivateKey", jarrayObj, out outMessage);
             });
         }
 
@@ -607,7 +614,7 @@ namespace Hoard
         /// Either symKeyID or privateKeyID must be present. Can not be both
         /// </summary>
         /// <param name="filters">message filters</param>
-        /// <param name="id">identifier of function call. In case of Whisper must contain the value "messages"</param>
+        /// <param name="id">identifier of function call. In case of Whisper must contain the value "messages"
         /// This might be the case in some very rare cases, e.g. if you intend to communicate to MailServers, etc</param>
         /// <returns>subscription id</returns>
         public async Task<string> Subscribe(SubscriptionCriteria filters, string id = "messages")

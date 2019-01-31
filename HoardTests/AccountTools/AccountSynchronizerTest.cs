@@ -48,7 +48,7 @@ namespace HoardTests.AccountTools
             //    string filterFrom = AccountSyncKeeper.RegisterMessageFilter(pin).Result;
             //    string filterTo = AccountSyncApplicant.RegisterMessageFilter(pin).Result;
             //    string confirmationPin = AccountSyncApplicant.GeneratePin();
-            //    string msg = AccountSyncApplicant.SendConfirmationPin(pin, confirmationPin).Result;
+            //    string msg = AccountSyncApplicant.SendConfirmationPin(confirmationPin).Result;
             //    int i = 8;
             //    while (i > 0)
             //    {
@@ -57,7 +57,20 @@ namespace HoardTests.AccountTools
             //    }
             //    if (AccountSyncKeeper.ConfirmationPinReceived())
             //    {
-            //        msg = AccountSyncKeeper.GenerateEncryptionKey(pin).Result;
+            //        msg = AccountSyncKeeper.GenerateEncryptionKey().Result;
+            //    }
+            //    i = 8;
+            //    while (i > 0)
+            //    {
+            //        res = AccountSyncApplicant.Update(filterTo).Result;
+            //        res = AccountSyncKeeper.Update(filterTo).Result;
+            //        i--;
+            //    }
+            //    int confirmation = AccountSyncKeeper.GetConfirmationStatus();
+            //    if(confirmation == 1)
+            //    {
+            //        string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
+            //        msg = AccountSyncKeeper.EncryptAndTransferKeystore(keyStoreData).Result;
             //    }
             //    i = 8;
             //    while (i > 0)

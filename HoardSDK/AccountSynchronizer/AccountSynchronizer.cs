@@ -1,19 +1,24 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Generators;
-using Org.BouncyCastle.Crypto.Prng;
-using Org.BouncyCastle.Security;
-using RestSharp;
+﻿using Nethereum.Signer;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Agreement;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Macs;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Paddings;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
 
 namespace Hoard
 {
@@ -22,6 +27,82 @@ namespace Hoard
     /// </summary>
     public class AccountSynchronizer
     {
+        public static byte[] Encrypt(byte[] data, AsymmetricKeyParameter pubKeyParam)
+        {
+            X9ECParameters ecParams = ECNamedCurveTable.GetByName("Secp256k1");
+            ECDomainParameters ecSpec = new ECDomainParameters(ecParams.Curve, ecParams.G, ecParams.N, ecParams.H);
+
+            // generate ephemeral key pair
+            IAsymmetricCipherKeyPairGenerator g = GeneratorUtilities.GetKeyPairGenerator("ECIES");
+            g.Init(new ECKeyGenerationParameters(ecSpec, new SecureRandom()));
+            AsymmetricCipherKeyPair generatedKeyPair = g.GenerateKeyPair();
+
+            // create encryption engine
+            IesEngine iesEngine = CreateIesEngine(true, generatedKeyPair.Private, pubKeyParam);
+
+            // encrypt data
+            byte[] encryptedData = iesEngine.ProcessBlock(data, 0, data.Length);
+
+            // encode public key that must be used for decryption together with private key
+            byte[] pubEnc = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(generatedKeyPair.Public).GetDerEncoded();
+
+            // write public key length
+            byte[] lengthBytes = new byte[4];
+            lengthBytes[0] = (byte)(pubEnc.Length >> 24);
+            lengthBytes[1] = (byte)(pubEnc.Length >> 16);
+            lengthBytes[2] = (byte)(pubEnc.Length >> 8);
+            lengthBytes[3] = (byte)pubEnc.Length;
+
+            // write: public key length, public key, encrypted data
+            byte[] outData = new byte[4 + pubEnc.Length + encryptedData.Length];
+            System.Buffer.BlockCopy(lengthBytes, 0, outData, 0, 4);
+            System.Buffer.BlockCopy(pubEnc, 0, outData, 4, pubEnc.Length);
+            System.Buffer.BlockCopy(encryptedData, 0, outData, 4 + pubEnc.Length, encryptedData.Length);
+
+            return outData;
+        }
+
+        public static byte[] Decrypt(byte[] data, AsymmetricKeyParameter privKeyParam)
+        {
+            // obtain public key length
+            uint lengthBytes = (((uint)data[0]) << 24) | (((uint)data[1]) << 16) | (((uint)data[2]) << 8) | (uint)data[3];
+            byte[] pubEnc = new byte[lengthBytes];
+            Array.Copy(data, 4, pubEnc, 0, lengthBytes);
+
+            // instantiate public key
+            ECPublicKeyParameters pubKeyParam = (ECPublicKeyParameters)PublicKeyFactory.CreateKey(pubEnc);
+
+            // get encrypted data
+            long dataSize = data.Length - 4 - lengthBytes;
+            byte[] dataEncrypted = new byte[dataSize];
+            Array.Copy(data, 4 + lengthBytes, dataEncrypted, 0, dataSize);
+
+            // create encryption engine 
+            IesEngine iesEngine = CreateIesEngine(false, privKeyParam, pubKeyParam);
+
+            // decrypt data
+            byte[] plainData = iesEngine.ProcessBlock(dataEncrypted, 0, dataEncrypted.Length);
+
+            return plainData;
+        }
+
+        static IesEngine CreateIesEngine(bool forEncryption, AsymmetricKeyParameter privKeyParam, AsymmetricKeyParameter pubKeyParam)
+        {
+            BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(
+                new CbcBlockCipher(new TwofishEngine()));
+            IesEngine iesEngine = new IesEngine(
+                new ECDHBasicAgreement(),
+                new Kdf2BytesGenerator(new Sha1Digest()),
+                new HMac(new Sha1Digest()),
+                cipher);
+            byte[] d = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            byte[] e = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
+            IesParameters p = new IesWithCipherParameters(d, e, 64, 128);
+
+            iesEngine.Init(forEncryption, privKeyParam, pubKeyParam, p);
+            return iesEngine;
+        }
+
         /// <summary>
         /// Internal message data
         /// </summary>
@@ -37,6 +118,9 @@ namespace Hoard
 
                 /// Encryption key generation
                 GenerateEncryptionKey,
+
+                /// Transfer keystore
+                TransferKeystore,
             }
 
             /// Internal message id
@@ -49,7 +133,31 @@ namespace Hoard
             public string data;
         }
 
+        /// <summary>
+        /// Requested key message
+        /// </summary>
+        public class KeyRequestData
+        {
+            /// message data length
+            public string EncryptionKeyPublicAddress;
+        }
+
         static private int MaxRange = 10;
+
+        /// <summary>
+        /// Time out in seconds
+        /// </summary>
+        static protected int MessageTimeOut = 30;
+
+        /// <summary>
+        /// Maximal time in seconds to be spent on proof of work
+        /// </summary>
+        static protected int MaximalProofOfWorkTime = 8;
+
+        /// <summary>
+        /// Minimal PoW target required for this message
+        /// </summary>
+        static protected float MinimalPowTarget = 3.03f;
 
         /// <summary>
         /// 
@@ -60,6 +168,11 @@ namespace Hoard
         /// 
         /// </summary>
         protected string SymKeyId = "";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected string OriginalPin = "";
 
         /// Confirmation Pin
         public string ConfirmationPin
@@ -105,6 +218,9 @@ namespace Hoard
         public async Task<bool> Initialize()
         {
             await WhisperService.Connect();
+            //bool res = WhisperService.CheckConnection().Result;
+            //res = WhisperService.SetMaxMessageSize(1024 * 1024 * 8).Result;
+            //res = WhisperService.CheckConnection().Result;
             return true;
         }
 
@@ -169,6 +285,29 @@ namespace Hoard
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        protected static EthECKey GenerateKey(byte[] seed)
+        {
+            SecureRandom secureRandom = SecureRandom.GetInstance("SHA256PRNG", false);
+            secureRandom.SetSeed(seed);
+            var gen = new ECKeyPairGenerator();
+            var keyGenParam = new KeyGenerationParameters(secureRandom, 256);
+            gen.Init(keyGenParam);
+            var keyPair = gen.GenerateKeyPair();
+            var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
+            if (privateBytes.Length != 32)
+            {
+                byte[] newSeed = new byte[seed.Length + 1];
+                Array.Copy(seed, newSeed, seed.Length);
+                newSeed[seed.Length] = newSeed[seed.Length - 1];
+                return GenerateKey(newSeed);
+            }
+            return new EthECKey(privateBytes, true);
+        }
+
+        /// <summary>
         /// Generates 8-digits pin
         /// </summary>
         /// <returns></returns>
@@ -195,6 +334,7 @@ namespace Hoard
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(pin);
+            OriginalPin = pin;
             SHA256 sha256 = new SHA256Managed();
             var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
             SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.ASCII.GetString(hashedPin));
