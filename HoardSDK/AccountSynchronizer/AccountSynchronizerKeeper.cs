@@ -162,6 +162,7 @@ namespace Hoard
             byte[] encryptedData = Encrypt(Encoding.ASCII.GetBytes(keyStoreData), pubKeyParam);
             string hexStringData = "0x" + BitConverter.ToString(encryptedData).Replace("-", string.Empty).ToLower();
             byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystore, Encoding.ASCII.GetBytes(hexStringData));
+
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return await WhisperService.SendMessage(msg);
         }

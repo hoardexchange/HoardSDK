@@ -285,7 +285,6 @@ namespace Hoard
                     jobj.Add("params", additionalParams);
                 }
                 jobj.Add("id", JsonId);
-                byte[] b = Encoding.ASCII.GetBytes(jobj.ToString());
                 WhisperClient.Send(Encoding.ASCII.GetBytes(jobj.ToString()));
                 ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
                 if (Error != "")
