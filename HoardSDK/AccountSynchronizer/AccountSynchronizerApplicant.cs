@@ -5,6 +5,7 @@ using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ namespace Hoard
     public class AccountSynchronizerApplicant : AccountSynchronizer
     {
         private EthECKey DecryptionKey;
+        private byte[][] EncryuptedKeystoreData;
 
         /// <summary>
         /// Constructor
@@ -45,14 +47,50 @@ namespace Hoard
             return WhisperService.SendMessage(msg).Result;
         }
 
-        private void DecryptKeystore(EthECKey key, string data)
+        private void AggregateMessage(string data)
         {
-            BigInteger privKeyInt = new BigInteger(key.GetPrivateKeyAsBytes());
-            X9ECParameters ecParams = ECNamedCurveTable.GetByName("Secp256k1");
-            ECDomainParameters ecSpec = new ECDomainParameters(ecParams.Curve, ecParams.G, ecParams.N, ecParams.H);
-            ECPrivateKeyParameters privKeyParam = new ECPrivateKeyParameters(privKeyInt, ecSpec);
-            byte[] decrypted = Decrypt(WhisperService.HexStringToByteArray(data), privKeyParam);
+            byte[] chunk = WhisperService.HexStringToByteArray(data.Substring(2));
+            byte id = chunk[0];
+            byte chunks = chunk[1];
+            if (EncryuptedKeystoreData == null)
+            {
+                EncryuptedKeystoreData = new byte[chunks][];
+            }
+            Debug.Assert(id < EncryuptedKeystoreData.Length);
+            EncryuptedKeystoreData[id] = new byte[chunk.Length - 2];
+            Buffer.BlockCopy(chunk, 2, EncryuptedKeystoreData[id], 0, EncryuptedKeystoreData[id].Length);
+
+            bool messageNotFinished = false;
+            int fullDataSize = 0;
+            for(int  i = 0; i < EncryuptedKeystoreData.Length; i++)
+            {
+                if (EncryuptedKeystoreData[i] == null)
+                {
+                    messageNotFinished = true;
+                    break;
+                }
+                else
+                {
+                    Debug.Assert(EncryuptedKeystoreData[i] != null);
+                    fullDataSize += EncryuptedKeystoreData[i].Length;
+                }
+            }
+            if (messageNotFinished)
+            {
+                return;
+            }
+
+            byte[] fullEncryptedData = new byte[fullDataSize];
+            int offset = 0;
+            for (int i = 0; i < EncryuptedKeystoreData.Length; i++)
+            {
+                Buffer.BlockCopy(EncryuptedKeystoreData[i], 0, fullEncryptedData, offset, EncryuptedKeystoreData[i].Length);
+                offset += EncryuptedKeystoreData[i].Length;
+            }
+            byte[] decrypted = Decrypt(DecryptionKey, fullEncryptedData);
             string decryptedData = Encoding.ASCII.GetString(decrypted);
+            Debug.Print("Decrypted Message: " + decryptedData);
+            EncryuptedKeystoreData = null;
         }
 
         /// <summary>
@@ -71,7 +109,7 @@ namespace Hoard
                     break;
                 case InternalData.InternalMessageId.TransferKeystore:
                     {
-                        DecryptKeystore(DecryptionKey, internalMessage.data);
+                        AggregateMessage(internalMessage.data);
                     }
                     break;
                 default:

@@ -27,82 +27,6 @@ namespace Hoard
     /// </summary>
     public class AccountSynchronizer
     {
-        public static byte[] Encrypt(byte[] data, AsymmetricKeyParameter pubKeyParam)
-        {
-            X9ECParameters ecParams = ECNamedCurveTable.GetByName("Secp256k1");
-            ECDomainParameters ecSpec = new ECDomainParameters(ecParams.Curve, ecParams.G, ecParams.N, ecParams.H);
-
-            // generate ephemeral key pair
-            IAsymmetricCipherKeyPairGenerator g = GeneratorUtilities.GetKeyPairGenerator("ECIES");
-            g.Init(new ECKeyGenerationParameters(ecSpec, new SecureRandom()));
-            AsymmetricCipherKeyPair generatedKeyPair = g.GenerateKeyPair();
-
-            // create encryption engine
-            IesEngine iesEngine = CreateIesEngine(true, generatedKeyPair.Private, pubKeyParam);
-
-            // encrypt data
-            byte[] encryptedData = iesEngine.ProcessBlock(data, 0, data.Length);
-
-            // encode public key that must be used for decryption together with private key
-            byte[] pubEnc = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(generatedKeyPair.Public).GetDerEncoded();
-
-            // write public key length
-            byte[] lengthBytes = new byte[4];
-            lengthBytes[0] = (byte)(pubEnc.Length >> 24);
-            lengthBytes[1] = (byte)(pubEnc.Length >> 16);
-            lengthBytes[2] = (byte)(pubEnc.Length >> 8);
-            lengthBytes[3] = (byte)pubEnc.Length;
-
-            // write: public key length, public key, encrypted data
-            byte[] outData = new byte[4 + pubEnc.Length + encryptedData.Length];
-            System.Buffer.BlockCopy(lengthBytes, 0, outData, 0, 4);
-            System.Buffer.BlockCopy(pubEnc, 0, outData, 4, pubEnc.Length);
-            System.Buffer.BlockCopy(encryptedData, 0, outData, 4 + pubEnc.Length, encryptedData.Length);
-
-            return outData;
-        }
-
-        public static byte[] Decrypt(byte[] data, AsymmetricKeyParameter privKeyParam)
-        {
-            // obtain public key length
-            uint lengthBytes = (((uint)data[0]) << 24) | (((uint)data[1]) << 16) | (((uint)data[2]) << 8) | (uint)data[3];
-            byte[] pubEnc = new byte[lengthBytes];
-            Array.Copy(data, 4, pubEnc, 0, lengthBytes);
-
-            // instantiate public key
-            ECPublicKeyParameters pubKeyParam = (ECPublicKeyParameters)PublicKeyFactory.CreateKey(pubEnc);
-
-            // get encrypted data
-            long dataSize = data.Length - 4 - lengthBytes;
-            byte[] dataEncrypted = new byte[dataSize];
-            Array.Copy(data, 4 + lengthBytes, dataEncrypted, 0, dataSize);
-
-            // create encryption engine 
-            IesEngine iesEngine = CreateIesEngine(false, privKeyParam, pubKeyParam);
-
-            // decrypt data
-            byte[] plainData = iesEngine.ProcessBlock(dataEncrypted, 0, dataEncrypted.Length);
-
-            return plainData;
-        }
-
-        static IesEngine CreateIesEngine(bool forEncryption, AsymmetricKeyParameter privKeyParam, AsymmetricKeyParameter pubKeyParam)
-        {
-            BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(
-                new CbcBlockCipher(new TwofishEngine()));
-            IesEngine iesEngine = new IesEngine(
-                new ECDHBasicAgreement(),
-                new Kdf2BytesGenerator(new Sha1Digest()),
-                new HMac(new Sha1Digest()),
-                cipher);
-            byte[] d = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-            byte[] e = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
-            IesParameters p = new IesWithCipherParameters(d, e, 64, 128);
-
-            iesEngine.Init(forEncryption, privKeyParam, pubKeyParam, p);
-            return iesEngine;
-        }
-
         /// <summary>
         /// Internal message data
         /// </summary>
@@ -160,6 +84,11 @@ namespace Hoard
         static protected float MinimalPowTarget = 3.03f;
 
         /// <summary>
+        /// Maximal message chunk size
+        /// </summary>
+        static protected int ChunkSize = 256;
+
+        /// <summary>
         /// 
         /// </summary>
         protected WhisperService WhisperService = null;
@@ -211,6 +140,79 @@ namespace Hoard
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static byte[] Encrypt(EthECKey key, byte[] data)
+        {
+            string publicKey = BitConverter.ToString(key.GetPubKeyNoPrefix()).Replace("-", string.Empty).ToLower();
+            X9ECParameters ecParams = ECNamedCurveTable.GetByName("Secp256k1");
+            ECDomainParameters ecSpec = new ECDomainParameters(ecParams.Curve, ecParams.G, ecParams.N, ecParams.H);
+            BigInteger ECPubQX = new BigInteger(publicKey.Substring(0, 64), 16);
+            BigInteger ECPubQY = new BigInteger(publicKey.Substring(64, 64), 16);
+            ECPublicKeyParameters pubKeyParam = new ECPublicKeyParameters(ecParams.Curve.ValidatePoint(ECPubQX, ECPubQY), ecSpec);
+
+            BigInteger privKeyInt = new BigInteger(key.GetPrivateKeyAsBytes());
+            ECPrivateKeyParameters privKeyParam = new ECPrivateKeyParameters(privKeyInt, ecSpec);
+
+            // create encryption engine
+            IesEngine iesEngine = CreateIesEngine(true, privKeyParam, pubKeyParam);
+
+            // encrypt data
+            byte[] encryptedData = iesEngine.ProcessBlock(data, 0, data.Length);
+
+            // write: public key length, public key, encrypted data
+            byte[] outData = new byte[encryptedData.Length];
+            System.Buffer.BlockCopy(encryptedData, 0, outData, 0, encryptedData.Length);
+
+            return outData;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="dataEncrypted"></param>
+        /// <returns></returns>
+        public static byte[] Decrypt(EthECKey key, byte[] dataEncrypted)
+        {
+            string publicKey = BitConverter.ToString(key.GetPubKeyNoPrefix()).Replace("-", string.Empty).ToLower();
+            X9ECParameters ecParams = ECNamedCurveTable.GetByName("Secp256k1");
+            ECDomainParameters ecSpec = new ECDomainParameters(ecParams.Curve, ecParams.G, ecParams.N, ecParams.H);
+            BigInteger ECPubQX = new BigInteger(publicKey.Substring(0, 64), 16);
+            BigInteger ECPubQY = new BigInteger(publicKey.Substring(64, 64), 16);
+            ECPublicKeyParameters pubKeyParam = new ECPublicKeyParameters(ecParams.Curve.ValidatePoint(ECPubQX, ECPubQY), ecSpec);
+
+            BigInteger privKeyInt = new BigInteger(key.GetPrivateKeyAsBytes());
+            ECPrivateKeyParameters privKeyParam = new ECPrivateKeyParameters(privKeyInt, ecSpec);
+
+            // create encryption engine 
+            IesEngine iesEngine = CreateIesEngine(false, privKeyParam, pubKeyParam);
+
+            // decrypt data
+            return iesEngine.ProcessBlock(dataEncrypted, 0, dataEncrypted.Length);
+        }
+
+        private static IesEngine CreateIesEngine(bool forEncryption, AsymmetricKeyParameter privKeyParam, AsymmetricKeyParameter pubKeyParam)
+        {
+            BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(
+                new CbcBlockCipher(new TwofishEngine()));
+            IesEngine iesEngine = new IesEngine(
+                new ECDHBasicAgreement(),
+                new Kdf2BytesGenerator(new Sha1Digest()),
+                new HMac(new Sha1Digest()),
+                cipher);
+            byte[] d = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            byte[] e = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
+            IesParameters p = new IesWithCipherParameters(d, e, 64, 128);
+
+            iesEngine.Init(forEncryption, privKeyParam, pubKeyParam, p);
+            return iesEngine;
+        }
+
+        /// <summary>
         /// Establishes connection with geth
         /// --wsorigins="*" --ws --wsport "port" --shh --rpc --rpcport "port" --rpcapi personal,db,eth,net,web3,shh
         /// </summary>
@@ -218,9 +220,6 @@ namespace Hoard
         public async Task<bool> Initialize()
         {
             await WhisperService.Connect();
-            //bool res = WhisperService.CheckConnection().Result;
-            //res = WhisperService.SetMaxMessageSize(1024 * 1024 * 8).Result;
-            //res = WhisperService.CheckConnection().Result;
             return true;
         }
 

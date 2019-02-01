@@ -18,21 +18,31 @@ namespace Hoard
     /// </summary>
     public class WhisperService
     {
+        private static readonly byte[] HexNibble = new byte[]
+        {
+            0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
+            0x8, 0x9, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+            0x0, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x0,
+            0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+            0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+            0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+            0x0, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF
+        };
+
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="s"></param>
+        /// <param name="str"></param>
         /// <returns></returns>
-        public static byte[] HexStringToByteArray(string s)
+        public static byte[] HexStringToByteArray(string str)
         {
-            byte[] ab = new byte[s.Length >> 1];
-            for (int i = 0; i < s.Length; i++)
-            {
-                int b = s[i];
-                b = (b - '0') + ((('9' - b) >> 31) & -7);
-                ab[i >> 1] |= (byte)(b << 4 * ((i & 1) ^ 1));
-            }
-            return ab;
+            int byteCount = str.Length >> 1;
+            byte[] result = new byte[byteCount + (str.Length & 1)];
+            for (int i = 0; i < byteCount; i++)
+                result[i] = (byte)(HexNibble[str[i << 1] - 48] << 4 | HexNibble[str[(i << 1) + 1] - 48]);
+            if ((str.Length & 1) != 0)
+                result[byteCount] = (byte)HexNibble[str[str.Length - 1] - 48];
+            return result;
         }
 
         /// <summary>
