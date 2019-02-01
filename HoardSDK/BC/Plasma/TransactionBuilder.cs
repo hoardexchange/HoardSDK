@@ -59,16 +59,11 @@ namespace Hoard.BC.Plasma
             {
                 tx.AddOutput(ERC223TransactionOutputData.Empty);
             }
-            //TESUJI_PLASMA
 
             var signedTransaction = await tx.Sign(from);
-
             
-
-            
-            // FIXME: not sure if it won't change in Hoard version of Plasma
             return tx.GetRLPEncoded(new List<string>() { signedTransaction, Transaction.NULL_SIGNATURE }).ToHex();
-
+            //TESUJI_PLASMA
         }
 
         /// <summary>
@@ -113,12 +108,11 @@ namespace Hoard.BC.Plasma
                 {
                     tx.AddOutput(ERC721TransactionOutputData.Empty);
                 }
-                //TESUJI_PLASMA
 
                 var signedTransaction = await tx.Sign(from);
 
-                // FIXME: not sure if it won't change in Hoard version of Plasma
                 return tx.GetRLPEncoded(new List<string>() { signedTransaction.EnsureHexPrefix(), Transaction.NULL_SIGNATURE }).ToHex();
+                //TESUJI_PLASMA
             }
 
             return null;

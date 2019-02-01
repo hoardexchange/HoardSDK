@@ -341,12 +341,11 @@ namespace Hoard
         /// </summary>
         /// <param name="account">Account to query</param>
         /// <returns></returns>
-        public async Task<BigInteger> GetBalance(HoardID account)
+        public async Task<float> GetBalance(AccountInfo account)
         {
             try
             {
-                // TODO: eth returns balance in wei, plasma in ether - it should be unified
-                return await BCComm.GetBalance(account);
+                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetBalance(account.ID)));
             }
             catch(Exception ex)
             {

@@ -65,14 +65,21 @@ namespace HoardTests.Fixtures
             HoardServiceConfig config = HoardServiceConfig.Load(configPath);
 
             BCClientOptions clientOpts = null;
-            if (config.BCClientConfig is EthereumClientConfig)
+            if (config.BCClient is EthereumClientConfig)
             {
-                var clientUrl = (config.BCClientConfig as EthereumClientConfig).ClientUrl;
-                clientOpts = new EthereumClientOptions(new Nethereum.JsonRpc.Client.RpcClient(new Uri(clientUrl)));
+                var ethConfig = config.BCClient as EthereumClientConfig;
+                clientOpts = new EthereumClientOptions(
+                    new Nethereum.JsonRpc.Client.RpcClient(new Uri(ethConfig.ClientUrl))
+                );
             }
             else
             {
-                throw new NotImplementedException();
+                var plasmaConfig = config.BCClient as PlasmaClientConfig;
+                clientOpts = new PlasmaClientOptions(
+                    new Nethereum.JsonRpc.Client.RpcClient(new Uri(plasmaConfig.ClientUrl)),
+                    plasmaConfig.ChildChainUrl,
+                    plasmaConfig.WatcherUrl
+                );
             }
 
             HoardServiceOptions options = new HoardServiceOptions(config, clientOpts);

@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -125,14 +126,15 @@ namespace Hoard.BC
 
             var responseString = await SendRequestPost(watcherClient, "account.get_balance", data);
 
-            if (IsResponseSuccess(responseString))
+            var responseJson = JObject.Parse(responseString);
+            if (IsResponseSuccess(responseJson))
             {
                 var responseData = GetResponseData(responseString);
                 return JsonConvert.DeserializeObject<List<TokenData>>(responseData);
             }
 
-            //TODO
-            throw new NotImplementedException();
+            Trace.Fail(string.Format("Could not get tokens data! {0}", responseJson.Value<string>("description")));
+            return new List<TokenData>();
         }
 
         /// <summary>
@@ -149,13 +151,19 @@ namespace Hoard.BC
 
             var responseString = await SendRequestPost(watcherClient, "account.get_balance", data);
 
-            if (IsResponseSuccess(responseString))
+            var responseJson = JObject.Parse(responseString);
+            if (IsResponseSuccess(responseJson))
             {
-                return JsonConvert.DeserializeObject<List<TokenData>>(GetResponseData(responseString));
+                var tokenData = JsonConvert.DeserializeObject<List<TokenData>>(GetResponseData(responseString));
+
+                //TODO: plasma api doesn't support request with currency filter
+                if (tokenData.Exists(x => x.Currency.ToLower() == currency.ToLower()))
+                {
+                    return tokenData.FindAll(x => x.Currency.ToLower() == currency.ToLower());
+                }
             }
 
-            //TODO
-            throw new NotImplementedException();
+            return new List<TokenData>();
         }
 
         /// <summary>
@@ -170,7 +178,8 @@ namespace Hoard.BC
 
             var responseString = await SendRequestPost(childChainClient, "transaction.submit", data);
 
-            if (IsResponseSuccess(responseString))
+            var responseJson = JObject.Parse(responseString);
+            if (IsResponseSuccess(responseJson))
             {
                 var responseData = GetResponseData(responseString);
                 var receipt = JsonConvert.DeserializeObject<TransactionReceipt>(responseData);
@@ -186,8 +195,8 @@ namespace Hoard.BC
                 return true;
             }
 
-            //TODO no sufficient funds
-            throw new NotImplementedException();
+            Trace.Fail(string.Format("Could not submit transaction! {0}", responseJson.Value<string>("description")));
+            return false;
         }
 
         /// <summary>
@@ -231,7 +240,8 @@ namespace Hoard.BC
 
             var responseString = await SendRequestPost(watcherClient, "account.get_utxos", data);
 
-            if (IsResponseSuccess(responseString))
+            var responseJson = JObject.Parse(responseString);
+            if (IsResponseSuccess(responseJson))
             {
                 var result = new List<UTXOData>();
 
@@ -249,8 +259,8 @@ namespace Hoard.BC
                 return result;
             }
 
-            //TODO
-            throw new NotImplementedException();
+            Trace.Fail(string.Format("Could not get utxos! {0}", responseJson.Value<string>("description")));
+            return new List<UTXOData>();
         }
 
         /// <summary>
@@ -265,13 +275,13 @@ namespace Hoard.BC
 
             var responseString = await SendRequestPost(watcherClient, "transaction.get", data);
 
-            if (IsResponseSuccess(responseString))
+            var responseJson = JObject.Parse(responseString);
+            if (IsResponseSuccess(responseJson))
             {
                 return JsonConvert.DeserializeObject<TransactionData>(GetResponseData(responseString));
             }
 
-            //TODO
-            throw new NotImplementedException();
+            return null;
         }
 
         /// <summary>
@@ -334,18 +344,13 @@ namespace Hoard.BC
             return response.Content;
         }
 
-        private bool IsResponseSuccess(string responseString)
+        private bool IsResponseSuccess(JObject responseJson)
         {
-            if (!string.IsNullOrEmpty(responseString))
+            if (responseJson.ContainsKey("success"))
             {
-                var result = JObject.Parse(responseString);
-
-                if (result.ContainsKey("success"))
-                {
-                    JToken success;
-                    result.TryGetValue("success", out success);
-                    return (success.Value<bool>() == true);
-                }
+                JToken success;
+                responseJson.TryGetValue("success", out success);
+                return (success.Value<bool>() == true);
             }
             return false;
         }

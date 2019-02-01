@@ -19,7 +19,7 @@ namespace Hoard
         /// <summary>
         /// Blockchain client configuration
         /// </summary>
-        public BCClientConfig BCClientConfig;
+        public BCClientConfig BCClient;
         /// <summary>
         /// The address of main Hoard Game Center contract
         /// </summary>
