@@ -78,6 +78,10 @@ namespace HoardTests.AccountTools
             //        res = AccountSyncApplicant.Update(filterTo).Result;
             //        i--;
             //    }
+            //    if(AccountSyncApplicant.IsKeyStoreReceived())
+            //    {
+            //        string data = AccountSyncApplicant.GetKeystoreReceivedData();
+            //    }
             //    await AccountSyncApplicant.UnregisterMessageFilter(filterTo);
             //    await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
             //}

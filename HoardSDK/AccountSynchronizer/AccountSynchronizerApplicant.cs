@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -19,6 +20,8 @@ namespace Hoard
     {
         private EthECKey DecryptionKey;
         private byte[][] EncryptedKeystoreData;
+        private int KeystoreReceiwed;
+        private string KeyStoreEncryptedData;
 
         /// <summary>
         /// Constructor
@@ -27,6 +30,8 @@ namespace Hoard
         {
             WhisperService = new WhisperService(url);
             ConfirmationPin = "";
+            KeyStoreEncryptedData = "";
+            Interlocked.Exchange(ref KeystoreReceiwed, 0);
         }
 
         private EthECKey GenerateDecryptionKey()
@@ -88,8 +93,9 @@ namespace Hoard
                 offset += EncryptedKeystoreData[i].Length;
             }
             byte[] decrypted = Decrypt(DecryptionKey, fullEncryptedData);
-            string decryptedData = Encoding.ASCII.GetString(decrypted);
-            Debug.Print("Decrypted Message: " + decryptedData);
+            KeyStoreEncryptedData = Encoding.ASCII.GetString(decrypted);
+            Debug.Print("Decrypted Message: " + KeyStoreEncryptedData);
+            Interlocked.Exchange(ref KeystoreReceiwed, 0);
             EncryptedKeystoreData = null;
         }
 
@@ -124,6 +130,8 @@ namespace Hoard
         {
             ConfirmationPin = "";
             EncryptedKeystoreData = null;
+            KeyStoreEncryptedData = "";
+            Interlocked.Exchange(ref KeystoreReceiwed, 0);
         }
 
         /// <summary>
@@ -138,6 +146,23 @@ namespace Hoard
             byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPin, Encoding.ASCII.GetBytes(confirmationPin));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return await WhisperService.SendMessage(msg);
+        }
+
+        /// <summary>
+        /// Checks if keystore was received
+        /// </summary>
+        /// <returns></returns>
+        public bool IsKeyStoreReceived()
+        {
+            return (Interlocked.CompareExchange(ref KeystoreReceiwed, KeystoreReceiwed, 0) != 0);
+        }
+
+        /// <summary>
+        /// Returns encrypted keystore data
+        /// </summary>
+        public string GetKeystoreReceivedData()
+        {
+            return KeyStoreEncryptedData;
         }
     }
 }
