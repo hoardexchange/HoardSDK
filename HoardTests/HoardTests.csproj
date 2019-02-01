@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="AccountServices\HoardAccountServiceTest.cs" />
     <Compile Include="AccountServices\KeyStoreAccountServiceTest.cs" />
+    <Compile Include="AccountTools\AccountSynchronizerTest.cs" />
     <Compile Include="CryptKittyTests\CKGameItemProvider.cs" />
     <Compile Include="CryptKittyTests\CryptoKittyTest.cs" />
     <Compile Include="DistributedStorageTests\IPFSClientTests.cs" />

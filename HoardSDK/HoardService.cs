@@ -112,37 +112,6 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Check if player is signed in.
-        /// </summary>
-        /// <param name="user">Player to be checked.</param>
-        /// <returns>True if given player is signed in.</returns>
-        public bool IsSignedIn(User user)
-        {
-            //TODO: this seems deprecated as each provider connects on its own
-            throw new NotImplementedException();
-            //return DefaultProvider.IsSignedIn(id);
-        }
-
-        /// <summary>
-        /// Sign in given player.
-        /// </summary>
-        /// <param name="user">Player to be signed in.</param>
-        /// <returns>True if given player has been successfully signed in.</returns>
-        public bool SignIn(User user)
-        {
-            //TODO: this seems deprecated as each provider connects on its own
-            throw new NotImplementedException();
-            /*if (!DefaultProvider.SignIn(id))
-                return false;
-
-            //GameBackendD = DefaultProvider.GetGameBackendDesc();
-            GameBackendClient = DefaultProvider.GetGameBackendClient();
-            GameExchangeService = DefaultProvider.GetExchangeService();
-
-            return true;*/
-        }
-
-        /// <summary>
         /// Connects to BC and fills missing options.
         /// </summary>
         /// <param name="options">Hoard service options.</param>
