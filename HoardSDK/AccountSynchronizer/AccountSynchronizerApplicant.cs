@@ -18,7 +18,7 @@ namespace Hoard
     public class AccountSynchronizerApplicant : AccountSynchronizer
     {
         private EthECKey DecryptionKey;
-        private byte[][] EncryuptedKeystoreData;
+        private byte[][] EncryptedKeystoreData;
 
         /// <summary>
         /// Constructor
@@ -52,27 +52,27 @@ namespace Hoard
             byte[] chunk = WhisperService.HexStringToByteArray(data.Substring(2));
             byte id = chunk[0];
             byte chunks = chunk[1];
-            if (EncryuptedKeystoreData == null)
+            if (EncryptedKeystoreData == null)
             {
-                EncryuptedKeystoreData = new byte[chunks][];
+                EncryptedKeystoreData = new byte[chunks][];
             }
-            Debug.Assert(id < EncryuptedKeystoreData.Length);
-            EncryuptedKeystoreData[id] = new byte[chunk.Length - 2];
-            Buffer.BlockCopy(chunk, 2, EncryuptedKeystoreData[id], 0, EncryuptedKeystoreData[id].Length);
+            Debug.Assert(id < EncryptedKeystoreData.Length);
+            EncryptedKeystoreData[id] = new byte[chunk.Length - 2];
+            Buffer.BlockCopy(chunk, 2, EncryptedKeystoreData[id], 0, EncryptedKeystoreData[id].Length);
 
             bool messageNotFinished = false;
             int fullDataSize = 0;
-            for(int  i = 0; i < EncryuptedKeystoreData.Length; i++)
+            for(int  i = 0; i < EncryptedKeystoreData.Length; i++)
             {
-                if (EncryuptedKeystoreData[i] == null)
+                if (EncryptedKeystoreData[i] == null)
                 {
                     messageNotFinished = true;
                     break;
                 }
                 else
                 {
-                    Debug.Assert(EncryuptedKeystoreData[i] != null);
-                    fullDataSize += EncryuptedKeystoreData[i].Length;
+                    Debug.Assert(EncryptedKeystoreData[i] != null);
+                    fullDataSize += EncryptedKeystoreData[i].Length;
                 }
             }
             if (messageNotFinished)
@@ -82,15 +82,15 @@ namespace Hoard
 
             byte[] fullEncryptedData = new byte[fullDataSize];
             int offset = 0;
-            for (int i = 0; i < EncryuptedKeystoreData.Length; i++)
+            for (int i = 0; i < EncryptedKeystoreData.Length; i++)
             {
-                Buffer.BlockCopy(EncryuptedKeystoreData[i], 0, fullEncryptedData, offset, EncryuptedKeystoreData[i].Length);
-                offset += EncryuptedKeystoreData[i].Length;
+                Buffer.BlockCopy(EncryptedKeystoreData[i], 0, fullEncryptedData, offset, EncryptedKeystoreData[i].Length);
+                offset += EncryptedKeystoreData[i].Length;
             }
             byte[] decrypted = Decrypt(DecryptionKey, fullEncryptedData);
             string decryptedData = Encoding.ASCII.GetString(decrypted);
             Debug.Print("Decrypted Message: " + decryptedData);
-            EncryuptedKeystoreData = null;
+            EncryptedKeystoreData = null;
         }
 
         /// <summary>
@@ -123,6 +123,7 @@ namespace Hoard
         protected override void OnClear()
         {
             ConfirmationPin = "";
+            EncryptedKeystoreData = null;
         }
 
         /// <summary>
