@@ -24,7 +24,8 @@ namespace Hoard
             if (value.StartsWith("0x"))
                 value = value.Substring(2);
 
-            BigInteger bigValue = BigInteger.Parse(value, System.Globalization.NumberStyles.AllowHexSpecifier);
+            // ensure id is always positive integer
+            BigInteger bigValue = BigInteger.Parse("00" + value, System.Globalization.NumberStyles.AllowHexSpecifier);
 
             //validity check
             BigInteger maxUValue = BigInteger.Pow(2, 160) - 1;
@@ -53,7 +54,8 @@ namespace Hoard
         /// <inheritdoc/>
         public override string ToString()
         {
-            return Value.ToString("x");
+            var ret = Value.ToString("x");
+            return ret.Substring(ret.Length - 40);
         }
 
         /// <summary>

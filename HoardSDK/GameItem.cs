@@ -55,6 +55,8 @@ namespace Hoard
                 return System.Type.GetType("System.Single");
             else if (Type.Equals("double"))
                 return System.Type.GetType("System.Double");
+            else if (Type.Equals("byte[]"))
+                return System.Type.GetType("Byte[]");
             return System.Type.GetType("System.String");
         }
     }
