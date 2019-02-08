@@ -26,7 +26,10 @@ namespace Hoard.GameItemProviders
         /// </summary>
         public IGameItemProvider SecureProvider { get; set; } = null;
 
-        private RestClient Client = null;
+        /// <summary>
+        /// Rest client used to communicate with the server.
+        /// </summary>
+        protected RestClient Client = null;
 
         /// <summary>
         /// Cached list of all supported item types as returned from server
@@ -51,6 +54,36 @@ namespace Hoard.GameItemProviders
         }
 
         private async Task<bool> ConnectToGameServer()
+        {
+            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            {
+                Client = new RestClient(Game.Url);
+                Client.AutomaticDecompression = false;
+                //setup a cookie container for automatic cookies handling
+                Client.CookieContainer = new System.Net.CookieContainer();
+
+                var request = new RestRequest("", Method.GET);
+                request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
+                var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
+
+                if (response.ErrorException != null)
+                {
+                    System.Diagnostics.Trace.TraceError(response.ErrorException.ToString());
+                    return false;
+                }
+
+                return true;
+            }
+            System.Diagnostics.Trace.TraceError($"Not a proper game url: {Game.Url}!");
+            return false;
+        }
+
+        /// <summary>
+        /// Signin given account to the server. Must be done before calling endpoints protected by default challenge based authentication.
+        /// </summary>
+        /// <param name="account">Account ot be singed in</param>
+        /// <returns></returns>
+        public async Task<bool> Signin(AccountInfo account)
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {                
@@ -82,14 +115,14 @@ namespace Hoard.GameItemProviders
                 var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
 
                 var dataBytes = Encoding.ASCII.GetBytes(response.Content.Substring(2) + nonceHex);
-                string sig = await KeyStoreAccountService.SignMessage(dataBytes,ecKey.GetPrivateKey()).ConfigureAwait(false);
+                string sig = await account.SignMessage(dataBytes).ConfigureAwait(false);
                 if (sig == null)
                     return false;
 
                 var data = new JObject();
                 data.Add("token", response.Content);
                 data.Add("nonce", nonceHex.EnsureHexPrefix());
-                data.Add("address", ecKey.GetPublicAddress());
+                data.Add("address", account.ID.ToString());
                 data.Add("signature", sig);
 
                 var responseLogin = PostJson("authentication/login/", data).Result;
@@ -112,16 +145,23 @@ namespace Hoard.GameItemProviders
             req.AddHeader("X-CSRFToken", cookies["csrftoken"].Value);
         }
 
-        private async Task<IRestResponse> PostJson(string url, JObject data)
+        /// <summary>
+        /// Make a request to the server using POST method.
+        /// </summary>
+        /// <param name="url">Request Url</param>
+        /// <param name="data">Optional POST params</param>
+        /// <returns></returns>
+        protected async Task<IRestResponse> PostJson(string url, JObject data)
         {
             var request = new RestRequest(url, Method.POST);
             request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
             request.RequestFormat = DataFormat.Json;
 
-            foreach (var item in data)
-            {
-                request.AddParameter(item.Key, item.Value, ParameterType.GetOrPost);
-            }
+            if (data != null)
+                foreach (var item in data)
+                {
+                    request.AddParameter(item.Key, item.Value, ParameterType.GetOrPost);
+                }
 
             PrepareRequest(request);
 

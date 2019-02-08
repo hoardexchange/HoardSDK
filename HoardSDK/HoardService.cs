@@ -190,6 +190,9 @@ namespace Hoard
                 // - switch original to SecureProvider upon direct request
                 if (BCComm.RegisterHoardGame(game).Result)
                 {
+                    if (DefaultGame == GameID.kInvalidID)
+                        DefaultGame = game;
+
                     if (provider.Connect().Result)
                     {
                         Providers.Add(game, provider);
