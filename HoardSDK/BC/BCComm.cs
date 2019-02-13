@@ -218,7 +218,7 @@ namespace Hoard.BC
                 GameID game = new GameID(gameID);                
                 GameContract gameContract = new GameContract(web, gameAddress);
                 string url = await gameContract.GetGameServerURLAsync();
-                game.GameDevName = await gameContract.GetDevName();
+                game.Symbol = await gameContract.GetSymbol();
                 game.Name = await gameContract.GetName();
                 game.GameOwner = await gameContract.GetOwner();
                 game.Url = !url.StartsWith("http") ? "http://" + url : url;
@@ -328,7 +328,7 @@ namespace Hoard.BC
 
             string data = function.GetData(functionInput);
             var trans = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, BigInteger.Zero, gas.Value, data);
-            string encoded = account.SignTransaction(trans.GetRLPEncodedRaw()).Result;
+            string encoded = await account.SignTransaction(trans.GetRLPEncodedRaw());
             if (encoded == null)
             {
                 Trace.Fail("Could not sign transaction!");

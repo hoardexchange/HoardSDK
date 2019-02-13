@@ -465,7 +465,7 @@ namespace Hoard
         /// Either symKeyID or privateKeyID must be present. Can not be both
         /// </summary>
         /// <param name="filters">message filters</param>
-        /// <param name="id">identifier of function call. In case of Whisper must contain the value "messages"</param>
+        /// <param name="id">identifier of function call. In case of Whisper must contain the value "messages"
         /// This might be the case in some very rare cases, e.g. if you intend to communicate to MailServers, etc</param>
         /// <returns>subscription id</returns>
         public string Subscribe(SubscriptionCriteria filters, string id = "messages")

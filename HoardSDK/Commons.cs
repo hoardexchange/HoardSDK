@@ -224,9 +224,9 @@ namespace Hoard
         /// </summary>
         public string Name { get; set; }
         /// <summary>
-        /// Developer's name of the game
+        /// Unique name identifier of the game
         /// </summary>
-        public string GameDevName { get; set; }
+        public string Symbol { get; set; }
         /// <summary>
         /// Url of game server
         /// </summary>
@@ -260,13 +260,13 @@ namespace Hoard
         /// <summary>
         /// Creates a proper GameID from name (calculates proper ID)
         /// </summary>
-        /// <param name="gameDevName">Developer's name of the game</param>
+        /// <param name="symbol">Unique name identifier of the game</param>
         /// <returns>GameID object</returns>
-        public static GameID FromName(string gameDevName)
+        public static GameID FromName(string symbol)
         {
             var sha3 = new Org.BouncyCastle.Crypto.Digests.KeccakDigest(256);
             byte[] hashb = new byte[sha3.GetDigestSize()];
-            byte[] value = System.Text.Encoding.UTF8.GetBytes(gameDevName);
+            byte[] value = System.Text.Encoding.UTF8.GetBytes(symbol);
             sha3.Reset();
             sha3.BlockUpdate(value, 0, value.Length);
             sha3.DoFinal(hashb, 0);
@@ -276,7 +276,7 @@ namespace Hoard
                 v = v + (BigInteger.One << 256);//make it always positive
             }
             GameID game = new GameID(v);
-            game.GameDevName = gameDevName;
+            game.Symbol = symbol;
             return game;
         }
 

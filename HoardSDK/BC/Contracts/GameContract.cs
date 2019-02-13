@@ -64,9 +64,9 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("name");
         }
 
-        private Function GetFunctionDevName()
+        private Function GetFunctionSymbol()
         {
-            return contract.GetFunction("devName");
+            return contract.GetFunction("symbol");
         }
 
         private Function GetFunctionOwner()
@@ -140,12 +140,12 @@ namespace Hoard.BC.Contracts
         }
 
         /// <summary>
-        /// Returns developer inner name of this game (ID is based on this name)
+        /// Returns game symbol (unique name identifier)
         /// </summary>
         /// <returns></returns>
-        public Task<string> GetDevName()
+        public Task<string> GetSymbol()
         {
-            var function = GetFunctionDevName();
+            var function = GetFunctionSymbol();
             return function.CallAsync<string>();
         }
 

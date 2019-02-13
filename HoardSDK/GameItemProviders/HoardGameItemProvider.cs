@@ -86,13 +86,13 @@ namespace Hoard.GameItemProviders
                 if (sig == null)
                     return false;
 
-                var responseLogin = PostJson("login/", new
+                var responseLogin = await PostJson("login/", new
                 {
                     token = response.Content,
                     nonce = "0x" + nonceHex,
                     address = ecKey.GetPublicAddress(),
                     signature = sig
-                }).Result;
+                });
 
                 if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
                 {
