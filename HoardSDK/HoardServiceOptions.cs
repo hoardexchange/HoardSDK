@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace Hoard
 {
@@ -120,15 +121,12 @@ namespace Hoard
         /// <param name="rpcClient"></param>
         public HoardServiceOptions(HoardServiceConfig cfg, Nethereum.JsonRpc.Client.IClient rpcClient)
         {
-            if (string.IsNullOrEmpty(cfg.GameID))
-            {
-                Game = GameID.kInvalidID;
+            Game = GameID.kInvalidID;
+            if (!string.IsNullOrEmpty(cfg.GameID))
+                Game = new GameID(System.Numerics.BigInteger.Parse(cfg.GameID, NumberStyles.AllowHexSpecifier));
+
+            if (!string.IsNullOrEmpty(cfg.GameBackendUrl))
                 Game.Url = cfg.GameBackendUrl;
-            }
-            else
-            {
-                Game = new GameID(System.Numerics.BigInteger.Parse(cfg.GameID, System.Globalization.NumberStyles.HexNumber));
-            }
 
             if (!string.IsNullOrEmpty(cfg.ExchangeServiceUrl))
                 ExchangeServiceUrl = cfg.ExchangeServiceUrl;

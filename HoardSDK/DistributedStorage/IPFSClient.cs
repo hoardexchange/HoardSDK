@@ -35,11 +35,17 @@ namespace Hoard.DistributedStorage
         public IPFSClient(string uploadClientUrl = "http://localhost:5001", string downloadClientUrl = "http://localhost:8080", 
                             byte fnCode = 18, byte digestSize = 32)
         {
-            uploadClient = new RestClient(uploadClientUrl);
-            downloadClient = new RestClient(downloadClientUrl);
+            if (uploadClientUrl != null && uploadClientUrl != "")
+            {
+                uploadClient = new RestClient(uploadClientUrl);
+                uploadClient.AutomaticDecompression = false;
+            }
 
-            uploadClient.AutomaticDecompression = false;
-            downloadClient.AutomaticDecompression = false;
+            if (downloadClientUrl != null && downloadClientUrl != "")
+            {
+                downloadClient = new RestClient(downloadClientUrl);
+                downloadClient.AutomaticDecompression = false;
+            }
 
             this.fnCode = fnCode;
             this.digestSize = digestSize;
@@ -48,43 +54,50 @@ namespace Hoard.DistributedStorage
         /// <inheritdoc/>
         public async Task<byte[]> DownloadBytesAsync(byte[] address)
         {
-            byte[] bytes = new byte[digestSize + 2];
-            bytes[0] = fnCode;
-            bytes[1] = digestSize;
-            address.CopyTo(bytes, 2);
-            //Encoding.Unicode.GetBytes(address, 0, address.Length, bytes, 2);
-
-            string hash = Base58CheckEncoding.EncodePlain(bytes);
-            RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
-            downloadRequest.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-
-            IRestResponse response = await downloadClient.ExecuteGetTaskAsync(downloadRequest);
-            if (response.ErrorException != null)
+            if (downloadClient != null)
             {
-                // TODO: throw some kind of custom exception on unsuccessful upload
-                throw new ApplicationException();
-            }
+                byte[] bytes = new byte[digestSize + 2];
+                bytes[0] = fnCode;
+                bytes[1] = digestSize;
+                address.CopyTo(bytes, 2);
+                //Encoding.Unicode.GetBytes(address, 0, address.Length, bytes, 2);
 
-            return response.RawBytes;
+                string hash = Base58CheckEncoding.EncodePlain(bytes);
+                RestRequest downloadRequest = new RestRequest("/ipfs/" + hash, Method.GET);
+                downloadRequest.AddDecompressionMethod(System.Net.DecompressionMethods.None);
+
+                IRestResponse response = await downloadClient.ExecuteGetTaskAsync(downloadRequest);
+                if (response.ErrorException != null)
+                {
+                    // TODO: throw some kind of custom exception on unsuccessful upload
+                    throw new ApplicationException();
+                }
+
+                return response.RawBytes;
+            }
+            return null;
         }
 
         /// <inheritdoc/>
         public async Task<byte[]> UploadAsync(byte[] data)
         {
-            RestRequest request = new RestRequest("/api/v0/add", Method.POST);
-            request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-            request.AddFile("file", data, "file", "application/octet-stream");
-
-            IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);
-            if (response.ErrorException != null)
+            if (uploadClient != null)
             {
-                // TODO: throw some kind of custom exception on unsuccessful upload
-                throw new ApplicationException();
-            }
+                RestRequest request = new RestRequest("/api/v0/add", Method.POST);
+                request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
+                request.AddFile("file", data, "file", "application/octet-stream");
 
-            string hash = JsonConvert.DeserializeObject<UploadResponse>(response.Content).Hash;
-            return Base58CheckEncoding.DecodePlain(hash).Skip(2).ToArray();
-           
+                IRestResponse response = await uploadClient.ExecutePostTaskAsync(request);
+                if (response.ErrorException != null)
+                {
+                    // TODO: throw some kind of custom exception on unsuccessful upload
+                    throw new ApplicationException();
+                }
+
+                string hash = JsonConvert.DeserializeObject<UploadResponse>(response.Content).Hash;
+                return Base58CheckEncoding.DecodePlain(hash).Skip(2).ToArray();
+            }
+            return null;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Hoard.BC.Contracts;
-using Hoard.Utils;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -25,8 +26,10 @@ namespace Hoard.GameItemProviders
         /// </summary>
         public IGameItemProvider SecureProvider { get; set; } = null;
 
-        private RestClient Client = null;
-        private string SessionKey = null;
+        /// <summary>
+        /// Rest client used to communicate with the server.
+        /// </summary>
+        protected RestClient Client = null;
 
         /// <summary>
         /// Cached list of all supported item types as returned from server
@@ -53,6 +56,36 @@ namespace Hoard.GameItemProviders
         private async Task<bool> ConnectToGameServer()
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            {
+                Client = new RestClient(Game.Url);
+                Client.AutomaticDecompression = false;
+                //setup a cookie container for automatic cookies handling
+                Client.CookieContainer = new System.Net.CookieContainer();
+
+                var request = new RestRequest("", Method.GET);
+                request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
+                var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
+
+                if (response.ErrorException != null)
+                {
+                    System.Diagnostics.Trace.TraceError(response.ErrorException.ToString());
+                    return false;
+                }
+
+                return true;
+            }
+            System.Diagnostics.Trace.TraceError($"Not a proper game url: {Game.Url}!");
+            return false;
+        }
+
+        /// <summary>
+        /// Signin given account to the server. Must be done before calling endpoints protected by default challenge based authentication.
+        /// </summary>
+        /// <param name="account">Account ot be singed in</param>
+        /// <returns></returns>
+        public async Task<bool> Signin(AccountInfo account)
+        {
+            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {                
                 Client = new RestClient(Game.Url);
                 Client.AutomaticDecompression = false;
@@ -62,7 +95,7 @@ namespace Hoard.GameItemProviders
                 //handshake
 
                 //1. GET challenge token
-                var request = new RestRequest("login/", Method.GET);
+                var request = new RestRequest("authentication/login/", Method.GET);
                 request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
                 var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
 
@@ -82,25 +115,23 @@ namespace Hoard.GameItemProviders
                 var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
 
                 var dataBytes = Encoding.ASCII.GetBytes(response.Content.Substring(2) + nonceHex);
-                string sig = await KeyStoreAccountService.SignMessage(dataBytes,ecKey.GetPrivateKey()).ConfigureAwait(false);
+                string sig = await account.SignMessage(dataBytes).ConfigureAwait(false);
                 if (sig == null)
                     return false;
 
-                var responseLogin = await PostJson("login/", new
-                {
-                    token = response.Content,
-                    nonce = "0x" + nonceHex,
-                    address = ecKey.GetPublicAddress(),
-                    signature = sig
-                });
+                var data = new JObject();
+                data.Add("token", response.Content);
+                data.Add("nonce", nonceHex.EnsureHexPrefix());
+                data.Add("address", account.ID.ToString());
+                data.Add("signature", sig);
+
+                var responseLogin = await PostJson("authentication/login/", data);
 
                 if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
                 {
                     System.Diagnostics.Trace.TraceError($"Failed to log in with response: {responseLogin.Content}!");
                     return false;
                 }
-
-                SessionKey = response.Content;
 
                 return true;
             }
@@ -114,11 +145,23 @@ namespace Hoard.GameItemProviders
             req.AddHeader("X-CSRFToken", cookies["csrftoken"].Value);
         }
 
-        private async Task<IRestResponse> PostJson(string url, object data)
+        /// <summary>
+        /// Make a request to the server using POST method.
+        /// </summary>
+        /// <param name="url">Request Url</param>
+        /// <param name="data">Optional POST params</param>
+        /// <returns></returns>
+        protected async Task<IRestResponse> PostJson(string url, JObject data)
         {
             var request = new RestRequest(url, Method.POST);
             request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
-            request.AddJsonBody(data);
+            request.RequestFormat = DataFormat.Json;
+
+            if (data != null)
+                foreach (var item in data)
+                {
+                    request.AddParameter(item.Key, item.Value, ParameterType.GetOrPost);
+                }
 
             PrepareRequest(request);
 
@@ -182,32 +225,30 @@ namespace Hoard.GameItemProviders
         {
             if (Client != null)
             {
-                var request = new RestRequest(string.Format("player_items/{0},", account.ID), Method.GET);
-                var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
-
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    return ParseItems(response.Content);
-                }
+                return await GetItemsClientRequest(account.ID);
             }
+
             if (SecureProvider != null)
             {
                 return await SecureProvider.GetPlayerItems(account).ConfigureAwait(false);
             }
+
             return null;
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong page, ulong itemsPerPage)
         {
             if (Client != null)
             {
-                throw new NotImplementedException();
+                return await GetItemsClientRequest(account.ID, itemType, page, itemsPerPage);
             }
+
             if (SecureProvider != null)
             {
-                return await SecureProvider.GetPlayerItems(account, itemType, firstItemIndex, itemsToGather).ConfigureAwait(false);
+                return await SecureProvider.GetPlayerItems(account, itemType, page, itemsPerPage).ConfigureAwait(false);
             }
+
             return null;
         }
 
@@ -216,7 +257,8 @@ namespace Hoard.GameItemProviders
         {
             if (Client != null)
             {
-                throw new NotImplementedException();
+                // FIXME why there is ulong instead of BigInteger in the interface?
+                return await GetItemsAmountClientRequest(account.ID, itemType);
             }
             if (SecureProvider != null)
             {
@@ -230,18 +272,14 @@ namespace Hoard.GameItemProviders
         {
             if (Client != null)
             {
-                var request = new RestRequest(string.Format("player_items/{0},{1}", account.ID, itemType), Method.GET);
-                var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
-
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    return ParseItems(response.Content);
-                }
+                return await GetItemsClientRequest(account.ID, itemType);
             }
+
             if (SecureProvider != null)
             {
                 return await SecureProvider.GetPlayerItems(account, itemType).ConfigureAwait(false);
             }
+
             return null;
         }
 
@@ -250,47 +288,80 @@ namespace Hoard.GameItemProviders
         {
             if (Client != null)
             {
-                var response = await PostJson("items/", gameItemsParams).ConfigureAwait(false);
-
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                var gameItems = new List<GameItem>();
+                foreach(var gameItemsParam in gameItemsParams)
                 {
-                    return ParseItems(response.Content);
+                    // FIXME Do we need another endpoint for batched game item request? 
+                    // We need to extend/change GameItemsParams, it is missing game item type. It has ContractAddress which is relevant for BC provider
+                    gameItems.AddRange(await GetItemsClientRequest(new HoardID(gameItemsParam.PlayerAddress), null));
                 }
+                return gameItems.ToArray();
             }
+
             if (SecureProvider != null)
             {
                 return await SecureProvider.GetItems(gameItemsParams);
             }
+
             return null;
         }
 
-        private GameItem[] ParseItems(string itemsStr)
+        private async Task<GameItem[]> GetItemsClientRequest(HoardID accountId = null, string itemType = null, ulong? page = null, ulong? itemsPerPage = null)
         {
-            var responseItems = JsonConvert.DeserializeObject<responseDict>(itemsStr);
-            GameItem[] items = new GameItem[responseItems.items.Count];
-            for (int i = 0; i < responseItems.items.Count; ++i)
-            {
-                string symbol = responseItems.items[i]["symbol"];
-                byte[] stateBytes = ToByteArray(responseItems.items[i]["state"]);
-                string stateStr = BitConverter.ToString(stateBytes);
-                string contract_address = responseItems.items[i]["contract_address"];
+            var request = new RestRequest("items/", Method.GET);
 
-                BaseGameItemMetadata meta = null;
-                if (responseItems.items[i]["metadata"] == "ERC223")
-                {
-                    BigInteger balance = BigInteger.Parse(responseItems.items[i]["amount"]);
-                    meta = new ERC223GameItemContract.Metadata(stateStr, contract_address, balance);
-                    items[i] = new GameItem(Game, symbol, meta);
-                }
-                else if (responseItems.items[i]["metadata"] == "ERC721")
-                {
-                    BigInteger asset_id = BigInteger.Parse(responseItems.items[i]["asset_id"]);
-                    meta = new ERC721GameItemContract.Metadata(contract_address, asset_id);
-                    items[i] = new GameItem(Game, symbol, meta);
-                    items[i].State = stateBytes;
-                }
+            if(accountId != null)
+                request.AddQueryParameter("owner_address", accountId.ToString().EnsureHexPrefix());
+
+            if(itemType != null)
+                request.AddQueryParameter("item_type", itemType);
+
+            if (page.HasValue)
+            {
+                request.AddQueryParameter("page", page.Value.ToString());
+                if (itemsPerPage != null)
+                    request.AddQueryParameter("per_page", itemsPerPage.Value.ToString());
             }
-            return items;
+
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                var gameItems = new List<GameItem>();
+
+                var result = JArray.Parse(response.Content);
+                foreach (var item in result.Children<JObject>())
+                {
+                    gameItems.AddRange(JsonConvert.DeserializeObject<List<GameItem>>(
+                        item.GetValue("items").ToString(),
+                        new JsonConverter[] { new GameItemsConverter() }
+                    ));
+                }
+
+                return gameItems.ToArray();
+            }
+
+            return null;
+        }
+
+        private async Task<ulong> GetItemsAmountClientRequest(HoardID accountId, string itemType = null)
+        {
+            var request = new RestRequest("items/balance/", Method.GET);
+
+            request.AddQueryParameter("owner_address", accountId.ToString().EnsureHexPrefix());
+
+            if (itemType != null)
+                request.AddQueryParameter("item_type", itemType);
+
+            var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                var result = JObject.Parse(response.Content);
+                return result.GetValue("balance").Value<ulong>();
+            }
+
+            return 0;
         }
 
         /// <inheritdoc/>
@@ -301,10 +372,12 @@ namespace Hoard.GameItemProviders
                 //TODO: implement this
                 //throw new NotImplementedException();
             }
+
             if (SecureProvider != null)
             {
                 return SecureProvider.Transfer(from, addressTo, item, amount);
             }
+
             System.Diagnostics.Trace.TraceError("Invalid Client or SecureProvider!");
             return new Task<bool>(()=> { return false; });
         }
@@ -327,5 +400,69 @@ namespace Hoard.GameItemProviders
             return connected;
         }
         #endregion
+
+        internal class GameItemsConverter : JsonConverter
+        {
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                JToken tokens = JToken.Load(reader);
+                var gameItems = new List<GameItem>();
+
+                foreach (var token in tokens)
+                {
+                    if (token["contract_type"].ToString() == "ERC721")
+                    {
+                        string symbol = token["item_type"].ToString();
+                        string contractAddress = token["contract_address"].ToString();
+                        byte[] stateBytes = token["state"].ToString().HexToByteArray();
+                        BigInteger tokenId = BigInteger.Parse(token["token_id"].ToString());
+
+                        var meta = new ERC721GameItemContract.Metadata(contractAddress, tokenId);
+                        var item = new GameItem(HoardService.Instance.DefaultGame, symbol, meta);
+                        item.State = stateBytes;
+
+                        gameItems.Add(item);
+                    }
+                    else if (token["contract_type"].ToString() == "ERC223")
+                    {
+                        string symbol = token["item_type"].ToString();
+                        string contractAddress = token["contract_address"].ToString();
+                        string stateStr = token["state"].ToString();
+                        BigInteger balance = BigInteger.Parse(token["balance"].ToString());
+
+                        var meta = new ERC223GameItemContract.Metadata(stateStr, contractAddress, balance);
+                        var item = new GameItem(HoardService.Instance.DefaultGame, symbol, meta);
+
+                        gameItems.Add(item);
+                    }
+                    else
+                    {
+                        throw new NotSupportedException();
+                    }
+                }
+
+                return gameItems;
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override bool CanConvert(Type objectType)
+            {
+                return true;
+            }
+
+            public override bool CanRead
+            {
+                get { return true; }
+            }
+
+            public override bool CanWrite
+            {
+                get { return false; }
+            }
+        }
     }
 }
