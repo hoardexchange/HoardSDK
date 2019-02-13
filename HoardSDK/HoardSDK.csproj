@@ -4,6 +4,9 @@
     <TargetFrameworks>netstandard2.0;net46</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="HoardSDK.xml" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Hid.Net">
       <Version>1.4.1</Version>
     </PackageReference>
