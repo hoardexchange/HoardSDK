@@ -18,7 +18,7 @@ namespace HoardTests.HW
 
         public LedgerWalletTest()
         {
-            signer = LedgerFactory.GetLedgerWalletAsync(DerivationPath.BIP44).Result;
+            signer = LedgerFactory.GetLedgerWalletAsync(DerivationPath.DefaultBIP44).Result;
             Assert.True(signer != null);
         }
 

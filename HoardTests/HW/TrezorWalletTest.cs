@@ -37,7 +37,7 @@ namespace HoardTests.HW
         public TrezorWalletTest()
         {
             var pinInputProvider = new PINInputProviderFixture();
-            signer = TrezorFactory.GetTrezorWalletAsync(DerivationPath.BIP44, pinInputProvider).Result;
+            signer = TrezorFactory.GetTrezorWalletAsync(DerivationPath.DefaultBIP44, pinInputProvider).Result;
             Assert.True(signer != null);
         }
 
