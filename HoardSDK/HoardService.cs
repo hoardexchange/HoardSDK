@@ -114,13 +114,13 @@ namespace Hoard
         /// </summary>
         /// <param name="options">Hoard service options.</param>
         /// <returns>True if initialization succeeds.</returns>
-        public bool Initialize(HoardServiceOptions options)
+        public async Task<bool> Initialize(HoardServiceOptions options)
         {
             Options = options;
 
             //access point to block chain - a must have
             BCComm = new BC.BCComm(Options.RpcClient, Options.GameCenterContract);
-            Tuple<bool,string> result = BCComm.Connect().Result;
+            Tuple<bool,string> result = await BCComm.Connect();
             if (!result.Item1)
                 return false;
 
@@ -137,7 +137,7 @@ namespace Hoard
 
             //init exchange service
             IExchangeService exchange = new HoardExchangeService(this);
-            if (exchange.Init().Result)
+            if (await exchange.Init())
             {
                 ExchangeService = exchange;
             }
