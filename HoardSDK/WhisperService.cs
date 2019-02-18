@@ -223,7 +223,7 @@ namespace Hoard
                         json.TryGetValue("error", out message);
                         if (message != null)
                         {
-                            Error = message.ToString();
+                            Answer = message.ToString();
                         }
                         else
                         {
@@ -278,7 +278,12 @@ namespace Hoard
         {
             try
             {
-                ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
+                if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+                {
+                    outMessage = "Connection error!";
+                    return false;
+                }
+
                 ResponseEvent.Reset();
 
                 if (IsConnected == false)
@@ -296,7 +301,12 @@ namespace Hoard
                 }
                 jobj.Add("id", JsonId);
                 WhisperClient.Send(Encoding.ASCII.GetBytes(jobj.ToString()));
-                ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
+                if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+                {
+                    outMessage = "Connection error!";
+                    return false;
+                }
+
                 if (Error != "")
                 {
                     outMessage = Error;
