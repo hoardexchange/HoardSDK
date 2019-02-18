@@ -252,7 +252,7 @@ namespace Hoard
                 };
                 WhisperClient.OnError += (sender, e) =>
                 {
-                    Trace.TraceError("Connection error!");
+                    ErrorCallbackProvider.Instance.ReportError("Connection error!");
                 };
                 WhisperClient.Connect();
                 if (ConnectionEvent.WaitOne(MAX_WAIT_TIME_IN_MS))

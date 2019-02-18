@@ -190,7 +190,7 @@ namespace Hoard.Utils
             }
             catch (Exception ex)
             {
-                Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
                 return false;
             }
         }
@@ -317,7 +317,7 @@ namespace Hoard.Utils
             }
             catch (Exception ex)
             {
-                Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
                 return false;
             }
         }

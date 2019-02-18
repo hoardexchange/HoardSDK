@@ -68,13 +68,13 @@ namespace Hoard.GameItemProviders
 
                 if (response.ErrorException != null)
                 {
-                    System.Diagnostics.Trace.TraceError(response.ErrorException.ToString());
+                    ErrorCallbackProvider.Instance.ReportError(response.ErrorException.ToString());
                     return false;
                 }
 
                 return true;
             }
-            System.Diagnostics.Trace.TraceError($"Not a proper game url: {Game.Url}!");
+            ErrorCallbackProvider.Instance.ReportError($"Not a proper game url: {Game.Url}!");
             return false;
         }
 
@@ -101,7 +101,7 @@ namespace Hoard.GameItemProviders
 
                 if (response.ErrorException != null)
                 {
-                    System.Diagnostics.Trace.TraceError(response.ErrorException.ToString());
+                    ErrorCallbackProvider.Instance.ReportError(response.ErrorException.ToString());
                     return false;
                 }
                 
@@ -129,13 +129,13 @@ namespace Hoard.GameItemProviders
 
                 if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
                 {
-                    System.Diagnostics.Trace.TraceError($"Failed to log in with response: {responseLogin.Content}!");
+                    ErrorCallbackProvider.Instance.ReportError($"Failed to log in with response: {responseLogin.Content}!");
                     return false;
                 }
 
                 return true;
             }
-            System.Diagnostics.Trace.TraceError($"Not a proper game url: {Game.Url}!");            
+            ErrorCallbackProvider.Instance.ReportError($"Not a proper game url: {Game.Url}!");            
             return false;            
         }
 
@@ -378,7 +378,7 @@ namespace Hoard.GameItemProviders
                 return SecureProvider.Transfer(from, addressTo, item, amount);
             }
 
-            System.Diagnostics.Trace.TraceError("Invalid Client or SecureProvider!");
+            ErrorCallbackProvider.Instance.ReportError("Invalid Client or SecureProvider!");
             return new Task<bool>(()=> { return false; });
         }
 

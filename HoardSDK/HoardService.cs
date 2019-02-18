@@ -122,7 +122,10 @@ namespace Hoard
             BCComm = new BC.BCComm(Options.RpcClient, Options.GameCenterContract);
             Tuple<bool,string> result = await BCComm.Connect();
             if (!result.Item1)
+            {
+                ErrorCallbackProvider.Instance.ReportError("Node not available!");
                 return false;
+            }
 
             Trace.TraceInformation(result.Item2);
             
@@ -202,7 +205,7 @@ namespace Hoard
             }
             else
             {
-                Trace.TraceError($"Game {game.ID} already registered!");
+                ErrorCallbackProvider.Instance.ReportError($"Game {game.ID} already registered!");
             }
             return false;
         }
@@ -318,7 +321,7 @@ namespace Hoard
             }
             catch(Exception ex)
             {
-                Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
                 return 0;
             }
         }
@@ -335,7 +338,7 @@ namespace Hoard
             }
             catch (Exception ex)
             {
-                Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
                 return "0x0";
             }
         }
@@ -353,7 +356,7 @@ namespace Hoard
             }
             catch (Exception ex)
             {
-                Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
                 return 0;
             }
         }

@@ -30,7 +30,7 @@ namespace Hoard.ExchangeServices
             ExchangeContract = await BCComm.GetHoardExchangeContract();
             if (ExchangeContract == null)
             {
-                System.Diagnostics.Trace.TraceError("Cannot get proper GameExchange contract!");
+                ErrorCallbackProvider.Instance.ReportError("Cannot get proper GameExchange contract!");
                 return false;
             }
             return true;
@@ -148,7 +148,7 @@ namespace Hoard.ExchangeServices
             }
             catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
-                System.Diagnostics.Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
             }
             return false;
         }
@@ -177,7 +177,7 @@ namespace Hoard.ExchangeServices
             }
             catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
-                System.Diagnostics.Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
                 return false;
             }
         }

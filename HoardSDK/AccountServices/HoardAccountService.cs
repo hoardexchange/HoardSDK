@@ -159,18 +159,18 @@ namespace Hoard
             MessageId id = (MessageId)reader.ReadUInt32();
             UInt32 errorCode = (prefix & 0xff000000) >> 24;
             if ((ErrorCodes)errorCode != ErrorCodes.errOk)
-                Trace.TraceInformation("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
+                ErrorCallbackProvider.Instance.ReportError("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
             switch (id)
             {
                 case MessageId.kInvalidMessage:
-                    Trace.TraceInformation("Invalid message");
+                    ErrorCallbackProvider.Instance.ReportError("Invalid message");
                     return true;
                 case MessageId.kAuthenticate:
                     return Msg_Authenticate(reader, sd);
                 case MessageId.kEnumerateAccounts:
                     return Msg_EnumerateAccounts(reader, sd);
                 case MessageId.kGiveActiveAccount:
-                    Trace.TraceInformation("Invalid message");
+                    ErrorCallbackProvider.Instance.ReportError("Invalid message");
                     return true;
                 case MessageId.kSignMessage:
                     return Msg_SignMessage(reader, sd);
@@ -179,7 +179,7 @@ namespace Hoard
                 case MessageId.kSetActiveAccount:
                     return Msg_SetActiveAccount(reader, sd);
                 default:
-                    Trace.TraceInformation("Invalid message id [" + id.ToString() + "]");
+                    ErrorCallbackProvider.Instance.ReportError("Invalid message id [" + id.ToString() + "]");
                     return true;
             }
         }
@@ -199,7 +199,9 @@ namespace Hoard
                 return false;
             }
             else
+            {
                 Trace.TraceWarning("Authentication not confirmed by signer!");
+            }
             return true;
         }
 
@@ -302,7 +304,7 @@ namespace Hoard
         {
             if (user.HoardId == "")
             {
-                Trace.TraceError($"Invalid user: {user.HoardId}!");
+                ErrorCallbackProvider.Instance.ReportError($"Invalid user: {user.HoardId}!");
                 return false;
             }
 
@@ -366,7 +368,7 @@ namespace Hoard
                     };
                     socketData.Socket.OnError += (sender, e) =>
                     {
-                        Trace.TraceError("Connection error!");
+                        ErrorCallbackProvider.Instance.ReportError("Connection error!");
                         socketData.ResponseEvent.Set();
                     };
                     SignerClients[user] = socketData;
@@ -390,7 +392,7 @@ namespace Hoard
                     return true;
                 }
             }
-            Trace.TraceError("No valid token received!");
+            ErrorCallbackProvider.Instance.ReportError("No valid token received!");
             return false;
         }
 
@@ -424,7 +426,7 @@ namespace Hoard
                     ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(tokenResponse.Content);
                     errorMsg += ", error: " + errorResponse.error;
                 }
-                Trace.TraceError(errorMsg);
+                ErrorCallbackProvider.Instance.ReportError(errorMsg);
             }
 
             return null;

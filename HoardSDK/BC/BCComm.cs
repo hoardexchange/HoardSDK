@@ -179,7 +179,7 @@ namespace Hoard.BC
                 gameContracts.Add(game, gameContract);
                 return true;
             }
-            Trace.TraceError($"Game is not registered in Hoard Game Center: game = {game.ID}!");
+            ErrorCallbackProvider.Instance.ReportError($"Game is not registered in Hoard Game Center: game = {game.ID}!");
             return false;
         }
 
@@ -287,7 +287,7 @@ namespace Hoard.BC
                     return await hrdContract.Transfer(from, to, amount);
                 }
             }
-            Trace.TraceError("Cannot get proper Hoard Token contract!");
+            ErrorCallbackProvider.Instance.ReportError("Cannot get proper Hoard Token contract!");
             return false;
         }
 

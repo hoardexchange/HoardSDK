@@ -146,7 +146,7 @@ namespace Hoard.GameItemProviders
                 }
                 return true;
             }
-            System.Diagnostics.Trace.TraceError($"Cannot find any contracts for Game: {Game.ID}!");
+            ErrorCallbackProvider.Instance.ReportError($"Cannot find any contracts for Game: {Game.ID}!");
             return false;
         }
 
