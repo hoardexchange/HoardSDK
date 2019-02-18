@@ -5,77 +5,29 @@ using System.Text;
 namespace Hoard
 {
     /// <summary>
-    /// Error callback provider
+    /// Error callback provider (not thread safe)
     /// </summary>
-    public class ErrorCallbackProvider
+    public static class ErrorCallbackProvider
     {
         /// <summary>
         /// Error callback
         /// </summary>
-        public class IErrorCallback
-        {
-            /// <summary>
-            /// Constructor
-            /// </summary>
-            public IErrorCallback()
-            {
-                Instance.RegisterCallback(this);
-            }
-
-            /// <summary>
-            /// Destructor
-            /// </summary>
-            ~IErrorCallback()
-            {
-                Instance.UnregisterCallback();
-            }
-
-            /// <summary>
-            /// Reports error
-            /// </summary>
-            /// <param name="code"></param>
-            /// <param name="message"></param>
-            public virtual void ReportError(string message) {}
-        }
-
-        private IErrorCallback ErrorCallback = null;
+        public delegate void ErrorCallback(string message);
 
         /// <summary>
-        /// Singleton instance
+        /// Event raised when error is reported
         /// </summary>
-        public static readonly ErrorCallbackProvider Instance = new ErrorCallbackProvider();
-
-        /// <summary>
-        /// Explicit static constructor to tell C# compiler
-        /// </summary>
-        static ErrorCallbackProvider()
-        {
-        }
-
-        private ErrorCallbackProvider()
-        {
-        }
-
-        private void RegisterCallback(IErrorCallback callback)
-        {
-            Instance.ErrorCallback = callback;
-        }
-
-        private void UnregisterCallback()
-        {
-            Instance.ErrorCallback = null;
-        }
+        public static event ErrorCallback OnError;
 
         /// <summary>
         /// Report error
         /// </summary>
-        /// <param name="code"></param>
         /// <param name="message"></param>
-        public void ReportError(string message)
+        public static void ReportError(string message)
         {
-            if (ErrorCallback != null)
+            if (OnError != null)
             {
-                ErrorCallback.ReportError(message);
+                OnError(message);
             }
         }
     }

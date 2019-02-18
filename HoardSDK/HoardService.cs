@@ -57,6 +57,12 @@ namespace Hoard
         /// </summary>
         private HoardService()
         {
+            ErrorCallbackProvider.OnError += ErrorCallbackProvider_OnError;
+        }
+
+        private void ErrorCallbackProvider_OnError(string message)
+        {
+            Trace.TraceError(message);
         }
 
         /// <summary>
