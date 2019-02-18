@@ -159,18 +159,18 @@ namespace Hoard
             MessageId id = (MessageId)reader.ReadUInt32();
             UInt32 errorCode = (prefix & 0xff000000) >> 24;
             if ((ErrorCodes)errorCode != ErrorCodes.errOk)
-                ErrorCallbackProvider.Instance.ReportError("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
+                ErrorCallbackProvider.ReportError("Error [" + errorCode.ToString() + "] occurred during receiving message from signer");
             switch (id)
             {
                 case MessageId.kInvalidMessage:
-                    ErrorCallbackProvider.Instance.ReportError("Invalid message");
+                    ErrorCallbackProvider.ReportError("Invalid message");
                     return true;
                 case MessageId.kAuthenticate:
                     return Msg_Authenticate(reader, sd);
                 case MessageId.kEnumerateAccounts:
                     return Msg_EnumerateAccounts(reader, sd);
                 case MessageId.kGiveActiveAccount:
-                    ErrorCallbackProvider.Instance.ReportError("Invalid message");
+                    ErrorCallbackProvider.ReportError("Invalid message");
                     return true;
                 case MessageId.kSignMessage:
                     return Msg_SignMessage(reader, sd);
@@ -179,7 +179,7 @@ namespace Hoard
                 case MessageId.kSetActiveAccount:
                     return Msg_SetActiveAccount(reader, sd);
                 default:
-                    ErrorCallbackProvider.Instance.ReportError("Invalid message id [" + id.ToString() + "]");
+                    ErrorCallbackProvider.ReportError("Invalid message id [" + id.ToString() + "]");
                     return true;
             }
         }
@@ -304,7 +304,7 @@ namespace Hoard
         {
             if (user.HoardId == "")
             {
-                ErrorCallbackProvider.Instance.ReportError($"Invalid user: {user.HoardId}!");
+                ErrorCallbackProvider.ReportError($"Invalid user: {user.HoardId}!");
                 return false;
             }
 
@@ -368,7 +368,7 @@ namespace Hoard
                     };
                     socketData.Socket.OnError += (sender, e) =>
                     {
-                        ErrorCallbackProvider.Instance.ReportError("Connection error!");
+                        ErrorCallbackProvider.ReportError("Connection error!");
                         socketData.ResponseEvent.Set();
                     };
                     SignerClients[user] = socketData;
@@ -392,7 +392,7 @@ namespace Hoard
                     return true;
                 }
             }
-            ErrorCallbackProvider.Instance.ReportError("No valid token received!");
+            ErrorCallbackProvider.ReportError("No valid token received!");
             return false;
         }
 
@@ -426,7 +426,7 @@ namespace Hoard
                     ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(tokenResponse.Content);
                     errorMsg += ", error: " + errorResponse.error;
                 }
-                ErrorCallbackProvider.Instance.ReportError(errorMsg);
+                ErrorCallbackProvider.ReportError(errorMsg);
             }
 
             return null;

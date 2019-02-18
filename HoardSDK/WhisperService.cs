@@ -252,7 +252,7 @@ namespace Hoard
                 };
                 WhisperClient.OnError += (sender, e) =>
                 {
-                    ErrorCallbackProvider.Instance.ReportError("Connection error!");
+                    ErrorCallbackProvider.ReportError("Connection error!");
                 };
                 WhisperClient.Connect();
                 if (ConnectionEvent.WaitOne(MAX_WAIT_TIME_IN_MS))

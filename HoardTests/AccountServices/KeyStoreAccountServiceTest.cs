@@ -7,18 +7,6 @@ using Xunit;
 
 namespace HoardTests.AccountServices
 {
-    public class MyErrorCallback : ErrorCallbackProvider.IErrorCallback
-    {
-        public MyErrorCallback()
-        {
-        }
-
-        public override void ReportError(string message)
-        {
-            System.Diagnostics.Debug.Print(message);
-        }
-    }
-
     public class KeyStoreAccountServiceTest //: IClassFixture<HoardServiceFixture>
     {
         public class UserInputProviderFixture : IUserInputProvider
@@ -39,7 +27,9 @@ namespace HoardTests.AccountServices
 
         public KeyStoreAccountServiceTest()
         {
-            MyErrorCallback ec = new MyErrorCallback();
+            ErrorCallbackProvider.OnError += (message) => {
+                System.Diagnostics.Debug.Print(message);
+            };
             signer = new KeyStoreAccountService(new UserInputProviderFixture());
             user = new User("KeyStoreUser");
             user.ChangeActiveAccount(signer.CreateAccount("KeyStoreAccount", user).Result).Wait();

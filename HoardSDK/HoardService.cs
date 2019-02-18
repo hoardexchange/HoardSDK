@@ -129,7 +129,7 @@ namespace Hoard
             Tuple<bool,string> result = await BCComm.Connect();
             if (!result.Item1)
             {
-                ErrorCallbackProvider.Instance.ReportError("Node not available!");
+                ErrorCallbackProvider.ReportError("Node not available!");
                 return false;
             }
 
@@ -211,7 +211,7 @@ namespace Hoard
             }
             else
             {
-                ErrorCallbackProvider.Instance.ReportError($"Game {game.ID} already registered!");
+                ErrorCallbackProvider.ReportError($"Game {game.ID} already registered!");
             }
             return false;
         }
@@ -327,7 +327,7 @@ namespace Hoard
             }
             catch(Exception ex)
             {
-                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
+                ErrorCallbackProvider.ReportError(ex.ToString());
                 return 0;
             }
         }
@@ -344,7 +344,7 @@ namespace Hoard
             }
             catch (Exception ex)
             {
-                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
+                ErrorCallbackProvider.ReportError(ex.ToString());
                 return "0x0";
             }
         }
@@ -362,7 +362,7 @@ namespace Hoard
             }
             catch (Exception ex)
             {
-                ErrorCallbackProvider.Instance.ReportError(ex.ToString());
+                ErrorCallbackProvider.ReportError(ex.ToString());
                 return 0;
             }
         }

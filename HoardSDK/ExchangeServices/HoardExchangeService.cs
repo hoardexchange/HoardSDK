@@ -36,7 +36,7 @@ namespace Hoard.ExchangeServices
 
                 return true;
             }
-            ErrorCallbackProvider.Instance.ReportError($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
+            ErrorCallbackProvider.ReportError($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
             return false;
         }
 
