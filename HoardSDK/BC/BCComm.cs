@@ -327,7 +327,37 @@ namespace Hoard.BC
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             string data = function.GetData(functionInput);
-            var trans = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, BigInteger.Zero, gas.Value, data);
+            var defaultGasPrice = Nethereum.Signer.TransactionBase.DEFAULT_GAS_PRICE;
+            var trans = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, defaultGasPrice, gas.Value, data);
+            string encoded = await account.SignTransaction(trans.GetRLPEncodedRaw());
+            if (encoded == null)
+            {
+                Trace.Fail("Could not sign transaction!");
+                return null;
+            }
+
+            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + encoded);
+            TransactionReceipt receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
+            while (receipt == null)
+            {
+                Thread.Sleep(1000);
+                receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
+            }
+            return receipt;
+        }
+
+        /// <summary>
+        /// Utility to send ETH on blockchain signing it by given account
+        /// </summary>
+        /// <returns>Receipt of called transaction</returns>
+        public static async Task<TransactionReceipt> EvaluateOnBC(Web3 web, AccountInfo account, string to, HexBigInteger amount)
+        {
+            Debug.Assert(account != null);
+
+            var nonceService = new InMemoryNonceService(account.ID, web.Client);
+            BigInteger nonce = await nonceService.GetNextNonceAsync();
+
+            var trans = new Nethereum.Signer.Transaction(to, amount, nonce);
             string encoded = await account.SignTransaction(trans.GetRLPEncodedRaw());
             if (encoded == null)
             {
