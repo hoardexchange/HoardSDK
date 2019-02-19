@@ -10,7 +10,7 @@ def makeConfig(addr, url, port, outFileName):
     outFile.write("{\n")
     outFile.write("\t\"GameID\":null,\n")
     outFile.write("\t\"GameBackendUrl\":\"\",\n")
-    outFile.write("\t\"ClientUrl\":"+"\"http://"+url+":"+port+"\",\n")
+    outFile.write("\t\"ClientUrl\":\""+url+":"+port+"\",\n")
     outFile.write("\t\"AccountsDir\":null,\n")
     outFile.write("\t\"GameCenterContract\":"+"\""+addr+"\"\n")
     outFile.write("}\n")
