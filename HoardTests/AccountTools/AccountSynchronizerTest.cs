@@ -63,7 +63,7 @@ namespace HoardTests.AccountTools
             //    while (i > 0)
             //    {
             //        res = AccountSyncApplicant.Update(filterTo).Result;
-            //        res = AccountSyncKeeper.Update(filterTo).Result;
+            //        res = AccountSyncKeeper.Update(filterFrom).Result;
             //        i--;
             //    }
             //    int confirmation = AccountSyncKeeper.GetConfirmationStatus();
@@ -78,7 +78,7 @@ namespace HoardTests.AccountTools
             //        res = AccountSyncApplicant.Update(filterTo).Result;
             //        i--;
             //    }
-            //    if(AccountSyncApplicant.IsKeyStoreReceived())
+            //    if (AccountSyncApplicant.IsKeyStoreReceived())
             //    {
             //        string data = AccountSyncApplicant.GetKeystoreReceivedData();
             //    }

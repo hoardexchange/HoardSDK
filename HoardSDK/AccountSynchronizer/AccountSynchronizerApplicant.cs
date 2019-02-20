@@ -47,7 +47,7 @@ namespace Hoard
             keyRequestData.EncryptionKeyPublicAddress = key.GetPublicAddress();
             string requestDataText = JsonConvert.SerializeObject(keyRequestData);
             string subData = "0x" + BitConverter.ToString(Encoding.ASCII.GetBytes(requestDataText)).Replace("-", string.Empty);
-            byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystore, Encoding.ASCII.GetBytes(subData));
+            byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.ASCII.GetBytes(subData));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return WhisperService.SendMessage(msg).Result;
         }
@@ -95,7 +95,7 @@ namespace Hoard
             byte[] decrypted = Decrypt(DecryptionKey, fullEncryptedData);
             KeyStoreEncryptedData = Encoding.ASCII.GetString(decrypted);
             Debug.Print("Decrypted Message: " + KeyStoreEncryptedData);
-            Interlocked.Exchange(ref KeystoreReceiwed, 0);
+            Interlocked.Exchange(ref KeystoreReceiwed, 1);
             EncryptedKeystoreData = null;
         }
 
@@ -107,13 +107,13 @@ namespace Hoard
         {
             switch (internalMessage.id)
             {
-                case InternalData.InternalMessageId.GenerateEncryptionKey:
+                case InternalData.InternalMessageId.GenerateEncryptionKeyRequest:
                     {
                         DecryptionKey = GenerateDecryptionKey();
                         string msg = SendTransferRequest(DecryptionKey);
                     }
                     break;
-                case InternalData.InternalMessageId.TransferKeystore:
+                case InternalData.InternalMessageId.TransferKeystoreAnswer:
                     {
                         AggregateMessage(internalMessage.data);
                     }
@@ -143,7 +143,7 @@ namespace Hoard
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
-            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPin, Encoding.ASCII.GetBytes(confirmationPin));
+            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPinRequest, Encoding.ASCII.GetBytes(confirmationPin));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return await WhisperService.SendMessage(msg);
         }

@@ -194,7 +194,7 @@ namespace Hoard
         /// </summary>
         public WhisperService(string url)
         {
-            WhisperClient = new WebSocket(url);
+            WhisperClient = new WebSocket(url, "whisper-protocol");
             ResponseEvent = new ManualResetEvent(false);
             ConnectionEvent = new ManualResetEvent(false);
         }

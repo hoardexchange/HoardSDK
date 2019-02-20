@@ -93,13 +93,13 @@ namespace Hoard
         {
             switch (internalMessage.id)
             {
-                case InternalData.InternalMessageId.ConfirmationPin:
+                case InternalData.InternalMessageId.ConfirmationPinRequest:
                     {
                         ConfirmationPin = internalMessage.data;
                         Interlocked.Exchange(ref ConfirmationPinReceiwed, 1);
                     }
                     break;
-                case InternalData.InternalMessageId.TransferKeystore:
+                case InternalData.InternalMessageId.TransferKeystoreRequest:
                     {
                         byte[] data = WhisperService.HexStringToByteArray(internalMessage.data.Substring(2));
                         string textData = Encoding.ASCII.GetString(data);
@@ -141,7 +141,7 @@ namespace Hoard
             topic[0] = ConvertPinToTopic(OriginalPin);
             byte[] msgData = new byte[1];
             msgData[0] = 0x0;
-            byte[] data = BuildMessage(InternalData.InternalMessageId.GenerateEncryptionKey, msgData);
+            byte[] data = BuildMessage(InternalData.InternalMessageId.GenerateEncryptionKeyRequest, msgData);
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return await WhisperService.SendMessage(msg);
         }
@@ -194,7 +194,7 @@ namespace Hoard
                 Debug.Print("chunk[" + i.ToString() + "] " + MessageChunks[i]);
                 id[0] = (byte)i;
                 string chunkId = BitConverter.ToString(id).Replace("-", string.Empty).ToLower();
-                byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystore, Encoding.ASCII.GetBytes("0x" + chunkId + maxChunks + MessageChunks[i]));
+                byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreAnswer, Encoding.ASCII.GetBytes("0x" + chunkId + maxChunks + MessageChunks[i]));
                 WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
                 string res = await WhisperService.SendMessage(msg);
             }
