@@ -21,7 +21,7 @@ namespace Hoard
         private EthECKey DecryptionKey;
         private byte[][] EncryptedKeystoreData;
         private int KeystoreReceiwed;
-        private string EncryptedKeystoreDataText;
+        private string DecryptedKeystoreData;
 
         /// <summary>
         /// Constructor
@@ -30,7 +30,7 @@ namespace Hoard
         {
             WhisperService = new WhisperService(url);
             ConfirmationPin = "";
-            EncryptedKeystoreDataText = "";
+            DecryptedKeystoreData = "";
             Interlocked.Exchange(ref KeystoreReceiwed, 0);
         }
 
@@ -93,8 +93,8 @@ namespace Hoard
                 offset += EncryptedKeystoreData[i].Length;
             }
             byte[] decrypted = Decrypt(DecryptionKey, fullEncryptedData);
-            EncryptedKeystoreDataText = Encoding.ASCII.GetString(decrypted);
-            Debug.Print("Decrypted Message: " + EncryptedKeystoreDataText);
+            DecryptedKeystoreData = Encoding.ASCII.GetString(decrypted);
+            Debug.Print("Decrypted Message: " + DecryptedKeystoreData);
             Interlocked.Exchange(ref KeystoreReceiwed, 1);
             EncryptedKeystoreData = null;
         }
@@ -130,7 +130,7 @@ namespace Hoard
         {
             ConfirmationPin = "";
             EncryptedKeystoreData = null;
-            EncryptedKeystoreDataText = "";
+            DecryptedKeystoreData = "";
             Interlocked.Exchange(ref KeystoreReceiwed, 0);
         }
 
@@ -162,7 +162,7 @@ namespace Hoard
         /// </summary>
         public string GetKeystoreReceivedData()
         {
-            return EncryptedKeystoreDataText;
+            return DecryptedKeystoreData;
         }
     }
 }
