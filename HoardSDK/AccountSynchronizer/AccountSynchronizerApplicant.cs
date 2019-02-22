@@ -36,7 +36,7 @@ namespace Hoard
 
         private EthECKey GenerateDecryptionKey()
         {
-            return GenerateKey(Encoding.ASCII.GetBytes(OriginalPin));
+            return GenerateKey(Encoding.ASCII.GetBytes(OriginalPin + mDateTime));
         }
 
         private string SendTransferRequest(EthECKey key)
@@ -46,24 +46,23 @@ namespace Hoard
             KeyRequestData keyRequestData = new KeyRequestData();
             keyRequestData.EncryptionKeyPublicAddress = key.GetPublicAddress();
             string requestDataText = JsonConvert.SerializeObject(keyRequestData);
-            string subData = "0x" + BitConverter.ToString(Encoding.ASCII.GetBytes(requestDataText)).Replace("-", string.Empty);
-            byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.ASCII.GetBytes(subData));
+            byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.ASCII.GetBytes(requestDataText));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return WhisperService.SendMessage(msg).Result;
         }
 
-        private void AggregateMessage(string data)
+        private void AggregateMessage(byte[] data)
         {
-            byte[] chunk = WhisperService.HexStringToByteArray(data.Substring(2));
-            byte id = chunk[0];
-            byte chunks = chunk[1];
+            UInt32 id = BitConverter.ToUInt32(data, 0);
+            UInt32 chunks = BitConverter.ToUInt32(data, 4);
+            UInt32 length = BitConverter.ToUInt32(data, 8);
             if (EncryptedKeystoreData == null)
             {
                 EncryptedKeystoreData = new byte[chunks][];
             }
             Debug.Assert(id < EncryptedKeystoreData.Length);
-            EncryptedKeystoreData[id] = new byte[chunk.Length - 2];
-            Buffer.BlockCopy(chunk, 2, EncryptedKeystoreData[id], 0, EncryptedKeystoreData[id].Length);
+            EncryptedKeystoreData[id] = new byte[length];
+            Buffer.BlockCopy(data, 12, EncryptedKeystoreData[id], 0, EncryptedKeystoreData[id].Length);
 
             bool messageNotFinished = false;
             int fullDataSize = 0;
@@ -131,6 +130,7 @@ namespace Hoard
             ConfirmationPin = "";
             EncryptedKeystoreData = null;
             DecryptedKeystoreData = "";
+            mDateTime = "";
             Interlocked.Exchange(ref KeystoreReceiwed, 0);
         }
 
@@ -143,7 +143,9 @@ namespace Hoard
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
-            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPinRequest, Encoding.ASCII.GetBytes(confirmationPin));
+            mDateTime = DateTime.Now.ToString();
+            string pinAndDate = confirmationPin + "|" + mDateTime;
+            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPinRequest, Encoding.ASCII.GetBytes(pinAndDate));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return await WhisperService.SendMessage(msg);
         }

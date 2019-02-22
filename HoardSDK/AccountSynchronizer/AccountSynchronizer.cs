@@ -57,7 +57,7 @@ namespace Hoard
             public int length;
 
             /// message data
-            public string data;
+            public byte[] data;
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Hoard
         /// <summary>
         /// Maximal message chunk size
         /// </summary>
-        static protected int ChunkSize = 256;
+        static protected int ChunkSize = 128;
 
         /// <summary>
         /// 
@@ -106,6 +106,11 @@ namespace Hoard
         /// </summary>
         protected string OriginalPin = "";
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected string mDateTime;
+
         /// Confirmation Pin
         public string ConfirmationPin
         {
@@ -120,6 +125,7 @@ namespace Hoard
         {
             WhisperService = new WhisperService(url);
             ConfirmationPin = "";
+            mDateTime = "";
         }
 
         private bool IsFairRandom(byte number, byte range)
@@ -245,7 +251,7 @@ namespace Hoard
             InternalData internalMsg = new InternalData();
             internalMsg.id = id;
             internalMsg.length = data.Length;
-            internalMsg.data = Encoding.ASCII.GetString(data);
+            internalMsg.data = data;
             return Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(internalMsg));
         }
 
