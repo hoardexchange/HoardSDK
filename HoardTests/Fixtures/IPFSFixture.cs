@@ -44,7 +44,7 @@ namespace HoardTests.Fixtures
 
             Directory.SetCurrentDirectory(EnvironmentCurrentDirectory);
 
-            Client = new IPFSClient();
+            Client = new IPFSClient("http://10.30.10.121:3081", "http://10.30.10.121:3080");
         }
 
         public void Dispose()
