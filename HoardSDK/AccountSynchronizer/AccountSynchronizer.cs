@@ -380,6 +380,8 @@ namespace Hoard
         public async Task<bool> Update(string filter)
         {
             List<WhisperService.ReceivedData> objects = await WhisperService.ReceiveMessage(filter);
+            if (objects == null)
+                return false;
             foreach (WhisperService.ReceivedData obj in objects)
             {
                 TranslateMessage(obj);
