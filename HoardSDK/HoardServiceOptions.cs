@@ -22,6 +22,10 @@ namespace Hoard
         /// </summary>
         public string ClientUrl;
         /// <summary>
+        /// Whisper web socket server
+        /// </summary>
+        public string WhisperAddress;
+        /// <summary>
         /// The address of main Hoard Game Center contract
         /// </summary>
         public string GameCenterContract;
