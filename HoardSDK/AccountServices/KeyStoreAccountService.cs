@@ -3,6 +3,7 @@ using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -136,6 +137,43 @@ namespace Hoard
                     }
                 });
                 return user.Accounts.Count > 0;
+            });
+        }
+
+        /// <summary>
+        /// Retrieves all account files stored in account folder for particular user.
+        /// </summary>
+        /// <param name="userName">user name to retrieve accounts for</param>
+        /// <param name="accountsDir">accounts directory</param>
+        /// <returns></returns>
+        public static async Task<bool> EnumerateAccounts(string userName, string accountsDir, Action<string> enumFunc)
+        {
+            return await Task.Run(() =>
+            {
+                string hashedName = Helper.Keccak256HexHashString(userName);
+                string path = Path.Combine(accountsDir, hashedName);
+
+                if (!Directory.Exists(path))
+                {
+                    System.Diagnostics.Trace.TraceWarning("Not found any account files.");
+                    return false;
+                }
+
+                var accountsFiles = Directory.GetFiles(path, "*.keystore");
+                if (accountsFiles.Length == 0)
+                {
+                    System.Diagnostics.Trace.TraceWarning("Not found any account files.");
+                    return false;
+                }
+
+                foreach (var fullPath in accountsFiles)
+                {
+                    string fileName = Path.GetFileName(fullPath);
+                    if ((fileName != null) && (fileName != System.String.Empty))
+                        enumFunc(fileName);
+                }
+
+                return true;
             });
         }
 
