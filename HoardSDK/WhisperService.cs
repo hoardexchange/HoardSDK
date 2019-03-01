@@ -184,10 +184,13 @@ namespace Hoard
         private string Error;
         private bool IsConnected = false;
 
-        static private string JsonVersion = "2.0";
-        static private int JsonId = 1;
+        static readonly private string JsonVersion = "2.0";
+        static readonly private int JsonId = 1;
 
-        static private int MAX_WAIT_TIME_IN_MS = 30000;
+        /// <summary>
+        /// Message timeout
+        /// </summary>
+        static readonly public int MAX_WAIT_TIME_IN_MS = 120000;
 
         /// <summary>
         /// Constructor
