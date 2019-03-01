@@ -145,7 +145,7 @@ namespace Hoard
         /// </summary>
         /// <param name="userName">user name to retrieve accounts for</param>
         /// <param name="accountsDir">accounts directory</param>
-        /// <param name="enumFunc">enumerator</param>
+        /// <param name="enumFunc">returns full acount path</param>
         /// <returns></returns>
         public static async Task<bool> EnumerateAccounts(string userName, string accountsDir, Action<string> enumFunc)
         {
@@ -169,9 +169,8 @@ namespace Hoard
 
                 foreach (var fullPath in accountsFiles)
                 {
-                    string fileName = Path.GetFileName(fullPath);
-                    if ((fileName != null) && (fileName != System.String.Empty))
-                        enumFunc(fileName);
+                    if ((fullPath != null) && (fullPath != System.String.Empty))
+                        enumFunc(fullPath);
                 }
 
                 return true;
