@@ -213,11 +213,11 @@ namespace Hoard
                     Error = "";
                     if (e.IsBinary)
                     {
-                        Trace.TraceInformation("Message received: " + e.RawData);
+                        ErrorCallbackProvider.ReportInfo("Message received: " + e.RawData);
                     }
                     else if (e.IsText)
                     {
-                        Trace.TraceInformation("Message received: " + e.Data);
+                        ErrorCallbackProvider.ReportInfo("Message received: " + e.Data);
                         JToken message = null;
                         JObject json = JObject.Parse(e.Data);
                         json.TryGetValue("error", out message);
@@ -238,14 +238,14 @@ namespace Hoard
                 };
                 WhisperClient.OnOpen += (sender, e) =>
                 {
-                    Trace.TraceInformation("Connection established");
+                    ErrorCallbackProvider.ReportInfo("Connection established");
                     IsConnected = true;
                     ResponseEvent.Set();
                     ConnectionEvent.Set();
                 };
                 WhisperClient.OnClose += (sender, e) =>
                 {
-                    Trace.TraceInformation("Connection closed");
+                    ErrorCallbackProvider.ReportInfo("Connection closed");
                     IsConnected = false;
                     ResponseEvent.Set();
                     ConnectionEvent.Set();

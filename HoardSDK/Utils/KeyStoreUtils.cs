@@ -15,8 +15,19 @@ namespace Hoard.Utils
         /// </summary>
         public class AccountDesc
         {
+            /// <summary>
+            /// 
+            /// </summary>
             public string Address;
+
+            /// <summary>
+            /// 
+            /// </summary>
             public string PrivKey;
+
+            /// <summary>
+            /// 
+            /// </summary>
             public string Name;
 
             /// <summary>
@@ -44,18 +55,18 @@ namespace Hoard.Utils
             string hashedName = Helper.Keccak256HexHashString(user.UserName);
             string path = Path.Combine(accountsDir, hashedName);
 
-            System.Diagnostics.Trace.TraceInformation(string.Format("Loading accounts from path: {0}", path));
+            ErrorCallbackProvider.ReportInfo(string.Format("Loading accounts from path: {0}", path));
 
             if (!Directory.Exists(path))
             {
-                System.Diagnostics.Trace.TraceWarning("Not found any account files.");
+                ErrorCallbackProvider.ReportWarning("Not found any account files.");
                 return;
             }
 
             var accountsFiles = Directory.GetFiles(path, "*.keystore");
             if (accountsFiles.Length == 0)
             {
-                System.Diagnostics.Trace.TraceWarning("Not found any account files.");
+                ErrorCallbackProvider.ReportWarning("Not found any account files.");
                 return;
             }
 
@@ -81,7 +92,7 @@ namespace Hoard.Utils
             var accountsFiles = Directory.GetFiles(Path.Combine(accountsDir, hashedName), filename);
             if (accountsFiles.Length == 0)
                 return null;
-            System.Diagnostics.Trace.TraceInformation(string.Format("Loading account {0}", accountsFiles[0]), "INFO");
+            ErrorCallbackProvider.ReportInfo(string.Format("Loading account {0}", accountsFiles[0]));
 
             string json = File.ReadAllText(accountsFiles[0]);
             var details = JObject.Parse(json);

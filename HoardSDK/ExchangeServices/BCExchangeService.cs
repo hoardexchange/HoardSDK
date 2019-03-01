@@ -144,7 +144,7 @@ namespace Hoard.ExchangeServices
                 {
                     return await gameItemProvider.Transfer(account, ExchangeContract.Address, item, amount);
                 }
-                System.Diagnostics.Trace.TraceWarning($"Cannot find GameItemProvider for item: {item.Symbol}!");
+                ErrorCallbackProvider.ReportWarning($"Cannot find GameItemProvider for item: {item.Symbol}!");
             }
             catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {

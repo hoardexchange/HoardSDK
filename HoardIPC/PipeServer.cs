@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Hoard;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -64,7 +65,7 @@ namespace HoardIPC
                     }
                     catch (IOException ex)
                     {
-                        Trace.TraceError(ex.ToString());
+                        ErrorCallbackProvider.ReportError(ex.ToString());
                     }
                 }
                 pipeServer.IsCLosed = true;

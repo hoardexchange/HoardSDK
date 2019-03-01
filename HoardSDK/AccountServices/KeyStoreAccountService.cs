@@ -104,7 +104,7 @@ namespace Hoard
         /// <returns>new account</returns>
         public async Task<AccountInfo> CreateAccount(string name, User user)
         {
-            Trace.TraceInformation("Generating user account.");
+            ErrorCallbackProvider.ReportInfo("Generating user account.");
 
             string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
 
@@ -145,6 +145,7 @@ namespace Hoard
         /// </summary>
         /// <param name="userName">user name to retrieve accounts for</param>
         /// <param name="accountsDir">accounts directory</param>
+        /// <param name="enumFunc">enumerator</param>
         /// <returns></returns>
         public static async Task<bool> EnumerateAccounts(string userName, string accountsDir, Action<string> enumFunc)
         {
@@ -155,14 +156,14 @@ namespace Hoard
 
                 if (!Directory.Exists(path))
                 {
-                    System.Diagnostics.Trace.TraceWarning("Not found any account files.");
+                    ErrorCallbackProvider.ReportWarning("Not found any account files.");
                     return false;
                 }
 
                 var accountsFiles = Directory.GetFiles(path, "*.keystore");
                 if (accountsFiles.Length == 0)
                 {
-                    System.Diagnostics.Trace.TraceWarning("Not found any account files.");
+                    ErrorCallbackProvider.ReportWarning("Not found any account files.");
                     return false;
                 }
 
@@ -188,7 +189,7 @@ namespace Hoard
             KeyStoreAccount ksa = signature as KeyStoreAccount;
             if (ksa == null)
             {
-                System.Diagnostics.Trace.Fail("Invalid signature!");
+                ErrorCallbackProvider.ReportError("Invalid signature!");
                 return null;
             }
 
@@ -206,7 +207,7 @@ namespace Hoard
             KeyStoreAccount ksa = signature as KeyStoreAccount;
             if (ksa == null)
             {
-                System.Diagnostics.Trace.Fail("Invalid signature!");
+                ErrorCallbackProvider.ReportError("Invalid signature!");
                 return null;
             }
 

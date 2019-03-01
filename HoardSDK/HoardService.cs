@@ -57,12 +57,6 @@ namespace Hoard
         /// </summary>
         private HoardService()
         {
-            ErrorCallbackProvider.OnError += ErrorCallbackProvider_OnError;
-        }
-
-        private void ErrorCallbackProvider_OnError(string message)
-        {
-            Trace.TraceError(message);
         }
 
         /// <summary>
@@ -133,8 +127,8 @@ namespace Hoard
                 return false;
             }
 
-            Trace.TraceInformation(result.Item2);
-            
+            ErrorCallbackProvider.ReportInfo(result.Item2);
+
             //our default GameItemProvider
             if (Options.Game != GameID.kInvalidID)
             {
@@ -403,7 +397,7 @@ namespace Hoard
             }
             else
             {
-                Trace.TraceWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
+                ErrorCallbackProvider.ReportWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
             }
             return items.ToArray();
         }
@@ -427,7 +421,7 @@ namespace Hoard
             }
             else
             {
-                Trace.TraceWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
+                ErrorCallbackProvider.ReportWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
             }
             return items.ToArray();
         }
