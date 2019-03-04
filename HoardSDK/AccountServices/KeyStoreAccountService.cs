@@ -1,6 +1,7 @@
 ﻿using Hoard.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -171,6 +172,39 @@ namespace Hoard
                 {
                     if ((fullPath != null) && (fullPath != System.String.Empty))
                         enumFunc(fullPath);
+                }
+
+                return true;
+            });
+        }
+
+        /// <summary>
+        /// Saves account to selected directory.
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="accountsDir"></param>
+        /// <param name="accountData"></param>
+        /// <returns></returns>
+        public static async Task<bool> SaveAccount(string userName, string accountsDir, string accountData)
+        {
+            return await Task.Run(() =>
+            {
+                string hashedName = Helper.Keccak256HexHashString(userName);
+                string path = Path.Combine(accountsDir, hashedName);
+                Directory.CreateDirectory(path);
+
+                var accountJsonObject = JObject.Parse(accountData);
+                if (accountJsonObject == null)
+                    return false;
+
+                string id = accountJsonObject["id"].Value<string>();
+                var fileName = id + ".keystore";
+
+                //save the File
+                using (var newfile = File.CreateText(Path.Combine(path, fileName)))
+                {
+                    newfile.Write(accountData);
+                    newfile.Flush();
                 }
 
                 return true;
