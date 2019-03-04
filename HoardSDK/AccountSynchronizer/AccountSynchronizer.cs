@@ -37,17 +37,20 @@ namespace Hoard
             /// </summary>
             public enum InternalMessageId
             {
-                /// Confirmation Pin request
-                ConfirmationPinRequest = 0,
+                /// Confirmation Pin
+                ConfirmationPin = 0,
 
-                /// Encryption key generation request
-                GenerateEncryptionKeyRequest,
+                /// Encryption key generation
+                GenerateEncryptionKey,
 
                 /// Transfer keystore request
                 TransferKeystoreRequest,
 
                 /// Transfer keystore answer
                 TransferKeystoreAnswer,
+
+                /// Custom data
+                TransferCustomData
             }
 
             /// Internal message id
