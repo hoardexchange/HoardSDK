@@ -226,7 +226,7 @@ namespace Hoard
                         json.TryGetValue("error", out message);
                         if (message != null)
                         {
-                            Answer = message.ToString();
+                            Error = message.ToString();
                         }
                         else
                         {
@@ -279,11 +279,12 @@ namespace Hoard
 
         private bool BuildAndSendRequest(string function, JArray additionalParams, out string outMessage)
         {
+            outMessage = "";
             try
             {
                 if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
-                    outMessage = "Connection error!";
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
                     return false;
                 }
 
@@ -291,7 +292,7 @@ namespace Hoard
 
                 if (IsConnected == false)
                 {
-                    outMessage = "Connection error!";
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
                     return false;
                 }
                 
@@ -306,13 +307,13 @@ namespace Hoard
                 WhisperClient.Send(Encoding.ASCII.GetBytes(jobj.ToString()));
                 if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
-                    outMessage = "Connection error!";
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
                     return false;
                 }
 
                 if (Error != "")
                 {
-                    outMessage = Error;
+                    ErrorCallbackProvider.ReportError("Whisper error! " + Error);
                     return false;
                 }
                 else
@@ -323,7 +324,7 @@ namespace Hoard
             }
             catch (Exception e)
             {
-                outMessage = "Unknown exception";
+                ErrorCallbackProvider.ReportError("Whisper unknown exception");
                 return false;
             }
         }
