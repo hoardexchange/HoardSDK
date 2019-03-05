@@ -88,7 +88,7 @@ namespace HoardTests.Fixtures
             // Collect the sort command output.
             if (!string.IsNullOrEmpty(outLine.Data))
             {
-                Trace.WriteLine(outLine.Data);
+                ErrorCallbackProvider.ReportInfo(outLine.Data);
             }
         }
 

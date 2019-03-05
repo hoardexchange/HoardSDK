@@ -106,13 +106,14 @@ namespace Hoard
         {
             switch (internalMessage.id)
             {
-                case InternalData.InternalMessageId.GenerateEncryptionKeyRequest:
+                case InternalData.InternalMessageId.GenerateEncryptionKey:
                     {
                         DecryptionKey = GenerateDecryptionKey();
                         string msg = SendTransferRequest(DecryptionKey);
                     }
                     break;
                 case InternalData.InternalMessageId.TransferKeystoreAnswer:
+                case InternalData.InternalMessageId.TransferCustomData:
                     {
                         AggregateMessage(internalMessage.data);
                     }
@@ -145,7 +146,7 @@ namespace Hoard
             topic[0] = ConvertPinToTopic(OriginalPin);
             mDateTime = DateTime.Now.ToString();
             string pinAndDate = confirmationPin + "|" + mDateTime;
-            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPinRequest, Encoding.ASCII.GetBytes(pinAndDate));
+            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPin, Encoding.ASCII.GetBytes(pinAndDate));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return await WhisperService.SendMessage(msg);
         }

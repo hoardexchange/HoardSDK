@@ -184,10 +184,13 @@ namespace Hoard
         private string Error;
         private bool IsConnected = false;
 
-        static private string JsonVersion = "2.0";
-        static private int JsonId = 1;
+        static readonly private string JsonVersion = "2.0";
+        static readonly private int JsonId = 1;
 
-        static private int MAX_WAIT_TIME_IN_MS = 30000;
+        /// <summary>
+        /// Message timeout
+        /// </summary>
+        static readonly public int MAX_WAIT_TIME_IN_MS = 120000;
 
         /// <summary>
         /// Constructor
@@ -213,17 +216,17 @@ namespace Hoard
                     Error = "";
                     if (e.IsBinary)
                     {
-                        Trace.TraceInformation("Message received: " + e.RawData);
+                        ErrorCallbackProvider.ReportInfo("Message received: " + e.RawData);
                     }
                     else if (e.IsText)
                     {
-                        Trace.TraceInformation("Message received: " + e.Data);
+                        ErrorCallbackProvider.ReportInfo("Message received: " + e.Data);
                         JToken message = null;
                         JObject json = JObject.Parse(e.Data);
                         json.TryGetValue("error", out message);
                         if (message != null)
                         {
-                            Answer = message.ToString();
+                            Error = message.ToString();
                         }
                         else
                         {
@@ -238,14 +241,14 @@ namespace Hoard
                 };
                 WhisperClient.OnOpen += (sender, e) =>
                 {
-                    Trace.TraceInformation("Connection established");
+                    ErrorCallbackProvider.ReportInfo("Connection established");
                     IsConnected = true;
                     ResponseEvent.Set();
                     ConnectionEvent.Set();
                 };
                 WhisperClient.OnClose += (sender, e) =>
                 {
-                    Trace.TraceInformation("Connection closed");
+                    ErrorCallbackProvider.ReportInfo("Connection closed");
                     IsConnected = false;
                     ResponseEvent.Set();
                     ConnectionEvent.Set();
@@ -276,11 +279,12 @@ namespace Hoard
 
         private bool BuildAndSendRequest(string function, JArray additionalParams, out string outMessage)
         {
+            outMessage = "";
             try
             {
                 if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
-                    outMessage = "Connection error!";
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
                     return false;
                 }
 
@@ -288,7 +292,7 @@ namespace Hoard
 
                 if (IsConnected == false)
                 {
-                    outMessage = "Connection error!";
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
                     return false;
                 }
                 
@@ -303,13 +307,13 @@ namespace Hoard
                 WhisperClient.Send(Encoding.ASCII.GetBytes(jobj.ToString()));
                 if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
-                    outMessage = "Connection error!";
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
                     return false;
                 }
 
                 if (Error != "")
                 {
-                    outMessage = Error;
+                    ErrorCallbackProvider.ReportError("Whisper error! " + Error);
                     return false;
                 }
                 else
@@ -320,7 +324,7 @@ namespace Hoard
             }
             catch (Exception e)
             {
-                outMessage = "Unknown exception";
+                ErrorCallbackProvider.ReportError("Whisper unknown exception");
                 return false;
             }
         }

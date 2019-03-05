@@ -37,17 +37,20 @@ namespace Hoard
             /// </summary>
             public enum InternalMessageId
             {
-                /// Confirmation Pin request
-                ConfirmationPinRequest = 0,
+                /// Confirmation Pin
+                ConfirmationPin = 0,
 
-                /// Encryption key generation request
-                GenerateEncryptionKeyRequest,
+                /// Encryption key generation
+                GenerateEncryptionKey,
 
                 /// Transfer keystore request
                 TransferKeystoreRequest,
 
                 /// Transfer keystore answer
                 TransferKeystoreAnswer,
+
+                /// Custom data
+                TransferCustomData
             }
 
             /// Internal message id
@@ -74,7 +77,7 @@ namespace Hoard
         /// <summary>
         /// Time out in seconds
         /// </summary>
-        static protected int MessageTimeOut = 30;
+        static public int MessageTimeOut = (WhisperService.MAX_WAIT_TIME_IN_MS / 1000);
 
         /// <summary>
         /// Maximal time in seconds to be spent on proof of work
@@ -358,7 +361,7 @@ namespace Hoard
             SHA256 sha256 = new SHA256Managed();
             var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
             SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.ASCII.GetString(hashedPin));
-            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, false);
+            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, true);
             return await WhisperService.CreateNewMessageFilter(msgCriteria);
         }
 
@@ -380,41 +383,13 @@ namespace Hoard
         public async Task<bool> Update(string filter)
         {
             List<WhisperService.ReceivedData> objects = await WhisperService.ReceiveMessage(filter);
+            if (objects == null)
+                return false;
             foreach (WhisperService.ReceivedData obj in objects)
             {
                 TranslateMessage(obj);
             }
             return true;
         }
-
-        //public bool SendPin(string pin)
-        //{
-        //    SHA256 sha256 = new SHA256Managed();
-        //    var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
-        //    bool res = WhisperService.CheckConnection().Result;
-        //    if (res)
-        //    {
-        //        string[] topic = { "0x07678231" };
-        //        string privKey = "";// WhisperService.GetPrivateKey(ActualKeyId);
-        //        string sig = "";// WhisperService.GetPublicKey(ActualKeyId);
-        //        string symKeyId = WhisperService.GenerateSymetricKeyFromPassword("dupa").Result;
-        //        WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(symKeyId, privKey, sig, 2.01f, topic, false);
-        //        //string filter = WhisperService.Subscribe(msgCriteria);
-        //        string filter = WhisperService.CreateNewMessageFilter(msgCriteria).Result;
-
-        //        string symKeyId2 = WhisperService.GenerateSymetricKeyFromPassword("dupa").Result;
-        //        WhisperService.SubscriptionCriteria msgCriteria2 = new WhisperService.SubscriptionCriteria(symKeyId2, privKey, sig, 2.01f, topic, false);
-        //        string filter2 = WhisperService.CreateNewMessageFilter(msgCriteria2).Result;
-        //        WhisperService.MessageDesc msg = new WhisperService.MessageDesc(symKeyId, "", "", 7, topic[0], hashedPin, "", 2, 2.01f, "");
-        //        string resStr = WhisperService.SendMessage(msg).Result;
-        //        List<WhisperService.ReceivedData> objects = WhisperService.ReceiveMessage(filter2).Result;
-        //        foreach(WhisperService.ReceivedData obj in objects)
-        //        {
-        //            byte[] data = obj.GetDecodedMessage();
-        //            string str = Encoding.ASCII.GetString(data);
-        //        }
-        //    }
-        //    return true;
-        //}
     }
 }

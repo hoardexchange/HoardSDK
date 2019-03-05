@@ -141,6 +141,13 @@ namespace Hoard
             return Encoding.ASCII.GetBytes(str.PadRight(length, '\0'));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="signerUrl"></param>
+        /// <param name="clientId"></param>
+        /// <param name="userInputProvider"></param>
         public HoardAccountService(string url, string signerUrl, string clientId, IUserInputProvider userInputProvider)
         {
             UserInputProvider = userInputProvider;
@@ -190,7 +197,7 @@ namespace Hoard
             uint userAuthenticated = reader.ReadUInt32();
             if (userAuthenticated != 0)
             {
-                Trace.TraceInformation("Authentication confirmed by signer");
+                ErrorCallbackProvider.ReportInfo("Authentication confirmed by signer");
                 MemoryStream ms = new MemoryStream();
                 BinaryWriter writer = new BinaryWriter(ms);
                 writer.Write(MessagePrefix);
@@ -200,7 +207,7 @@ namespace Hoard
             }
             else
             {
-                Trace.TraceWarning("Authentication not confirmed by signer!");
+                ErrorCallbackProvider.ReportWarning("Authentication not confirmed by signer!");
             }
             return true;
         }
@@ -217,7 +224,7 @@ namespace Hoard
                     byte[] address = new byte[(int)Helper.kAddressLength];
                     reader.Read(address, 0, (int)Helper.kAddressLength);
                     string accountName = BitConverter.ToString(address).Replace("-", string.Empty).ToLower();
-                    Trace.TraceInformation("SignerAccountService: " + accountName + " received");
+                    ErrorCallbackProvider.ReportInfo("SignerAccountService: " + accountName + " received");
                     Debug.Assert(sd.Owner != null);
                     HoardAccount accountInfo = new HoardAccount(sd.Owner.HoardId, "0x" + accountName, sd.Owner);
                     sd.Owner.Accounts.Add(accountInfo);
@@ -264,9 +271,15 @@ namespace Hoard
             return true;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="user"></param>
+        /// <returns></returns>
         public async Task<AccountInfo> CreateAccount(string name, User user)
         {
-            //System.Diagnostics.Trace.TraceInformation("Generating user account on Hoard Auth Server.");
+            //ErrorCallbackProvider.ReportInfo("Generating user account on Hoard Auth Server.");
 
             //string email = user.HoardId;
             //if (email == "")
@@ -294,12 +307,17 @@ namespace Hoard
             //        ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(createResponse.Content);
             //        errorMsg += ", error: " + errorResponse.error;
             //    }
-            //    System.Diagnostics.Trace.TraceInformation(errorMsg);
+            //    ErrorCallbackProvider.ReportInfo(errorMsg);
             //}
 
             return await Task.FromResult<AccountInfo>(null);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
         public async Task<bool> RequestAccounts(User user)
         {
             if (user.HoardId == "")
@@ -347,23 +365,23 @@ namespace Hoard
                     {
                         if (e.IsBinary)
                         {
-                            Trace.TraceInformation("Message received: " + e.RawData);
+                            ErrorCallbackProvider.ReportInfo("Message received: " + e.RawData);
                             if (ProcessMessage(e.RawData, socketData))
                                 socketData.ResponseEvent.Set();
                         }
                         else if (e.IsText)
                         {
-                            Trace.TraceInformation("Message received: " + e.Data);
+                            ErrorCallbackProvider.ReportInfo("Message received: " + e.Data);
                         }
                     };
                     socketData.Socket.OnOpen += (sender, e) =>
                     {
-                        Trace.TraceInformation("Connection established");
+                        ErrorCallbackProvider.ReportInfo("Connection established");
                         socketData.ResponseEvent.Set();
                     };
                     socketData.Socket.OnClose += (sender, e) =>
                     {
-                        Trace.TraceInformation("Connection closed");
+                        ErrorCallbackProvider.ReportInfo("Connection closed");
                         socketData.ResponseEvent.Set();
                     };
                     socketData.Socket.OnError += (sender, e) =>
@@ -432,16 +450,34 @@ namespace Hoard
             return null;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
         public Task<string> SignMessage(byte[] input, AccountInfo signature)
         {
             return SignMessageInternal(input, signature);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rlpEncodedTransaction"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
         public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature)
         {
             return SignTransactionInternal(rlpEncodedTransaction, signature);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="accountInfo"></param>
+        /// <returns></returns>
         public static Task<string> SignMessageInternal(byte[] input, AccountInfo accountInfo)
         {
             var signer = new Nethereum.Signer.EthereumMessageSigner();
@@ -463,6 +499,12 @@ namespace Hoard
             return Task.FromResult<string>("");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rlpEncodedTransaction"></param>
+        /// <param name="accountInfo"></param>
+        /// <returns></returns>
         public static Task<string> SignTransactionInternal(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
         {
             MemoryStream ms = new MemoryStream();
@@ -488,6 +530,11 @@ namespace Hoard
             return Task.FromResult<string>("");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns></returns>
         public static Task<AccountInfo> ActivateAccount(AccountInfo account)
         {
             Trace.Assert(account != null);

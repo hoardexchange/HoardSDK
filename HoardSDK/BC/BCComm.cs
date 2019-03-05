@@ -49,7 +49,7 @@ namespace Hoard.BC
             }
             catch(Exception ex)
             {
-                Trace.Fail(ex.ToString());
+                ErrorCallbackProvider.ReportError(ex.ToString());
                 return new Tuple<bool, string>(false, ex.Message);
             }
         }
@@ -169,7 +169,7 @@ namespace Hoard.BC
         {
             if (gameContracts.ContainsKey(game))
             {
-                Trace.TraceWarning("Game already registered!");
+                ErrorCallbackProvider.ReportWarning("Game already registered!");
                 return true;
             }
 
@@ -341,7 +341,7 @@ namespace Hoard.BC
             string encoded = await account.SignTransaction(trans.GetRLPEncodedRaw());
             if (encoded == null)
             {
-                Trace.Fail("Could not sign transaction!");
+                ErrorCallbackProvider.ReportError("Could not sign transaction!");
                 return null;
             }
 
@@ -370,7 +370,7 @@ namespace Hoard.BC
             string encoded = await account.SignTransaction(trans.GetRLPEncodedRaw());
             if (encoded == null)
             {
-                Trace.Fail("Could not sign transaction!");
+                ErrorCallbackProvider.ReportError("Could not sign transaction!");
                 return null;
             }
 

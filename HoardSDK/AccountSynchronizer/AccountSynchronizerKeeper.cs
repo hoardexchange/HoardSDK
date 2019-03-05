@@ -91,7 +91,7 @@ namespace Hoard
         {
             switch (internalMessage.id)
             {
-                case InternalData.InternalMessageId.ConfirmationPinRequest:
+                case InternalData.InternalMessageId.ConfirmationPin:
                     {
                         ConfirmationPin = Encoding.ASCII.GetString(internalMessage.data);
                         int index = ConfirmationPin.IndexOf("|");
@@ -144,7 +144,7 @@ namespace Hoard
             topic[0] = ConvertPinToTopic(OriginalPin);
             byte[] msgData = new byte[1];
             msgData[0] = 0x0;
-            byte[] data = BuildMessage(InternalData.InternalMessageId.GenerateEncryptionKeyRequest, msgData);
+            byte[] data = BuildMessage(InternalData.InternalMessageId.GenerateEncryptionKey, msgData);
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return await WhisperService.SendMessage(msg);
         }
@@ -200,11 +200,36 @@ namespace Hoard
                 Buffer.BlockCopy(length, 0, dtsData, 8, 4);
                 Buffer.BlockCopy(chunks[i], 0, dtsData, 12, chunks[i].Length);
                 byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreAnswer, dtsData);
-
-                //string chunkId = i.ToString("X4");
-                //string length = MessageChunks[i].Length.ToString("X4");
-                //byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreAnswer, Encoding.ASCII.GetBytes("0x" + chunkId + numChunks + MessageChunks[i]));
                 WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
+                string res = await WhisperService.SendMessage(msg);
+            }
+            return "Message sent";
+        }
+
+        /// <summary>
+        /// Sends custom data
+        /// </summary>
+        /// <param name="data">Custom data</param>
+        /// <returns></returns>
+        public async Task<string> SendEncryptedData(byte[] data)
+        {
+            string[] topic = new string[1];
+            topic[0] = ConvertPinToTopic(OriginalPin);
+            byte[] encryptedData = Encrypt(EncryptionKey, data);
+            List<byte[]> chunks = new List<byte[]>();
+            SplitMessage(encryptedData, ChunkSize, ref chunks);
+            byte[] numChunks = BitConverter.GetBytes(chunks.Count);
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                byte[] chunkId = BitConverter.GetBytes(i);
+                byte[] length = BitConverter.GetBytes(chunks[i].Length);
+                byte[] dtsData = new byte[chunks[i].Length + 4 + 4 + 4];
+                Buffer.BlockCopy(chunkId, 0, dtsData, 0, 4);
+                Buffer.BlockCopy(numChunks, 0, dtsData, 4, 4);
+                Buffer.BlockCopy(length, 0, dtsData, 8, 4);
+                Buffer.BlockCopy(chunks[i], 0, dtsData, 12, chunks[i].Length);
+                byte[] pack = BuildMessage(InternalData.InternalMessageId.TransferCustomData, dtsData);
+                WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], pack, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
                 string res = await WhisperService.SendMessage(msg);
             }
             return "Message sent";

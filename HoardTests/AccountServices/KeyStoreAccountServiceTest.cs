@@ -27,9 +27,6 @@ namespace HoardTests.AccountServices
 
         public KeyStoreAccountServiceTest()
         {
-            ErrorCallbackProvider.OnError += (message) => {
-                System.Diagnostics.Debug.Print(message);
-            };
             signer = new KeyStoreAccountService(new UserInputProviderFixture());
             user = new User("KeyStoreUser");
             user.ChangeActiveAccount(signer.CreateAccount("KeyStoreAccount", user).Result).Wait();

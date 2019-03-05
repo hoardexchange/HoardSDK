@@ -38,8 +38,8 @@ namespace HoardTests.AccountTools
         [Trait("Category", "Unit")]
         public async Task TransferKey()
         {
-            //AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper("ws://localhost:8546");
-            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant("ws://localhost:8546");
+            //AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper("ws://10.30.10.121:3046");
+            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant("ws://10.30.10.121:3046");
             //bool res = AccountSyncKeeper.Initialize().Result;
             //res = AccountSyncApplicant.Initialize().Result;
             //if (res)

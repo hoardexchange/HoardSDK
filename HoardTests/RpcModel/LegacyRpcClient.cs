@@ -1,4 +1,5 @@
-﻿using HoardTest;
+﻿using Hoard;
+using HoardTest;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -73,7 +74,7 @@ namespace HoardTests.RpcModel
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.ReportError(ex.ToString());
                 return false;
             }
         }

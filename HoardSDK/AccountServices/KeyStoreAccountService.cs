@@ -1,8 +1,10 @@
 ﻿using Hoard.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -103,7 +105,7 @@ namespace Hoard
         /// <returns>new account</returns>
         public async Task<AccountInfo> CreateAccount(string name, User user)
         {
-            Trace.TraceInformation("Generating user account.");
+            ErrorCallbackProvider.ReportInfo("Generating user account.");
 
             string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "new password");
 
@@ -140,6 +142,76 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Retrieves all account files stored in account folder for particular user.
+        /// </summary>
+        /// <param name="userName">user name to retrieve accounts for</param>
+        /// <param name="accountsDir">accounts directory</param>
+        /// <param name="enumFunc">returns full acount path</param>
+        /// <returns></returns>
+        public static async Task<bool> EnumerateAccounts(string userName, string accountsDir, Action<string> enumFunc)
+        {
+            return await Task.Run(() =>
+            {
+                string hashedName = Helper.Keccak256HexHashString(userName);
+                string path = Path.Combine(accountsDir, hashedName);
+
+                if (!Directory.Exists(path))
+                {
+                    ErrorCallbackProvider.ReportWarning("Not found any account files.");
+                    return false;
+                }
+
+                var accountsFiles = Directory.GetFiles(path, "*.keystore");
+                if (accountsFiles.Length == 0)
+                {
+                    ErrorCallbackProvider.ReportWarning("Not found any account files.");
+                    return false;
+                }
+
+                foreach (var fullPath in accountsFiles)
+                {
+                    if ((fullPath != null) && (fullPath != System.String.Empty))
+                        enumFunc(fullPath);
+                }
+
+                return true;
+            });
+        }
+
+        /// <summary>
+        /// Saves account to selected directory.
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="accountsDir"></param>
+        /// <param name="accountData"></param>
+        /// <returns></returns>
+        public static async Task<bool> SaveAccount(string userName, string accountsDir, string accountData)
+        {
+            return await Task.Run(() =>
+            {
+                string hashedName = Helper.Keccak256HexHashString(userName);
+                string path = Path.Combine(accountsDir, hashedName);
+                Directory.CreateDirectory(path);
+
+                var accountJsonObject = JObject.Parse(accountData);
+                if (accountJsonObject == null)
+                    return false;
+
+                string id = accountJsonObject["id"].Value<string>();
+                var fileName = id + ".keystore";
+
+                //save the File
+                using (var newfile = File.CreateText(Path.Combine(path, fileName)))
+                {
+                    newfile.Write(accountData);
+                    newfile.Flush();
+                }
+
+                return true;
+            });
+        }
+
+        /// <summary>
         /// Sings a message with given account
         /// </summary>
         /// <param name="input">message input arguments</param>
@@ -150,7 +222,7 @@ namespace Hoard
             KeyStoreAccount ksa = signature as KeyStoreAccount;
             if (ksa == null)
             {
-                System.Diagnostics.Trace.Fail("Invalid signature!");
+                ErrorCallbackProvider.ReportError("Invalid signature!");
                 return null;
             }
 
@@ -168,7 +240,7 @@ namespace Hoard
             KeyStoreAccount ksa = signature as KeyStoreAccount;
             if (ksa == null)
             {
-                System.Diagnostics.Trace.Fail("Invalid signature!");
+                ErrorCallbackProvider.ReportError("Invalid signature!");
                 return null;
             }
 
