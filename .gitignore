@@ -4,6 +4,7 @@
 HoardSDK/HoardSDK/packages/
 build/
 bin/
+Documentation/Help
 node_modules/
 .eth_data/
 GameServer/db.sqlite3
