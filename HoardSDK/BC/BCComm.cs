@@ -75,6 +75,15 @@ namespace Hoard.BC
         }
 
         /// <summary>
+        /// Retrieves owner address from game center
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> GetHoardOwner()
+        {
+            return await gameCenter.GetContractOwner();
+        }
+
+        /// <summary>
         /// Returns HRD balance of given account
         /// </summary>
         /// <param name="account">account to query</param>

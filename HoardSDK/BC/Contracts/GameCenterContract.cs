@@ -37,6 +37,11 @@ namespace Hoard.BC.Contracts
             this.contract = web3.Eth.GetContract(ABI, address);
         }
 
+        public Function GetFunctionOwner()
+        {
+            return contract.GetFunction("owner");
+        }
+
         public Function GetFunctionName()
         {
             return contract.GetFunction("name");
@@ -180,6 +185,12 @@ namespace Hoard.BC.Contracts
         public async Task<string> GetHoardTokenAddressAsync()
         {
             var function = GetFunctionHoardTokenAddress();
+            return await function.CallAsync<string>();
+        }
+
+        public async Task<string> GetContractOwner()
+        {
+            var function = GetFunctionOwner();
             return await function.CallAsync<string>();
         }
     }
