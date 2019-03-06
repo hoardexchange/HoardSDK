@@ -427,11 +427,12 @@ namespace Hoard.GameItemProviders
                     {
                         string symbol = token["item_type"].ToString();
                         string contractAddress = token["contract_address"].ToString();
-                        string stateStr = token["state"].ToString();
+                        byte[] stateBytes = token["state"].ToString().HexToByteArray();
                         BigInteger balance = BigInteger.Parse(token["balance"].ToString());
 
-                        var meta = new ERC223GameItemContract.Metadata(stateStr, contractAddress, balance);
+                        var meta = new ERC223GameItemContract.Metadata(contractAddress, balance);
                         var item = new GameItem(HoardService.Instance.DefaultGame, symbol, meta);
+                        item.State = stateBytes;
 
                         gameItems.Add(item);
                     }

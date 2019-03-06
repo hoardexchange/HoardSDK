@@ -77,7 +77,7 @@ namespace HoardTests
                     //TODO: if properties is not null we would need to compare state with some cached data and if there is mismatch update too
                     ErrorCallbackProvider.ReportInfo(string.Format("Getting properties for item {0}:{1}...", gi.Symbol, gi.State));
                     if (gi.Properties == null)
-                        HoardService.FetchItemProperties(gi);
+                        success = HoardService.FetchItemProperties(gi).Result;
                     //TODO: enumerate properties...
                 }
             }

@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Hoard.ItemPropertyProviders
 {
@@ -19,11 +20,11 @@ namespace Hoard.ItemPropertyProviders
         }
 
         /// <inheritdoc/>
-        public bool FetchGameItemProperties(GameItem item)
+        public async Task<bool> FetchGameItemProperties(GameItem item)
         {
             // FIXME: handle unsuccessful data download
 
-            byte[] globalData = Client.DownloadBytesAsync(item.State).Result;
+            byte[] globalData = await Client.DownloadBytesAsync(item.State);
             string globalJson = Encoding.UTF8.GetString(globalData);
 
             item.Properties = JsonConvert.DeserializeObject<ItemProperties>(globalJson);

@@ -481,13 +481,13 @@ namespace Hoard
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        public bool FetchItemProperties(GameItem item)
+        public async Task<bool> FetchItemProperties(GameItem item)
         {
             //find compatible provider
             IItemPropertyProvider pp = GetItemPropertyProvider(item);
             if (pp != null)
             {
-                return pp.FetchGameItemProperties(item);
+                return await pp.FetchGameItemProperties(item);
             }
             return false;
         }
