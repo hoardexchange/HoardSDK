@@ -12,7 +12,7 @@ namespace HoardTests.AccountTools
 {
     /// <summary>
     ///  geth parameters
-    ///  geth --identity "MyTestNetNode" --nodiscover --datadir "d:\hoard" --wsorigins="*" --ws --wsport "8546" --networkid 15 --shh --rpc --rpcport "8545" --rpcapi personal,db,eth,net,web3,shh console
+    ///  geth --identity "MyTestNetNode" --nodiscover --datadir "d:\hoard" --wsorigins="*" --ws --wsport "8546" --wsaddr 0.0.0.0 --networkid 15 --shh --rpc --rpcport "8545" --rpcapi personal,db,eth,net,web3,shh console
     /// </summary>
     public class AccountSynchronizerTest
     {
@@ -24,11 +24,11 @@ namespace HoardTests.AccountTools
         [Trait("Category", "Unit")]
         public async Task GeneratePin()
         {
-            //AccountSynchronizer AccountSync = new AccountSynchronizer("ws://localhost:8546");
+            //AccountSynchronizer AccountSync = new AccountSynchronizer("ws://10.30.8.228:8546");
             //bool res = AccountSync.Initialize().Result;
             //for (int i = 0; i < 100; i++)
             //{
-            //    string pin = AccountSync.GeneratePin();
+            //    string pin = AccountSynchronizer.GeneratePin();
             //    Assert.Equal(8, pin.Length);
             //}
             //await AccountSync.Shutdown();
@@ -44,10 +44,10 @@ namespace HoardTests.AccountTools
             //res = AccountSyncApplicant.Initialize().Result;
             //if (res)
             //{
-            //    string pin = AccountSyncKeeper.GeneratePin();
+            //    string pin = AccountSynchronizer.GeneratePin();
             //    string filterFrom = AccountSyncKeeper.RegisterMessageFilter(pin).Result;
             //    string filterTo = AccountSyncApplicant.RegisterMessageFilter(pin).Result;
-            //    string confirmationPin = AccountSyncApplicant.GeneratePin();
+            //    string confirmationPin = AccountSynchronizer.GeneratePin();
             //    string msg = AccountSyncApplicant.SendConfirmationPin(confirmationPin).Result;
             //    int i = 8;
             //    while (i > 0)

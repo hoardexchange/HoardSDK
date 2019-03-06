@@ -131,13 +131,13 @@ namespace Hoard
             mDateTime = "";
         }
 
-        private bool IsFairRandom(byte number, byte range)
+        static private bool IsFairRandom(byte number, byte range)
         {
             int fullSetOfValues = Byte.MaxValue / range;
             return number < range * fullSetOfValues;
         }
 
-        private int GenerateDigit(int range)
+        static private int GenerateDigit(int range)
         {
             Debug.Assert(range > 0);
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
@@ -231,8 +231,7 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> Initialize()
         {
-            await WhisperService.Connect();
-            return true;
+            return await WhisperService.Connect();
         }
 
         /// <summary>
@@ -241,6 +240,14 @@ namespace Hoard
         public async Task Shutdown()
         {
             await WhisperService.Close();
+        }
+
+        /// <summary>
+        /// Clears synchronizer state
+        /// </summary>
+        public void Clear()
+        {
+            OnClear();
         }
 
         /// <summary>
@@ -334,9 +341,9 @@ namespace Hoard
         /// Generates 8-digits pin
         /// </summary>
         /// <returns></returns>
-        public string GeneratePin()
+        static public string GeneratePin()
         {
-            OnClear();
+            //OnClear(); 
 
             int digitsToGenerate = 8;
             string pin = "";
