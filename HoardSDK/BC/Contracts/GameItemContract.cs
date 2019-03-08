@@ -250,10 +250,6 @@ namespace Hoard.BC.Contracts
         public class Metadata : BaseGameItemMetadata
         {
             /// <summary>
-            /// State of this item
-            /// </summary>
-            public string State { get; set; }
-            /// <summary>
             /// Ethereum address of the owner
             /// </summary>
             public string OwnerAddress { get; set; }
@@ -268,9 +264,8 @@ namespace Hoard.BC.Contracts
             /// <param name="state">state of thi item</param>
             /// <param name="ownerAddress">address of the item owner</param>
             /// <param name="balance">total amount of owned instances</param>
-            public Metadata(string state, string ownerAddress, BigInteger balance)
+            public Metadata(string ownerAddress, BigInteger balance)
             {
-                State = state;
                 OwnerAddress = ownerAddress;
                 Balance = balance;
             }
@@ -338,9 +333,9 @@ namespace Hoard.BC.Contracts
             BigInteger itemBalance = await GetBalanceOf(info.ID);
             if (BigInteger.Zero.CompareTo(itemBalance)<0)
             {
-                string state = BitConverter.ToString(await GetTokenState());
-                Metadata meta = new Metadata(state, Address, itemBalance);
+                Metadata meta = new Metadata(Address, itemBalance);
                 GameItem gi = new GameItem(Game, await GetSymbol(), meta);
+                gi.State = await GetTokenState();
                 return new GameItem[] { gi };
             }
             else
@@ -356,9 +351,10 @@ namespace Hoard.BC.Contracts
         /// <inheritdoc/>
         public override async Task<GameItem> GetGameItem(GameItemsParams gameItemsParams)
         {
-            string state = BitConverter.ToString(await GetTokenState());
-            Metadata meta = new Metadata(state, Address, gameItemsParams.Amount);
-            return new GameItem(Game, await GetSymbol(), meta);
+            Metadata meta = new Metadata(Address, gameItemsParams.Amount);
+            var item = new GameItem(Game, await GetSymbol(), meta);
+            item.State = await GetTokenState();
+            return item;
         }
     }
 

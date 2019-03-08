@@ -30,11 +30,11 @@ namespace HoardTests
 
             GameID gameID = GameID.FromName("12345");
             Assert.DoesNotContain(gameID, games);
-            Assert.False(HoardService.RegisterHoardGame(gameID));
+            Assert.False(HoardService.RegisterHoardGame(gameID).Result);
 
             gameID = new GameID(System.Numerics.BigInteger.Parse("2c3257614189ee907c819a4c92b04c6b9e6e9346051563e780d3c302e67e76b1", System.Globalization.NumberStyles.AllowHexSpecifier));
             Assert.Contains(gameID, games);
-            Assert.True(HoardService.RegisterHoardGame(gameID));
+            Assert.True(HoardService.RegisterHoardGame(gameID).Result);
 
             HoardService.Shutdown();
         }
@@ -65,7 +65,7 @@ namespace HoardTests
             {
                 //Register hoard provider for this gam
                 ErrorCallbackProvider.ReportInfo(string.Format("Registering Hoard game {0}", game.Name));
-                HoardService.RegisterHoardGame(game);
+                var success = HoardService.RegisterHoardGame(game).Result;
 
                 ErrorCallbackProvider.ReportInfo(string.Format("Getting player items for game {0}", game.Name));
                 GameItem[] items = HoardService.GetPlayerItems(hoardFixture.UserIDs[0], game).Result;
@@ -77,7 +77,7 @@ namespace HoardTests
                     //TODO: if properties is not null we would need to compare state with some cached data and if there is mismatch update too
                     ErrorCallbackProvider.ReportInfo(string.Format("Getting properties for item {0}:{1}...", gi.Symbol, gi.State));
                     if (gi.Properties == null)
-                        HoardService.FetchItemProperties(gi);
+                        success = HoardService.FetchItemProperties(gi).Result;
                     //TODO: enumerate properties...
                 }
             }

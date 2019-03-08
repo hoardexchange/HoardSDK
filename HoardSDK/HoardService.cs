@@ -132,7 +132,8 @@ namespace Hoard
             //our default GameItemProvider
             if (Options.Game != GameID.kInvalidID)
             {
-                if (!RegisterHoardGame(Options.Game))
+                bool success = await RegisterHoardGame(Options.Game);
+                if (!success)
                     return false;
             }
 
@@ -166,13 +167,13 @@ namespace Hoard
         /// Register default HoardBackend connector with BC fallback.
         /// </summary>
         /// <param name="game"></param>
-        public bool RegisterHoardGame(GameID game)
+        public async Task<bool> RegisterHoardGame(GameID game)
         {
             //assumig this is a hoard game we can use a default hoard provider that connects to Hoard game server backend
             HoardGameItemProvider provider = new HoardGameItemProvider(game);
             //for security reasons (or fallback in case server is down) we will pass a BC provider
             provider.SecureProvider = new BCGameItemProvider(game, BCComm);
-            return RegisterGame(game, provider);
+            return await RegisterGame(game, provider);
         }
 
         /// <summary>
@@ -180,7 +181,7 @@ namespace Hoard
         /// </summary>
         /// <param name="game"></param>
         /// <param name="provider"></param>
-        public bool RegisterGame(GameID game, IGameItemProvider provider)
+        public async Task<bool> RegisterGame(GameID game, IGameItemProvider provider)
         {
             if (!Providers.ContainsKey(game))
             {
@@ -191,12 +192,12 @@ namespace Hoard
                 // - only when secure check should happen 
                 // - when original GameItemProvider fails
                 // - switch original to SecureProvider upon direct request
-                if (BCComm.RegisterHoardGame(game).Result)
+                if (await BCComm.RegisterHoardGame(game))
                 {
                     if (DefaultGame == GameID.kInvalidID)
                         DefaultGame = game;
 
-                    if (provider.Connect().Result)
+                    if (await provider.Connect())
                     {
                         Providers.Add(game, provider);
                         return true;
@@ -480,13 +481,13 @@ namespace Hoard
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        public bool FetchItemProperties(GameItem item)
+        public async Task<bool> FetchItemProperties(GameItem item)
         {
             //find compatible provider
             IItemPropertyProvider pp = GetItemPropertyProvider(item);
             if (pp != null)
             {
-                return pp.FetchGameItemProperties(item);
+                return await pp.FetchGameItemProperties(item);
             }
             return false;
         }

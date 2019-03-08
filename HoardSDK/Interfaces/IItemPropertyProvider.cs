@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace Hoard
 {
@@ -22,6 +18,6 @@ namespace Hoard
         /// Updates game item properties and updates game item. Synchronous function.
         /// Warning: might take long time to execute.
         /// </summary>
-        bool FetchGameItemProperties(GameItem item);
+        Task<bool> FetchGameItemProperties(GameItem item);
     }
 }
