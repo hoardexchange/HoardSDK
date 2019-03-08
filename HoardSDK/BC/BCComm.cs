@@ -41,11 +41,15 @@ namespace Hoard.BC
         /// </summary>
         /// <returns>a pair of [bool result, string return infromation] received from client</returns>
         public async Task<Tuple<bool,string>> Connect()
-        {
-            var ver = new Nethereum.RPC.Web3.Web3ClientVersion(web.Client);
+        {            
             try
             {
-                return new Tuple<bool, string>(true, await ver.SendRequestAsync());
+                var ver = new Nethereum.RPC.Web3.Web3ClientVersion(web.Client);
+                string verStr = await ver.SendRequestAsync();
+                //check if game contract exists
+                var code = new Nethereum.RPC.Eth.EthGetCode(web.Client);
+                string codeStr = await code.SendRequestAsync(gameCenter.Address);
+                return new Tuple<bool, string>(!string.IsNullOrEmpty(codeStr) && codeStr!="0x", verStr);
             }
             catch(Exception ex)
             {
