@@ -65,12 +65,12 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong page, ulong itemsPerPage)
         {
             List<GameItem> items = new List<GameItem>();
             if (ItemContracts.ContainsKey(itemType))
             {
-                items.AddRange(await ItemContracts[itemType].GetGameItems(account, firstItemIndex, itemsToGather));
+                items.AddRange(await ItemContracts[itemType].GetGameItems(account, page, itemsPerPage));
             }
             return items.ToArray();
         }

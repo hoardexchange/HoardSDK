@@ -408,17 +408,17 @@ namespace Hoard
         /// </summary>
         /// <param name="account"></param>
         /// <param name="gameID"></param>
-        /// <param name="firstItemIndex">Start index for items pack</param>
-        /// <param name="itemsToGather">Number of items to gather</param>
+        /// <param name="page">Page number</param>
+        /// <param name="itemsPerPage">Number of items per page</param>
         /// <param name="itemType">Item type</param>
         /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, GameID gameID, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, GameID gameID, string itemType, ulong page, ulong itemsPerPage)
         {
             List<GameItem> items = new List<GameItem>();
             if (Providers.ContainsKey(gameID))
             {
                 IGameItemProvider c = Providers[gameID];
-                items.AddRange(await c.GetPlayerItems(account, itemType, firstItemIndex, itemsToGather).ConfigureAwait(false));
+                items.AddRange(await c.GetPlayerItems(account, itemType, page, itemsPerPage).ConfigureAwait(false));
             }
             else
             {

@@ -54,11 +54,11 @@ namespace Hoard
         /// Returns all items belonging to a particular player
         /// </summary>
         /// <param name="account"></param>
-        /// <param name="firstItemIndex">Start index for items pack</param>
-        /// <param name="itemsToGather">Number of items to gather</param>
         /// <param name="itemType">Item type</param>
+        /// <param name="page">Page number</param>
+        /// <param name="itemsPerPage">Number of items per page</param>
         /// <returns></returns>
-        Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather);
+        Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong page, ulong itemsPerPage);
 
         /// <summary>
         /// Returns all items belonging to a particular player with given type

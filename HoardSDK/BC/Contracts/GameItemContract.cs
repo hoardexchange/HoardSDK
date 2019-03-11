@@ -226,10 +226,10 @@ namespace Hoard.BC.Contracts
         /// Returns all Game Items owned by Account <paramref name="info"/>
         /// </summary>
         /// <param name="info">Owner account</param>
-        /// <param name="firstItemIndex">Start index for items pack</param>
-        /// <param name="itemsToGather">Number of items to gather</param>
+        /// <param name="page">Page number</param>
+        /// <param name="itemsPerPage">Number of items per page</param>
         /// <returns></returns>
-        public abstract Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex, ulong itemsToGather);
+        public abstract Task<GameItem[]> GetGameItems(AccountInfo info, ulong page, ulong itemsPerPage);
 
         /// <summary>
         /// Returns specific Game Item based on query parameters
@@ -343,7 +343,7 @@ namespace Hoard.BC.Contracts
         }
 
         /// <inheritdoc/>
-        public override async Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex = 0, ulong itemsToGather = 0)
+        public override async Task<GameItem[]> GetGameItems(AccountInfo info, ulong page = 0, ulong itemsPerPage = 0)
         {
             return await GetGameItems(info);
         }
@@ -562,17 +562,18 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Returns a pack of items owned by <paramref name="info"/>
         /// </summary>
-        /// <param name="firstItemIndex">Start index for items pack</param>
-        /// <param name="itemsToGather">Number of items to gather</param>
         /// <param name="info">Owners's account</param>
+        /// <param name="page">Page number</param>
+        /// <param name="itemsPerPage">Number of items per page</param>
         /// <returns></returns>
-        public override async Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex, ulong itemsToGather)
+        public override async Task<GameItem[]> GetGameItems(AccountInfo info, ulong page, ulong itemsPerPage)
         {
             BigInteger itemBalance = await GetBalanceOf(info.ID);
             ulong count = (ulong)itemBalance;
+            ulong firstItemIndex = page * itemsPerPage;
             if (firstItemIndex >= itemBalance)
                 return new GameItem[0];
-            List<BigInteger> ids = await TokensOfOwnerByIndices(info.ID, firstItemIndex, itemsToGather);
+            List<BigInteger> ids = await TokensOfOwnerByIndices(info.ID, firstItemIndex, itemsPerPage);
             string symbol = await GetSymbol();
             GameItem[] items = new GameItem[ids.Count];
             List<byte[]> states = await GetTokenStateArray(ids.ToArray());
