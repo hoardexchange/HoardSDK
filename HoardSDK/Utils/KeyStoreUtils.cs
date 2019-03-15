@@ -133,6 +133,46 @@ namespace Hoard.Utils
             return new Tuple<string, string>(ecKey.GetPublicAddress(), ecKey.GetPrivateKey());
         }
 
+        /// <summary>
+        /// Deletes account
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="accountsDir"></param>
+        /// <returns></returns>
+        public static bool DeleteAccount(AccountInfo account, string accountsDir)
+        {
+            if (account.Owner.ActiveAccount == account)
+            {
+                return false;
+            }
+
+            string hashedName = Helper.Keccak256HexHashString(account.Owner.UserName);
+            string path = Path.Combine(accountsDir, hashedName);
+            if (!Directory.Exists(path))
+            {
+                return false;
+            }
+
+            string[] files = Directory.GetFiles(path, "*.keystore");
+            foreach (string file in files)
+            {
+                StreamReader jsonReader = new StreamReader(file);
+                JObject jobj = JObject.Parse(jsonReader.ReadToEnd());
+                jsonReader.Close();
+                JToken valueAddress;
+                if (jobj.TryGetValue("address", out valueAddress))
+                {
+                    if (Helper.Compare(account.ID, new HoardID(valueAddress.Value<string>())))
+                    {
+                        account.Owner.Accounts.Remove(account);
+                        File.Delete(file);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         private static string CreateAccountKeyStoreFile(Nethereum.Signer.EthECKey ecKey, string password, string name, string path)
         {
             //Get the public address (derivied from the public key)
