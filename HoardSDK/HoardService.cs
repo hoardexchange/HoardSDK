@@ -292,6 +292,15 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Retrieves number of Hoard games registered on the platform
+        /// </summary>
+        /// <returns></returns>
+        public async Task<UInt64> GetHoardGameCount()
+        {
+            return await BCComm.GetHoardGameCount();
+        }
+
+        /// <summary>
         /// Check if game exists on the Hoard Platform.
         /// </summary>
         /// <param name="game"></param>

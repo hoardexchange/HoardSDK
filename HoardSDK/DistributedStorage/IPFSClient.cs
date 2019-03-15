@@ -39,12 +39,14 @@ namespace Hoard.DistributedStorage
             {
                 uploadClient = new RestClient(uploadClientUrl);
                 uploadClient.AutomaticDecompression = false;
+                uploadClient.Timeout = 3000;
             }
 
             if (downloadClientUrl != null && downloadClientUrl != "")
             {
                 downloadClient = new RestClient(downloadClientUrl);
                 downloadClient.AutomaticDecompression = false;
+                downloadClient.Timeout = 3000;
             }
 
             this.fnCode = fnCode;
@@ -70,7 +72,7 @@ namespace Hoard.DistributedStorage
                 if (response.ErrorException != null)
                 {
                     // TODO: throw some kind of custom exception on unsuccessful upload
-                    throw new ApplicationException();
+                    throw new Exception();
                 }
 
                 return response.RawBytes;
@@ -91,7 +93,7 @@ namespace Hoard.DistributedStorage
                 if (response.ErrorException != null)
                 {
                     // TODO: throw some kind of custom exception on unsuccessful upload
-                    throw new ApplicationException();
+                    throw new Exception();
                 }
 
                 string hash = JsonConvert.DeserializeObject<UploadResponse>(response.Content).Hash;
