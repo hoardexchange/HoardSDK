@@ -162,7 +162,8 @@ namespace Hoard.Utils
                 JToken valueAddress;
                 if (jobj.TryGetValue("address", out valueAddress))
                 {
-                    if (Helper.Compare(account.ID, new HoardID(valueAddress.Value<string>())))
+                    HoardID id = new HoardID(valueAddress.Value<string>());
+                    if (account.ID == id)
                     {
                         account.Owner.Accounts.Remove(account);
                         File.Delete(file);
