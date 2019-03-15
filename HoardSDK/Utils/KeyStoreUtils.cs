@@ -143,6 +143,7 @@ namespace Hoard.Utils
         {
             if (account.Owner.ActiveAccount == account)
             {
+                ErrorCallbackProvider.ReportWarning("Can't delete active account!");
                 return false;
             }
 

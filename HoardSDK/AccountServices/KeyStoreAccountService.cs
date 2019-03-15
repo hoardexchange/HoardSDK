@@ -118,6 +118,19 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Deletes account file and remove acocunt from user's account list
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns></returns>
+        public async Task<bool> DeleteAccount(AccountInfo account)
+        {
+            return await Task.Run(() =>
+            {
+                return KeyStoreUtils.DeleteAccount(account, AccountsDir);
+            });
+        }
+
+        /// <summary>
         /// Retrieves all accounts stored in account folder for particular user.
         /// Found accounts will be stored in User object.
         /// </summary>
