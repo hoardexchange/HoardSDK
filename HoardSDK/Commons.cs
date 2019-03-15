@@ -87,6 +87,28 @@ namespace Hoard
             return addr.Value;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="addr1"></param>
+        /// <param name="addr2"></param>
+        /// <returns></returns>
+        public static bool operator ==(HoardID addr1, HoardID addr2)
+        {
+            return (addr1.ToString() == addr2.ToString());
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="addr1"></param>
+        /// <param name="addr2"></param>
+        /// <returns></returns>
+        public static bool operator !=(HoardID addr1, HoardID addr2)
+        {
+            return (addr1.ToString() != addr2.ToString());
+        }
+
         /// <inheritdoc/>
         public override bool Equals(object obj)
         {
