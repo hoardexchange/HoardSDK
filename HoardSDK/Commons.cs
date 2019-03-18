@@ -95,7 +95,7 @@ namespace Hoard
         /// <returns></returns>
         public static bool operator ==(HoardID addr1, HoardID addr2)
         {
-            return (addr1.ToString() == addr2.ToString());
+            return (addr1?.ToString() == addr2?.ToString());
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace Hoard
         /// <returns></returns>
         public static bool operator !=(HoardID addr1, HoardID addr2)
         {
-            return (addr1.ToString() != addr2.ToString());
+            return (addr1?.ToString() != addr2?.ToString());
         }
 
         /// <inheritdoc/>
