@@ -302,7 +302,7 @@ namespace Hoard
         {
         }
 
-        private byte[] CalculateSeed(byte[] seed)
+        private static byte[] CalculateSeed(byte[] seed)
         {
             int val = 0;
             for(int i = 0; i < seed.Length; i++)
@@ -320,7 +320,7 @@ namespace Hoard
         /// 
         /// </summary>
         /// <returns></returns>
-        protected EthECKey GenerateKey(byte[] seed)
+        static public EthECKey GenerateKey(byte[] seed)
         {
             byte[] newSeed = CalculateSeed(seed);
             SecureRandom secureRandom = SecureRandom.GetInstance("SHA256PRNG", false);
