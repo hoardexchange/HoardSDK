@@ -181,8 +181,8 @@ namespace Hoard.Utils
             var address = ecKey.GetPublicAddress();
 
             //Create a store service, to encrypt and save the file using the web3 standard
-            var service = new Nethereum.KeyStore.KeyStoreService(null, new HoardKeyStoreScryptService(), null);
-            var encryptedKey = service.EncryptAndGenerateDefaultKeyStoreAsJson(password, ecKey.GetPrivateKeyAsBytes(), address).ToLower();
+            var service = new HoardKeyStorePbkdf2Service();
+            var encryptedKey = service.EncryptAndGenerateKeyStoreAsJson(password, ecKey.GetPrivateKeyAsBytes(), address).ToLower();
             var keystoreJsonObject = JObject.Parse(encryptedKey);
             if (keystoreJsonObject == null)
                 return null;
