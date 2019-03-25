@@ -1,4 +1,5 @@
 using Hoard.Utils;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -11,13 +12,16 @@ namespace Hoard
     public class ItemProperty
     {
         /// <summary>
-        /// Value of this property
-        /// </summary>
-        public object Value;
-        /// <summary>
         /// Type of this property
         /// </summary>
+        [JsonProperty(propertyName: "type")]
         public string Type;
+
+        /// <summary>
+        /// Value of this property
+        /// </summary>
+        [JsonProperty(propertyName: "value")]
+        public object Value;
 
         /// <summary>
         /// Basic constructor
