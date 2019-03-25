@@ -17,19 +17,24 @@ namespace HoardTests
 {
     public class SwordProperties : ItemProperties, IEquatable<SwordProperties>
     {
-        public UInt32 Endurance { get { return UInt32.Parse(this.GetItemProperty("endurance").Value.ToString()); } }
-        public UInt32 Strength { get { return UInt32.Parse(this.GetItemProperty("strength").Value.ToString()); } }
-        public UInt32 Dexterity { get { return UInt32.Parse(this.GetItemProperty("dexterity").Value.ToString()); } }
+        public string Name { get { return (string)this["name"].Value; } }
+        public UInt32 Endurance { get { return UInt32.Parse(((ItemProperties)this["attributes"].Value)["endurance"].Value.ToString()); } }
+        public UInt32 Strength { get { return UInt32.Parse(((ItemProperties)this["attributes"].Value)["strength"].Value.ToString()); } }
+        public UInt32 Dexterity { get { return UInt32.Parse(((ItemProperties)this["attributes"].Value)["dexterity"].Value.ToString()); } }
 
         public SwordProperties()
         {
         }
 
-        public SwordProperties(uint endurance, uint strength, uint dexterity)
+        public SwordProperties(string name, uint endurance, uint strength, uint dexterity)
         {
-            Add("endurance", endurance, "uint32");
-            Add("strength", strength, "uint32");
-            Add("dexterity", dexterity, "uint32");
+            Add("name", name, "string");
+
+            ItemProperties attributes = new ItemProperties();
+            attributes.Add("endurance", endurance, "uint32");
+            attributes.Add("strength", endurance, "uint32");
+            attributes.Add("dexterity", endurance, "uint32");
+            Add("attributes", attributes, "dict");
         }
 
         public override bool Equals(object obj)
@@ -44,7 +49,8 @@ namespace HoardTests
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return this.Endurance.Equals(other.Endurance) &&
+            return this.Name.Equals(other.Name) &&
+                this.Endurance.Equals(other.Endurance) &&
                 this.Strength.Equals(other.Strength) &&
                 this.Dexterity.Equals(other.Dexterity);
         }
@@ -52,6 +58,7 @@ namespace HoardTests
         public override int GetHashCode()
         {
             var hashCode = -1621467;
+            hashCode = hashCode * -1521134295 + Name.GetHashCode();
             hashCode = hashCode * -1521134295 + Endurance.GetHashCode();
             hashCode = hashCode * -1521134295 + Strength.GetHashCode();
             hashCode = hashCode * -1521134295 + Dexterity.GetHashCode();
@@ -145,7 +152,7 @@ namespace HoardTests
         public void UploadDownloadState()
         {
             GameItem swordItem = new GameItem(GameID.FromName("test"), "TM721", null);
-            swordItem.Properties = new SwordProperties(10, 5, 20);
+            swordItem.Properties = new SwordProperties("my sword", 10, 5, 20);
 
             GameItem[] items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol).Result;
             Assert.Equal(2, items.Length);
