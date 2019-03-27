@@ -123,11 +123,6 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("totalSupply");
         }
 
-        private Function GetFunctionItemType()
-        {
-            return contract.GetFunction("tokenType");
-        }
-
         private Function GetFunctionTokenStateType()
         {
             return contract.GetFunction("tokenStateType");
@@ -182,16 +177,6 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionTotalSupply();
             return function.CallAsync<BigInteger>();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public Task<string> GetItemType()
-        {
-            var function = GetFunctionItemType();
-            return function.CallAsync<string>();
         }
 
         /// <summary>
@@ -261,7 +246,6 @@ namespace Hoard.BC.Contracts
             /// <summary>
             /// Creates new instance of metadata object
             /// </summary>
-            /// <param name="state">state of thi item</param>
             /// <param name="ownerAddress">address of the item owner</param>
             /// <param name="balance">total amount of owned instances</param>
             public Metadata(string ownerAddress, BigInteger balance)

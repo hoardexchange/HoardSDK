@@ -44,6 +44,13 @@ namespace Hoard
         string[] GetItemTypes();
 
         /// <summary>
+        /// Returns full description of GameItem type
+        /// </summary>
+        /// <param name="type">Symbol of game item</param>
+        /// <returns></returns>
+        Task<GameItemType> GetItemTypeInfo(string type);
+
+        /// <summary>
         /// Returns all items belonging to a particular player
         /// </summary>
         /// <param name="account"></param>

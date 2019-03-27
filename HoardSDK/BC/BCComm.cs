@@ -33,6 +33,9 @@ namespace Hoard.BC
         {
             web = new Web3(client);
 
+            if (gameCenterContract == null)
+                ErrorCallbackProvider.ReportError("Game center contract cannot be null!");
+
             gameCenter = GetContract<GameCenterContract>(gameCenterContract);
         }
 

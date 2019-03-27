@@ -282,7 +282,7 @@ namespace Hoard
                 InternalData internalMessage = JsonConvert.DeserializeObject<InternalData>(textData);
                 OnTranslateMessage(internalMessage);
             }
-            catch(Exception e)
+            catch(Exception)
             {
             }
         }

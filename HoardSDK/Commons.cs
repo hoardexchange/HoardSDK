@@ -367,4 +367,20 @@ namespace Hoard
             return !(game1.Equals(game2));
         }
     }
+
+    public class GameItemType
+    {
+        public string Name { get; private set; }
+        public string Symbol { get; private set; }
+        public string Type { get; private set; }
+        public string StateType { get; private set; }
+        public BigInteger TotalSupply { get; private set; }
+
+        public GameItemType(string name, string symbol, string type)
+        {
+            Name = name;
+            Symbol = symbol;
+            Type = type;
+        }
+    }
 }

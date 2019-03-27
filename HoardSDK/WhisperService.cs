@@ -324,7 +324,7 @@ namespace Hoard
             }
             catch (Exception e)
             {
-                ErrorCallbackProvider.ReportError("Whisper unknown exception");
+                ErrorCallbackProvider.ReportError("Whisper unknown exception:\n"+e.Message);
                 return false;
             }
         }

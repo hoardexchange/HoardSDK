@@ -134,7 +134,7 @@ namespace HoardTests
             HoardGameItemProvider hoardItemProvider = new HoardGameItemProvider(game);
             gameItemProvider = new BCGameItemMockProvider(game, hoardFixture.HoardService.BCComm);
             hoardItemProvider.SecureProvider = gameItemProvider;
-            hoardFixture.HoardService.RegisterGame(game, hoardItemProvider);
+            Assert.True(hoardFixture.HoardService.RegisterGame(game, hoardItemProvider).Result);
 
             Assert.NotNull(gameItemProvider);
 

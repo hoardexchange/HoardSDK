@@ -203,6 +203,16 @@ namespace Hoard.GameItemProviders
             return ItemTypes;
         }
 
+        /// <inheritdoc/>
+        public async Task<GameItemType> GetItemTypeInfo(string itemType)
+        {
+            if (SecureProvider != null)
+            {
+                return await SecureProvider.GetItemTypeInfo(itemType);
+            }
+            return null;
+        }
+
         private static byte[] ToByteArray(string value)
         {
             char[] charArr = value.ToCharArray();

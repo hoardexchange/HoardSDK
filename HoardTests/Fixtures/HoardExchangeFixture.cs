@@ -36,15 +36,15 @@ namespace HoardTests.Fixtures
             RunExchangeServer();
 
             BCExchangeService = new BCExchangeService(HoardService);
-            BCExchangeService.Init();
+            BCExchangeService.Init().Wait();
 
             HoardExchangeService = new HoardExchangeService(HoardService);
-            HoardExchangeService.Init();
+            HoardExchangeService.Init().Wait();
 
             GameIDs = HoardService.GetAllHoardGames().Result;
             foreach (var game in GameIDs)
             {
-                HoardService.RegisterHoardGame(game);
+                Assert.True(HoardService.RegisterHoardGame(game).Result);
             }
 
             Items = GetGameItems(Users[0]).Result;

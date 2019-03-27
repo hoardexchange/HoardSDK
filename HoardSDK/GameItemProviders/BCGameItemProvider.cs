@@ -27,7 +27,7 @@ namespace Hoard.GameItemProviders
         private List<ContractInterfaceID> interfaceIDs = new List<ContractInterfaceID>();
 
         /// <summary>
-        /// Game identifier (only items for thi game will be proccessed)
+        /// Game identifier (only items for this game will be proccessed)
         /// </summary>
         public GameID Game { get; private set; }
 
@@ -51,6 +51,20 @@ namespace Hoard.GameItemProviders
         public string[] GetItemTypes()
         {
             return ItemContracts.Keys.ToArray();
+        }
+
+        /// <inheritdoc/>
+        public async Task<GameItemType> GetItemTypeInfo(string itemType)
+        {
+            if (ItemContracts.ContainsKey(itemType))
+            {
+                string name = await ItemContracts[itemType].GetName();
+                string stateType = Encoding.UTF8.GetString(await ItemContracts[itemType].GetTokenStateType());
+                BigInteger supply = await ItemContracts[itemType].GetTotalSupply();
+
+                return new GameItemType(name, itemType, stateType);
+            }
+            return null;
         }
 
         /// <inheritdoc/>
@@ -163,7 +177,7 @@ namespace Hoard.GameItemProviders
         private void RegisterGameItemContract(string symbol, GameItemContract contract)
         {
             System.Diagnostics.Debug.Assert(!ItemContracts.ContainsKey(symbol),
-                string.Format("ERROR: contract with this symbol has been already regisered for Game: '{0}' with ID {1}",Game.Name,Game.ID));
+                string.Format("ERROR: contract with this symbol has been already registered for Game: '{0}' with ID {1}",Game.Name,Game.ID));
             ItemContracts.Add(symbol, contract);
         }
 
