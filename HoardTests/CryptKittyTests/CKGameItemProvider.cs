@@ -95,6 +95,11 @@ namespace HoardTests.CryptKittyTests
 
         }
 
+        public async Task<GameItemType> GetItemTypeInfo(string type)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
             throw new NotImplementedException();

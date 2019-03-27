@@ -1,6 +1,7 @@
 ﻿using Nethereum.Web3.Accounts;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Hoard.Utils
@@ -183,6 +184,8 @@ namespace Hoard.Utils
             //Create a store service, to encrypt and save the file using the web3 standard
             var service = new HoardKeyStoreScryptService();
             var encryptedKey = service.EncryptAndGenerateKeyStoreAsJson(password, ecKey.GetPrivateKeyAsBytes(), address).ToLower();
+            if (encryptedKey == null)
+                return null;
             var keystoreJsonObject = JObject.Parse(encryptedKey);
             if (keystoreJsonObject == null)
                 return null;
