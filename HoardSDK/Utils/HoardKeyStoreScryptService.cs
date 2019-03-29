@@ -7,7 +7,7 @@ namespace Hoard.Utils
     {
         protected override ScryptParams GetDefaultParams()
         {
-            return new ScryptParams { Dklen = 32, N = (1024 * 64), R = 1, P = 8 };
+            return new ScryptParams { Dklen = 32, N = (1024 * 64), R = 1, P = 4 };
         }
     }
 }
