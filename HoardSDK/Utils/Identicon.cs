@@ -35,9 +35,9 @@ namespace Hoard.Utils
         }
 
 
-        private Int32[] randseed = new Int32[4];
+        private int[] randseed = new int[4];
         private Color[] iconPixels;
-        private int Size;
+        private readonly int Size;
 
         private void seedrand(string seed)
         {
