@@ -1,8 +1,10 @@
 ﻿using Hoard.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
+using Nethereum.Util;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -288,15 +290,18 @@ namespace Hoard
             //CPU-bound
             return Task.Run(() =>
             {
-                var decodedList = RLP.Decode(rlpEncodedTransaction);
-                var decodedRlpCollection = (RLPCollection)decodedList[0];
-                var data = decodedRlpCollection.ToBytes();
-
                 var ecKey = new Nethereum.Signer.EthECKey(privKey);
-                var signer = new Nethereum.Signer.RLPSigner(data);
 
-                signer.Sign(ecKey);
-                return signer.GetRLPEncoded().ToHex();
+                var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
+                var signature = ecKey.SignAndCalculateV(rawHash);
+
+                var encodedData = new List<byte[]>();
+                encodedData.Add(rlpEncodedTransaction);
+                encodedData.Add(RLP.EncodeElement(signature.V));
+                encodedData.Add(RLP.EncodeElement(signature.R));
+                encodedData.Add(RLP.EncodeElement(signature.S));
+
+                return RLP.EncodeList(encodedData.ToArray()).ToHex().EnsureHexPrefix();
             });
         }
 
