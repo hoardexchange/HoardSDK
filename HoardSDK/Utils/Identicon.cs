@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using System.Linq;
 
 namespace Hoard.Utils
@@ -9,6 +8,27 @@ namespace Hoard.Utils
     /// </summary>
     public class Identicon
     {
+        private class Color
+        {
+            public byte G { get; }
+            public byte B { get; }
+            public byte R { get; }
+            public byte A { get; }
+
+            public Color(byte alpha, byte red, byte green, byte blue)
+            {
+                A = alpha;
+                R = red;
+                G = green;
+                B = blue;
+            }
+
+            static public Color FromArgb(int red, int green, int blue)
+            {
+                return new Color(255, (byte)red, (byte)green, (byte)blue);
+            }
+        }
+
         /// <summary>
         /// Creates new identicon for ethereum address. Standard size of identicon is 8.
         /// </summary>
