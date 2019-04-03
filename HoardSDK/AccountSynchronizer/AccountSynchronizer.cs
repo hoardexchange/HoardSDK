@@ -73,6 +73,7 @@ namespace Hoard
         }
 
         static private int MaxRange = 10;
+        static private int KeyStrength = 256;
 
         /// <summary>
         /// Time out in seconds
@@ -326,7 +327,7 @@ namespace Hoard
             SecureRandom secureRandom = SecureRandom.GetInstance("SHA256PRNG", false);
             secureRandom.SetSeed(newSeed);
             var gen = new ECKeyPairGenerator();
-            var keyGenParam = new KeyGenerationParameters(secureRandom, 256);
+            var keyGenParam = new KeyGenerationParameters(secureRandom, KeyStrength);
             gen.Init(keyGenParam);
             var keyPair = gen.GenerateKeyPair();
             var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
