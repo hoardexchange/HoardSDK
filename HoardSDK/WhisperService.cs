@@ -170,6 +170,11 @@ namespace Hoard
             /// Recipient public key
             public string recipientPublicKey;
 
+            static ReceivedData()
+            {
+                new ReceivedData();//to force code generators create proper code for reflection (JSON deserialize)
+            }
+
             /// Returns decoded message
             public byte[] GetDecodedMessage()
             {

@@ -12,15 +12,15 @@ namespace Hoard.Utils
         /// <summary>
         /// Creates new identicon for ethereum address. Standard size of identicon is 8.
         /// </summary>
-        /// <param name="Seed">Ethereum address (0x prefix is added automaticly)</param>
-        /// <param name="Size">Size of the identicon (use 8 for standard identicon)</param>
-        public Identicon(string Seed, int size)
+        /// <param name="seed">Ethereum address (0x prefix is added automaticly)</param>
+        /// <param name="size">Size of the identicon (use 8 for standard identicon)</param>
+        public Identicon(string seed, int size)
         {
             const string prefix = "0x";
             Size = size;
-            if (!Seed.StartsWith(prefix))
-                Seed = prefix + Seed;
-            createImageData(Seed);
+            if (!seed.StartsWith(prefix))
+                seed = prefix + seed;
+            createImageData(seed);
         }
 
         /// <summary>

@@ -11,7 +11,7 @@
       <Version>1.4.1</Version>
     </PackageReference>
     <PackageReference Include="Hoard.NethereumCore">
-      <Version>3.1.57</Version>
+      <Version>3.1.58</Version>
     </PackageReference>
     <PackageReference Include="Json.Net.Unity3D" Version="9.0.1" />
     <PackageReference Include="Portable.BouncyCastle">

@@ -368,14 +368,38 @@ namespace Hoard
         }
     }
 
+    /// <summary>
+    /// Item type information used for queries.
+    /// </summary>
     public class GameItemType
     {
+        /// <summary>
+        /// Name of the item type
+        /// </summary>
         public string Name { get; private set; }
+        /// <summary>
+        /// Symbol of item
+        /// </summary>
         public string Symbol { get; private set; }
+        /// <summary>
+        /// Type of the item
+        /// </summary>
         public string Type { get; private set; }
+        /// <summary>
+        /// Type of Item state
+        /// </summary>
         public string StateType { get; private set; }
+        /// <summary>
+        /// Totoal available supply of items
+        /// </summary>
         public BigInteger TotalSupply { get; private set; }
 
+        /// <summary>
+        /// Basic constructor
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="symbol"></param>
+        /// <param name="type"></param>
         public GameItemType(string name, string symbol, string type)
         {
             Name = name;
