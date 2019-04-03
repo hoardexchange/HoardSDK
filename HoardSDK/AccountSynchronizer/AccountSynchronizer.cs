@@ -73,7 +73,7 @@ namespace Hoard
         }
 
         static private int MaxRange = 10;
-        static private int KeyStrength = 256;
+        static private int KeyStrength = 512;
 
         /// <summary>
         /// Time out in seconds
