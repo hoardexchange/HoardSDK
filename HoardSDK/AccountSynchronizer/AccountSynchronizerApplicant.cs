@@ -36,7 +36,7 @@ namespace Hoard
 
         private EthECKey GenerateDecryptionKey()
         {
-            return GenerateKey(Encoding.ASCII.GetBytes(OriginalPin + mDateTime));
+            return GenerateKey(Encoding.UTF8.GetBytes(OriginalPin + mDateTime));
         }
 
         private string SendTransferRequest(EthECKey key)
@@ -46,7 +46,7 @@ namespace Hoard
             KeyRequestData keyRequestData = new KeyRequestData();
             keyRequestData.EncryptionKeyPublicAddress = key.GetPublicAddress();
             string requestDataText = JsonConvert.SerializeObject(keyRequestData);
-            byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.ASCII.GetBytes(requestDataText));
+            byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.UTF8.GetBytes(requestDataText));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return WhisperService.SendMessage(msg).Result;
         }
@@ -92,7 +92,7 @@ namespace Hoard
                 offset += EncryptedKeystoreData[i].Length;
             }
             byte[] decrypted = Decrypt(DecryptionKey, fullEncryptedData);
-            DecryptedKeystoreData = Encoding.ASCII.GetString(decrypted);
+            DecryptedKeystoreData = Encoding.UTF8.GetString(decrypted);
             Debug.Print("Decrypted Message: " + DecryptedKeystoreData);
             Interlocked.Exchange(ref KeystoreReceiwed, 1);
             EncryptedKeystoreData = null;
@@ -146,7 +146,7 @@ namespace Hoard
             topic[0] = ConvertPinToTopic(OriginalPin);
             mDateTime = DateTime.Now.ToString();
             string pinAndDate = confirmationPin + "|" + mDateTime;
-            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPin, Encoding.ASCII.GetBytes(pinAndDate));
+            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPin, Encoding.UTF8.GetBytes(pinAndDate));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
             return await WhisperService.SendMessage(msg);
         }

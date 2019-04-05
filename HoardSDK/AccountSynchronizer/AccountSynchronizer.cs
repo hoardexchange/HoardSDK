@@ -73,7 +73,7 @@ namespace Hoard
         }
 
         static private int MaxRange = 10;
-        static private int KeyStrength = 512;
+        static private int KeyStrength = 256;
 
         /// <summary>
         /// Time out in seconds
@@ -279,7 +279,7 @@ namespace Hoard
             try
             {
                 byte[] data = msg.GetDecodedMessage();
-                string textData = Encoding.ASCII.GetString(data);
+                string textData = Encoding.UTF8.GetString(data);
                 InternalData internalMessage = JsonConvert.DeserializeObject<InternalData>(textData);
                 OnTranslateMessage(internalMessage);
             }
@@ -368,7 +368,7 @@ namespace Hoard
             OriginalPin = pin;
             SHA256 sha256 = new SHA256Managed();
             var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
-            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.ASCII.GetString(hashedPin));
+            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
             WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, true);
             return await WhisperService.CreateNewMessageFilter(msgCriteria);
         }
