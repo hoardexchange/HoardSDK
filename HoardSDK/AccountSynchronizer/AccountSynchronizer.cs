@@ -263,7 +263,7 @@ namespace Hoard
             internalMsg.id = id;
             internalMsg.length = data.Length;
             internalMsg.data = data;
-            return Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(internalMsg));
+            return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(internalMsg));
         }
 
         /// <summary>
@@ -367,7 +367,7 @@ namespace Hoard
             topic[0] = ConvertPinToTopic(pin);
             OriginalPin = pin;
             SHA256 sha256 = new SHA256Managed();
-            var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
             SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
             WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, true);
             return await WhisperService.CreateNewMessageFilter(msgCriteria);
