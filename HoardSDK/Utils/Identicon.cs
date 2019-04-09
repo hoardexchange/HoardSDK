@@ -169,9 +169,9 @@ namespace Hoard.Utils
                 {
                     for (int yy = y * scale; yy < y * scale + scale; yy++)
                     {
-                        data[(xx * bitmapSize + yy) * 3 + 0] = iconPixels[i].R;
-                        data[(xx * bitmapSize + yy) * 3 + 1] = iconPixels[i].G;
-                        data[(xx * bitmapSize + yy) * 3 + 2] = iconPixels[i].B;
+                        data[(yy * bitmapSize + xx) * 3 + 0] = iconPixels[i].R;
+                        data[(yy * bitmapSize + xx) * 3 + 1] = iconPixels[i].G;
+                        data[(yy * bitmapSize + xx) * 3 + 2] = iconPixels[i].B;
                     }
                 }
             }
