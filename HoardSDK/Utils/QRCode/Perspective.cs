@@ -41,6 +41,7 @@
 //	For version history please refer to QRCode.cs
 /////////////////////////////////////////////////////////////////////
 
+#if TODO
 using System;
 using System.Drawing;
 
@@ -170,3 +171,5 @@ internal class Perspective
 		}
 	}
 }
+
+#endif
