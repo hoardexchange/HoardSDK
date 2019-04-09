@@ -309,7 +309,8 @@ namespace Hoard
                     jobj.Add("params", additionalParams);
                 }
                 jobj.Add("id", JsonId);
-                WhisperClient.Send(Encoding.ASCII.GetBytes(jobj.ToString()));
+                //string msg = jobj.ToString();
+                WhisperClient.Send(Encoding.UTF8.GetBytes(jobj.ToString()));
                 if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
                     ErrorCallbackProvider.ReportError("Whisper connection error!");

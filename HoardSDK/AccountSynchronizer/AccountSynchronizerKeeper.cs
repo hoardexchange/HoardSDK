@@ -93,7 +93,7 @@ namespace Hoard
             {
                 case InternalData.InternalMessageId.ConfirmationPin:
                     {
-                        ConfirmationPin = Encoding.ASCII.GetString(internalMessage.data);
+                        ConfirmationPin = Encoding.UTF8.GetString(internalMessage.data);
                         int index = ConfirmationPin.IndexOf("|");
                         string pin = ConfirmationPin.Substring(0, index);
                         mDateTime = ConfirmationPin.Substring(index+1);
@@ -104,7 +104,7 @@ namespace Hoard
                     break;
                 case InternalData.InternalMessageId.TransferKeystoreRequest:
                     {
-                        string textData = Encoding.ASCII.GetString(internalMessage.data);
+                        string textData = Encoding.UTF8.GetString(internalMessage.data);
                         KeyRequestData keyRequestData = JsonConvert.DeserializeObject<KeyRequestData>(textData);
                         if (EncryptionKey.GetPublicAddress() == keyRequestData.EncryptionKeyPublicAddress)
                         {
@@ -139,7 +139,7 @@ namespace Hoard
         /// <returns></returns>
         public async Task<string> GenerateEncryptionKey()
         {
-            EncryptionKey = GenerateKey(Encoding.ASCII.GetBytes(OriginalPin + mDateTime));
+            EncryptionKey = GenerateKey(Encoding.UTF8.GetBytes(OriginalPin + mDateTime));
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
             byte[] msgData = new byte[1];
@@ -184,7 +184,7 @@ namespace Hoard
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
-            byte[] encryptedData = Encrypt(EncryptionKey, Encoding.ASCII.GetBytes(keyStoreData));
+            byte[] encryptedData = Encrypt(EncryptionKey, Encoding.UTF8.GetBytes(keyStoreData));
             //string hexStringData = BitConverter.ToString(encryptedData).Replace("-", string.Empty).ToLower();
             List<byte[]> chunks = new List<byte[]>();
             SplitMessage(encryptedData, ChunkSize, ref chunks);

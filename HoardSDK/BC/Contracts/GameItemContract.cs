@@ -1,4 +1,5 @@
 ﻿using Nethereum.Contracts;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Web3;
 using System;
 using System.Collections.Generic;
@@ -305,8 +306,7 @@ namespace Hoard.BC.Contracts
         public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
         {
             var function = GetFunctionTransfer();
-            System.Numerics.BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
-            object[] functionInput = { addressTo.Substring(2), amount };
+            object[] functionInput = { addressTo.RemoveHexPrefix(), amount };
             var receipt = await Hoard.BC.BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;
         }
@@ -512,7 +512,7 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionTransfer();
             BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
-            object[] functionInput = { from.ID.ToString(), addressTo.Substring(2), tokenId };
+            object[] functionInput = { from.ID.ToString(), addressTo.RemoveHexPrefix(), tokenId };
             var receipt = await BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;
         }

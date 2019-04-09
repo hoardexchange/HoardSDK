@@ -1,6 +1,8 @@
 using Hoard.BC.Contracts;
 using Nethereum.Contracts;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
+using Nethereum.RLP;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.RPC.NonceServices;
 using Nethereum.Web3;
@@ -100,8 +102,7 @@ namespace Hoard.BC
             string hrdAddress = await GetHRDAddress();
             if (hrdAddress != null)
             {
-                if (hrdAddress.StartsWith("0x"))
-                    hrdAddress = hrdAddress.Substring(2);
+                hrdAddress.RemoveHexPrefix();
 
                 HoardTokenContract hrdContract = new HoardTokenContract(web, hrdAddress);
                 return await hrdContract.GetBalanceOf(account);
@@ -230,16 +231,7 @@ namespace Hoard.BC
             GameID[] games = new GameID[count];
             for (ulong i = 0; i < count; ++i)
             {
-                BigInteger gameID = (await gameCenter.GetGameIdByIndexAsync(i));
-                string gameAddress = await gameCenter.GetGameContractAsync(gameID);
-                GameID game = new GameID(gameID);                
-                GameContract gameContract = new GameContract(web, gameAddress);
-                string url = await gameContract.GetGameServerURLAsync();
-                game.Symbol = await gameContract.GetSymbol();
-                game.Name = await gameContract.GetName();
-                game.GameOwner = await gameContract.GetOwner();
-                game.Url = !url.StartsWith("http") ? "http://" + url : url;
-                games[i] = game;
+                games[i] = await GetGameByIndex(i);
             }
             return games;
         }
@@ -281,8 +273,7 @@ namespace Hoard.BC
             string exchangeAddress = await gameCenter.GetExchangeAddressAsync();
             if (exchangeAddress != null)
             {
-                if (exchangeAddress.StartsWith("0x"))
-                    exchangeAddress = exchangeAddress.Substring(2);
+                exchangeAddress.RemoveHexPrefix();
 
                 BigInteger exchangeAddressInt = BigInteger.Parse(exchangeAddress, NumberStyles.AllowHexSpecifier);
                 if (!exchangeAddressInt.Equals(0))
@@ -303,8 +294,7 @@ namespace Hoard.BC
             string hoardTokenAddress = await gameCenter.GetHoardTokenAddressAsync();
             if (hoardTokenAddress != null)
             {
-                if (hoardTokenAddress.StartsWith("0x"))
-                    hoardTokenAddress = hoardTokenAddress.Substring(2);
+                hoardTokenAddress.RemoveHexPrefix();
 
                 BigInteger hoardTokenAddressInt = BigInteger.Parse(hoardTokenAddress, NumberStyles.AllowHexSpecifier);
                 if (!hoardTokenAddressInt.Equals(0))
@@ -355,14 +345,21 @@ namespace Hoard.BC
             string data = function.GetData(functionInput);
             var defaultGasPrice = Nethereum.Signer.TransactionBase.DEFAULT_GAS_PRICE;
             var trans = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, defaultGasPrice, gas.Value, data);
-            string encoded = await account.SignTransaction(trans.GetRLPEncodedRaw());
-            if (encoded == null)
+            var rlpEncodedTx = trans.GetRLPEncodedRaw();
+
+            // FIXME? hoard sdk api is not compatible with plasma and ethereum at the same time
+            // SignTransaction should return some struct or only signature
+            // temp fix - encode/decode transaction data
+            string signedTransactionData = await account.SignTransaction(rlpEncodedTx);
+            if (signedTransactionData == null)
             {
                 ErrorCallbackProvider.ReportError("Could not sign transaction!");
                 return null;
             }
 
-            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + encoded);
+            string encodedFlatten = FlattenSignedTransactionData(signedTransactionData);
+
+            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync(encodedFlatten).ConfigureAwait(false);
             TransactionReceipt receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
             while (receipt == null)
             {
@@ -384,14 +381,16 @@ namespace Hoard.BC
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             var trans = new Nethereum.Signer.Transaction(to, amount, nonce);
-            string encoded = await account.SignTransaction(trans.GetRLPEncodedRaw());
-            if (encoded == null)
+            string signedTransactionData = await account.SignTransaction(trans.GetRLPEncodedRaw());
+            if (signedTransactionData == null)
             {
                 ErrorCallbackProvider.ReportError("Could not sign transaction!");
                 return null;
             }
 
-            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + encoded);
+            string encodedFlatten = FlattenSignedTransactionData(signedTransactionData);
+
+            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync(encodedFlatten);
             TransactionReceipt receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
             while (receipt == null)
             {
@@ -399,6 +398,48 @@ namespace Hoard.BC
                 receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
             }
             return receipt;
+        }
+
+        private async Task<GameID> GetGameByIndex(ulong gameIndex)
+        {
+            BigInteger gameID = (await gameCenter.GetGameIdByIndexAsync(gameIndex));
+            string gameAddress = await gameCenter.GetGameContractAsync(gameID);
+            GameID game = new GameID(gameID);
+            GameContract gameContract = new GameContract(web, gameAddress);
+            string url = await gameContract.GetGameServerURLAsync();
+            game.Symbol = await gameContract.GetSymbol();
+            game.Name = await gameContract.GetName();
+            game.GameOwner = await gameContract.GetOwner();
+            game.Url = !url.StartsWith("http") ? "http://" + url : url;
+            return game;
+        }
+
+        static private string FlattenSignedTransactionData(string encodedTransactionData)
+        {
+            var encodedFlattenList = new List<byte[]>();
+            RLPCollection rlpDecoded = RLP.Decode(encodedTransactionData.HexToByteArray());
+            if (rlpDecoded.Count == 1)
+            {
+                rlpDecoded = (RLPCollection)rlpDecoded[0];
+                foreach (var rlpItem in (RLPCollection)rlpDecoded[0])
+                {
+                    if (rlpItem.RLPData != null)
+                    {
+                        encodedFlattenList.Add(RLP.EncodeElement(rlpItem.RLPData));
+                    }
+                    else
+                    {
+                        encodedFlattenList.Add(RLP.EncodeElement(0.ToBytesForRLPEncoding()));
+                    }
+                }
+
+                for (int i = 1; i < rlpDecoded.Count; ++i)
+                {
+                    encodedFlattenList.Add(RLP.EncodeElement(rlpDecoded[i].RLPData));
+                }
+            }
+
+            return RLP.EncodeList(encodedFlattenList.ToArray()).ToHex().EnsureHexPrefix();
         }
     }
 }
