@@ -294,6 +294,14 @@ namespace Hoard
             }
         }
 
+        private string PackHashedPin(byte[] hashedPin)
+        {
+            Debug.Assert(hashedPin.Length >= 4);
+            byte[] packedPin = new byte[4];
+            Array.Copy(hashedPin, packedPin, packedPin.Length);
+            return BitConverter.ToString(packedPin).Replace("-", string.Empty);
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -301,7 +309,9 @@ namespace Hoard
         /// <returns></returns>
         protected string ConvertPinToTopic(string pin)
         {
-            return "0x" + pin;
+            SHA256 sha256 = new SHA256Managed();
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            return "0x" + PackHashedPin(hashedPin);
         }
 
         ///
