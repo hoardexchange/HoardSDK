@@ -111,13 +111,13 @@ namespace Hoard.GameItemProviders
                 var nonce = Eth.Utils.Mine(challengeToken, new BigInteger(1) << 496);
                 var nonceHex = nonce.ToString("x");
 
-                //generate new secure random key
-                var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
-
                 var dataBytes = Encoding.ASCII.GetBytes(response.Content.Substring(2) + nonceHex);
                 string sig = await account.SignMessage(dataBytes).ConfigureAwait(false);
                 if (sig == null)
+                {
+                    ErrorCallbackProvider.ReportError("Cannot sign challenge answer");
                     return false;
+                }
 
                 var data = new JObject();
                 data.Add("token", response.Content);
