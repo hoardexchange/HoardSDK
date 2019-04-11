@@ -19,6 +19,7 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
+using NBitcoin;
 
 namespace Hoard
 {
@@ -94,6 +95,11 @@ namespace Hoard
         /// Maximal message chunk size
         /// </summary>
         static protected int ChunkSize = 128;
+
+        /// <summary>
+        /// Master key
+        /// </summary>
+        static public readonly string MasterKey = "xprv9s21ZrQH143K37MjeFycYaN4PVgP7AD6V8pS8mH3UJspeUUfF4pkQdh3gFTY9f1NPTKMEQkCZiE91uoiRDhZh65Kkytn8bkG1Xi5YfstAqH";
 
         /// <summary>
         /// 
@@ -288,6 +294,14 @@ namespace Hoard
             }
         }
 
+        private string PackHashedPin(byte[] hashedPin)
+        {
+            Debug.Assert(hashedPin.Length >= 4);
+            byte[] packedPin = new byte[4];
+            Array.Copy(hashedPin, packedPin, packedPin.Length);
+            return BitConverter.ToString(packedPin).Replace("-", string.Empty);
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -295,7 +309,9 @@ namespace Hoard
         /// <returns></returns>
         protected string ConvertPinToTopic(string pin)
         {
-            return "0x" + pin;
+            SHA256 sha256 = new SHA256Managed();
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            return "0x" + PackHashedPin(hashedPin);
         }
 
         ///
@@ -324,17 +340,23 @@ namespace Hoard
         static public EthECKey GenerateKey(byte[] seed)
         {
             byte[] newSeed = CalculateSeed(seed);
-            SecureRandom secureRandom = SecureRandom.GetInstance("SHA256PRNG", false);
-            secureRandom.SetSeed(newSeed);
-            var gen = new ECKeyPairGenerator();
-            var keyGenParam = new KeyGenerationParameters(secureRandom, KeyStrength);
-            gen.Init(keyGenParam);
-            var keyPair = gen.GenerateKeyPair();
-            var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
-            if (privateBytes.Length != 32)
+            string path = "m";
+            for(int i = 0; i < newSeed.Length; i++)
             {
-                return GenerateKey(newSeed);
-            }
+                path += "/";
+                path += newSeed[i].ToString();
+             }
+            //SecureRandom secureRandom = SecureRandom.GetInstance("SHA256PRNG", false);
+            //secureRandom.SetSeed(newSeed);
+            //var gen = new ECKeyPairGenerator();
+            //var keyGenParam = new KeyGenerationParameters(secureRandom, KeyStrength);
+            //gen.Init(keyGenParam);
+            //var keyPair = gen.GenerateKeyPair();
+            //var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
+            Debug.Print("path: " + path + "\n");
+            ExtKey childKey = ExtKey.Parse(MasterKey).Derive(new KeyPath(path));
+            var privateBytes = childKey.PrivateKey.ToBytes();
+            Debug.Assert(privateBytes.Length == 32);
             return new EthECKey(privateBytes, true);
         }
 

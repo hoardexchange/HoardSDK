@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -38,8 +39,8 @@ namespace HoardTests.AccountTools
         [Trait("Category", "Unit")]
         public async Task TransferKey()
         {
-            //AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper("ws://10.30.10.121:3046");
-            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant("ws://10.30.10.121:3046");
+            //AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper("ws://localhost:8546");
+            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant("ws://localhost:8546");
             //bool res = AccountSyncKeeper.Initialize().Result;
             //res = AccountSyncApplicant.Initialize().Result;
             //if (res)
@@ -86,6 +87,49 @@ namespace HoardTests.AccountTools
             //    await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
             //}
             //await AccountSyncApplicant.Shutdown();
+            //await AccountSyncKeeper.Shutdown();
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public async Task TransferKytoWhisperJS()
+        {
+            //AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper("ws://localhost:8546");
+            //bool res = AccountSyncKeeper.Initialize().Result;
+            //if (res)
+            //{
+            //    string msg = "";
+            //    string pin = "12345678";// AccountSynchronizer.GeneratePin();
+            //    string filterFrom = AccountSyncKeeper.RegisterMessageFilter(pin).Result;
+            //    while (true)
+            //    {
+            //        res = AccountSyncKeeper.Update(filterFrom).Result;
+            //        if (AccountSyncKeeper.ConfirmationPinReceived())
+            //        {
+            //            msg = AccountSyncKeeper.GenerateEncryptionKey().Result;
+            //            break;
+            //        }
+            //        Thread.Sleep(1000);
+            //    }
+
+            //    int confirmation = 0;
+            //    while (true)
+            //    {
+            //        res = AccountSyncKeeper.Update(filterFrom).Result;
+            //        confirmation = AccountSyncKeeper.GetConfirmationStatus();
+            //        if (confirmation != 0)
+            //        {
+            //            break;
+            //        }
+            //    }
+
+            //    if (confirmation == 1)
+            //    {
+            //        string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
+            //        msg = AccountSyncKeeper.EncryptAndTransferKeystore(keyStoreData).Result;
+            //    }
+            //    await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
+            //}
             //await AccountSyncKeeper.Shutdown();
         }
     }
