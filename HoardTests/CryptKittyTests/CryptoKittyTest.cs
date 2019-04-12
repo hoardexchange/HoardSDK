@@ -33,12 +33,12 @@ namespace HoardTests.CryptKittyTests
 
             GameID myGame = GameID.FromName("mygame");
 
-            Assert.True(hoard.RegisterGame(myGame, new CKGameItemProvider(myGame)).Result);
+            Assert.True(hoard.RegisterGame(myGame, new CKGameItemProvider(myGame)).Result == Result.Ok);
 
             GameItem[] items = hoard.GetPlayerItems(hoardFixture.UserIDs[0], myGame).Result;
 
             ErrorCallbackProvider.ReportInfo("Shutting down HOARD...");
-            Assert.True(hoard.Shutdown());
+            Assert.True(hoard.Shutdown() == Result.Ok);
         }
     }
 }

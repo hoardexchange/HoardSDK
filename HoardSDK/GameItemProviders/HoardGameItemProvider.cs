@@ -53,7 +53,7 @@ namespace Hoard.GameItemProviders
         {
         }
 
-        private async Task<bool> ConnectToGameServer()
+        private async Task<Result> ConnectToGameServer()
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {
@@ -69,21 +69,21 @@ namespace Hoard.GameItemProviders
                 if (response.ErrorException != null)
                 {
                     ErrorCallbackProvider.ReportError(response.ErrorException.ToString());
-                    return false;
+                    return Result.ConnectionError;
                 }
 
-                return true;
+                return Result.Ok;
             }
             ErrorCallbackProvider.ReportError($"Not a proper game url: {Game.Url}!");
-            return false;
+            return Result.ConnectionError;
         }
 
         /// <summary>
         /// Signin given account to the server. Must be done before calling endpoints protected by default challenge based authentication.
         /// </summary>
         /// <param name="account">Account ot be singed in</param>
-        /// <returns></returns>
-        public async Task<bool> Signin(AccountInfo account)
+        /// <returns>Result code.</returns>
+        public async Task<Result> Signin(AccountInfo account)
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {                
@@ -102,7 +102,7 @@ namespace Hoard.GameItemProviders
                 if (response.ErrorException != null)
                 {
                     ErrorCallbackProvider.ReportError(response.ErrorException.ToString());
-                    return false;
+                    return Result.ConnectionError;
                 }
                 
                 string challengeToken = response.Content;
@@ -116,7 +116,7 @@ namespace Hoard.GameItemProviders
                 if (sig == null)
                 {
                     ErrorCallbackProvider.ReportError("Cannot sign challenge answer");
-                    return false;
+                    return Result.Error;
                 }
 
                 var data = new JObject();
@@ -130,13 +130,13 @@ namespace Hoard.GameItemProviders
                 if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
                 {
                     ErrorCallbackProvider.ReportError($"Failed to log in with response: {responseLogin.Content}!");
-                    return false;
+                    return Result.Error;
                 }
 
-                return true;
+                return Result.Ok;
             }
             ErrorCallbackProvider.ReportError($"Not a proper game url: {Game.Url}!");            
-            return false;            
+            return Result.ConnectionError;
         }
 
         private void PrepareRequest(RestRequest req)
@@ -396,18 +396,19 @@ namespace Hoard.GameItemProviders
         /// Connects to Hoard Game Server
         /// </summary>
         /// <returns>true if connection has been established, false otherwise</returns>
-        public async Task<bool> Connect()
+        public async Task<Result> Connect()
         {
-            bool connected = false;
             //1. connect to REST server
-            connected = await ConnectToGameServer();
+            Result result = await ConnectToGameServer();
             //2. check also fallback connector
             if (SecureProvider != null)
             {
-                connected |= await SecureProvider.Connect();
+                Result fallbackResult = await SecureProvider.Connect();
+                if (result != Result.Ok)
+                    result = fallbackResult;
             }
 
-            return connected;
+            return result;
         }
         #endregion
 

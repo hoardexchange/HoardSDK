@@ -173,12 +173,12 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="game">[in/out] game object must contain valid ID. Other fields will be retrieved from platform</param>
         /// <returns></returns>
-        public async Task<bool> RegisterHoardGame(GameID game)
+        public async Task<Result> RegisterHoardGame(GameID game)
         {
             if (gameContracts.ContainsKey(game))
             {
                 ErrorCallbackProvider.ReportWarning("Game already registered!");
-                return true;
+                return Result.Ok;
             }
 
             string gameAddress = await gameCenter.GetGameContractAsync(game.ID);
@@ -195,10 +195,10 @@ namespace Hoard.BC
                     game.Url = !url.StartsWith("http") ? "http://" + url : url;
 
                 gameContracts.Add(game, gameContract);
-                return true;
+                return Result.Ok;
             }
             ErrorCallbackProvider.ReportError($"Game is not registered in Hoard Game Center: game = {game.ID}!");
-            return false;
+            return Result.GameNotFoundError;
         }
 
         /// <summary>

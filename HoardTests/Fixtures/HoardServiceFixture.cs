@@ -67,7 +67,7 @@ namespace HoardTests.Fixtures
 
             HoardService = HoardService.Instance;
 
-            Assert.True(HoardService.Initialize(options).Result, "ERROR: Could not initialize HOARD!");
+            Assert.True(HoardService.Initialize(options).Result == Result.Ok, "ERROR: Could not initialize HOARD!");
 
             //authenticate user
             UserIDs.Add(CreateUser().Result);
@@ -89,7 +89,7 @@ namespace HoardTests.Fixtures
             
             HoardService = HoardService.Instance;
             
-            Assert.True(HoardService.Initialize(options).Result, "ERROR: Could not initialize HOARD!");
+            Assert.True(HoardService.Initialize(options).Result == Result.Ok, "ERROR: Could not initialize HOARD!");
 
             //authenticate user
             UserIDs.Add(CreateUser().Result);

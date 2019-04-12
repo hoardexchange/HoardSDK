@@ -130,7 +130,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Connect()
+        public async Task<Result> Connect()
         {
             ItemContracts.Clear();
             return await RegisterHoardGameContracts();
@@ -140,7 +140,7 @@ namespace Hoard.GameItemProviders
         /// <summary>
         /// Helper function to automatically register all contracts for given game
         /// </summary>
-        public async Task<bool> RegisterHoardGameContracts()
+        public async Task<Result> RegisterHoardGameContracts()
         {
             string[] contracts = await BCComm.GetGameItemContracts(Game);
             if (contracts != null)
@@ -154,14 +154,13 @@ namespace Hoard.GameItemProviders
                     }
                     else
                     {
-                        // TODO: handle contracts that does not implement ERC165?
-                        throw new NotImplementedException();
+                        return Result.InvalidContractError;
                     }
                 }
-                return true;
+                return Result.Ok;
             }
             ErrorCallbackProvider.ReportError($"Cannot find any contracts for Game: {Game.ID}!");
-            return false;
+            return Result.ContractNotFoundError;
         }
 
         /// <summary>

@@ -1,14 +1,14 @@
 
 namespace Hoard
 {
-    public class Result
+    public class DataResult
     {
-        public Result()
+        public DataResult()
         {
             Success = true;
             Error = "";
         }
-        public Result(string error)
+        public DataResult(string error)
         {
             Success = false;
             Error = error;

@@ -47,12 +47,12 @@ namespace HoardTests.CryptKittyTests
             Game = game;
         }
 
-        public async Task<bool> Connect()
+        public async Task<Result> Connect()
         {
             Client = new RestClient("https://api.cryptokitties.co");
             Client.AutomaticDecompression = false;
 
-            return true;
+            return Result.Ok;
         }
 
         public string[] GetItemTypes()

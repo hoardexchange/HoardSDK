@@ -18,6 +18,6 @@ namespace Hoard
         /// Updates game item properties and updates game item. Synchronous function.
         /// Warning: might take long time to execute.
         /// </summary>
-        Task<bool> FetchGameItemProperties(GameItem item);
+        Task<Result> FetchGameItemProperties(GameItem item);
     }
 }

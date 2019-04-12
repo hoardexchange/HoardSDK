@@ -44,7 +44,7 @@ namespace HoardTests.Fixtures
             GameIDs = HoardService.GetAllHoardGames().Result;
             foreach (var game in GameIDs)
             {
-                Assert.True(HoardService.RegisterHoardGame(game).Result);
+                Assert.True(HoardService.RegisterHoardGame(game).Result == Result.Ok);
             }
 
             Items = GetGameItems(Users[0]).Result;

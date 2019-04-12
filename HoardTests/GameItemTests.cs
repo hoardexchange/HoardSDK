@@ -141,7 +141,7 @@ namespace HoardTests
             HoardGameItemProvider hoardItemProvider = new HoardGameItemProvider(game);
             gameItemProvider = new BCGameItemMockProvider(game, hoardFixture.HoardService.BCComm);
             hoardItemProvider.SecureProvider = gameItemProvider;
-            Assert.True(hoardFixture.HoardService.RegisterGame(game, hoardItemProvider).Result);
+            Assert.True(hoardFixture.HoardService.RegisterGame(game, hoardItemProvider).Result == Result.Ok);
 
             Assert.NotNull(gameItemProvider);
 
@@ -165,7 +165,8 @@ namespace HoardTests
 
             items = gameItemProvider.GetPlayerItems(DefaultPlayer.ActiveAccount, swordItem.Symbol).Result;
             GameItem downloadedSwordItem = items[0];
-            bool success = hoardFixture.HoardService.FetchItemProperties(downloadedSwordItem).Result;
+            Result result = hoardFixture.HoardService.FetchItemProperties(downloadedSwordItem).Result;
+            Assert.Equal(Result.Ok, result);
 
             Assert.Equal(swordItem.State, downloadedSwordItem.State);
 

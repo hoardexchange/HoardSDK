@@ -62,29 +62,29 @@ namespace Hoard
             return GetGameCachePath() + "/gameDataInfo.dat";
         }
 
-        public Result Store(ulong assetId, string diskFilePath)
+        public DataResult Store(ulong assetId, string diskFilePath)
         {
             byte[] data = DataStorageUtils.LoadFromDisk(diskFilePath);
             if (data == null)
             {
-                return new Result("Unable to get data from file");
+                return new DataResult("Unable to get data from file");
             }
             return DataStorageBackend.UploadDataToServer(assetId, data);
         }
 
-        public Result Store(ulong assetId, byte[] data)
+        public DataResult Store(ulong assetId, byte[] data)
         {
             return DataStorageBackend.UploadDataToServer(assetId, data);
         }
 
-        public Result Load(ulong assetId, out byte[] data)
+        public DataResult Load(ulong assetId, out byte[] data)
         {
             AssetFile assetFile = null;
             bool existsInCache = GameDataInfo.assets.TryGetValue(assetId, out assetFile);
 
             // get hash from the server
             string hash = null;
-            Result hashResult = DataStorageBackend.LoadHashFromServer(assetId, out hash);
+            DataResult hashResult = DataStorageBackend.LoadHashFromServer(assetId, out hash);
             bool existsOnServer = (hashResult.Success);
 
             if (!existsOnServer)
@@ -99,12 +99,12 @@ namespace Hoard
                 data = DataStorageUtils.LoadFromDisk(GetGameCachePath() + "/" + assetId);
                 if (data != null)
                 {
-                    return new Result();
+                    return new DataResult();
                 }
             }
 
             // get data from the server
-            Result dataResult = DataStorageBackend.LoadDataFromServer(assetId, out data);
+            DataResult dataResult = DataStorageBackend.LoadDataFromServer(assetId, out data);
             if (!dataResult.Success)
                 return dataResult;
 
@@ -126,7 +126,7 @@ namespace Hoard
             byte[] gameDataInfoSerialized = DataStorageUtils.Serialize(GameDataInfo);
             DataStorageUtils.SaveToDisk(GetGameDataPath(), gameDataInfoSerialized);
 
-            return new Result();
+            return new DataResult();
         }
 
         byte[] Decrypt(byte[] data)
