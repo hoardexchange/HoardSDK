@@ -106,7 +106,7 @@ namespace Hoard
                     {
                         string textData = Encoding.UTF8.GetString(internalMessage.data);
                         KeyRequestData keyRequestData = JsonConvert.DeserializeObject<KeyRequestData>(textData);
-                        if (EncryptionKey.GetPublicAddress().ToLower() == keyRequestData.EncryptionKeyPublicAddress)
+                        if (EncryptionKey.GetPublicAddress().ToLower() == keyRequestData.EncryptionKeyPublicAddress.ToLower())
                         {
                             Interlocked.Exchange(ref ConfirmationStatus, 1);
                         }
