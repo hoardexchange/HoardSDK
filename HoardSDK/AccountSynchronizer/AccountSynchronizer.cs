@@ -20,6 +20,7 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
 using NBitcoin;
+using System.IO;
 
 namespace Hoard
 {
@@ -232,6 +233,74 @@ namespace Hoard
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static byte[] GenerateIV(string pin)
+        {
+            byte[] iv = new byte[16];
+            SHA256 sha256 = new SHA256Managed();
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            Debug.Assert(hashedPin.Length >= 16);
+            Array.Copy(hashedPin, iv, iv.Length);
+            return iv;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="data"></param>
+        /// <param name="iv"></param>
+        /// <returns></returns>
+        public static byte[] AESEncrypt(EthECKey key, byte[] data, byte[] iv)
+        {
+            // Create a new AesManaged.    
+            AesManaged aes = new AesManaged();
+
+            // Create encryptor    
+            byte[] b = key.GetPrivateKeyAsBytes();
+            ICryptoTransform encryptor = aes.CreateEncryptor(key.GetPrivateKeyAsBytes(), iv);
+
+            // Create MemoryStream    
+            MemoryStream ms = new MemoryStream();
+
+            // Create crypto stream using the CryptoStream class. This class is the key to encryption    
+            // and encrypts and decrypts data from any given stream. In this case, we will pass a memory stream    
+            // to encrypt    
+            CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+            cs.Write(data, 0, data.Length);
+            cs.Close();
+
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="iv"></param>
+        /// <param name="dataEncrypted"></param>
+        /// <returns></returns>
+        public static byte[] AESDecrypt(EthECKey key, byte[] iv, byte[] dataEncrypted)
+        {
+            // Create AesManaged    
+            AesManaged aes = new AesManaged();
+
+            // Create a decryptor    
+            ICryptoTransform decryptor = aes.CreateDecryptor(key.GetPrivateKeyAsBytes(), iv);
+
+            // Create the streams used for decryption.    
+            MemoryStream ms = new MemoryStream();
+
+            CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Write);
+            cs.Write(dataEncrypted, 0, dataEncrypted.Length);
+            cs.Close();
+
+            return ms.ToArray();
+        }
+
+        /// <summary>
         /// Establishes connection with geth
         /// --wsorigins="*" --ws --wsport "port" --shh --rpc --rpcport "port" --rpcapi personal,db,eth,net,web3,shh
         /// </summary>
@@ -313,6 +382,21 @@ namespace Hoard
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
             return "0x" + PackHashedPin(hashedPin);
         }
+    
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pin"></param>
+        /// <returns></returns>
+        protected byte[] ConvertPinToIV(string pin)
+        {
+            SHA256 sha256 = new SHA256Managed();
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            Debug.Assert(hashedPin.Length >= 16);
+            byte[] packedPin = new byte[16];
+            Array.Copy(hashedPin, packedPin, packedPin.Length);
+            return packedPin;
+        }
 
         ///
         protected virtual void OnClear()
@@ -357,7 +441,12 @@ namespace Hoard
             ExtKey childKey = ExtKey.Parse(MasterKey).Derive(new KeyPath(path));
             var privateBytes = childKey.PrivateKey.ToBytes();
             Debug.Assert(privateBytes.Length == 32);
-            return new EthECKey(privateBytes, true);
+            EthECKey key = new EthECKey(privateBytes, true);
+            if (key.GetPrivateKeyAsBytes().Length != 32)
+            {
+                return GenerateKey(newSeed);
+            }
+            return key;
         }
 
         /// <summary>

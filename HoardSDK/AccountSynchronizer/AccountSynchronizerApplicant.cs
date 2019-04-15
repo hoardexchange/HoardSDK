@@ -91,7 +91,7 @@ namespace Hoard
                 Buffer.BlockCopy(EncryptedKeystoreData[i], 0, fullEncryptedData, offset, EncryptedKeystoreData[i].Length);
                 offset += EncryptedKeystoreData[i].Length;
             }
-            byte[] decrypted = Decrypt(DecryptionKey, fullEncryptedData);
+            byte[] decrypted = AESDecrypt(DecryptionKey, GenerateIV(OriginalPin), fullEncryptedData);
             DecryptedKeystoreData = Encoding.UTF8.GetString(decrypted);
             Debug.Print("Decrypted Message: " + DecryptedKeystoreData);
             Interlocked.Exchange(ref KeystoreReceiwed, 1);

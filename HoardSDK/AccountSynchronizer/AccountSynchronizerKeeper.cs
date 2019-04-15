@@ -184,11 +184,9 @@ namespace Hoard
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
-            byte[] encryptedData = Encrypt(EncryptionKey, Encoding.UTF8.GetBytes(keyStoreData));
-            //string hexStringData = BitConverter.ToString(encryptedData).Replace("-", string.Empty).ToLower();
+            byte[] encryptedData = AESEncrypt(EncryptionKey, Encoding.UTF8.GetBytes(keyStoreData), GenerateIV(OriginalPin));
             List<byte[]> chunks = new List<byte[]>();
             SplitMessage(encryptedData, ChunkSize, ref chunks);
-            //string numChunks = MessageChunks.Count.ToString("X4");
             byte[] numChunks = BitConverter.GetBytes(chunks.Count);
             for (int i = 0; i < chunks.Count; i++)
             {
@@ -215,7 +213,7 @@ namespace Hoard
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
-            byte[] encryptedData = Encrypt(EncryptionKey, data);
+            byte[] encryptedData = AESEncrypt(EncryptionKey, data, GenerateIV(OriginalPin));
             List<byte[]> chunks = new List<byte[]>();
             SplitMessage(encryptedData, ChunkSize, ref chunks);
             byte[] numChunks = BitConverter.GetBytes(chunks.Count);
