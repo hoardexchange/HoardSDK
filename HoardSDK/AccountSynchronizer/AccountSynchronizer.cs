@@ -235,11 +235,11 @@ namespace Hoard
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="privatekey"></param>
         /// <param name="data"></param>
         /// <param name="iv"></param>
         /// <returns></returns>
-        public static byte[] AESEncrypt(EthECKey key, byte[] data, byte[] iv)
+        public static byte[] AESEncrypt(byte[] privatekey, byte[] data, byte[] iv)
         {
             // Create a new AesManaged.    
             AesManaged aes = new AesManaged();
@@ -248,7 +248,7 @@ namespace Hoard
             aes.KeySize = KeyStrength;
 
             // Create encryptor    
-            ICryptoTransform encryptor = aes.CreateEncryptor(key.GetPrivateKeyAsBytes(), iv);
+            ICryptoTransform encryptor = aes.CreateEncryptor(privatekey, iv);
 
             // Create MemoryStream    
             MemoryStream ms = new MemoryStream();
@@ -266,11 +266,11 @@ namespace Hoard
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="privatekey"></param>
         /// <param name="iv"></param>
         /// <param name="dataEncrypted"></param>
         /// <returns></returns>
-        public static byte[] AESDecrypt(EthECKey key, byte[] iv, byte[] dataEncrypted)
+        public static byte[] AESDecrypt(byte[] privatekey, byte[] iv, byte[] dataEncrypted)
         {
             // Create AesManaged    
             AesManaged aes = new AesManaged();
@@ -279,7 +279,7 @@ namespace Hoard
             aes.KeySize = KeyStrength;
 
             // Create a decryptor    
-            ICryptoTransform decryptor = aes.CreateDecryptor(key.GetPrivateKeyAsBytes(), iv);
+            ICryptoTransform decryptor = aes.CreateDecryptor(privatekey, iv);
 
             // Create the streams used for decryption.    
             MemoryStream ms = new MemoryStream();
@@ -411,7 +411,7 @@ namespace Hoard
         /// 
         /// </summary>
         /// <returns></returns>
-        static public EthECKey GenerateKey(byte[] seed)
+        static public byte[] GenerateKey(byte[] seed)
         {
             byte[] newSeed = CalculateSeed(seed);
             string path = "m";
@@ -431,12 +431,7 @@ namespace Hoard
             ExtKey childKey = ExtKey.Parse(MasterKey).Derive(new KeyPath(path));
             var privateBytes = childKey.PrivateKey.ToBytes();
             Debug.Assert(privateBytes.Length == 32);
-            EthECKey key = new EthECKey(privateBytes, true);
-            if (key.GetPrivateKeyAsBytes().Length != 32)
-            {
-                return GenerateKey(newSeed);
-            }
-            return key;
+            return privateBytes;
         }
 
         /// <summary>

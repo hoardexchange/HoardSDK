@@ -7,6 +7,7 @@ using Org.BouncyCastle.Math;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace Hoard
     /// </summary>
     public class AccountSynchronizerApplicant : AccountSynchronizer
     {
-        private EthECKey DecryptionKey;
+        private byte[] DecryptionKey;
         private byte[][] EncryptedKeystoreData;
         private int KeystoreReceiwed;
         private string DecryptedKeystoreData;
@@ -34,17 +35,18 @@ namespace Hoard
             Interlocked.Exchange(ref KeystoreReceiwed, 0);
         }
 
-        private EthECKey GenerateDecryptionKey()
+        private byte[] GenerateDecryptionKey()
         {
             return GenerateKey(Encoding.UTF8.GetBytes(OriginalPin + mDateTime));
         }
 
-        private string SendTransferRequest(EthECKey key)
+        private string SendTransferRequest(byte[] key)
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
             KeyRequestData keyRequestData = new KeyRequestData();
-            keyRequestData.EncryptionKeyPublicAddress = key.GetPublicAddress();
+            SHA256 sha256 = new SHA256Managed();
+            keyRequestData.EncryptionKeyPublicAddress = BitConverter.ToString(sha256.ComputeHash(key)).Replace("-", string.Empty);
             string requestDataText = JsonConvert.SerializeObject(keyRequestData);
             byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.UTF8.GetBytes(requestDataText));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
