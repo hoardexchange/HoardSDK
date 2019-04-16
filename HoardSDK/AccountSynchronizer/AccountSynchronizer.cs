@@ -235,20 +235,6 @@ namespace Hoard
         /// <summary>
         /// 
         /// </summary>
-        /// <returns></returns>
-        public static byte[] GenerateIV(string pin)
-        {
-            byte[] iv = new byte[16];
-            SHA256 sha256 = new SHA256Managed();
-            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
-            Debug.Assert(hashedPin.Length >= 16);
-            Array.Copy(hashedPin, iv, iv.Length);
-            return iv;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="key"></param>
         /// <param name="data"></param>
         /// <param name="iv"></param>
@@ -257,9 +243,11 @@ namespace Hoard
         {
             // Create a new AesManaged.    
             AesManaged aes = new AesManaged();
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.KeySize = KeyStrength;
 
             // Create encryptor    
-            byte[] b = key.GetPrivateKeyAsBytes();
             ICryptoTransform encryptor = aes.CreateEncryptor(key.GetPrivateKeyAsBytes(), iv);
 
             // Create MemoryStream    
@@ -286,6 +274,9 @@ namespace Hoard
         {
             // Create AesManaged    
             AesManaged aes = new AesManaged();
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.KeySize = KeyStrength;
 
             // Create a decryptor    
             ICryptoTransform decryptor = aes.CreateDecryptor(key.GetPrivateKeyAsBytes(), iv);
@@ -382,20 +373,19 @@ namespace Hoard
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
             return "0x" + PackHashedPin(hashedPin);
         }
-    
+
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="pin"></param>
         /// <returns></returns>
-        protected byte[] ConvertPinToIV(string pin)
+        public static byte[] GenerateIV(string pin)
         {
+            byte[] iv = new byte[16];
             SHA256 sha256 = new SHA256Managed();
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
             Debug.Assert(hashedPin.Length >= 16);
-            byte[] packedPin = new byte[16];
-            Array.Copy(hashedPin, packedPin, packedPin.Length);
-            return packedPin;
+            Array.Copy(hashedPin, iv, iv.Length);
+            return iv;
         }
 
         ///
