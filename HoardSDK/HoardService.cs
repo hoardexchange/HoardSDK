@@ -452,6 +452,10 @@ namespace Hoard
                 IGameItemProvider c = Providers[gameID];
                 return await c.GetPlayerItemsAmount(account, itemType).ConfigureAwait(false);
             }
+            else
+            {
+                ErrorCallbackProvider.ReportWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
+            }
             return await Task.FromResult<ulong>(0);
         }
 

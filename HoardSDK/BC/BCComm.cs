@@ -54,7 +54,10 @@ namespace Hoard.BC
                 //check if game contract exists
                 var code = new Nethereum.RPC.Eth.EthGetCode(web.Client);
                 string codeStr = await code.SendRequestAsync(gameCenter.Address);
-                return new Tuple<bool, string>(!string.IsNullOrEmpty(codeStr) && codeStr!="0x", verStr);
+                bool result = !string.IsNullOrEmpty(codeStr) && codeStr != "0x";
+                if (!result)
+                    ErrorCallbackProvider.ReportError("Could not find Game Center contract at address: " + gameCenter.Address);
+                return new Tuple<bool, string>(result, verStr);
             }
             catch(Exception ex)
             {
