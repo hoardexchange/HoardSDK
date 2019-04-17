@@ -33,6 +33,7 @@ namespace Hoard
             ConfirmationPin = "";
             DecryptedKeystoreData = "";
             Interlocked.Exchange(ref KeystoreReceiwed, 0);
+            OnClear();
         }
 
         private byte[] GenerateDecryptionKey()
@@ -46,7 +47,7 @@ namespace Hoard
             topic[0] = ConvertPinToTopic(OriginalPin);
             KeyRequestData keyRequestData = new KeyRequestData();
             SHA256 sha256 = new SHA256Managed();
-            keyRequestData.EncryptionKeyPublicAddress = BitConverter.ToString(sha256.ComputeHash(key)).Replace("-", string.Empty);
+            keyRequestData.EncryptionKeyPublicAddress = BitConverter.ToString(sha256.ComputeHash(key)).Replace("-", string.Empty).ToLower();
             string requestDataText = JsonConvert.SerializeObject(keyRequestData);
             byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.UTF8.GetBytes(requestDataText));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
@@ -60,6 +61,7 @@ namespace Hoard
             UInt32 length = BitConverter.ToUInt32(data, 8);
             if (EncryptedKeystoreData == null)
             {
+                Debug.Assert(chunks > 0);
                 EncryptedKeystoreData = new byte[chunks][];
             }
             Debug.Assert(id < EncryptedKeystoreData.Length);

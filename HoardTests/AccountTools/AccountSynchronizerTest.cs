@@ -143,7 +143,7 @@ namespace HoardTests.AccountTools
             //bool res = AccountSyncApplicant.Initialize().Result;
             //if (res)
             //{
-            //    string pin = AccountSynchronizer.GeneratePin();
+            //    string pin = "12345678";// AccountSynchronizer.GeneratePin();
             //    string filterTo = AccountSyncApplicant.RegisterMessageFilter(pin).Result;
             //    string confirmationPin = "12345678";// AccountSynchronizer.GeneratePin();
             //    string msg = AccountSyncApplicant.SendConfirmationPin(confirmationPin).Result;

@@ -427,7 +427,7 @@ namespace Hoard
             //gen.Init(keyGenParam);
             //var keyPair = gen.GenerateKeyPair();
             //var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
-            Debug.Print("path: " + path + "\n");
+            //Debug.Print("path: " + path + "\n");
             ExtKey childKey = ExtKey.Parse(MasterKey).Derive(new KeyPath(path));
             var privateBytes = childKey.PrivateKey.ToBytes();
             Debug.Assert(privateBytes.Length == 32);
