@@ -203,6 +203,7 @@ namespace Hoard
         public WhisperService(string url)
         {
             WhisperClient = new WebSocket(url, "whisper-protocol");
+            WhisperClient.WaitTime = TimeSpan.FromSeconds(3);
             ResponseEvent = new ManualResetEvent(false);
             ConnectionEvent = new ManualResetEvent(false);
         }
@@ -290,7 +291,7 @@ namespace Hoard
                 if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
                     ErrorCallbackProvider.ReportError("Whisper connection error!");
-                    return false;
+                    throw new WebException("Whisper connection error!");
                 }
 
                 ResponseEvent.Reset();
@@ -298,7 +299,7 @@ namespace Hoard
                 if (IsConnected == false)
                 {
                     ErrorCallbackProvider.ReportError("Whisper connection error!");
-                    return false;
+                    throw new WebException("Whisper connection error!");
                 }
                 
                 JObject jobj = new JObject();
@@ -314,13 +315,13 @@ namespace Hoard
                 if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
                     ErrorCallbackProvider.ReportError("Whisper connection error!");
-                    return false;
+                    throw new WebException("Whisper connection error!");
                 }
 
                 if (Error != "")
                 {
                     ErrorCallbackProvider.ReportError("Whisper error! " + Error);
-                    return false;
+                    throw new WebException("Whisper error! " + Error);
                 }
                 else
                 {
@@ -328,9 +329,9 @@ namespace Hoard
                     return true;
                 }
             }
-            catch (Exception e)
+            catch (WebSocketException ex)
             {
-                ErrorCallbackProvider.ReportError("Whisper unknown exception:\n"+e.Message);
+                ErrorCallbackProvider.ReportError("Whisper unknown exception:\n" + ex.Message);
                 return false;
             }
         }

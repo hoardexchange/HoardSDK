@@ -6,6 +6,7 @@ using Org.BouncyCastle.Math;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace Hoard
         // -1 - not confirmed
         private int ConfirmationStatus; 
 
-        private EthECKey EncryptionKey;
+        private byte[] EncryptionKey;
 
         /// <summary>
         /// Address of requested key
@@ -106,7 +107,10 @@ namespace Hoard
                     {
                         string textData = Encoding.UTF8.GetString(internalMessage.data);
                         KeyRequestData keyRequestData = JsonConvert.DeserializeObject<KeyRequestData>(textData);
-                        if (EncryptionKey.GetPublicAddress().ToLower() == keyRequestData.EncryptionKeyPublicAddress.ToLower())
+                        SHA256 sha256 = new SHA256Managed();
+                        string address1 = BitConverter.ToString(sha256.ComputeHash(EncryptionKey)).Replace("-", string.Empty).ToLower();
+                        string address2 = keyRequestData.EncryptionKeyPublicAddress.ToLower();
+                        if (address1 == address2)
                         {
                             Interlocked.Exchange(ref ConfirmationStatus, 1);
                         }

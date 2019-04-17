@@ -84,7 +84,7 @@ namespace HoardTests.AccountTools
             //            break;
             //        }
             //    }
-                
+
             //    await AccountSyncApplicant.UnregisterMessageFilter(filterTo);
             //    await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
             //}
@@ -94,7 +94,7 @@ namespace HoardTests.AccountTools
 
         [Fact]
         [Trait("Category", "Unit")]
-        public async Task TransferKytoWhisperJS()
+        public async Task TransferKeyWhisperJS()
         {
             //AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper("ws://localhost:8546");
             //bool res = AccountSyncKeeper.Initialize().Result;
@@ -133,6 +133,32 @@ namespace HoardTests.AccountTools
             //    await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
             //}
             //await AccountSyncKeeper.Shutdown();
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public async Task ReceiveKeyWhisperJS()
+        {
+            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant("ws://localhost:8546");
+            //bool res = AccountSyncApplicant.Initialize().Result;
+            //if (res)
+            //{
+            //    string pin = AccountSynchronizer.GeneratePin();
+            //    string filterTo = AccountSyncApplicant.RegisterMessageFilter(pin).Result;
+            //    string confirmationPin = "12345678";// AccountSynchronizer.GeneratePin();
+            //    string msg = AccountSyncApplicant.SendConfirmationPin(confirmationPin).Result;
+            //    while (true)
+            //    {
+            //        res = AccountSyncApplicant.Update(filterTo).Result;
+            //        if (AccountSyncApplicant.IsKeyStoreReceived())
+            //        {
+            //            string data = AccountSyncApplicant.GetKeystoreReceivedData();
+            //            break;
+            //        }
+            //    }
+            //    await AccountSyncApplicant.UnregisterMessageFilter(filterTo);
+            //}
+            //await AccountSyncApplicant.Shutdown();
         }
     }
 }
