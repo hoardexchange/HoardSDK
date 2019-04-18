@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Collections.Concurrent;
 
 namespace Hoard
 {    
@@ -188,6 +189,7 @@ namespace Hoard
         private string Answer;
         private string Error;
         private bool IsConnected = false;
+        private ConcurrentQueue<ReceivedData> ReceivedMessagesQueue = new ConcurrentQueue<ReceivedData>();
 
         static readonly private string JsonVersion = "2.0";
         static readonly private int JsonId = 1;
@@ -236,10 +238,30 @@ namespace Hoard
                         }
                         else
                         {
-                            json.TryGetValue("result", out message);
-                            if (message != null)
+                            JToken method = null;
+                            json.TryGetValue("method", out method);
+                            if ((method != null) && (method.ToString() == "shh_subscription"))
                             {
-                                Answer = message.ToString();
+                                JToken prms = null;
+                                json.TryGetValue("params", out prms);
+                                if (prms != null)
+                                {
+                                    JObject jsonParams = prms.ToObject<JObject>();
+                                    JToken result = "";
+                                    jsonParams.TryGetValue("result", out result);
+                                    if (result != null)
+                                    {
+                                        ReceivedMessagesQueue.Enqueue(JsonConvert.DeserializeObject<ReceivedData>(result.ToString()));
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                json.TryGetValue("result", out message);
+                                if (message != null)
+                                {
+                                    Answer = message.ToString();
+                                }
                             }
                         }
                         ResponseEvent.Set();
@@ -756,6 +778,14 @@ namespace Hoard
                 }
                 return "";
             });
-        }        
+        }  
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        public ConcurrentQueue<ReceivedData> GetReceivedMessages()
+        {
+            return ReceivedMessagesQueue;
+        }
     }
 }
