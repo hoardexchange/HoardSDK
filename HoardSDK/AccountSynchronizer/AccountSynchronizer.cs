@@ -527,8 +527,14 @@ namespace Hoard
             {
                 res = await WhisperService.Unsubscribe(SubscriptionId);
             }
-            res = await WhisperService.DeleteMessageFilter(filter);
-            res = await WhisperService.DeleteSymetricKey(SymKeyId);
+            if (filter != "")
+            {
+                res = await WhisperService.DeleteMessageFilter(filter);
+            }
+            if (SymKeyId != "")
+            {
+                res = await WhisperService.DeleteSymetricKey(SymKeyId);
+            }
         }
 
         /// <summary>
