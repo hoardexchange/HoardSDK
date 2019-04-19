@@ -21,7 +21,7 @@ namespace Hoard
     {
         private byte[] DecryptionKey;
         private byte[][] EncryptedKeystoreData;
-        private int KeystoreReceiwed;
+        private int KeystoreReceived;
         private string DecryptedKeystoreData;
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Hoard
             WhisperService = new WhisperService(url);
             ConfirmationPin = "";
             DecryptedKeystoreData = "";
-            Interlocked.Exchange(ref KeystoreReceiwed, 0);
+            Interlocked.Exchange(ref KeystoreReceived, 0);
             OnClear();
         }
 
@@ -41,7 +41,7 @@ namespace Hoard
             return GenerateKey(Encoding.UTF8.GetBytes(OriginalPin + mDateTime));
         }
 
-        private string SendTransferRequest(byte[] key)
+        private async Task<string> SendTransferRequest(byte[] key)
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
@@ -51,7 +51,7 @@ namespace Hoard
             string requestDataText = JsonConvert.SerializeObject(keyRequestData);
             byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.UTF8.GetBytes(requestDataText));
             WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
-            return WhisperService.SendMessage(msg).Result;
+            return await WhisperService.SendMessage(msg);
         }
 
         private void AggregateMessage(byte[] data)
@@ -98,7 +98,7 @@ namespace Hoard
             byte[] decrypted = AESDecrypt(DecryptionKey, fullEncryptedData, GenerateIV(OriginalPin));
             DecryptedKeystoreData = Encoding.UTF8.GetString(decrypted);
             Debug.Print("Decrypted Message: " + DecryptedKeystoreData);
-            Interlocked.Exchange(ref KeystoreReceiwed, 1);
+            Interlocked.Exchange(ref KeystoreReceived, 1);
             EncryptedKeystoreData = null;
         }
 
@@ -112,8 +112,11 @@ namespace Hoard
             {
                 case InternalData.InternalMessageId.GenerateEncryptionKey:
                     {
-                        DecryptionKey = GenerateDecryptionKey();
-                        string msg = SendTransferRequest(DecryptionKey);
+                        DecryptionKey = GenerateDecryptionKey();                        
+                        SendTransferRequest(DecryptionKey).ContinueWith(async (task)=>
+                        {
+                            string msg = await task;//TODO: is this really needed?
+                        });
                     }
                     break;
                 case InternalData.InternalMessageId.TransferKeystoreAnswer:
@@ -136,7 +139,7 @@ namespace Hoard
             EncryptedKeystoreData = null;
             DecryptedKeystoreData = "";
             mDateTime = "";
-            Interlocked.Exchange(ref KeystoreReceiwed, 0);
+            Interlocked.Exchange(ref KeystoreReceived, 0);
         }
 
         /// <summary>
@@ -161,7 +164,7 @@ namespace Hoard
         /// <returns></returns>
         public bool IsKeyStoreReceived()
         {
-            return (Interlocked.CompareExchange(ref KeystoreReceiwed, KeystoreReceiwed, 0) != 0);
+            return (Interlocked.CompareExchange(ref KeystoreReceived, KeystoreReceived, 0) != 0);
         }
 
         /// <summary>
