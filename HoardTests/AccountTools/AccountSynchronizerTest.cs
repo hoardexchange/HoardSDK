@@ -50,34 +50,37 @@ namespace HoardTests.AccountTools
             //    string filterTo = AccountSyncApplicant.RegisterMessageFilter(pin).Result;
             //    string confirmationPin = AccountSynchronizer.GeneratePin();
             //    string msg = AccountSyncApplicant.SendConfirmationPin(confirmationPin).Result;
-            //    int i = 8;
-            //    while (i > 0)
+            //    while (true)
             //    {
-            //        res = AccountSyncKeeper.Update(filterFrom).Result;
-            //        i--;
+            //        AccountSyncApplicant.ProcessMessage();
+            //        AccountSyncKeeper.ProcessMessage();
+            //        if (AccountSyncKeeper.ConfirmationPinReceived())
+            //        {
+            //            msg = AccountSyncKeeper.GenerateEncryptionKey().Result;
+            //            break;
+            //        }
             //    }
-            //    if (AccountSyncKeeper.ConfirmationPinReceived())
+
+            //    int confirmation = 0;
+            //    while (true)
             //    {
-            //        msg = AccountSyncKeeper.GenerateEncryptionKey().Result;
+            //        AccountSyncApplicant.ProcessMessage();
+            //        AccountSyncKeeper.ProcessMessage();
+            //        confirmation = AccountSyncKeeper.GetConfirmationStatus();
+            //        if (confirmation != 0)
+            //        {
+            //            break;
+            //        }
             //    }
-            //    i = 8;
-            //    while (i > 0)
-            //    {
-            //        res = AccountSyncApplicant.Update(filterTo).Result;
-            //        res = AccountSyncKeeper.Update(filterFrom).Result;
-            //        i--;
-            //    }
-            //    int confirmation = AccountSyncKeeper.GetConfirmationStatus();
             //    if (confirmation == 1)
             //    {
             //        string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
             //        msg = AccountSyncKeeper.EncryptAndTransferKeystore(keyStoreData).Result;
             //    }
-            //    i = 8;
-            //    while (i > 0)
+            //    while (true)
             //    {
-            //        res = AccountSyncApplicant.Update(filterTo).Result;
-            //        i--;
+            //        AccountSyncApplicant.ProcessMessage();
+            //        AccountSyncKeeper.ProcessMessage();
             //        if (AccountSyncApplicant.IsKeyStoreReceived())
             //        {
             //            string data = AccountSyncApplicant.GetKeystoreReceivedData();
@@ -105,7 +108,7 @@ namespace HoardTests.AccountTools
             //    string filterFrom = AccountSyncKeeper.RegisterMessageFilter(pin).Result;
             //    while (true)
             //    {
-            //        res = AccountSyncKeeper.Update(filterFrom).Result;
+            //        AccountSyncKeeper.ProcessMessage();
             //        if (AccountSyncKeeper.ConfirmationPinReceived())
             //        {
             //            msg = AccountSyncKeeper.GenerateEncryptionKey().Result;
@@ -117,7 +120,7 @@ namespace HoardTests.AccountTools
             //    int confirmation = 0;
             //    while (true)
             //    {
-            //        res = AccountSyncKeeper.Update(filterFrom).Result;
+            //        AccountSyncKeeper.ProcessMessage();
             //        confirmation = AccountSyncKeeper.GetConfirmationStatus();
             //        if (confirmation != 0)
             //        {
@@ -130,6 +133,7 @@ namespace HoardTests.AccountTools
             //        string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
             //        msg = AccountSyncKeeper.EncryptAndTransferKeystore(keyStoreData).Result;
             //    }
+
             //    await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
             //}
             //await AccountSyncKeeper.Shutdown();
@@ -143,13 +147,13 @@ namespace HoardTests.AccountTools
             //bool res = AccountSyncApplicant.Initialize().Result;
             //if (res)
             //{
-            //    string pin = AccountSynchronizer.GeneratePin();
+            //    string pin = "12345678";// AccountSynchronizer.GeneratePin();
             //    string filterTo = AccountSyncApplicant.RegisterMessageFilter(pin).Result;
             //    string confirmationPin = "12345678";// AccountSynchronizer.GeneratePin();
             //    string msg = AccountSyncApplicant.SendConfirmationPin(confirmationPin).Result;
             //    while (true)
             //    {
-            //        res = AccountSyncApplicant.Update(filterTo).Result;
+            //        AccountSyncApplicant.ProcessMessage();
             //        if (AccountSyncApplicant.IsKeyStoreReceived())
             //        {
             //            string data = AccountSyncApplicant.GetKeystoreReceivedData();

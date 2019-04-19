@@ -21,6 +21,7 @@ using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
 using NBitcoin;
 using System.IO;
+using System.Collections.Concurrent;
 
 namespace Hoard
 {
@@ -121,6 +122,8 @@ namespace Hoard
         /// 
         /// </summary>
         protected string mDateTime;
+
+        private string SubscriptionId = "";
 
         /// Confirmation Pin
         public string ConfirmationPin
@@ -270,7 +273,7 @@ namespace Hoard
         /// <param name="iv"></param>
         /// <param name="dataEncrypted"></param>
         /// <returns></returns>
-        public static byte[] AESDecrypt(byte[] privatekey, byte[] iv, byte[] dataEncrypted)
+        public static byte[] AESDecrypt(byte[] privatekey, byte[] dataEncrypted, byte[] iv)
         {
             // Create AesManaged    
             AesManaged aes = new AesManaged();
@@ -290,6 +293,32 @@ namespace Hoard
 
             return ms.ToArray();
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="publicKey"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        //public static byte[] RSAEncrypt(byte[] publicKey, byte[] data)
+        //{
+        //    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(); 
+        //    rsa.FromXmlString(publicKey);  
+        //    return rsa.Encrypt(data, false);
+        //}
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="privateKey"></param>
+        /// <param name="encryptedData"></param>
+        /// <returns></returns>
+        //public static byte[] RSADecrypt(byte[] privateKey, byte[] encryptedData)
+        //{
+        //    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(); 
+        //    rsa.FromXmlString(privateKey);
+        //    return rsa.Decrypt(encryptedData, false);
+        //}
 
         /// <summary>
         /// Establishes connection with geth
@@ -340,7 +369,7 @@ namespace Hoard
         {
         }
 
-        private void TranslateMessage(WhisperService.ReceivedData msg)
+        public void TranslateMessage(WhisperService.ReceivedData msg)
         {
             try
             {
@@ -427,7 +456,7 @@ namespace Hoard
             //gen.Init(keyGenParam);
             //var keyPair = gen.GenerateKeyPair();
             //var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
-            Debug.Print("path: " + path + "\n");
+            //Debug.Print("path: " + path + "\n");
             ExtKey childKey = ExtKey.Parse(MasterKey).Derive(new KeyPath(path));
             var privateBytes = childKey.PrivateKey.ToBytes();
             Debug.Assert(privateBytes.Length == 32);
@@ -452,6 +481,23 @@ namespace Hoard
             return pin;
         }
 
+        private async Task<string> Subscribe(string pin)
+        {
+            string[] topic = new string[1];
+            topic[0] = ConvertPinToTopic(pin);
+            OriginalPin = pin;
+            SHA256 sha256 = new SHA256Managed();
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
+            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, true);
+            return await WhisperService.Subscribe(msgCriteria);
+        }
+
+        private async Task<bool> Unsubscribe(string subscriptionId)
+        {
+            return await WhisperService.Unsubscribe(subscriptionId);
+        }
+
         /// <summary>
         /// Registers message filter generated from pin
         /// </summary>
@@ -466,6 +512,7 @@ namespace Hoard
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
             SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
             WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, true);
+            SubscriptionId = await WhisperService.Subscribe(msgCriteria);
             return await WhisperService.CreateNewMessageFilter(msgCriteria);
         }
 
@@ -475,25 +522,51 @@ namespace Hoard
         /// </summary>
         public async Task UnregisterMessageFilter(string filter)
         {
-            bool res = await WhisperService.DeleteMessageFilter(filter);
-            res = await WhisperService.DeleteSymetricKey(SymKeyId);
+            bool res = true;
+            if (SubscriptionId != "")
+            {
+                res = await WhisperService.Unsubscribe(SubscriptionId);
+            }
+            if (filter != "")
+            {
+                res = await WhisperService.DeleteMessageFilter(filter);
+            }
+            if (SymKeyId != "")
+            {
+                res = await WhisperService.DeleteSymetricKey(SymKeyId);
+            }
         }
 
         /// <summary>
-        /// Gathers messages
+        /// 
         /// </summary>
-        /// <param name="filter">Message filter</param>
+        /// <param name="filter"></param>
         /// <returns></returns>
-        public async Task<bool> Update(string filter)
+        //public async Task<bool> Update(string filter)
+        //{
+        //    List<WhisperService.ReceivedData> objects = await WhisperService.ReceiveMessage(filter);
+        //    if (objects == null)
+        //        return false;
+        //    foreach (WhisperService.ReceivedData obj in objects)
+        //    {
+        //        TranslateMessage(obj);
+        //    }
+        //    return true;
+        //}
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public void ProcessMessage()
         {
-            List<WhisperService.ReceivedData> objects = await WhisperService.ReceiveMessage(filter);
-            if (objects == null)
-                return false;
-            foreach (WhisperService.ReceivedData obj in objects)
+            ConcurrentQueue<WhisperService.ReceivedData> receivedMessagesQueue = WhisperService.GetReceivedMessages();
+            if (receivedMessagesQueue.Count > 0)
             {
-                TranslateMessage(obj);
+                WhisperService.ReceivedData rd = null;
+                if (receivedMessagesQueue.TryDequeue(out rd))
+                    TranslateMessage(rd);
             }
-            return true;
         }
     }
 }
