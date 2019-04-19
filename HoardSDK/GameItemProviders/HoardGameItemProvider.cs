@@ -399,7 +399,15 @@ namespace Hoard.GameItemProviders
         public async Task<Result> Connect()
         {
             //1. connect to REST server
-            Result result = await ConnectToGameServer();
+            Result result = Result.Ok;
+            if (!string.IsNullOrEmpty(Game.Url))
+            {
+                result = await ConnectToGameServer();
+            }
+            else
+            {
+                ErrorCallbackProvider.ReportWarning("Game.Url is empty - all data will be provided by BlockChain provider!");
+            }            
             //2. check also fallback connector
             if (SecureProvider != null)
             {
