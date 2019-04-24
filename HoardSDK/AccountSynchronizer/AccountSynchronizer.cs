@@ -108,6 +108,11 @@ namespace Hoard
         /// <summary>
         /// 
         /// </summary>
+        public byte[] PublicKey { get { return publicKey; } }
+
+        /// <summary>
+        /// 
+        /// </summary>
         protected string topic = "";
 
         private X9ECParameters X9 = null;
