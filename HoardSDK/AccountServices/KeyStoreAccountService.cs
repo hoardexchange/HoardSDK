@@ -313,15 +313,12 @@ namespace Hoard
         public static Task<AccountInfo> ActivateAccount(AccountInfo account)
         {
             Trace.Assert(account != null);
-            return Task.Run(() =>
+            //TODO: this code is awkward
+            if (account.Owner.Accounts.Contains(account))
             {
-                //TODO: this code is awkward
-                if (account.Owner.Accounts.Contains(account))
-                {
-                    return account;
-                }
-                return null;
-            });
+                return Task.FromResult(account);
+            }
+            return Task.FromResult((AccountInfo)null);
         }
     }
 }

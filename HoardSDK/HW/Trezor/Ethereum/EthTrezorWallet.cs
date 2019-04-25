@@ -68,14 +68,11 @@ namespace Hoard.HW.Trezor.Ethereum
 
         public override async Task<AccountInfo> ActivateAccount(User user, AccountInfo accountInfo)
         {
-            return await Task.Run(() =>
+            if (user.Accounts.Contains(accountInfo))
             {
-                if (user.Accounts.Contains(accountInfo))
-                {
-                    return accountInfo;
-                }
-                return null;
-            });
+                return await Task.FromResult(accountInfo);
+            }
+            return await Task.FromResult((AccountInfo)null);
         }
     }
 }

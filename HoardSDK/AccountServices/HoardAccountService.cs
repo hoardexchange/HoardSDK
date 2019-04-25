@@ -92,10 +92,7 @@ namespace Hoard
             {
                 if (InternalSet)
                 {
-                    return Task.Run(() =>
-                    {
-                        return (AccountInfo)this;
-                    });
+                    return Task.FromResult((AccountInfo)this);
                 }
                 else
                     return HoardAccountService.ActivateAccount(this);
