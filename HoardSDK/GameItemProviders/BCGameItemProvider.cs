@@ -182,7 +182,7 @@ namespace Hoard.GameItemProviders
 
         private async Task<GameItemContract> GetGameItemContractByInterface(string contractAddress)
         {
-            SupportsInterfaceWithLookupContract interfaceContract = BCComm.GetContract<SupportsInterfaceWithLookupContract>(contractAddress);
+            SupportsInterfaceWithLookupContract interfaceContract = (SupportsInterfaceWithLookupContract)BCComm.GetContract(typeof(SupportsInterfaceWithLookupContract), contractAddress);
 
             ContractInterfaceID currentInterfaceId = null;
 

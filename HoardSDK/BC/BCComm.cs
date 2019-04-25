@@ -38,7 +38,7 @@ namespace Hoard.BC
             if (gameCenterContract == null)
                 ErrorCallbackProvider.ReportError("Game center contract cannot be null!");
 
-            gameCenter = GetContract<GameCenterContract>(gameCenterContract);
+            gameCenter = (GameCenterContract)GetContract(typeof(GameCenterContract), gameCenterContract);
         }
 
         /// <summary>
@@ -125,23 +125,38 @@ namespace Hoard.BC
         {
             if (abi == "")
             {
-                return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress);
+                if (contractType == typeof(ERC721GameItemContract))
+                    return new ERC721GameItemContract(game, web, contractAddress);
+                else if (contractType == typeof(ERC223GameItemContract))
+                    return new ERC223GameItemContract(game, web, contractAddress);
             }
             else
             {
-                return (GameItemContract)Activator.CreateInstance(contractType, game, web, contractAddress, abi);
+                if (contractType == typeof(ERC721GameItemContract))
+                    return new ERC721GameItemContract(game, web, contractAddress, abi);
+                else if (contractType == typeof(ERC223GameItemContract))
+                    return new ERC223GameItemContract(game, web, contractAddress, abi);
             }
+
+            ErrorCallbackProvider.ReportError($"Unknown game item contract type: {contractType.ToString()}");
+            return null;
         }
 
         /// <summary>
         /// Helper function to get contract of a prticular type
         /// </summary>
-        /// <typeparam name="TContract">type of contract</typeparam>
+        /// <param name="contractType">type of contract</param>
         /// <param name="contractAddress">address of the contract</param>
         /// <returns></returns>
-        public TContract GetContract<TContract>(string contractAddress)
+        public object GetContract(Type contractType, string contractAddress)
         {
-            return (TContract)Activator.CreateInstance(typeof(TContract), web, contractAddress);
+            if (contractType == typeof(GameCenterContract))
+                return new GameCenterContract(web, contractAddress);
+            else if (contractType == typeof(SupportsInterfaceWithLookupContract))
+                return new SupportsInterfaceWithLookupContract(web, contractAddress);
+
+            ErrorCallbackProvider.ReportError($"Unknown contract type: {contractType.ToString()}");
+            return null;
         }
 
         /// <summary>
