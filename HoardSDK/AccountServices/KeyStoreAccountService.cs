@@ -126,10 +126,7 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> DeleteAccount(AccountInfo account)
         {
-            return await Task.Run(() =>
-            {
-                return KeyStoreUtils.DeleteAccount(account, AccountsDir);
-            });
+            return await Task.FromResult(KeyStoreUtils.DeleteAccount(account, AccountsDir));
         }
 
         /// <summary>
@@ -140,20 +137,17 @@ namespace Hoard
         /// <returns>true if at least one account has been properly loaded</returns>
         public async Task<bool> RequestAccounts(User user)
         {
-            return await Task.Run(() =>
+            user.Accounts.Clear();
+            KeyStoreUtils.EnumerateAccounts(user, AccountsDir, (string filename) =>
             {
-                user.Accounts.Clear();
-                KeyStoreUtils.EnumerateAccounts(user, AccountsDir, (string filename) =>
+                KeyStoreUtils.AccountDesc accountDesc = KeyStoreUtils.LoadAccount(user, UserInputProvider, filename, AccountsDir);
+                if (accountDesc != null)
                 {
-                    KeyStoreUtils.AccountDesc accountDesc = KeyStoreUtils.LoadAccount(user, UserInputProvider, filename, AccountsDir);
-                    if (accountDesc != null)
-                    {
-                        AccountInfo accountInfo = new KeyStoreAccount(accountDesc.Name, new HoardID(accountDesc.Address), accountDesc.PrivKey, user);
-                        user.Accounts.Add(accountInfo);
-                    }
-                });
-                return user.Accounts.Count > 0;
+                    AccountInfo accountInfo = new KeyStoreAccount(accountDesc.Name, new HoardID(accountDesc.Address), accountDesc.PrivKey, user);
+                    user.Accounts.Add(accountInfo);
+                }
             });
+            return await Task.FromResult(user.Accounts.Count > 0);
         }
 
         /// <summary>
@@ -165,32 +159,29 @@ namespace Hoard
         /// <returns></returns>
         public static async Task<bool> EnumerateAccounts(string userName, string accountsDir, Action<string> enumFunc)
         {
-            return await Task.Run(() =>
+            string hashedName = Helper.Keccak256HexHashString(userName);
+            string path = Path.Combine(accountsDir, hashedName);
+
+            if (!Directory.Exists(path))
             {
-                string hashedName = Helper.Keccak256HexHashString(userName);
-                string path = Path.Combine(accountsDir, hashedName);
+                ErrorCallbackProvider.ReportWarning("Not found any account files.");
+                return await Task.FromResult(false);
+            }
 
-                if (!Directory.Exists(path))
-                {
-                    ErrorCallbackProvider.ReportWarning("Not found any account files.");
-                    return false;
-                }
+            var accountsFiles = Directory.GetFiles(path, "*.keystore");
+            if (accountsFiles.Length == 0)
+            {
+                ErrorCallbackProvider.ReportWarning("Not found any account files.");
+                return await Task.FromResult(false);
+            }
 
-                var accountsFiles = Directory.GetFiles(path, "*.keystore");
-                if (accountsFiles.Length == 0)
-                {
-                    ErrorCallbackProvider.ReportWarning("Not found any account files.");
-                    return false;
-                }
+            foreach (var fullPath in accountsFiles)
+            {
+                if ((fullPath != null) && (fullPath != System.String.Empty))
+                    enumFunc(fullPath);
+            }
 
-                foreach (var fullPath in accountsFiles)
-                {
-                    if ((fullPath != null) && (fullPath != System.String.Empty))
-                        enumFunc(fullPath);
-                }
-
-                return true;
-            });
+            return await Task.FromResult(true);
         }
 
         /// <summary>
@@ -202,28 +193,25 @@ namespace Hoard
         /// <returns></returns>
         public static async Task<bool> SaveAccount(string userName, string accountsDir, string accountData)
         {
-            return await Task.Run(() =>
+            string hashedName = Helper.Keccak256HexHashString(userName);
+            string path = Path.Combine(accountsDir, hashedName);
+            Directory.CreateDirectory(path);
+
+            var accountJsonObject = JObject.Parse(accountData);
+            if (accountJsonObject == null)
+                return await Task.FromResult(false);
+
+            string id = accountJsonObject["id"].Value<string>();
+            var fileName = id + ".keystore";
+
+            //save the File
+            using (var newfile = File.CreateText(Path.Combine(path, fileName)))
             {
-                string hashedName = Helper.Keccak256HexHashString(userName);
-                string path = Path.Combine(accountsDir, hashedName);
-                Directory.CreateDirectory(path);
+                newfile.Write(accountData);
+                newfile.Flush();
+            }
 
-                var accountJsonObject = JObject.Parse(accountData);
-                if (accountJsonObject == null)
-                    return false;
-
-                string id = accountJsonObject["id"].Value<string>();
-                var fileName = id + ".keystore";
-
-                //save the File
-                using (var newfile = File.CreateText(Path.Combine(path, fileName)))
-                {
-                    newfile.Write(accountData);
-                    newfile.Flush();
-                }
-
-                return true;
-            });
+            return await Task.FromResult(true);
         }
 
         /// <summary>
@@ -271,12 +259,9 @@ namespace Hoard
         public static Task<string> SignMessage(byte[] input, string privKey)
         {
             //CPU-bound
-            return Task.Run(() =>
-            {
-                var signer = new Nethereum.Signer.EthereumMessageSigner();
-                var ecKey = new Nethereum.Signer.EthECKey(privKey);
-                return signer.Sign(input, ecKey);
-            });
+            var signer = new Nethereum.Signer.EthereumMessageSigner();
+            var ecKey = new Nethereum.Signer.EthECKey(privKey);
+            return Task.FromResult(signer.Sign(input, ecKey));
         }
 
         /// <summary>
@@ -288,21 +273,18 @@ namespace Hoard
         public static Task<string> SignTransaction(byte[] rlpEncodedTransaction, string privKey)
         {
             //CPU-bound
-            return Task.Run(() =>
-            {
-                var ecKey = new Nethereum.Signer.EthECKey(privKey);
+            var ecKey = new Nethereum.Signer.EthECKey(privKey);
 
-                var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
-                var signature = ecKey.SignAndCalculateV(rawHash);
+            var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
+            var signature = ecKey.SignAndCalculateV(rawHash);
 
-                var encodedData = new List<byte[]>();
-                encodedData.Add(rlpEncodedTransaction);
-                encodedData.Add(RLP.EncodeElement(signature.V));
-                encodedData.Add(RLP.EncodeElement(signature.R));
-                encodedData.Add(RLP.EncodeElement(signature.S));
+            var encodedData = new List<byte[]>();
+            encodedData.Add(rlpEncodedTransaction);
+            encodedData.Add(RLP.EncodeElement(signature.V));
+            encodedData.Add(RLP.EncodeElement(signature.R));
+            encodedData.Add(RLP.EncodeElement(signature.S));
 
-                return RLP.EncodeList(encodedData.ToArray()).ToHex().EnsureHexPrefix();
-            });
+            return Task.FromResult(RLP.EncodeList(encodedData.ToArray()).ToHex().EnsureHexPrefix());
         }
 
         /// <summary>
