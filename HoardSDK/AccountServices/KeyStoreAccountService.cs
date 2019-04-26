@@ -138,16 +138,16 @@ namespace Hoard
         public async Task<bool> RequestAccounts(User user)
         {
             user.Accounts.Clear();
-            KeyStoreUtils.EnumerateAccounts(user, AccountsDir, (string filename) =>
+            await KeyStoreUtils.EnumerateAccountsAsync(user, AccountsDir, async (string filename) =>
             {
-                KeyStoreUtils.AccountDesc accountDesc = KeyStoreUtils.LoadAccount(user, UserInputProvider, filename, AccountsDir);
+                KeyStoreUtils.AccountDesc accountDesc = await KeyStoreUtils.LoadAccount(user, UserInputProvider, filename, AccountsDir);
                 if (accountDesc != null)
                 {
                     AccountInfo accountInfo = new KeyStoreAccount(accountDesc.Name, new HoardID(accountDesc.Address), accountDesc.PrivKey, user);
                     user.Accounts.Add(accountInfo);
                 }
             });
-            return await Task.FromResult(user.Accounts.Count > 0);
+            return user.Accounts.Count > 0;
         }
 
         /// <summary>

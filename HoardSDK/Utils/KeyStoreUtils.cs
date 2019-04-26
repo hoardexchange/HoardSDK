@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Hoard.Utils
 {
@@ -51,7 +52,7 @@ namespace Hoard.Utils
         /// <param name="user">User whose accounts to iterate</param>
         /// <param name="accountsDir">folder with key store data</param>
         /// <param name="enumFunc">action to call for each account</param>
-        public static void EnumerateAccounts(User user, string accountsDir, Action<string> enumFunc)
+        public static async Task EnumerateAccountsAsync(User user, string accountsDir, Func<string, Task> enumFunc)
         {
             string hashedName = Helper.Keccak256HexHashString(user.UserName);
             string path = Path.Combine(accountsDir, hashedName);
@@ -75,7 +76,7 @@ namespace Hoard.Utils
             {
                 string fileName = Path.GetFileName(fullPath);
                 if ((fileName != null) && (fileName != System.String.Empty))
-                    enumFunc(fileName);
+                    await enumFunc(fileName);
             }
         }
 
@@ -87,7 +88,7 @@ namespace Hoard.Utils
         /// <param name="filename">filename of the file with account to load</param>
         /// <param name="accountsDir">folder where the key store files are stored</param>
         /// <returns>description making an account</returns>
-        public static AccountDesc LoadAccount(User user, IUserInputProvider userInputProvider, string filename, string accountsDir)
+        public static async Task<AccountDesc> LoadAccount(User user, IUserInputProvider userInputProvider, string filename, string accountsDir)
         {
             string hashedName = Helper.Keccak256HexHashString(user.UserName);
             var accountsFiles = Directory.GetFiles(Path.Combine(accountsDir, hashedName), filename);
@@ -100,7 +101,7 @@ namespace Hoard.Utils
             if (details == null)
                 return null;
             string address = details["address"].Value<string>();
-            string password = userInputProvider.RequestInput(user, eUserInputType.kPassword, address).Result;
+            string password = await userInputProvider.RequestInput(user, eUserInputType.kPassword, address);
             string name = "";
             if (details["name"] != null)
                 name = details["name"].Value<string>();
