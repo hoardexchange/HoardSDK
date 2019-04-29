@@ -125,17 +125,11 @@ namespace Hoard.BC
         {
             if (abi == "")
             {
-                if (contractType == typeof(ERC721GameItemContract))
-                    return new ERC721GameItemContract(game, web, contractAddress);
-                else if (contractType == typeof(ERC223GameItemContract))
-                    return new ERC223GameItemContract(game, web, contractAddress);
+                return (GameItemContract)Activator.CreateInstance(contractType, new object[] { game, web, contractAddress });
             }
             else
             {
-                if (contractType == typeof(ERC721GameItemContract))
-                    return new ERC721GameItemContract(game, web, contractAddress, abi);
-                else if (contractType == typeof(ERC223GameItemContract))
-                    return new ERC223GameItemContract(game, web, contractAddress, abi);
+                return (GameItemContract)Activator.CreateInstance(contractType, new object[] { game, web, contractAddress, abi });
             }
 
             ErrorCallbackProvider.ReportError($"Unknown game item contract type: {contractType.ToString()}");
