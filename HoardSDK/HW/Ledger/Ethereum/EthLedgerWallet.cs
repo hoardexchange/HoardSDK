@@ -9,12 +9,12 @@ namespace Hoard.HW.Ledger.Ethereum
     /// </summary>
     internal class EthLedgerWallet : LedgerWallet
     {
-        private class HDWalletAccountInfo : AccountInfo
+        private class HDWalletProfile : Profile
         {
             private EthLedgerWallet Wallet;
 
-            public HDWalletAccountInfo(string name, HoardID id, EthLedgerWallet wallet, User user)
-                :base(name, id, user)
+            public HDWalletProfile(string name, HoardID id, EthLedgerWallet wallet)
+                :base(name, id)
             {
                 Wallet = wallet;
             }
@@ -28,11 +28,6 @@ namespace Hoard.HW.Ledger.Ethereum
             {
                 return await Wallet.SignTransaction(input, this);
             }
-
-            public override async Task<AccountInfo> Activate()
-            {
-                return await Wallet.ActivateAccount(Owner, this);
-            }
         }
         private KeyPath keyPath;
         private byte[] derivation;
@@ -43,20 +38,19 @@ namespace Hoard.HW.Ledger.Ethereum
             derivation = keyPath.ToBytes();
         }
 
-        public override async Task<bool> RequestAccounts(User user)
+        public override async Task<Profile> RequestProfile(string name)
         {
             var output = await SendRequestAsync(EthGetAddress.Request(derivation));
             if(IsSuccess(output.StatusCode))
             {
                 var address = new HoardID(EthGetAddress.GetAddress(output.Data));
-                user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this, user));
-                return true;
+                return new HDWalletProfile(AccountInfoName, address, this);
             }
 
-            return false;
+            return null;
         }
 
-        public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
+        public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
         {
             uint txLength = (uint)rlpEncodedTransaction.Length;
             uint bytesToCopy = Math.Min(0xff - (uint)derivation.Length, txLength);
@@ -87,7 +81,7 @@ namespace Hoard.HW.Ledger.Ethereum
             return null;
         }
 
-        public override async Task<string> SignMessage(byte[] message, AccountInfo accountInfo)
+        public override async Task<string> SignMessage(byte[] message, Profile profile)
         {
             uint msgLength = (uint)message.Length;
             uint bytesToCopy = Math.Min(0xff - (uint)derivation.Length - sizeof(int), msgLength);
@@ -118,15 +112,6 @@ namespace Hoard.HW.Ledger.Ethereum
             }
 
             return null;
-        }
-
-        public override async Task<AccountInfo> ActivateAccount(User user, AccountInfo accountInfo)
-        {
-            if (user.Accounts.Contains(accountInfo))
-            {
-                return await Task.FromResult(accountInfo);
-            }
-            return await Task.FromResult((AccountInfo)null);
         }
     }
 }

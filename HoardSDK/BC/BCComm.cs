@@ -303,11 +303,11 @@ namespace Hoard.BC
         /// <summary>
         /// Transfer HRD amount to another account
         /// </summary>
-        /// <param name="from">sender account</param>
-        /// <param name="to">receiver account</param>
+        /// <param name="from">sender profile</param>
+        /// <param name="to">receiver address</param>
         /// <param name="amount">amount to send</param>
         /// <returns>true if transfer was successful, false otherwise</returns>
-        public async Task<bool> TransferHRD(AccountInfo from, string to, BigInteger amount)
+        public async Task<bool> TransferHRD(Profile from, string to, BigInteger amount)
         {
             string hoardTokenAddress = await gameCenter.GetHoardTokenAddressAsync();
             if (hoardTokenAddress != null)
@@ -328,36 +328,36 @@ namespace Hoard.BC
         /// <summary>
         /// Sets exchange contract address in game center
         /// </summary>
-        /// <param name="account">game center owner account</param>
+        /// <param name="profile">game center owner profile</param>
         /// <param name="exchangeAddress">address of Hoard exchange contract</param>
         /// <returns></returns>
-        public async Task<TransactionReceipt> SetExchangeContract(AccountInfo account, string exchangeAddress)
+        public async Task<TransactionReceipt> SetExchangeContract(Profile profile, string exchangeAddress)
         {
-            return await gameCenter.SetExchangeAddressAsync(exchangeAddress, account);
+            return await gameCenter.SetExchangeAddressAsync(exchangeAddress, profile);
         }
 
         /// <summary>
         /// Sets HRD token contract address in game center
         /// </summary>
-        /// <param name="account">game center owner account</param>
+        /// <param name="profile">game center owner profile</param>
         /// <param name="hoardTokenAddress">address of HRD token contract</param>
         /// <returns></returns>
-        public async Task<TransactionReceipt> SetHRDAddress(AccountInfo account, string hoardTokenAddress)
+        public async Task<TransactionReceipt> SetHRDAddress(Profile profile, string hoardTokenAddress)
         {
-            return await gameCenter.SetHoardTokenAddressAsync(hoardTokenAddress, account);
+            return await gameCenter.SetHoardTokenAddressAsync(hoardTokenAddress, profile);
         }
 
         /// <summary>
         /// Utility to call functions on blockchain signing it by given account
         /// </summary>
         /// <returns>Receipt of called transaction</returns>
-        public static async Task<TransactionReceipt> EvaluateOnBC(Web3 web, AccountInfo account, Function function, params object[] functionInput)
+        public static async Task<TransactionReceipt> EvaluateOnBC(Web3 web, Profile profile, Function function, params object[] functionInput)
         {
-            Debug.Assert(account != null);
+            Debug.Assert(profile != null);
 
-            HexBigInteger gas = await function.EstimateGasAsync(account.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
+            HexBigInteger gas = await function.EstimateGasAsync(profile.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
 
-            var nonceService = new InMemoryNonceService(account.ID, web.Client);
+            var nonceService = new InMemoryNonceService(profile.ID, web.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             string data = function.GetData(functionInput);
@@ -368,7 +368,7 @@ namespace Hoard.BC
             // FIXME? hoard sdk api is not compatible with plasma and ethereum at the same time
             // SignTransaction should return some struct or only signature
             // temp fix - encode/decode transaction data
-            string signedTransactionData = await account.SignTransaction(rlpEncodedTx);
+            string signedTransactionData = await profile.SignTransaction(rlpEncodedTx);
             if (signedTransactionData == null)
             {
                 ErrorCallbackProvider.ReportError("Could not sign transaction!");
@@ -391,15 +391,15 @@ namespace Hoard.BC
         /// Utility to send ETH on blockchain signing it by given account
         /// </summary>
         /// <returns>Receipt of called transaction</returns>
-        public static async Task<TransactionReceipt> EvaluateOnBC(Web3 web, AccountInfo account, string to, HexBigInteger amount)
+        public static async Task<TransactionReceipt> EvaluateOnBC(Web3 web, Profile profile, string to, HexBigInteger amount)
         {
-            Debug.Assert(account != null);
+            Debug.Assert(profile != null);
 
-            var nonceService = new InMemoryNonceService(account.ID, web.Client);
+            var nonceService = new InMemoryNonceService(profile.ID, web.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             var trans = new Nethereum.Signer.Transaction(to, amount, nonce);
-            string signedTransactionData = await account.SignTransaction(trans.GetRLPEncodedRaw());
+            string signedTransactionData = await profile.SignTransaction(trans.GetRLPEncodedRaw());
             if (signedTransactionData == null)
             {
                 ErrorCallbackProvider.ReportError("Could not sign transaction!");

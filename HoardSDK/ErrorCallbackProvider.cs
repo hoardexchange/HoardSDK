@@ -10,34 +10,24 @@ namespace Hoard
     public static class ErrorCallbackProvider
     {
         /// <summary>
-        /// Message type
-        /// </summary>
-        public enum MessagType
-        {
-            /// <summary>
-            /// Info
-            /// </summary>
-            Info = 0,
-
-            /// <summary>
-            /// Warning
-            /// </summary>
-            Warning,
-            /// <summary>
-            /// Error
-            /// </summary>
-            Error
-        }
-
-        /// <summary>
         /// Error callback
         /// </summary>
-        public delegate void ErrorCallback(string message, MessagType type);
+        public delegate void ErrorCallback(string message);
 
         /// <summary>
         /// Event raised when error is reported
         /// </summary>
-        public static event ErrorCallback OnReport;
+        public static event ErrorCallback OnReportError;
+
+        /// <summary>
+        /// Event raised when warning is reported
+        /// </summary>
+        public static event ErrorCallback OnReportWarning;
+
+        /// <summary>
+        /// Event raised when info is reported
+        /// </summary>
+        public static event ErrorCallback OnReportInfo;
 
         /// <summary>
         /// Report error
@@ -45,9 +35,9 @@ namespace Hoard
         /// <param name="message"></param>
         public static void ReportError(string message)
         {
-            if (OnReport != null)
+            if (OnReportError != null)
             {
-                OnReport(message, MessagType.Error);
+                OnReportError(message);
             }
         }
 
@@ -57,9 +47,9 @@ namespace Hoard
         /// <param name="message"></param>
         public static void ReportWarning(string message)
         {
-            if (OnReport != null)
+            if (OnReportWarning != null)
             {
-                OnReport(message, MessagType.Warning);
+                OnReportWarning(message);
             }
         }
 
@@ -69,9 +59,9 @@ namespace Hoard
         /// <param name="message"></param>
         public static void ReportInfo(string message)
         {
-            if (OnReport != null)
+            if (OnReportInfo != null)
             {
-                OnReport(message, MessagType.Info);
+                OnReportInfo(message);
             }
         }
     }

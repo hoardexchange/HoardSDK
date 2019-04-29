@@ -16,7 +16,7 @@ namespace Hoard
     /// <summary>
     /// HoardAccountService
     /// </summary>
-    public class HoardAccountService : IAccountService
+    public class HoardProfileService : IProfileService
     {
         private enum MessageId
         {
@@ -27,7 +27,6 @@ namespace Hoard
             kGiveActiveAccount,
             kSignMessage,
             kSignTransaction,
-            kSetActiveAccount,
         }
 
         private enum Helper
@@ -54,8 +53,8 @@ namespace Hoard
             public byte[] ReceivedSignature = new byte[(int)Helper.kSignature];
             public ManualResetEvent ResponseEvent = new ManualResetEvent(false);
             public WebSocket Socket = null;
-            public User Owner = null;
-            public AccountInfo ActiveAccount = null;
+            public Profile profile = null;
+            public string profileName = "";
 
             public SocketData()
             {
@@ -67,45 +66,34 @@ namespace Hoard
             }
         }
 
-        private class HoardAccount : AccountInfo
+        private class HoardProfile : Profile
         {
             public bool InternalSet = false;
 
-            public HoardAccount(string name, string id, User user)
-                : base(name, new HoardID(id), user)
+            public HoardProfile(string name, string id)
+                : base(name, new HoardID(id))
             {
-                Owner = user;
                 InternalSet = false;
             }
 
             public override Task<string> SignTransaction(byte[] input)
             {
-                return HoardAccountService.SignTransactionInternal(input, this);
+                return HoardProfileService.SignTransactionInternal(input, this);
             }
 
             public override Task<string> SignMessage(byte[] input)
             {
-                return HoardAccountService.SignMessageInternal(input, this);
-            }
-
-            public override Task<AccountInfo> Activate()
-            {
-                if (InternalSet)
-                {
-                    return Task.FromResult((AccountInfo)this);
-                }
-                else
-                    return HoardAccountService.ActivateAccount(this);
+                return HoardProfileService.SignMessageInternal(input, this);
             }
         }
 
         RestClient AuthClient = null;
         IUserInputProvider UserInputProvider = null;
         string ClientId = null;
-        Dictionary<User, AuthToken> UserAuthTokens = new Dictionary<User, AuthToken>();        
+        Dictionary<string, AuthToken> UserAuthTokens = new Dictionary<string, AuthToken>();        
         string SignerUrl = "";
 
-        static Dictionary<User, SocketData> SignerClients = new Dictionary<User, SocketData>();
+        static Dictionary<string, SocketData> SignerClients = new Dictionary<string, SocketData>();
         static UInt32 MessagePrefix = 0x00201801;
         static int MAX_WAIT_TIME_IN_MS = 20000;
 
@@ -145,7 +133,7 @@ namespace Hoard
         /// <param name="signerUrl"></param>
         /// <param name="clientId"></param>
         /// <param name="userInputProvider"></param>
-        public HoardAccountService(string url, string signerUrl, string clientId, IUserInputProvider userInputProvider)
+        public HoardProfileService(string url, string signerUrl, string clientId, IUserInputProvider userInputProvider)
         {
             UserInputProvider = userInputProvider;
             ClientId = clientId;
@@ -180,8 +168,6 @@ namespace Hoard
                     return Msg_SignMessage(reader, sd);
                 case MessageId.kSignTransaction:
                     return Msg_SignTransaction(reader, sd);
-                case MessageId.kSetActiveAccount:
-                    return Msg_SetActiveAccount(reader, sd);
                 default:
                     ErrorCallbackProvider.ReportError("Invalid message id [" + id.ToString() + "]");
                     return true;
@@ -222,16 +208,12 @@ namespace Hoard
                     reader.Read(address, 0, (int)Helper.kAddressLength);
                     string accountName = BitConverter.ToString(address).Replace("-", string.Empty).ToLower();
                     ErrorCallbackProvider.ReportInfo("SignerAccountService: " + accountName + " received");
-                    Debug.Assert(sd.Owner != null);
-                    HoardAccount accountInfo = new HoardAccount(sd.Owner.HoardId, "0x" + accountName, sd.Owner);
-                    sd.Owner.Accounts.Add(accountInfo);
+                    Debug.Assert(sd.profile != null);
+                    sd.profile = new HoardProfile(sd.profileName, "0x" + accountName);
                 }
-                if(activeAccountIndex > -1)
+                if (activeAccountIndex < 1)
                 {
-                    Debug.Assert(activeAccountIndex >= 0 && activeAccountIndex < sd.Owner.Accounts.Count);
-                    ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = true;
-                    sd.Owner.ChangeActiveAccount((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).Wait();
-                    ((HoardAccount)sd.Owner.Accounts[activeAccountIndex]).InternalSet = false;
+                    ErrorCallbackProvider.ReportError("No profiles [" + sd.profileName + "] found!");
                 }
             }
             return true;
@@ -251,30 +233,12 @@ namespace Hoard
             return true;
         }
 
-        //
-        private bool Msg_SetActiveAccount(BinaryReader reader, SocketData sd)
-        {
-            byte[] id = new byte[(int)Helper.kAddressLength];
-            reader.Read(id, 0, (int)Helper.kAddressLength);
-            HoardID hid = new HoardID(new System.Numerics.BigInteger(id));
-            for (int i = 0; i < sd.Owner.Accounts.Count; i++)
-            {
-                if(sd.Owner.Accounts[i].ID == hid)
-                {
-                    sd.ActiveAccount = sd.Owner.Accounts[i];
-                    break;
-                }
-            }
-            return true;
-        }
-
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="user"></param>
+        /// <param name="profileName"></param>
         /// <returns></returns>
-        public async Task<AccountInfo> CreateAccount(string name, User user)
+        public async Task<Profile> CreateProfile(string profileName)
         {
             //ErrorCallbackProvider.ReportInfo("Generating user account on Hoard Auth Server.");
 
@@ -307,20 +271,20 @@ namespace Hoard
             //    ErrorCallbackProvider.ReportInfo(errorMsg);
             //}
 
-            return await Task.FromResult<AccountInfo>(null);
+            return await Task.FromResult<Profile>(null);
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="name"></param>
         /// <returns></returns>
-        public async Task<bool> RequestAccounts(User user)
+        public async Task<Profile> RequestProfile(string name)
         {
-            if (user.HoardId == "")
+            if (name == "")
             {
-                ErrorCallbackProvider.ReportError($"Invalid user: {user.HoardId}!");
-                return false;
+                ErrorCallbackProvider.ReportError($"Invalid user!");
+                return null;
             }
 
             //connect to account server using REST
@@ -336,15 +300,15 @@ namespace Hoard
             //Do sth similar for Switch authentication
 
             AuthToken token = null;
-            string password = await UserInputProvider.RequestInput(user, eUserInputType.kPassword, "password");
+            string password = await UserInputProvider.RequestInput(name, null, eUserInputType.kPassword, "password");
             //check if we have valid auth token
-            if (!UserAuthTokens.TryGetValue(user, out token) || !token.IsValid())
+            if (!UserAuthTokens.TryGetValue(name, out token) || !token.IsValid())
             {
                 //none found ask for a new one
-                token = await RequestAuthToken(user, password);
+                token = await RequestAuthToken(name, password);
                 //store
                 if (token != null)
-                    UserAuthTokens[user] = token;
+                    UserAuthTokens[name] = token;
             }
 
             if (token != null)
@@ -354,7 +318,7 @@ namespace Hoard
                 //assume it did and returned a valid account or no accounts (which is also valid)
 
                 SocketData socketData = null;
-                if (!SignerClients.TryGetValue(user, out socketData))
+                if (!SignerClients.TryGetValue(name, out socketData))
                 {
                     socketData = new SocketData();
                     socketData.Socket = new WebSocket(SignerUrl, "internal-hoard-protocol");
@@ -386,36 +350,35 @@ namespace Hoard
                         ErrorCallbackProvider.ReportError("Connection error!");
                         socketData.ResponseEvent.Set();
                     };
-                    SignerClients[user] = socketData;
+                    SignerClients[name] = socketData;
                     socketData.Socket.Connect();
                 }
 
-                user.Accounts.Clear();
                 MemoryStream ms = new MemoryStream();
                 BinaryWriter writer = new BinaryWriter(ms);
                 writer.Write(MessagePrefix);
                 writer.Write((uint)MessageId.kAuthenticate);
-                writer.Write(StringToByteArray(user.HoardId, (int)Helper.kUserNameLength));
+                writer.Write(StringToByteArray(name, (int)Helper.kUserNameLength));
                 // Consider that password should not be transferred to signer
                 //writer.Write(StringToByteArray(password, (int)Helper.kUserNameLength));
                 writer.Write(StringToByteArray(token.AccessToken, (int)Helper.kTokenLength));
-                socketData.Owner = user;
+                socketData.profileName = name;
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
                 if(socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                 {
-                    return true;
+                    return socketData.profile;
                 }
             }
             ErrorCallbackProvider.ReportError("No valid token received!");
-            return false;
+            return null;
         }
 
-        private async Task<AuthToken> RequestAuthToken(User user, string password)
+        private async Task<AuthToken> RequestAuthToken(string profileName, string password)
         {
             var tokenRequest = new RestRequest("/token", Method.POST);
             tokenRequest.AddParameter("grant_type", "password");
-            tokenRequest.AddParameter("username", user.HoardId);
+            tokenRequest.AddParameter("username", profileName);
             tokenRequest.AddParameter("password", password);
             tokenRequest.AddParameter("client_id", ClientId);
 
@@ -435,7 +398,7 @@ namespace Hoard
             }
             else
             {
-                string errorMsg = "Unable to authenticate user account " + user.HoardId  + ": Hoard Auth Server status code: " + tokenResponse.StatusCode;
+                string errorMsg = "Unable to authenticate user account " + profileName + ": Hoard Auth Server status code: " + tokenResponse.StatusCode;
                 if (!string.IsNullOrEmpty(tokenResponse.Content))
                 {
                     ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(tokenResponse.Content);
@@ -451,31 +414,31 @@ namespace Hoard
         /// 
         /// </summary>
         /// <param name="input"></param>
-        /// <param name="signature"></param>
+        /// <param name="profile"></param>
         /// <returns></returns>
-        public Task<string> SignMessage(byte[] input, AccountInfo signature)
+        public Task<string> SignMessage(byte[] input, Profile profile)
         {
-            return SignMessageInternal(input, signature);
+            return SignMessageInternal(input, profile);
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="rlpEncodedTransaction"></param>
-        /// <param name="signature"></param>
+        /// <param name="profile"></param>
         /// <returns></returns>
-        public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature)
+        public Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
         {
-            return SignTransactionInternal(rlpEncodedTransaction, signature);
+            return SignTransactionInternal(rlpEncodedTransaction, profile);
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="input"></param>
-        /// <param name="accountInfo"></param>
+        /// <param name="profile"></param>
         /// <returns></returns>
-        public static Task<string> SignMessageInternal(byte[] input, AccountInfo accountInfo)
+        public static Task<string> SignMessageInternal(byte[] input, Profile profile)
         {
             var signer = new Nethereum.Signer.EthereumMessageSigner();
             MemoryStream ms = new MemoryStream();
@@ -483,11 +446,11 @@ namespace Hoard
             writer.Write(MessagePrefix);
             writer.Write((uint)MessageId.kSignMessage);
             writer.Write(signer.HashPrefixedMessage(input), 0, (int)Helper.kHash);
-            Debug.Assert(((HoardAccount)accountInfo).Owner != null);
+            Debug.Assert((HoardProfile)profile != null);
             SocketData socketData = null;
-            if (SignerClients.TryGetValue(((HoardAccount)accountInfo).Owner, out socketData))
+            if (SignerClients.TryGetValue(profile.Name, out socketData))
             {
-                socketData.Owner = ((HoardAccount)accountInfo).Owner;
+                socketData.profile = (HoardProfile)profile;
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
                 if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
@@ -500,9 +463,9 @@ namespace Hoard
         /// 
         /// </summary>
         /// <param name="rlpEncodedTransaction"></param>
-        /// <param name="accountInfo"></param>
+        /// <param name="profile"></param>
         /// <returns></returns>
-        public static Task<string> SignTransactionInternal(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
+        public static Task<string> SignTransactionInternal(byte[] rlpEncodedTransaction, Profile profile)
         {
             MemoryStream ms = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(ms);
@@ -513,49 +476,17 @@ namespace Hoard
             var data = decodedRlpCollection.ToBytes();
             var signer = new Nethereum.Signer.RLPSigner(data);
             writer.Write(signer.RawHash, 0, (int)Helper.kHash);
-
-            Debug.Assert(((HoardAccount)accountInfo).Owner != null);
+            Debug.Assert((HoardProfile)profile != null);
             SocketData socketData = null;
-            if (SignerClients.TryGetValue(((HoardAccount)accountInfo).Owner, out socketData))
+            if (SignerClients.TryGetValue(profile.Name, out socketData))
             {
-                socketData.Owner = ((HoardAccount)accountInfo).Owner;
+                socketData.profile = (HoardProfile)profile;
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
                 if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
                     return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
             }
             return Task.FromResult<string>("");
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="account"></param>
-        /// <returns></returns>
-        public static Task<AccountInfo> ActivateAccount(AccountInfo account)
-        {
-            Trace.Assert(account != null);
-            return Task.Run(() =>
-            {
-                SocketData socketData = null;
-                if (!SignerClients.TryGetValue(account.Owner, out socketData))
-                {
-                    MemoryStream ms = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(ms);
-                    writer.Write(MessagePrefix);
-                    writer.Write((UInt32)MessageId.kSetActiveAccount);
-                    writer.Write(account.ID.ToHexByteArray());
-                    socketData.ActiveAccount = null;
-                    socketData.Owner = account.Owner;
-                    socketData.ResponseEvent.Reset();
-                    socketData.Socket.Send(ms.ToArray());
-                    if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
-                    {
-                        return socketData.ActiveAccount;
-                    }
-                }
-                return null;
-            });
         }
     }
 }

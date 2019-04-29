@@ -53,35 +53,35 @@ namespace Hoard
         /// <summary>
         /// Returns all items belonging to a particular player
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <returns></returns>
-        Task<GameItem[]> GetPlayerItems(AccountInfo account);
+        Task<GameItem[]> GetPlayerItems(Profile profile);
 
         /// <summary>
         /// Returns all items belonging to a particular player
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="itemType">Item type</param>
         /// <param name="page">Page number</param>
         /// <param name="itemsPerPage">Number of items per page</param>
         /// <returns></returns>
-        Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong page, ulong itemsPerPage);
+        Task<GameItem[]> GetPlayerItems(Profile profile, string itemType, ulong page, ulong itemsPerPage);
 
         /// <summary>
         /// Returns all items belonging to a particular player with given type
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="itemType"></param>
         /// <returns></returns>
-        Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType);
+        Task<GameItem[]> GetPlayerItems(Profile profile, string itemType);
 
         /// <summary>
         /// Returns amount of all items of the specified type belonging to a particular player with given type
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="itemType"></param>
         /// <returns></returns>
-        Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType);
+        Task<ulong> GetPlayerItemsAmount(Profile profile, string itemType);
 
         /// <summary>
         /// Retrieve all items matching given parameters
@@ -93,12 +93,12 @@ namespace Hoard
         /// <summary>
         /// Changes ownership of an item, sending it to new owner
         /// </summary>
-        /// <param name="from">sender account</param>
+        /// <param name="from">sender profile</param>
         /// <param name="addressTo">receiver address</param>
         /// <param name="item">item to transfer</param>
         /// <param name="amount">amount of itmes to transfer (for NFT it must be equal to 1)</param>
         /// <returns></returns>
-        Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount);
+        Task<bool> Transfer(Profile from, string addressTo, GameItem item, BigInteger amount);
 
         /// <summary>
         /// Initializes provider (connects to backend)

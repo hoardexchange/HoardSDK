@@ -561,7 +561,7 @@ namespace Hoard
         public void ProcessMessage()
         {
             ConcurrentQueue<WhisperService.ReceivedData> receivedMessagesQueue = WhisperService.GetReceivedMessages();
-            if (receivedMessagesQueue.Count > 0)
+            while (receivedMessagesQueue.Count > 0)
             {
                 WhisperService.ReceivedData rd = null;
                 if (receivedMessagesQueue.TryDequeue(out rd))

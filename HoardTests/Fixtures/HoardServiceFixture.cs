@@ -14,7 +14,7 @@ namespace HoardTests.Fixtures
     {
         public class UserInputProviderFixture : IUserInputProvider
         {
-            public async Task<string> RequestInput(User user, eUserInputType type, string description)
+            public async Task<string> RequestInput(string name, HoardID id, eUserInputType type, string description)
             {
                 if (type == eUserInputType.kLogin)
                     return "TestUser";
@@ -31,7 +31,7 @@ namespace HoardTests.Fixtures
 
         public HoardService HoardService { get; private set; }
 
-        public List<User> UserIDs = new List<User>();
+        public List<Profile> UserIDs = new List<Profile>();
         private Process cmd = new Process();
 
         public HoardServiceFixture()
@@ -48,16 +48,11 @@ namespace HoardTests.Fixtures
             cmd.Close();
         }
 
-        public async Task<User> CreateUser()
+        public async Task<Profile> CreateUser()
         {
             //create user
-            User user = new User("testPlayer");
-
-            KeyStoreAccountService service = new KeyStoreAccountService(new UserInputProviderFixture());
-            AccountInfo mainAcc = await service.CreateAccount("default", user);
-            await user.ChangeActiveAccount(mainAcc);
-
-            return user;
+            KeyStoreProfileService service = new KeyStoreProfileService(new UserInputProviderFixture());
+            return await service.CreateProfile("testPlayer");
         }
 
         public void InitializeFromConfig(string configPath = null)

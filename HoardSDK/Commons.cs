@@ -163,7 +163,7 @@ namespace Hoard
     /// <summary>
     /// User account basic information.
     /// </summary>
-    public abstract class AccountInfo
+    public abstract class Profile
     {
         /// <summary>
         /// HoardID of this account (public address)
@@ -173,10 +173,6 @@ namespace Hoard
         /// Name of this account (for convenience)
         /// </summary>
         public string Name { get; private set; } = null;
-        /// <summary>
-        /// Owner of this account
-        /// </summary>
-        public User Owner;
 
         /// <summary>
         /// Basic constructor of account
@@ -184,11 +180,10 @@ namespace Hoard
         /// <param name="name">Name</param>
         /// <param name="id">Identifier (public address)</param>
         /// <param name="user">Owner of account</param>
-        public AccountInfo(string name, HoardID id, User user)
+        public Profile(string name, HoardID id)
         {
             Name = name;
             ID = id;
-            Owner = user;
         }
 
         /// <summary>
@@ -204,57 +199,6 @@ namespace Hoard
         /// <param name="input">input arguments</param>
         /// <returns>signed message</returns>
         public abstract Task<string> SignMessage(byte[] input);
-
-        /// <summary>
-        /// Makes this account active one.
-        /// </summary>
-        /// <returns></returns>
-        public abstract Task<AccountInfo> Activate();
-    }
-
-    /// <summary>
-    /// Hoard user.
-    /// </summary>
-    public class User
-    {
-        /// <summary>
-        /// Name of user
-        /// </summary>
-        public string UserName { get; private set; } = "";
-        /// <summary>
-        /// HoardId (public address) of Hoard user
-        /// </summary>
-        public string HoardId { get; internal set; } = "";
-        /// <summary>
-        /// List of user accounts (that hold ownership data)
-        /// </summary>
-        public List<AccountInfo> Accounts { get; private set; } = new List<AccountInfo>();
-        /// <summary>
-        /// Default account. If not specified this account will be used as default for all user operations.
-        /// </summary>
-        public AccountInfo ActiveAccount { get; private set; } = null;
-
-        /// <summary>
-        /// Basic constructor
-        /// </summary>
-        /// <param name="name">User name</param>
-        /// <param name="hoardId">TODO: specify!!</param>
-        public User(string name, string hoardId = "")
-        {
-            UserName = name;
-            HoardId = hoardId;
-        }
-
-        /// <summary>
-        /// Sets default account for user
-        /// </summary>
-        /// <param name="account"></param>
-        /// <returns></returns>
-        public async Task<bool> ChangeActiveAccount(AccountInfo account)
-        {
-            ActiveAccount = await account.Activate();
-            return ActiveAccount != null;
-        }
     }
 
     internal class BigIntegerHexConverter : System.ComponentModel.TypeConverter

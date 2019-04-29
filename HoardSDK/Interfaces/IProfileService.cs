@@ -6,37 +6,36 @@ namespace Hoard
     /// <summary>
     /// Service for managing user accounts. 
     /// </summary>
-    public interface IAccountService
+    public interface IProfileService
     {
         /// <summary>
         /// Create new account for User
         /// </summary>
-        /// <param name="name">name of new account</param>
-        /// <param name="user">user to create account for</param>
-        /// <returns>new account and also binds to the user</returns>
-        Task<AccountInfo> CreateAccount(string name, User user);
+        /// <param name="name">name of new profile</param>
+        /// <returns>new profile</returns>
+        Task<Profile> CreateProfile(string name);
 
         /// <summary>
         /// Load all accounts registered for User
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="name">address or name of profile</param>
         /// <returns></returns>
-        Task<bool> RequestAccounts(User user);
+        Task<Profile> RequestProfile(string name);
 
         /// <summary>
         /// Sings transaction with account signature
         /// </summary>
         /// <param name="rlpEncodedTransaction"></param>
-        /// <param name="signature"></param>
+        /// <param name="profile"></param>
         /// <returns>Signed transaction</returns>
-        Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo signature);
+        Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile);
 
         /// <summary>
         /// Sings any message with account signature
         /// </summary>
         /// <param name="message"></param>
-        /// <param name="signature"></param>
+        /// <param name="profile"></param>
         /// <returns>Signed message</returns>
-        Task<string> SignMessage(byte[] message, AccountInfo signature);
+        Task<string> SignMessage(byte[] message, Profile profile);
     }
 }

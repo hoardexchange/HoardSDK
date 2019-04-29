@@ -13,7 +13,7 @@ namespace HoardTests.AccountServices
     {
         public class UserInputProviderFixture : IUserInputProvider
         {
-            public async Task<string> RequestInput(User user, eUserInputType type, string description)
+            public async Task<string> RequestInput(string name, HoardID id, eUserInputType type, string description)
             {
                 if (type == eUserInputType.kLogin)
                     return "TestUser";
@@ -24,14 +24,13 @@ namespace HoardTests.AccountServices
             }
         }
 
-        IAccountService signer;
-        User user;
+        IProfileService signer;
+        Profile user;
 
         public KeyStoreAccountServiceTest()
         {
-            signer = new KeyStoreAccountService(new UserInputProviderFixture());
-            user = new User("KeyStoreUser");
-            user.ChangeActiveAccount(signer.CreateAccount("KeyStoreAccount", user).Result).Wait();
+            signer = new KeyStoreProfileService(new UserInputProviderFixture());
+            user = signer.CreateProfile("KeyStoreUser").Result;
         }
 
         [Fact]
@@ -39,11 +38,11 @@ namespace HoardTests.AccountServices
         public async Task SignMessage()
         {
             var message = "Hello world";
-            var signature = await signer.SignMessage(message.ToBytesForRLPEncoding(), user.ActiveAccount);
+            var signature = await signer.SignMessage(message.ToBytesForRLPEncoding(), user);
             
             var msgSigner = new EthereumMessageSigner();
             var addressRec = new HoardID(msgSigner.EncodeUTF8AndEcRecover(message, signature));
-            Assert.Equal(user.Accounts[0].ID, addressRec);
+            Assert.Equal(user.ID, addressRec);
         }
 
         [Fact]
@@ -67,7 +66,7 @@ namespace HoardTests.AccountServices
 
             var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
 
-            var rlpEncoded = await signer.SignTransaction(rlpEncodedTransaction, user.ActiveAccount);
+            var rlpEncoded = await signer.SignTransaction(rlpEncodedTransaction, user);
             Assert.True(rlpEncoded != null);
             Assert.True(rlpEncoded.Length > 0);
 
@@ -83,7 +82,7 @@ namespace HoardTests.AccountServices
             var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
 
             var account = new HoardID(EthECKey.RecoverFromSignature(signature, rawHash).GetPublicAddress());
-            Assert.Equal(user.Accounts[0].ID, account);
+            Assert.Equal(user.ID, account);
         }
     }
 }

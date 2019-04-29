@@ -10,7 +10,7 @@ namespace Hoard.HW.Trezor
     /// <summary>
     /// Base class for TrezorWallet access. Implements IAccountService
     /// </summary>
-    public abstract class TrezorWallet : IAccountService
+    public abstract class TrezorWallet : IProfileService
     {
         /// <summary>
         /// Name of this Wallet type
@@ -48,24 +48,16 @@ namespace Hoard.HW.Trezor
         }
 
         /// <ineritdoc/>
-        public async Task<AccountInfo> CreateAccount(string name, User user) { return null; }
+        public async Task<Profile> CreateProfile(string name) { return null; }
 
         /// <ineritdoc/>
-        abstract public Task<bool> RequestAccounts(User user);
+        abstract public Task<Profile> RequestProfile(string name);
 
         /// <ineritdoc/>
-        abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo);
+        abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile);
 
         /// <ineritdoc/>
-        abstract public Task<string> SignMessage(byte[] message, AccountInfo accountInfo);
-
-        /// <summary>
-        /// Activates specific account for given user
-        /// </summary>
-        /// <param name="user">owner of the account</param>
-        /// <param name="account">account to activate</param>
-        /// <returns></returns>
-        abstract public Task<AccountInfo> ActivateAccount(User user, AccountInfo account);
+        abstract public Task<string> SignMessage(byte[] message, Profile profile);
 
         /// <summary>
         /// Initializes the wallet. Call this when first using Trezor device.
@@ -256,7 +248,7 @@ namespace Hoard.HW.Trezor
             {
                 if (response is PinMatrixRequest)
                 {
-                    var pin = await pinInputProvider.RequestInput(null, eUserInputType.kPIN, "Trezor PIN request");
+                    var pin = await pinInputProvider.RequestInput(null, null, eUserInputType.kPIN, "Trezor PIN request");
                     response = await PinMatrixAckAsync(pin);
                 }
                 else if (response is ButtonRequest)

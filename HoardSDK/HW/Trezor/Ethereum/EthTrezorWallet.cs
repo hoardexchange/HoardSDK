@@ -9,12 +9,12 @@ namespace Hoard.HW.Trezor.Ethereum
     /// </summary>
     internal class EthTrezorWallet : TrezorWallet
     {
-        private class HDWalletAccountInfo : AccountInfo
+        private class HDWalletProfile : Profile
         {
             private EthTrezorWallet Wallet;
 
-            public HDWalletAccountInfo(string name, HoardID id, EthTrezorWallet wallet, User user)
-                : base(name, id, user)
+            public HDWalletProfile(string name, HoardID id, EthTrezorWallet wallet)
+                : base(name, id)
             {
                 Wallet = wallet;
             }
@@ -27,11 +27,6 @@ namespace Hoard.HW.Trezor.Ethereum
             public override async Task<string> SignTransaction(byte[] input)
             {
                 return await Wallet.SignTransaction(input, this);
-            }
-
-            public override async Task<AccountInfo> Activate()
-            {
-                return await Wallet.ActivateAccount(Owner, this);
             }
         }
         private KeyPath keyPath;
@@ -46,33 +41,23 @@ namespace Hoard.HW.Trezor.Ethereum
             derivation = keyPath.ToBytes();
         }
 
-        public override async Task<bool> RequestAccounts(User user)
+        public override async Task<Profile> RequestProfile(string name)
         {
             var output = await SendRequestAsync(EthGetAddress.Request(indices));
             var address = new HoardID(EthGetAddress.GetAddress(output));
-            user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this, user));
-            return true;
+            return new HDWalletProfile(name, address, this);
         }
 
-        public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
+        public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
         {
             var output = await SendRequestAsync(EthSignTransaction.Request(indices, rlpEncodedTransaction));
             return EthSignTransaction.GetRLPEncoded(output, rlpEncodedTransaction);
         }
 
-        public override async Task<string> SignMessage(byte[] message, AccountInfo accountInfo)
+        public override async Task<string> SignMessage(byte[] message, Profile profile)
         {
             var output = await SendRequestAsync(EthSignMessage.Request(indices, message));
             return EthSignMessage.GetRLPEncoded(output, message);
-        }
-
-        public override async Task<AccountInfo> ActivateAccount(User user, AccountInfo accountInfo)
-        {
-            if (user.Accounts.Contains(accountInfo))
-            {
-                return await Task.FromResult(accountInfo);
-            }
-            return await Task.FromResult((AccountInfo)null);
         }
     }
 }

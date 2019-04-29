@@ -67,7 +67,7 @@ namespace Hoard
         /// <param name="item">Game item to be transfered.</param>
         /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
-        public async Task<bool> RequestGameItemTransfer(AccountInfo sender, HoardID recipientID, GameItem item, BigInteger amount)
+        public async Task<bool> RequestGameItemTransfer(Profile sender, HoardID recipientID, GameItem item, BigInteger amount)
         {
             IGameItemProvider gameItemProvider = GetGameItemProvider(item);
             if (gameItemProvider != null && sender != null && recipientID != null)
@@ -323,13 +323,13 @@ namespace Hoard
         /// <summary>
         /// Returns the ethers owned by the player.
         /// </summary>
-        /// <param name="account">Account to query</param>
+        /// <param name="profile">Profile to query</param>
         /// <returns></returns>
-        public async Task<float> GetBalance(AccountInfo account)
+        public async Task<float> GetBalance(Profile profile)
         {
             try
             {
-                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetETHBalance(account.ID)));
+                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetETHBalance(profile.ID)));
             }
             catch(Exception ex)
             {
@@ -358,13 +358,13 @@ namespace Hoard
         /// <summary>
         /// Returns the Hoard tokens amount owned by the player.
         /// </summary>
-        /// <param name="account">Account to query</param>
+        /// <param name="profile">Profile to query</param>
         /// <returns></returns>
-        public async Task<BigInteger> GetHRDAmount(AccountInfo account)
+        public async Task<BigInteger> GetHRDAmount(Profile profile)
         {
             try
             {
-                return await BCComm.GetHRDBalance(account.ID);
+                return await BCComm.GetHRDBalance(profile.ID);
             }
             catch (Exception ex)
             {
@@ -376,36 +376,26 @@ namespace Hoard
         /// <summary>
         /// Returns all Game Items owned by player's subaacount in default game (one passed in options to Initialize method).
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile)
         {
-            return await GetPlayerItems(account, DefaultGame).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Returns all Game Items owned by player in default game (one passed in options to Initialize method).
-        /// </summary>
-        /// <param name="user">user which game items to return</param>
-        /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(User user)
-        {
-            return await GetPlayerItems(user, DefaultGame).ConfigureAwait(false);
+            return await GetPlayerItems(profile, DefaultGame).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Returns all Game Items owned by player's subaccount in particular game
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="gameID"></param>
         /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, GameID gameID)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, GameID gameID)
         {
             List<GameItem> items = new List<GameItem>();
             if (Providers.ContainsKey(gameID))
             {
                 IGameItemProvider c = Providers[gameID];
-                items.AddRange(await c.GetPlayerItems(account).ConfigureAwait(false));
+                items.AddRange(await c.GetPlayerItems(profile).ConfigureAwait(false));
             }
             else
             {
@@ -417,19 +407,19 @@ namespace Hoard
         /// <summary>
         /// Returns all Game Items owned by player's subaccount in particular game
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="gameID"></param>
         /// <param name="page">Page number</param>
         /// <param name="itemsPerPage">Number of items per page</param>
         /// <param name="itemType">Item type</param>
         /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, GameID gameID, string itemType, ulong page, ulong itemsPerPage)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, GameID gameID, string itemType, ulong page, ulong itemsPerPage)
         {
             List<GameItem> items = new List<GameItem>();
             if (Providers.ContainsKey(gameID))
             {
                 IGameItemProvider c = Providers[gameID];
-                items.AddRange(await c.GetPlayerItems(account, itemType, page, itemsPerPage).ConfigureAwait(false));
+                items.AddRange(await c.GetPlayerItems(profile, itemType, page, itemsPerPage).ConfigureAwait(false));
             }
             else
             {
@@ -441,38 +431,22 @@ namespace Hoard
         /// <summary>
         /// Returns amount of all items of the specified type belonging to a particular player with given type
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="gameID"></param>
         /// <param name="itemType">Item type</param>
         /// <returns></returns>
-        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, GameID gameID, string itemType)
+        public async Task<ulong> GetPlayerItemsAmount(Profile profile, GameID gameID, string itemType)
         {
             if (Providers.ContainsKey(gameID))
             {
                 IGameItemProvider c = Providers[gameID];
-                return await c.GetPlayerItemsAmount(account, itemType).ConfigureAwait(false);
+                return await c.GetPlayerItemsAmount(profile, itemType).ConfigureAwait(false);
             }
             else
             {
                 ErrorCallbackProvider.ReportWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
             }
             return await Task.FromResult<ulong>(0);
-        }
-
-        /// <summary>
-        /// Returns all Game Items owned by playerin particular game
-        /// </summary>
-        /// <param name="user"></param>
-        /// <param name="gameID"></param>
-        /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(User user, GameID gameID)
-        {
-            List<GameItem> items = new List<GameItem>();
-            foreach (AccountInfo account in user.Accounts)
-            {
-                items.AddRange(await GetPlayerItems(account, gameID).ConfigureAwait(false));
-            }
-            return items.ToArray();
         }
 
         /// <summary>

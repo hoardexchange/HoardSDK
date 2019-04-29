@@ -88,13 +88,13 @@ namespace Hoard.BC.Contracts
         /// Sets new Game Server URL in contract
         /// </summary>
         /// <param name="url">new URL of Game Server</param>
-        /// <param name="account">signer account</param>
+        /// <param name="profile">signer profile</param>
         /// <returns>receipt of the transaction</returns>
-        public async Task<TransactionReceipt> SetGameServerURLAsync(string url, AccountInfo account)
+        public async Task<TransactionReceipt> SetGameServerURLAsync(string url, Profile profile)
         {
             var function = GetFunctionSetGameSrvURL();
 
-            return await BCComm.EvaluateOnBC(web3, account, function, url);
+            return await BCComm.EvaluateOnBC(web3, profile, function, url);
         }
 
         /// <summary>

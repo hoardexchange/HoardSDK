@@ -14,11 +14,9 @@ namespace HoardTests
         [Trait("Category", "Unit")]
         public async Task TestIdenticon()
         {
-            AccountInfo PlayerAccount = KeyStoreAccountService.CreateAccountDirect(
-                "keyStore",
-                "0x2370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c",
-                new User("TestPlayer")
-            );
+            Profile PlayerAccount = KeyStoreProfileService.CreateProfileDirect(
+                "TestPlayer",
+                "0x2370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c");
 
             Hoard.Utils.Identicon identicon = new Hoard.Utils.Identicon(PlayerAccount.ID, 8);
             int w = 64, h = w;

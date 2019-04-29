@@ -68,44 +68,44 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile)
         {
             List<GameItem> items = new List<GameItem>();
             foreach (var contract in ItemContracts.Values)
             {
-                items.AddRange(await contract.GetGameItems(account));
+                items.AddRange(await contract.GetGameItems(profile));
             }
             return items.ToArray();
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong page, ulong itemsPerPage)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType, ulong page, ulong itemsPerPage)
         {
             List<GameItem> items = new List<GameItem>();
             if (ItemContracts.ContainsKey(itemType))
             {
-                items.AddRange(await ItemContracts[itemType].GetGameItems(account, page, itemsPerPage));
+                items.AddRange(await ItemContracts[itemType].GetGameItems(profile, page, itemsPerPage));
             }
             return items.ToArray();
         }
 
         /// <inheritdoc/>
-        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        public async Task<ulong> GetPlayerItemsAmount(Profile profile, string itemType)
         {
             if (ItemContracts.ContainsKey(itemType))
             {
-                return (ulong)(await ItemContracts[itemType].GetBalanceOf(account.ID).ConfigureAwait(false));
+                return (ulong)(await ItemContracts[itemType].GetBalanceOf(profile.ID).ConfigureAwait(false));
             }
             return await Task.FromResult<ulong>(0);
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType)
         {
             List<GameItem> items = new List<GameItem>();
             if (ItemContracts.ContainsKey(itemType))
             {
-                items.AddRange(await ItemContracts[itemType].GetGameItems(account));
+                items.AddRange(await ItemContracts[itemType].GetGameItems(profile));
             }
             return items.ToArray();
         }
@@ -123,7 +123,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
+        public Task<bool> Transfer(Profile from, string addressTo, GameItem item, BigInteger amount)
         {
             GameItemContract gameItemContract = ItemContracts[item.Symbol];
             return gameItemContract.Transfer(from, addressTo, item, amount);

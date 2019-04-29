@@ -44,7 +44,7 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<BigInteger>(address);
         }
 
-        public async Task<bool> Transfer(AccountInfo from, string to, BigInteger amount)
+        public async Task<bool> Transfer(Profile from, string to, BigInteger amount)
         {
             var function = GetFunctionTransfer();
             object[] functionInput = { to.RemoveHexPrefix(), amount };

@@ -10,7 +10,7 @@ namespace Hoard.HW.Ledger
     /// <summary>
     /// Base class for LedgerWallet access. Implements IAccountService
     /// </summary>
-    public abstract class LedgerWallet : IAccountService
+    public abstract class LedgerWallet : IProfileService
     {
         /// <summary>
         /// Name of this Wallet type
@@ -44,24 +44,16 @@ namespace Hoard.HW.Ledger
         }
 
         /// <ineritdoc/>
-        public async Task<AccountInfo> CreateAccount(string name, User user) { return null; }
+        public async Task<Profile> CreateProfile(string name) { return null; }
 
         /// <ineritdoc/>
-        abstract public Task<bool> RequestAccounts(User user);
+        abstract public Task<Profile> RequestProfile(string name);
 
         /// <ineritdoc/>
-        abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo);
+        abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile);
 
         /// <ineritdoc/>
-        abstract public Task<string> SignMessage(byte[] message, AccountInfo accountInfo);
-
-        /// <summary>
-        /// Activates specific account for given user
-        /// </summary>
-        /// <param name="user">owner of the account</param>
-        /// <param name="account">account to activate</param>
-        /// <returns></returns>
-        abstract public Task<AccountInfo> ActivateAccount(User user, AccountInfo account);
+        abstract public Task<string> SignMessage(byte[] message, Profile profile);
 
         //-------------------------
         private static byte[] GetRequestDataPacket(Stream stream, int packetIndex)

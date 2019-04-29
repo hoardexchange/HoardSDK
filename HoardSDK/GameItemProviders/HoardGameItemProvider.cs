@@ -81,9 +81,9 @@ namespace Hoard.GameItemProviders
         /// <summary>
         /// Signin given account to the server. Must be done before calling endpoints protected by default challenge based authentication.
         /// </summary>
-        /// <param name="account">Account ot be singed in</param>
+        /// <param name="profile">Profile ot be singed in</param>
         /// <returns>Result code.</returns>
-        public async Task<Result> Signin(AccountInfo account)
+        public async Task<Result> Signin(Profile profile)
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {                
@@ -112,7 +112,7 @@ namespace Hoard.GameItemProviders
                 var nonceHex = nonce.ToString("x");
 
                 var dataBytes = Encoding.ASCII.GetBytes(response.Content.Substring(2) + nonceHex);
-                string sig = await account.SignMessage(dataBytes).ConfigureAwait(false);
+                string sig = await profile.SignMessage(dataBytes).ConfigureAwait(false);
                 if (sig == null)
                 {
                     ErrorCallbackProvider.ReportError("Cannot sign challenge answer");
@@ -122,7 +122,7 @@ namespace Hoard.GameItemProviders
                 var data = new JObject();
                 data.Add("token", response.Content);
                 data.Add("nonce", nonceHex.EnsureHexPrefix());
-                data.Add("address", account.ID.ToString());
+                data.Add("address", profile.ID.ToString());
                 data.Add("signature", sig);
 
                 var responseLogin = await PostJson("authentication/login/", data);
@@ -231,63 +231,63 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile)
         {
             if (Client != null)
             {
-                return await GetItemsClientRequest(account.ID);
+                return await GetItemsClientRequest(profile.ID);
             }
 
             if (SecureProvider != null)
             {
-                return await SecureProvider.GetPlayerItems(account).ConfigureAwait(false);
+                return await SecureProvider.GetPlayerItems(profile).ConfigureAwait(false);
             }
 
             return null;
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong page, ulong itemsPerPage)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType, ulong page, ulong itemsPerPage)
         {
             if (Client != null)
             {
-                return await GetItemsClientRequest(account.ID, itemType, page, itemsPerPage);
+                return await GetItemsClientRequest(profile.ID, itemType, page, itemsPerPage);
             }
 
             if (SecureProvider != null)
             {
-                return await SecureProvider.GetPlayerItems(account, itemType, page, itemsPerPage).ConfigureAwait(false);
+                return await SecureProvider.GetPlayerItems(profile, itemType, page, itemsPerPage).ConfigureAwait(false);
             }
 
             return null;
         }
 
         /// <inheritdoc/>
-        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        public async Task<ulong> GetPlayerItemsAmount(Profile profile, string itemType)
         {
             if (Client != null)
             {
                 // FIXME why there is ulong instead of BigInteger in the interface?
-                return await GetItemsAmountClientRequest(account.ID, itemType);
+                return await GetItemsAmountClientRequest(profile.ID, itemType);
             }
             if (SecureProvider != null)
             {
-                return await SecureProvider.GetPlayerItemsAmount(account, itemType).ConfigureAwait(false);
+                return await SecureProvider.GetPlayerItemsAmount(profile, itemType).ConfigureAwait(false);
             }
             return await Task.FromResult<ulong>(0);
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType)
         {
             if (Client != null)
             {
-                return await GetItemsClientRequest(account.ID, itemType);
+                return await GetItemsClientRequest(profile.ID, itemType);
             }
 
             if (SecureProvider != null)
             {
-                return await SecureProvider.GetPlayerItems(account, itemType).ConfigureAwait(false);
+                return await SecureProvider.GetPlayerItems(profile, itemType).ConfigureAwait(false);
             }
 
             return null;
@@ -375,7 +375,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
+        public Task<bool> Transfer(Profile from, string addressTo, GameItem item, BigInteger amount)
         {
             if (Client != null)
             {
