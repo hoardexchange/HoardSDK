@@ -468,7 +468,7 @@ namespace Hoard
         /// <summary>
         /// Fills properties for given Game Item.
         /// </summary>
-        /// <param name="item"></param>
+        /// <param name="item">item to fetch properties for</param>
         /// <returns></returns>
         public async Task<Result> FetchItemProperties(GameItem item)
         {

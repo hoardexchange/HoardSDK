@@ -40,7 +40,7 @@ namespace HoardTests.HW
             }
         }
 
-        IProfileService signer;
+        TrezorWallet signer;
 
         public TrezorWalletTest()
         {

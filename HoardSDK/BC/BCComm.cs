@@ -131,9 +131,6 @@ namespace Hoard.BC
             {
                 return (GameItemContract)Activator.CreateInstance(contractType, new object[] { game, web, contractAddress, abi });
             }
-
-            ErrorCallbackProvider.ReportError($"Unknown game item contract type: {contractType.ToString()}");
-            return null;
         }
 
         /// <summary>

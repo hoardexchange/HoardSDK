@@ -9,6 +9,7 @@ namespace Hoard.HW.Trezor.Ethereum
     /// </summary>
     internal class EthTrezorWallet : TrezorWallet
     {
+        //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
         private class HDWalletProfile : Profile
         {
             private EthTrezorWallet Wallet;
@@ -33,6 +34,7 @@ namespace Hoard.HW.Trezor.Ethereum
         private byte[] derivation;
         private uint[] indices;
 
+        //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
         public EthTrezorWallet(IHidDevice hidDevice, string derivationPath, IUserInputProvider pinInputProvider, uint index = 0) 
             : base(hidDevice, derivationPath, pinInputProvider)
         {

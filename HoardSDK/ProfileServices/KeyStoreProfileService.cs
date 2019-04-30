@@ -21,7 +21,7 @@ namespace Hoard
         /// </summary>
         private class KeyStoreProfile : Profile
         {
-            public string PrivateKey = null;
+            public string EncryptedPrivateKey = null;
 
             /// <summary>
             /// Creates a new KeyStoreAccount.
@@ -32,7 +32,7 @@ namespace Hoard
             public KeyStoreProfile(string name, HoardID id, string key)
                 :base(name, id)
             {
-                PrivateKey = key;
+                EncryptedPrivateKey =  Encode(key);
             }
 
             /// <summary>
@@ -42,7 +42,19 @@ namespace Hoard
             /// <returns>signed transaction string</returns>
             public override Task<string> SignTransaction(byte[] input)
             {
-                return KeyStoreProfileService.SignTransaction(input,PrivateKey);
+                //CPU-bound
+                var ecKey = new Nethereum.Signer.EthECKey(Decode(EncryptedPrivateKey));
+
+                var rawHash = new Sha3Keccack().CalculateHash(input);
+                var signature = ecKey.SignAndCalculateV(rawHash);
+
+                var encodedData = new List<byte[]>();
+                encodedData.Add(input);
+                encodedData.Add(RLP.EncodeElement(signature.V));
+                encodedData.Add(RLP.EncodeElement(signature.R));
+                encodedData.Add(RLP.EncodeElement(signature.S));
+
+                return Task.FromResult(RLP.EncodeList(encodedData.ToArray()).ToHex().EnsureHexPrefix());
             }
 
             /// <summary>
@@ -52,7 +64,22 @@ namespace Hoard
             /// <returns>signed message string</returns>
             public override Task<string> SignMessage(byte[] input)
             {
-                return KeyStoreProfileService.SignMessage(input, PrivateKey);
+                //CPU-bound
+                var signer = new Nethereum.Signer.EthereumMessageSigner();
+                var ecKey = new Nethereum.Signer.EthECKey(Decode(EncryptedPrivateKey));
+                return Task.FromResult(signer.Sign(input, ecKey));
+            }
+
+            private string Encode(string val)
+            {
+                //TODO: implement
+                return val;
+            }
+
+            private string Decode(string val)
+            {
+                //TODO: implement
+                return val;
             }
         }
 
@@ -167,79 +194,6 @@ namespace Hoard
             }
 
             return Task.FromResult<bool>(true);
-        }
-
-        /// <summary>
-        /// Sings a message with given account
-        /// </summary>
-        /// <param name="input">message input arguments</param>
-        /// <param name="profile">signing profile</param>
-        /// <returns></returns>
-        public Task<string> SignMessage(byte[] input, Profile profile)
-        {
-            KeyStoreProfile ksa = profile as KeyStoreProfile;
-            if (ksa == null)
-            {
-                ErrorCallbackProvider.ReportError("Invalid signature!");
-                return null;
-            }
-
-            return SignMessage(input, ksa.PrivateKey);
-        }
-
-        /// <summary>
-        /// Handy function to sign any transaction with given profile
-        /// </summary>
-        /// <param name="rlpEncodedTransaction">transaction input encoded in RLP format</param>
-        /// <param name="profile">profile that signs transaction</param>
-        /// <returns></returns>
-        public Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
-        {
-            KeyStoreProfile ksa = profile as KeyStoreProfile;
-            if (ksa == null)
-            {
-                ErrorCallbackProvider.ReportError("Invalid signature!");
-                return null;
-            }
-
-            return SignTransaction(rlpEncodedTransaction, ksa.PrivateKey);
-        }
-
-        /// <summary>
-        /// Handy function to sign any message with given private key
-        /// </summary>
-        /// <param name="input">input to sign</param>
-        /// <param name="privKey">key to sign message with</param>
-        /// <returns></returns>
-        public static Task<string> SignMessage(byte[] input, string privKey)
-        {
-            //CPU-bound
-            var signer = new Nethereum.Signer.EthereumMessageSigner();
-            var ecKey = new Nethereum.Signer.EthECKey(privKey);
-            return Task.FromResult(signer.Sign(input, ecKey));
-        }
-
-        /// <summary>
-        /// Handy function to sign any transaction with given private key
-        /// </summary>
-        /// <param name="rlpEncodedTransaction">transaction input encoded in RLP format</param>
-        /// <param name="privKey">key that signs transaction</param>
-        /// <returns></returns>
-        public static Task<string> SignTransaction(byte[] rlpEncodedTransaction, string privKey)
-        {
-            //CPU-bound
-            var ecKey = new Nethereum.Signer.EthECKey(privKey);
-
-            var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
-            var signature = ecKey.SignAndCalculateV(rawHash);
-
-            var encodedData = new List<byte[]>();
-            encodedData.Add(rlpEncodedTransaction);
-            encodedData.Add(RLP.EncodeElement(signature.V));
-            encodedData.Add(RLP.EncodeElement(signature.R));
-            encodedData.Add(RLP.EncodeElement(signature.S));
-
-            return Task.FromResult(RLP.EncodeList(encodedData.ToArray()).ToHex().EnsureHexPrefix());
         }
     }
 }

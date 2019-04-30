@@ -9,6 +9,7 @@ namespace Hoard.HW.Ledger.Ethereum
     /// </summary>
     internal class EthLedgerWallet : LedgerWallet
     {
+        //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
         private class HDWalletProfile : Profile
         {
             private EthLedgerWallet Wallet;
@@ -29,9 +30,17 @@ namespace Hoard.HW.Ledger.Ethereum
                 return await Wallet.SignTransaction(input, this);
             }
         }
-        private KeyPath keyPath;
+
+        /// <summary>
+        /// TODO: move this to profile
+        /// </summary>
+        private KeyPath keyPath;        
+        /// <summary>
+        /// TODO: move this to profile
+        /// </summary>
         private byte[] derivation;
 
+        //TODO: Profile should keep derivation and key path and index , wallet should not have any account related state!
         public EthLedgerWallet(IHidDevice hidDevice, string derivationPath, uint index = 0) : base(hidDevice, derivationPath)
         {
             keyPath = new KeyPath(derivationPath).Derive(index);

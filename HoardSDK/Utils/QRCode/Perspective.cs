@@ -43,7 +43,6 @@
 
 #if TODO
 using System;
-using System.Drawing;
 
 namespace Hoard.Utils.QRCodeEncoder
 {

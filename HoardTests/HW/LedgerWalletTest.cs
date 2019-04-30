@@ -14,7 +14,7 @@ namespace HoardTests.HW
 {
     public class LedgerWalletTest
     {
-        IProfileService signer;
+        LedgerWallet signer;
 
         public LedgerWalletTest()
         {

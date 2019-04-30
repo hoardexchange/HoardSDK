@@ -369,7 +369,7 @@ namespace Hoard
         {
         }
 
-        public void TranslateMessage(WhisperService.ReceivedData msg)
+        private void TranslateMessage(WhisperService.ReceivedData msg)
         {
             try
             {
@@ -536,23 +536,6 @@ namespace Hoard
                 res = await WhisperService.DeleteSymetricKey(SymKeyId);
             }
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="filter"></param>
-        /// <returns></returns>
-        //public async Task<bool> Update(string filter)
-        //{
-        //    List<WhisperService.ReceivedData> objects = await WhisperService.ReceiveMessage(filter);
-        //    if (objects == null)
-        //        return false;
-        //    foreach (WhisperService.ReceivedData obj in objects)
-        //    {
-        //        TranslateMessage(obj);
-        //    }
-        //    return true;
-        //}
 
         /// <summary>
         /// 

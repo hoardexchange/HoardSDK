@@ -79,7 +79,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <summary>
-        /// Signin given account to the server. Must be done before calling endpoints protected by default challenge based authentication.
+        /// Signin given user profile to the server. Must be done before calling endpoints protected by default challenge based authentication.
         /// </summary>
         /// <param name="profile">Profile ot be singed in</param>
         /// <returns>Result code.</returns>

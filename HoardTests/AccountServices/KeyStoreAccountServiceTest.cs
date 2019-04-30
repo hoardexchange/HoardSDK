@@ -38,7 +38,7 @@ namespace HoardTests.AccountServices
         public async Task SignMessage()
         {
             var message = "Hello world";
-            var signature = await signer.SignMessage(message.ToBytesForRLPEncoding(), user);
+            var signature = await user.SignMessage(message.ToBytesForRLPEncoding());
             
             var msgSigner = new EthereumMessageSigner();
             var addressRec = new HoardID(msgSigner.EncodeUTF8AndEcRecover(message, signature));
@@ -66,7 +66,7 @@ namespace HoardTests.AccountServices
 
             var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
 
-            var rlpEncoded = await signer.SignTransaction(rlpEncodedTransaction, user);
+            var rlpEncoded = await user.SignTransaction(rlpEncodedTransaction);
             Assert.True(rlpEncoded != null);
             Assert.True(rlpEncoded.Length > 0);
 

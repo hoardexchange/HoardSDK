@@ -166,20 +166,20 @@ namespace Hoard
     public abstract class Profile
     {
         /// <summary>
-        /// HoardID of this account (public address)
+        /// HoardID of user profile (public address)
         /// </summary>
         public HoardID ID { get; private set; } = null;
+
         /// <summary>
-        /// Name of this account (for convenience)
+        /// Name of user profile (for convenience)
         /// </summary>
         public string Name { get; private set; } = null;
 
         /// <summary>
-        /// Basic constructor of account
+        /// Basic constructor of user profile
         /// </summary>
         /// <param name="name">Name</param>
         /// <param name="id">Identifier (public address)</param>
-        /// <param name="user">Owner of account</param>
         public Profile(string name, HoardID id)
         {
             Name = name;
@@ -187,14 +187,14 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Sign any transaction with account
+        /// Sign any transaction with user profile
         /// </summary>
         /// <param name="input">input arguments</param>
         /// <returns>signed transaction string</returns>
         public abstract Task<string> SignTransaction(byte[] input);
 
         /// <summary>
-        /// Sign any message with account
+        /// Sign any message with user profile
         /// </summary>
         /// <param name="input">input arguments</param>
         /// <returns>signed message</returns>

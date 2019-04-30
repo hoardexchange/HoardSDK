@@ -168,14 +168,6 @@ namespace Hoard.Utils.QRCodeEncoder
         Unknown15,
     }
 
-    public enum ImageFormatIndex
-    {
-        Png,
-        Jpeg,
-        Bmp,
-        Gif,
-    }
-
     /// <summary>
     /// QR Code library main class
     /// </summary>
