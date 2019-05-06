@@ -46,11 +46,5 @@
     <Compile Include="PipeServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HoardSDK\HoardSDK.csproj">
-      <Project>{C9517A0E-EC39-4E8B-951A-6CFC4A7C76E3}</Project>
-      <Name>HoardSDK</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

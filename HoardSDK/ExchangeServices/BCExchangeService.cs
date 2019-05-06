@@ -21,7 +21,7 @@ namespace Hoard.ExchangeServices
         public BCExchangeService(HoardService hoard)
         {
             Hoard = hoard;
-            BCComm = hoard.BCComm;
+            BCComm = (BC.BCComm)hoard.BCComm;
         }
 
         /// <inheritdoc/>

@@ -1,4 +1,5 @@
 using Hoard.BC.Contracts;
+using Hoard.Interfaces;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
@@ -20,11 +21,13 @@ namespace Hoard.BC
     /// Utility class for Blockchain communication.
     /// Uses Nethereum library.
     /// </summary>
-    public class BCComm
+    public class BCComm : IBCComm
     {
         private Web3 web = null;
         private GameCenterContract gameCenter = null;
         private Dictionary<GameID, GameContract> gameContracts = new Dictionary<GameID, GameContract>();
+
+        private static string HRDAddress = null;
 
         /// <summary>
         /// Creates BCComm object.
@@ -66,12 +69,8 @@ namespace Hoard.BC
             }
         }
 
-        /// <summary>
-        /// Returns ETH balance of given account
-        /// </summary>
-        /// <param name="account">account to query</param>
-        /// <returns></returns>
-        public async Task<BigInteger> GetETHBalance(HoardID account)
+        /// <inheritdoc/>
+        public async Task<BigInteger> GetBalance(HoardID account)
         {
             var ver = new Nethereum.RPC.Eth.EthGetBalance(web.Client);
             return (await ver.SendRequestAsync(account)).Value;
@@ -83,7 +82,11 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<string> GetHRDAddress()
         {
-            return await gameCenter.GetHoardTokenAddressAsync();
+            if (HRDAddress == null)
+            {
+                HRDAddress = await gameCenter.GetHoardTokenAddressAsync();
+            }
+            return HRDAddress;
         }
 
         /// <summary>
@@ -210,19 +213,13 @@ namespace Hoard.BC
             return Result.GameNotFoundError;
         }
 
-        /// <summary>
-        /// Removes game from system. Call when you are finished with using that game
-        /// </summary>
-        /// <param name="game">game to unregister</param>
+        /// <inheritdoc/>
         public void UnregisterHoardGame(GameID game)
         {
             gameContracts.Remove(game);
         }
 
-        /// <summary>
-        /// Returns all registered games (using RegisterHoardGame)
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public GameID[] GetRegisteredHoardGames()
         {
             GameID[] games = new GameID[gameContracts.Count];
@@ -230,10 +227,7 @@ namespace Hoard.BC
             return games;
         }
 
-        /// <summary>
-        /// Retrieves all Hoard games registered on the platform.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task<GameID[]> GetHoardGames()
         {
             ulong count = await gameCenter.GetGameCount();
@@ -245,10 +239,7 @@ namespace Hoard.BC
             return games;
         }
 
-        /// <summary>
-        /// Retrieves number of Hoard games registered on the platform
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task<UInt64> GetHoardGameCount()
         {
             return await gameCenter.GetGameCount();
@@ -264,10 +255,7 @@ namespace Hoard.BC
             return await gameCenter.GetGameExistsAsync(gameID);
         }
 
-        /// <summary>
-        /// Returns address of Hoard exchange contract
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task<string> GetHoardExchangeContractAddress()
         {
             return await gameCenter.GetExchangeAddressAsync();

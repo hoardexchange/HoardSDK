@@ -67,6 +67,7 @@ namespace HoardTests.AccountServices
             var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
 
             var rlpEncoded = await user.SignTransaction(rlpEncodedTransaction);
+
             Assert.True(rlpEncoded != null);
             Assert.True(rlpEncoded.Length > 0);
 

@@ -1,0 +1,13 @@
+{
+	"GameID":null,
+	"GameBackendUrl":"",
+	"BCClient":
+    {
+        "Type": "Plasma",
+        "ClientUrl": "http://localhost:8545",
+        "ChildChainUrl": "http://localhost:9656",
+        "WatcherUrl": "http://localhost:7434"
+    },
+	"AccountsDir":null,
+	"GameCenterContract":"0x0"
+}

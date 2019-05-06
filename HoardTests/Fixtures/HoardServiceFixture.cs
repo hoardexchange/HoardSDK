@@ -58,11 +58,31 @@ namespace HoardTests.Fixtures
         public void InitializeFromConfig(string configPath = null)
         {
             HoardServiceConfig config = HoardServiceConfig.Load(configPath);
-            HoardServiceOptions options = new HoardServiceOptions(config, new Nethereum.JsonRpc.Client.RpcClient(new Uri(config.ClientUrl)));
+
+            BCClientOptions clientOpts = null;
+            if (config.BCClient is EthereumClientConfig)
+            {
+                var ethConfig = config.BCClient as EthereumClientConfig;
+                clientOpts = new EthereumClientOptions(
+                    new Nethereum.JsonRpc.Client.RpcClient(new Uri(ethConfig.ClientUrl))
+                );
+            }
+            else
+            {
+                var plasmaConfig = config.BCClient as PlasmaClientConfig;
+                clientOpts = new PlasmaClientOptions(
+                    new Nethereum.JsonRpc.Client.RpcClient(new Uri(plasmaConfig.ClientUrl)),
+                    plasmaConfig.ChildChainUrl,
+                    plasmaConfig.WatcherUrl
+                );
+            }
+
+            HoardServiceOptions options = new HoardServiceOptions(config, clientOpts);
 
             HoardService = HoardService.Instance;
 
-            Assert.True(HoardService.Initialize(options).Result == Result.Ok, "ERROR: Could not initialize HOARD!");
+            Result result = HoardService.Initialize(options).Result;
+            Assert.True(result == Result.Ok, "ERROR: Could not initialize HOARD!");
 
             //authenticate user
             UserIDs.Add(CreateUser().Result);
@@ -80,7 +100,7 @@ namespace HoardTests.Fixtures
             options.GameCenterContract = data["hoard_game_center"]["contract_addr"];
             Assert.NotEmpty(options.GameCenterContract);
 
-            options.RpcClient = new Nethereum.JsonRpc.Client.RpcClient(new Uri(string.Format("http://{0}:{1}", data["network"]["host"], data["network"]["port"])));
+            options.BCClientOptions = new EthereumClientOptions(new Nethereum.JsonRpc.Client.RpcClient(new Uri(string.Format("http://{0}:{1}", data["network"]["host"], data["network"]["port"]))));
             
             HoardService = HoardService.Instance;
             

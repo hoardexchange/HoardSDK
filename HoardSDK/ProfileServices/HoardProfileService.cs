@@ -1,15 +1,15 @@
-﻿using System;
+﻿using Hoard.Utils;
+using Nethereum.RLP;
+using Newtonsoft.Json;
+using RestSharp;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Nethereum.RLP;
-using Newtonsoft.Json;
-using RestSharp;
 using WebSocketSharp;
-using Hoard.Utils;
 
 namespace Hoard
 {

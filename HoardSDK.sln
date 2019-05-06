@@ -14,9 +14,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardIPC", "HoardIPC\HoardIPC.csproj", "{FE24A95C-3BDC-4046-BFA8-E72EF0B6FD24}"
 EndProject
 Project("{7CF6DF6D-3B04-46F8-A40B-537D21BCA0B4}") = "HoardSDKDocumentation", "Documentation\HoardSDKDocumentation.shfbproj", "{D733BF8F-732F-45F2-8036-ED305DAEA7F6}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C9517A0E-EC39-4E8B-951A-6CFC4A7C76E3} = {C9517A0E-EC39-4E8B-951A-6CFC4A7C76E3}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

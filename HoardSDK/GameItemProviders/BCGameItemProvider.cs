@@ -1,5 +1,6 @@
 ﻿using Hoard.BC;
 using Hoard.BC.Contracts;
+using Hoard.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,10 +37,10 @@ namespace Hoard.GameItemProviders
         /// </summary>
         /// <param name="game"></param>
         /// <param name="comm"></param>
-        public BCGameItemProvider(GameID game, BCComm comm)
+        public BCGameItemProvider(GameID game, IBCComm comm)
         {
             Game = game;
-            BCComm = comm;
+            BCComm = (BCComm)comm;
 
             RegisterContractInterfaceID(ERC223GameItemContract.InterfaceID, typeof(ERC223GameItemContract));
             RegisterContractInterfaceID(ERC721GameItemContract.InterfaceID, typeof(ERC721GameItemContract));
