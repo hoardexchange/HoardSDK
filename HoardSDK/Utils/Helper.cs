@@ -11,35 +11,25 @@ namespace Hoard.Utils
     /// <summary>
     /// Utiltity and extension class.
     /// </summary>
-    internal static class Helper
+    public static class Helper
     {
-        public static TResult GetPropertyValue<TResult>(this object t, string propertyName)
+        internal static TResult GetPropertyValue<TResult>(this object t, string propertyName)
         {
             object val = t.GetType().GetProperties().Single(pi => pi.Name == propertyName).GetValue(t, null);
             return (TResult)val;
         }
 
-        public static void SetPropertyValue<TResult>(this object t, string propertyName, TResult value)
+        internal static void SetPropertyValue<TResult>(this object t, string propertyName, TResult value)
         {
             t.GetType().GetProperties().Single(pi => pi.Name == propertyName).SetValue(t, value, null);
         }
 
-        private static string ToHex(byte[] bytes, bool upperCase)
+        internal static string ToHex(byte[] bytes, bool upperCase)
         {
             StringBuilder result = new StringBuilder(bytes.Length * 2);
             for (int i = 0; i < bytes.Length; i++)
                 result.Append(bytes[i].ToString(upperCase ? "X2" : "x2"));
             return result.ToString();
-        }
-
-        public static string Keccak256HexHashString(string StringIn)
-        {
-            var sha3 = new KeccakDigest(256);
-            byte[] hash = new byte[sha3.GetDigestSize()];
-            byte[] value = Encoding.Default.GetBytes(StringIn);
-            sha3.BlockUpdate(value, 0, value.Length);
-            sha3.DoFinal(hash, 0);
-            return ToHex(hash, false);
         }
 
         internal static byte[][] ToBytes(this RLPCollection collection)
@@ -54,6 +44,21 @@ namespace Hoard.Utils
                 }
             }
             return data;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="StringIn"></param>
+        /// <returns></returns>
+        public static string Keccak256HexHashString(string StringIn)
+        {
+            var sha3 = new KeccakDigest(256);
+            byte[] hash = new byte[sha3.GetDigestSize()];
+            byte[] value = Encoding.Default.GetBytes(StringIn);
+            sha3.BlockUpdate(value, 0, value.Length);
+            sha3.DoFinal(hash, 0);
+            return ToHex(hash, false);
         }
     }
 }

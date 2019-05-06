@@ -68,13 +68,13 @@ namespace Hoard.BC.Plasma
         /// <summary>
         /// Builds transaction object from provided inputs and outputs and signs it with account info
         /// </summary>
-        /// <param name="fromAccount">account used to sign transaction</param>
+        /// <param name="profileFrom">account used to sign transaction</param>
         /// <returns>signed transaction as string</returns>
-        public async Task<string> Sign(AccountInfo fromAccount)
+        public async Task<string> Sign(Profile profileFrom)
         {
             var encodedData = GetRLPEncoded();
 
-            var signedTransaction = await fromAccount.SignTransaction(encodedData);
+            var signedTransaction = await profileFrom.SignTransaction(encodedData);
 
             var decodedList = RLP.Decode(signedTransaction.HexToByteArray());
             var decodedRlpCollection = (RLPCollection)decodedList[0];

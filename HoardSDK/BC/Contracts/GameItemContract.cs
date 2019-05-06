@@ -1,4 +1,5 @@
 ﻿using Nethereum.Contracts;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Web3;
 using System;
 using System.Collections.Generic;
@@ -123,11 +124,6 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("totalSupply");
         }
 
-        private Function GetFunctionItemType()
-        {
-            return contract.GetFunction("tokenType");
-        }
-
         private Function GetFunctionTokenStateType()
         {
             return contract.GetFunction("tokenStateType");
@@ -185,16 +181,6 @@ namespace Hoard.BC.Contracts
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public Task<string> GetItemType()
-        {
-            var function = GetFunctionItemType();
-            return function.CallAsync<string>();
-        }
-
-        /// <summary>
         /// Returns type of the Item State (IPFS hash, SWARM hash, compound U256 state, etc.)
         /// </summary>
         /// <returns></returns>
@@ -208,28 +194,28 @@ namespace Hoard.BC.Contracts
         /// Transfers <paramref name="item"/> from account <paramref name="from"/> to <paramref name="addressTo"/>
         /// in given <paramref name="amount"/>
         /// </summary>
-        /// <param name="from">Account of the sender</param>
-        /// <param name="addressTo">destination account address</param>
+        /// <param name="from">Profile of the sender</param>
+        /// <param name="addressTo">destination profile address</param>
         /// <param name="item">Item to transfer</param>
         /// <param name="amount">Amount of items to transfer</param>
         /// <returns></returns>
-        public abstract Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount);
+        public abstract Task<bool> Transfer(Profile from, string addressTo, GameItem item, BigInteger amount);
 
         /// <summary>
-        /// Returns all Game Items owned by Account <paramref name="info"/>
+        /// Returns all Game Items owned by Profile <paramref name="profile"/>
         /// </summary>
-        /// <param name="info">Owner account</param>
+        /// <param name="profile">Player profile</param>
         /// <returns></returns>
-        public abstract Task<GameItem[]> GetGameItems(AccountInfo info);
+        public abstract Task<GameItem[]> GetGameItems(Profile profile);
 
         /// <summary>
-        /// Returns all Game Items owned by Account <paramref name="info"/>
+        /// Returns all Game Items owned by Profile <paramref name="profile"/>
         /// </summary>
-        /// <param name="info">Owner account</param>
-        /// <param name="firstItemIndex">Start index for items pack</param>
-        /// <param name="itemsToGather">Number of items to gather</param>
+        /// <param name="profile">Player profile</param>
+        /// <param name="page">Page number</param>
+        /// <param name="itemsPerPage">Number of items per page</param>
         /// <returns></returns>
-        public abstract Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex, ulong itemsToGather);
+        public abstract Task<GameItem[]> GetGameItems(Profile profile, ulong page, ulong itemsPerPage);
 
         /// <summary>
         /// Returns specific Game Item based on query parameters
@@ -250,10 +236,6 @@ namespace Hoard.BC.Contracts
         public class Metadata : BaseGameItemMetadata
         {
             /// <summary>
-            /// State of this item
-            /// </summary>
-            public string State { get; set; }
-            /// <summary>
             /// Ethereum address of the owner
             /// </summary>
             public string OwnerAddress { get; set; }
@@ -265,12 +247,10 @@ namespace Hoard.BC.Contracts
             /// <summary>
             /// Creates new instance of metadata object
             /// </summary>
-            /// <param name="state">state of thi item</param>
             /// <param name="ownerAddress">address of the item owner</param>
             /// <param name="balance">total amount of owned instances</param>
-            public Metadata(string state, string ownerAddress, BigInteger balance)
+            public Metadata(string ownerAddress, BigInteger balance)
             {
-                State = state;
                 OwnerAddress = ownerAddress;
                 Balance = balance;
             }
@@ -323,23 +303,23 @@ namespace Hoard.BC.Contracts
         }
 
         /// <inheritdoc/>
-        public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
+        public override async Task<bool> Transfer(Profile from, string addressTo, GameItem item, BigInteger amount)
         {
             var function = GetFunctionTransfer();
-            object[] functionInput = { addressTo.Substring(2), amount };
+            object[] functionInput = { addressTo.RemoveHexPrefix(), amount };
             var receipt = await Hoard.BC.BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;
         }
 
         /// <inheritdoc/>
-        public override async Task<GameItem[]> GetGameItems(AccountInfo info)
+        public override async Task<GameItem[]> GetGameItems(Profile profile)
         {
-            BigInteger itemBalance = await GetBalanceOf(info.ID);
+            BigInteger itemBalance = await GetBalanceOf(profile.ID);
             if (BigInteger.Zero.CompareTo(itemBalance)<0)
             {
-                string state = BitConverter.ToString(await GetTokenState());
-                Metadata meta = new Metadata(state, Address, itemBalance);
+                Metadata meta = new Metadata(Address, itemBalance);
                 GameItem gi = new GameItem(Game, await GetSymbol(), meta);
+                gi.State = await GetTokenState();
                 return new GameItem[] { gi };
             }
             else
@@ -347,17 +327,18 @@ namespace Hoard.BC.Contracts
         }
 
         /// <inheritdoc/>
-        public override async Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex = 0, ulong itemsToGather = 0)
+        public override async Task<GameItem[]> GetGameItems(Profile profile, ulong page = 0, ulong itemsPerPage = 0)
         {
-            return await GetGameItems(info);
+            return await GetGameItems(profile);
         }
 
         /// <inheritdoc/>
         public override async Task<GameItem> GetGameItem(GameItemsParams gameItemsParams)
         {
-            string state = BitConverter.ToString(await GetTokenState());
-            Metadata meta = new Metadata(state, Address, gameItemsParams.Amount);
-            return new GameItem(Game, await GetSymbol(), meta);
+            Metadata meta = new Metadata(Address, gameItemsParams.Amount);
+            var item = new GameItem(Game, await GetSymbol(), meta);
+            item.State = await GetTokenState();
+            return item;
         }
     }
 
@@ -527,23 +508,23 @@ namespace Hoard.BC.Contracts
         /// <param name="item">item to transfer</param>
         /// <param name="amount">amount of items to transfer</param>
         /// <returns></returns>
-        public override async Task<bool> Transfer(AccountInfo from, string addressTo, GameItem item, BigInteger amount)
+        public override async Task<bool> Transfer(Profile from, string addressTo, GameItem item, BigInteger amount)
         {
             var function = GetFunctionTransfer();
             BigInteger tokenId = (item.Metadata as ERC721GameItemContract.Metadata).ItemId;
-            object[] functionInput = { from.ID.ToString(), addressTo.Substring(2), tokenId };
+            object[] functionInput = { from.ID.ToString(), addressTo.RemoveHexPrefix(), tokenId };
             var receipt = await BCComm.EvaluateOnBC(web3, from, function, functionInput);
             return receipt.Status.Value == 1;
         }
 
         /// <summary>
-        /// Returns all items owned by <paramref name="info"/>
+        /// Returns all items owned by <paramref name="profile"/>
         /// </summary>
-        /// <param name="info">Owners's account</param>
+        /// <param name="profile">Owners's profile</param>
         /// <returns></returns>
-        public override async Task<GameItem[]> GetGameItems(AccountInfo info)
+        public override async Task<GameItem[]> GetGameItems(Profile profile)
         {
-            BigInteger itemBalance = await GetBalanceOf(info.ID);
+            BigInteger itemBalance = await GetBalanceOf(profile.ID);
             string symbol = await GetSymbol();
 
             ulong count = (ulong)itemBalance;
@@ -552,7 +533,7 @@ namespace Hoard.BC.Contracts
 
             for (ulong i = 0; i < count; ++i)
             {
-                BigInteger id = await TokenOfOwnerByIndex(info.ID, i);
+                BigInteger id = await TokenOfOwnerByIndex(profile.ID, i);
                 Metadata meta = new Metadata(Address, id);
 
                 items[i] = new GameItem(Game, symbol, meta);
@@ -563,19 +544,20 @@ namespace Hoard.BC.Contracts
         }
 
         /// <summary>
-        /// Returns a pack of items owned by <paramref name="info"/>
+        /// Returns a pack of items owned by <paramref name="profile"/>
         /// </summary>
-        /// <param name="firstItemIndex">Start index for items pack</param>
-        /// <param name="itemsToGather">Number of items to gather</param>
-        /// <param name="info">Owners's account</param>
+        /// <param name="profile">Owners's profile</param>
+        /// <param name="page">Page number</param>
+        /// <param name="itemsPerPage">Number of items per page</param>
         /// <returns></returns>
-        public override async Task<GameItem[]> GetGameItems(AccountInfo info, ulong firstItemIndex, ulong itemsToGather)
+        public override async Task<GameItem[]> GetGameItems(Profile profile, ulong page, ulong itemsPerPage)
         {
-            BigInteger itemBalance = await GetBalanceOf(info.ID);
+            BigInteger itemBalance = await GetBalanceOf(profile.ID);
             ulong count = (ulong)itemBalance;
+            ulong firstItemIndex = page * itemsPerPage;
             if (firstItemIndex >= itemBalance)
                 return new GameItem[0];
-            List<BigInteger> ids = await TokensOfOwnerByIndices(info.ID, firstItemIndex, itemsToGather);
+            List<BigInteger> ids = await TokensOfOwnerByIndices(profile.ID, firstItemIndex, itemsPerPage);
             string symbol = await GetSymbol();
             GameItem[] items = new GameItem[ids.Count];
             List<byte[]> states = await GetTokenStateArray(ids.ToArray());

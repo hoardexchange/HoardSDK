@@ -79,7 +79,7 @@ namespace Hoard.BC
         }
 
         /// <inheritdoc/>
-        public async Task<bool> RegisterHoardGame(GameID game)
+        public async Task<Result> RegisterHoardGame(GameID game)
         {
             return await bcComm.RegisterHoardGame(game);
         }
@@ -112,6 +112,12 @@ namespace Hoard.BC
         public async Task<string> GetHoardExchangeContractAddress()
         {
             return await bcComm.GetHoardExchangeContractAddress();
+        }
+
+        /// <inheritdoc/>
+        public async Task<UInt64> GetHoardGameCount()
+        {
+            return await bcComm.GetHoardGameCount();
         }
 
         /// <summary>
@@ -303,12 +309,12 @@ namespace Hoard.BC
         /// <summary>
         /// Helper function to get contract of a prticular type
         /// </summary>
-        /// <typeparam name="TContract">type of contract</typeparam>
+        /// <param name="contractType">type of contract</param>
         /// <param name="contractAddress">address of the contract</param>
         /// <returns></returns>
-        public TContract GetContract<TContract>(string contractAddress)
+        public object GetContract(Type contractType, string contractAddress)
         {
-            return bcComm.GetContract<TContract>(contractAddress);
+            return bcComm.GetContract(contractType, contractAddress);
         }
 
         /// <summary>

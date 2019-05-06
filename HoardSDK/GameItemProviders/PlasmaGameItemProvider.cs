@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Hoard.GameItemProviders
@@ -44,7 +45,7 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Connect()
+        public async Task<Result> Connect()
         {
             GameItemAdapters.Clear();
             return await RegisterHoardGameContracts();
@@ -57,51 +58,57 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
+        public async Task<bool> Transfer(Profile profileFrom, string addressTo, GameItem item, BigInteger amount)
+        {
+            return await GameItemAdapters[item.Symbol].Transfer(profileFrom, addressTo, item, amount);
+        }
+
+        /// <inheritdoc/>
         public string[] GetItemTypes()
         {
             return GameItemAdapters.Keys.ToArray();
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
-        {
-            List<GameItem> items = new List<GameItem>();
-            foreach (var proxy in GameItemAdapters.Values)
-            {
-                items.AddRange(await proxy.GetGameItems(account.ID));
-            }
-            return items.ToArray();
-        }
-
-        /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
-        {
-            List<GameItem> items = new List<GameItem>();
-            if (GameItemAdapters.ContainsKey(itemType))
-            {
-                items.AddRange(await GameItemAdapters[itemType].GetGameItems(account.ID));
-            }
-            return items.ToArray();
-        }
-
-        /// <inheritdoc/>
-        public async Task<bool> Transfer(AccountInfo addressFrom, HoardID addressTo, GameItem item, BigInteger amount)
-        {
-            return await GameItemAdapters[item.Symbol].Transfer(addressFrom, addressTo, item, amount);
-        }
-
-        /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        public async Task<GameItemType> GetItemTypeInfo(string itemType)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc/>
-        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile)
+        {
+            List<GameItem> items = new List<GameItem>();
+            foreach (var proxy in GameItemAdapters.Values)
+            {
+                items.AddRange(await proxy.GetGameItems(profile.ID));
+            }
+            return items.ToArray();
+        }
+
+        /// <inheritdoc/>
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType)
+        {
+            List<GameItem> items = new List<GameItem>();
+            if (GameItemAdapters.ContainsKey(itemType))
+            {
+                items.AddRange(await GameItemAdapters[itemType].GetGameItems(profile.ID));
+            }
+            return items.ToArray();
+        }
+
+        /// <inheritdoc/>
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc/>
+        public async Task<ulong> GetPlayerItemsAmount(Profile profile, string itemType)
         {
             if (GameItemAdapters.ContainsKey(itemType))
             {
-                return (ulong)(await GameItemAdapters[itemType].GetBalanceOf(account.ID));
+                return (ulong)(await GameItemAdapters[itemType].GetBalanceOf(profile.ID));
             }
 
             return 0;
@@ -120,7 +127,7 @@ namespace Hoard.GameItemProviders
         /// <summary>
         /// Helper function to automatically register all contracts for given game
         /// </summary>
-        public async Task<bool> RegisterHoardGameContracts()
+        public async Task<Result> RegisterHoardGameContracts()
         {
             string[] contracts = await plasmaComm.GetGameItemContracts(Game);
             if (contracts != null)
@@ -137,21 +144,19 @@ namespace Hoard.GameItemProviders
                     }
                     else
                     {
-                        // TODO: handle contracts that does not implement ERC165?
-                        throw new NotImplementedException();
+                        return Result.InvalidContractError;
                     }
                 }
-
-                return true;
+                return Result.Ok;
             }
 
-            System.Diagnostics.Trace.TraceError($"Cannot find any contracts for Game: {Game.ID}!");
-            return false;
+            ErrorCallbackProvider.ReportError($"Cannot find any contracts for Game: {Game.ID}!");
+            return Result.ContractNotFoundError;
         }
 
         private async Task<GameItemAdapter> GetGameItemAdapter(string contractAddress)
         {
-            SupportsInterfaceWithLookupContract interfaceContract = plasmaComm.GetContract<SupportsInterfaceWithLookupContract>(contractAddress);
+            SupportsInterfaceWithLookupContract interfaceContract = (SupportsInterfaceWithLookupContract)plasmaComm.GetContract(typeof(SupportsInterfaceWithLookupContract), contractAddress);
 
             ContractInterfaceID currentInterfaceId = null;
 

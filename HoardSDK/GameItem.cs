@@ -1,4 +1,6 @@
 using Hoard.Utils;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
@@ -10,13 +12,16 @@ namespace Hoard
     public class ItemProperty
     {
         /// <summary>
-        /// Value of this property
-        /// </summary>
-        public object Value;
-        /// <summary>
         /// Type of this property
         /// </summary>
+        [JsonProperty(propertyName: "type")]
         public string Type;
+
+        /// <summary>
+        /// Value of this property
+        /// </summary>
+        [JsonProperty(propertyName: "value")]
+        public object Value;
 
         /// <summary>
         /// Basic constructor
@@ -25,8 +30,11 @@ namespace Hoard
         /// <param name="type">type of property</param>
         public ItemProperty(object value, string type)
         {
-            Value = value;
             Type = type;
+            if (Type.Equals("dict") && value is JObject)
+                Value = ((JObject)value).ToObject<ItemProperties>();
+            else
+                Value = value;
         }
 
         /// <summary>
@@ -55,6 +63,10 @@ namespace Hoard
                 return System.Type.GetType("System.Single");
             else if (Type.Equals("double"))
                 return System.Type.GetType("System.Double");
+            else if (Type.Equals("byte[]"))
+                return System.Type.GetType("Byte[]");
+            else if (Type.Equals("dict"))
+                return System.Type.GetType("ItemProperties");
             return System.Type.GetType("System.String");
         }
     }

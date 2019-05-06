@@ -19,7 +19,7 @@ namespace HoardTests.Fixtures
 
         public HoardServiceFixture HoardServiceFixture { get; private set; }
         public GameID[] GameIDs { get; private set; }
-        public User[] Users { get; private set; }
+        public Profile[] Users { get; private set; }
         public List<GameItem> Items { get; private set; }
 
         public BCExchangeService BCExchangeService { get; private set; }
@@ -36,15 +36,15 @@ namespace HoardTests.Fixtures
             RunExchangeServer();
 
             BCExchangeService = new BCExchangeService(HoardService);
-            BCExchangeService.Init();
+            BCExchangeService.Init().Wait();
 
             HoardExchangeService = new HoardExchangeService(HoardService);
-            HoardExchangeService.Init();
+            HoardExchangeService.Init().Wait();
 
             GameIDs = HoardService.GetAllHoardGames().Result;
             foreach (var game in GameIDs)
             {
-                HoardService.RegisterHoardGame(game);
+                Assert.True(HoardService.RegisterHoardGame(game).Result == Result.Ok);
             }
 
             Items = GetGameItems(Users[0]).Result;
@@ -88,7 +88,7 @@ namespace HoardTests.Fixtures
             // Collect the sort command output.
             if (!string.IsNullOrEmpty(outLine.Data))
             {
-                Trace.WriteLine(outLine.Data);
+                ErrorCallbackProvider.ReportInfo(outLine.Data);
             }
         }
 
@@ -110,28 +110,21 @@ namespace HoardTests.Fixtures
             }
         }
 
-        public async Task<List<GameItem>> GetGameItems(User user)
+        public async Task<List<GameItem>> GetGameItems(Profile profile)
         {
             var items = new List<GameItem>();
             foreach (var game in GameIDs)
             {
-                items.AddRange(await HoardService.GetPlayerItems(user, game));
+                items.AddRange(await HoardService.GetPlayerItems(profile, game));
             }
             return items;
         }
 
-        private User[] GetUsers()
+        private Profile[] GetUsers()
         {
-            var users = new List<User>();
-
-            users.Add(new User("user0"));
-            users[0].Accounts.Add(KeyStoreAccountService.CreateAccountDirect("keystore", "0x779cd70609f0637ecf7449611b261411b281ee912456153d3fbdf762a8b21670", users[0]));
-            Assert.True(users[0].ChangeActiveAccount(users[0].Accounts[0]).Result);
-
-            users.Add(new User("user1"));
-            users[1].Accounts.Add(KeyStoreAccountService.CreateAccountDirect("keystore", "0x63eacbf4503767f13c7ecdbf9b65d702913ce3d711e8386d71b8f2a2053c2b85", users[1]));
-            Assert.True(users[1].ChangeActiveAccount(users[1].Accounts[0]).Result);
-
+            var users = new List<Profile>();
+            users.Add(KeyStoreProfileService.CreateProfileDirect("user0", "0x779cd70609f0637ecf7449611b261411b281ee912456153d3fbdf762a8b21670"));
+            users.Add(KeyStoreProfileService.CreateProfileDirect("user1", "0x63eacbf4503767f13c7ecdbf9b65d702913ce3d711e8386d71b8f2a2053c2b85"));
             return users.ToArray();
         }
     }

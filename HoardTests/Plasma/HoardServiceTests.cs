@@ -16,7 +16,7 @@ namespace HoardTests.Plasma
 
         public HoardService HoardService { get; private set; }
 
-        private AccountInfo playerAccount = null;
+        private Profile playerProfile = null;
         private GameID gameID = null;
 
         public HoardServiceTests(HoardServiceFixture _hoardFixture)
@@ -27,8 +27,7 @@ namespace HoardTests.Plasma
 
             Assert.True(HoardService.Options.BCClientOptions is PlasmaClientOptions);
 
-            var plasmaUser = new User("plasmaUser");
-            playerAccount = KeyStoreAccountService.CreateAccountDirect("keyStore", "0xea93fd741e8508d4f9a5039761496c31b742001e88b88c260c2a47105e329d37", plasmaUser);
+            playerProfile = KeyStoreProfileService.CreateProfileDirect("keyStore", "0xea93fd741e8508d4f9a5039761496c31b742001e88b88c260c2a47105e329d37");
 
             gameID = new GameID(BigInteger.Parse("2c3257614189ee907c819a4c92b04c6b9e6e9346051563e780d3c302e67e76b1", System.Globalization.NumberStyles.AllowHexSpecifier));
 
@@ -42,22 +41,22 @@ namespace HoardTests.Plasma
             Assert.NotEmpty(games);
 
             Assert.DoesNotContain(GameID.FromName("12345"), games);
-            Assert.False(HoardService.RegisterHoardGame(GameID.FromName("12345")));
+            Assert.Equal(Result.GameNotFoundError, HoardService.RegisterHoardGame(GameID.FromName("12345")).Result);
 
             Assert.Contains(gameID, games);
-            Assert.True(HoardService.RegisterHoardGame(gameID));
+            Assert.Equal(Result.Ok, HoardService.RegisterHoardGame(gameID).Result);
         }
 
         [Fact, TestPriority(1)]
         public void GetBalanceERC223()
         {
-            var balance = HoardService.GetBalance(playerAccount).Result;
+            var balance = HoardService.GetBalance(playerProfile).Result;
             Assert.True(balance > 0);
 
-            var hrdBalance = HoardService.GetHRDAmount(playerAccount).Result;
+            var hrdBalance = HoardService.GetHRDAmount(playerProfile).Result;
             Assert.True(hrdBalance == 0);
 
-            var gameItems = HoardService.GetPlayerItems(playerAccount, gameID).Result;
+            var gameItems = HoardService.GetPlayerItems(playerProfile, gameID).Result;
             Assert.NotEmpty(gameItems);
             Assert.True(gameItems[0].Metadata.Get<BigInteger>("Balance") > 0);
         }
@@ -65,8 +64,8 @@ namespace HoardTests.Plasma
         [Fact, TestPriority(2)]
         public void GameItemTransfer()
         {
-            var sender = playerAccount;
-            var receiver = hoardFixture.CreateUser().Result.Accounts[0];
+            var sender = playerProfile;
+            var receiver = hoardFixture.CreateUser().Result;
 
             var gameItems = HoardService.GetPlayerItems(sender, gameID).Result;
             Assert.NotEmpty(gameItems);

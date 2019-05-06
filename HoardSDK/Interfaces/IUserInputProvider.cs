@@ -38,10 +38,11 @@ namespace Hoard
         /// <summary>
         /// Requests input from User.
         /// </summary>
-        /// <param name="user">User from wchich we want some input</param>
+        /// <param name="name">Profile name from wchich we want some input</param>
+        /// <param name="id">Profile id from wchich we want some input</param>
         /// <param name="type">What kind of input</param>
         /// <param name="description">Human readable description (comment)</param>
         /// <returns>Input from User</returns>
-        Task<string> RequestInput(User user, eUserInputType type, string description);
+        Task<string> RequestInput(string name, HoardID id, eUserInputType type, string description);
     }
 }

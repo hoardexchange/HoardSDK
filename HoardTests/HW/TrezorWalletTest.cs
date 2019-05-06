@@ -17,7 +17,15 @@ namespace HoardTests.HW
     {
         public class PINInputProviderFixture : IUserInputProvider
         {
-            public async Task<string> RequestInput(User user, eUserInputType type, string description)
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="id"></param>
+            /// <param name="type"></param>
+            /// <param name="description"></param>
+            /// <returns></returns>
+            public async Task<string> RequestInput(string name, HoardID id, eUserInputType type, string description)
             {
                 if (type == eUserInputType.kPIN)
                 {
@@ -33,23 +41,21 @@ namespace HoardTests.HW
             }
         }
 
-        IAccountService signer;
+        TrezorWallet signer;
 
         public TrezorWalletTest()
         {
             var pinInputProvider = new PINInputProviderFixture();
-            signer = TrezorFactory.GetTrezorWalletAsync(DerivationPath.BIP44, pinInputProvider).Result;
+            signer = TrezorFactory.GetTrezorWalletAsync(DerivationPath.DefaultBIP44, pinInputProvider).Result;
             Assert.True(signer != null);
         }
 
         [Fact]
         public async Task DisplayAddress()
         {
-            var user = new User("TrezorUser");
-            var response = await signer.RequestAccounts(user);
-            Assert.True(response);
-            Assert.True(user.Accounts.Count > 0);
-            Assert.True(user.Accounts[0].Name == TrezorWallet.AccountInfoName);
+            var response = await signer.RequestProfile("TrezorUser");
+            Assert.True(response != null);
+            Assert.True(response.Name == TrezorWallet.AccountInfoName);
         }
 
         [Fact]
@@ -74,12 +80,11 @@ namespace HoardTests.HW
             {
                 var signature = await signer.SignMessage(messages[i], null);
 
-                var user = new User("TrezorUser");
-                var response = await signer.RequestAccounts(user);
+                var response = await signer.RequestProfile("TrezorUser");
 
                 var msgSigner = new EthereumMessageSigner();
                 var addressRec = msgSigner.EcRecover(messages[i], signature);
-                Assert.Equal(user.Accounts[0].ID, addressRec.ToLower());
+                Assert.Equal(response.ID, addressRec.ToLower());
             }
         }
 
@@ -107,22 +112,28 @@ namespace HoardTests.HW
             Assert.True(rlpEncoded != null);
             Assert.True(rlpEncoded.Length > 0);
 
-            var user = new User("TrezorUser");
-            var response = await signer.RequestAccounts(user);
+            var response = await signer.RequestProfile("TrezorUser");
 
-            var decodedRlpEncoded = RLP.Decode(rlpEncoded.HexToByteArray());
-            var decodedRlpCollection = (RLPCollection)decodedRlpEncoded[0];
+//<<<<<<< HEAD
+//            var decodedRlpEncoded = RLP.Decode(rlpEncoded.HexToByteArray());
+//            var decodedRlpCollection = (RLPCollection)decodedRlpEncoded[0];
 
-            var signature = EthECDSASignatureFactory.FromComponents(
-                decodedRlpCollection[txEncoded.Count + 1].RLPData,
-                decodedRlpCollection[txEncoded.Count + 2].RLPData,
-                decodedRlpCollection[txEncoded.Count].RLPData
-            );
+//            var signature = EthECDSASignatureFactory.FromComponents(
+//                decodedRlpCollection[txEncoded.Count + 1].RLPData,
+//                decodedRlpCollection[txEncoded.Count + 2].RLPData,
+//                decodedRlpCollection[txEncoded.Count].RLPData
+//            );
 
-            var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
+//            var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
 
-            var account = new HoardID(EthECKey.RecoverFromSignature(signature, rawHash).GetPublicAddress());
-            Assert.Equal(user.Accounts[0].ID, account);
+//            var account = new HoardID(EthECKey.RecoverFromSignature(signature, rawHash).GetPublicAddress());
+//            Assert.Equal(user.Accounts[0].ID, account);
+//=======
+//            tx = new RLPSigner(rlpEncoded.HexToByteArray(), 6);
+//            var account = new HoardID(EthECKey.RecoverFromSignature(tx.Signature, tx.RawHash).GetPublicAddress());
+//            Assert.Equal(response.ID, account);
+//            Assert.Equal(new HoardID(tx.Data[3].ToHex()), to);
+//>>>>>>> development
         }
     }
 }

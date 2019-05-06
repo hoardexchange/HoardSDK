@@ -17,12 +17,12 @@ namespace Hoard.BC.Plasma
         /// <summary>
         /// Builds the simplest, the most common ERC223 transaction (one ERC223 currency, one receiver, one sender)
         /// </summary>
-        /// <param name="from">account of tokens owner</param>
+        /// <param name="profileFrom">account of tokens owner</param>
         /// <param name="addressTo">address of destination account</param>
         /// <param name="inputUtxos">input utxos satisfing given amount</param>
         /// <param name="amount">amount of tokens to transfer</param>
         /// <returns>RLP encoded signed transaction</returns>
-        public async Task<string> BuildERC223Transaction(AccountInfo from, string addressTo, List<ERC223UTXOData> inputUtxos, BigInteger amount)
+        public async Task<string> BuildERC223Transaction(Profile profileFrom, string addressTo, List<ERC223UTXOData> inputUtxos, BigInteger amount)
         {
             Debug.Assert(inputUtxos != null);
             Debug.Assert(inputUtxos.Count() > 0);
@@ -52,7 +52,7 @@ namespace Hoard.BC.Plasma
 
             if (sum > amount)
             {
-                tx.AddOutput(new ERC223TransactionOutputData(from.ID, inputUtxos[0].Currency, sum - amount));
+                tx.AddOutput(new ERC223TransactionOutputData(profileFrom.ID, inputUtxos[0].Currency, sum - amount));
             }
 
             for (UInt32 i = tx.GetOutputCount(); i < maxOutputs; ++i)
@@ -60,7 +60,7 @@ namespace Hoard.BC.Plasma
                 tx.AddOutput(ERC223TransactionOutputData.Empty);
             }
 
-            var signedTransaction = await tx.Sign(from);
+            var signedTransaction = await tx.Sign(profileFrom);
             
             return tx.GetRLPEncoded(new List<string>() { signedTransaction, Transaction.NULL_SIGNATURE }).ToHex();
             //TESUJI_PLASMA
@@ -69,12 +69,12 @@ namespace Hoard.BC.Plasma
         /// <summary>
         /// Builds the simplest, the most common ERC721 transaction (one ERC721 currency, one item, one receiver, one sender)
         /// </summary>
-        /// <param name="from">account of tokens owner</param>
+        /// <param name="profileFrom">account of tokens owner</param>
         /// <param name="addressTo">address of destination account</param>
         /// <param name="inputUtxos">input utxos containing given token id</param>
         /// <param name="tokenId">id of token to transfer</param>
         /// <returns>RLP encoded signed transaction</returns>
-        public async Task<string> BuildERC721Transaction(AccountInfo from, string addressTo, List<ERC721UTXOData> inputUtxos, BigInteger tokenId)
+        public async Task<string> BuildERC721Transaction(Profile profileFrom, string addressTo, List<ERC721UTXOData> inputUtxos, BigInteger tokenId)
         {
             Debug.Assert(inputUtxos != null);
             Debug.Assert(inputUtxos.Count() == 1);
@@ -101,7 +101,7 @@ namespace Hoard.BC.Plasma
                 if (erc721Utxo.TokenIds.Count > 1)
                 {
                     erc721Utxo.TokenIds.Remove(tokenId);
-                    tx.AddOutput(new ERC721TransactionOutputData(from.ID, inputUtxos[0].Currency, erc721Utxo.TokenIds));
+                    tx.AddOutput(new ERC721TransactionOutputData(profileFrom.ID, inputUtxos[0].Currency, erc721Utxo.TokenIds));
                 }
 
                 for (UInt32 i = tx.GetOutputCount(); i <= maxOutputs; ++i)
@@ -109,7 +109,7 @@ namespace Hoard.BC.Plasma
                     tx.AddOutput(ERC721TransactionOutputData.Empty);
                 }
 
-                var signedTransaction = await tx.Sign(from);
+                var signedTransaction = await tx.Sign(profileFrom);
 
                 return tx.GetRLPEncoded(new List<string>() { signedTransaction.EnsureHexPrefix(), Transaction.NULL_SIGNATURE }).ToHex();
                 //TESUJI_PLASMA

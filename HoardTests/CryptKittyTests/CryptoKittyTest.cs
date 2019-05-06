@@ -22,23 +22,23 @@ namespace HoardTests.CryptKittyTests
 
             if (hoard.DefaultGame != GameID.kInvalidID)
             {
-                Trace.TraceInformation("\tName: " + hoard.DefaultGame.Name);
-                Trace.TraceInformation("\tBackend Url: " + hoard.DefaultGame.Url);
-                Trace.TraceInformation("\tGameID: " + hoard.DefaultGame.ID);
+                ErrorCallbackProvider.ReportInfo("\tName: " + hoard.DefaultGame.Name);
+                ErrorCallbackProvider.ReportInfo("\tBackend Url: " + hoard.DefaultGame.Url);
+                ErrorCallbackProvider.ReportInfo("\tGameID: " + hoard.DefaultGame.ID);
             }
 
             //Hoard.PlayerID myId = new PlayerID("0x5d0774af3a8f7656dc61bcf30e383056275911b7","");
             //Assert.True(myId != PlayerID.kInvalidID, "ERROR: Invalid player ID!");
-            //Trace.TraceInformation(string.Format("Current player is: {0}", myId.ID));
+            //ErrorCallbackProvider.ReportInfo(string.Format("Current player is: {0}", myId.ID));
 
             GameID myGame = GameID.FromName("mygame");
 
-            Assert.True(hoard.RegisterGame(myGame, new CKGameItemProvider(myGame)));
+            Assert.True(hoard.RegisterGame(myGame, new CKGameItemProvider(myGame)).Result == Result.Ok);
 
             GameItem[] items = hoard.GetPlayerItems(hoardFixture.UserIDs[0], myGame).Result;
-            
-            Trace.TraceInformation("Shutting down HOARD...");
-            Assert.True(hoard.Shutdown());
+
+            ErrorCallbackProvider.ReportInfo("Shutting down HOARD...");
+            Assert.True(hoard.Shutdown() == Result.Ok);
         }
     }
 }

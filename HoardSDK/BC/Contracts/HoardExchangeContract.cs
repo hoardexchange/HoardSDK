@@ -85,7 +85,7 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Creates a trade order for an ERC223 tokens in currency expressed in ERC233 tokens
         /// </summary>
-        /// <param name="from">seller account</param>
+        /// <param name="from">seller profile</param>
         /// <param name="tokenGet">type of currency</param>
         /// <param name="amountGet">price in given currency</param>
         /// <param name="tokenGive">type of token to sell</param>
@@ -93,7 +93,7 @@ namespace Hoard.BC.Contracts
         /// <param name="blockTimeDuration">expiration time of order in block number</param>
         /// <returns>true if order has been created, false otherwise</returns>
         public async Task<bool> Order(
-            AccountInfo from,
+            Profile from,
             string tokenGet,
             BigInteger amountGet,
             string tokenGive,
@@ -114,7 +114,7 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Creates a trade order for an ERC721 tokens in currency expressed in ERC233 tokens
         /// </summary>
-        /// <param name="from">seller account</param>
+        /// <param name="from">seller profile</param>
         /// <param name="tokenGet">currency type</param>
         /// <param name="amountGet">price in currency</param>
         /// <param name="tokenGive">type of token to sell</param>
@@ -122,7 +122,7 @@ namespace Hoard.BC.Contracts
         /// <param name="blockTimeDuration">expiration time of order in block number</param>
         /// <returns>true if order has been created, false otherwise</returns>
         public async Task<bool> OrderERC721(
-            AccountInfo from,
+            Profile from,
             string tokenGet,
             BigInteger amountGet,
             string tokenGive,
@@ -143,7 +143,7 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Consumes an order and pays for the ERC223 Items
         /// </summary>
-        /// <param name="from">Account of the buyer</param>
+        /// <param name="from">Profile of the buyer</param>
         /// <param name="tokenGet">currency</param>
         /// <param name="amountGet">price in currency</param>
         /// <param name="tokenGive">item to buy</param>
@@ -154,7 +154,7 @@ namespace Hoard.BC.Contracts
         /// <param name="amount">how many of items from order to buy</param>
         /// <returns></returns>
         public async Task<bool> Trade(
-            AccountInfo from,
+            Profile from,
             string tokenGet,
             BigInteger amountGet, 
             string tokenGive,
@@ -188,7 +188,7 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Consumes an order and pays for the ERC721 Items
         /// </summary>
-        /// <param name="from">Account of the buyer</param>
+        /// <param name="from">Profile of the buyer</param>
         /// <param name="tokenGet">currency</param>
         /// <param name="amountGet">price in currency</param>
         /// <param name="tokenGive">item to buy</param>
@@ -199,7 +199,7 @@ namespace Hoard.BC.Contracts
         /// <param name="amount">must be 1</param>
         /// <returns></returns>
         public async Task<bool> TradeERC721(
-            AccountInfo from,
+            Profile from,
             string tokenGet,
             BigInteger amountGet,
             string tokenGive,
@@ -233,11 +233,11 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Withdraws the payment (or part of it)
         /// </summary>
-        /// <param name="from">Withdrawing account</param>
+        /// <param name="from">Withdrawing profile</param>
         /// <param name="tokenAddress">currency</param>
         /// <param name="value">amount to withdraw</param>
         /// <returns></returns>
-        public async Task<bool> Withdraw(AccountInfo from, string tokenAddress, BigInteger value)
+        public async Task<bool> Withdraw(Profile from, string tokenAddress, BigInteger value)
         {
             var function = GetFunctionWithdrawToken();
             var receipt = await BCComm.EvaluateOnBC(web3, from, function, tokenAddress, value);
@@ -247,11 +247,11 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Withdraws the sold item
         /// </summary>
-        /// <param name="from">Withdrawing account</param>
+        /// <param name="from">Withdrawing profile</param>
         /// <param name="tokenAddress">type of sold item</param>
         /// <param name="tokenId">identifier of sold item</param>
         /// <returns></returns>
-        public async Task<bool> WithdrawERC721(AccountInfo from, string tokenAddress, BigInteger tokenId)
+        public async Task<bool> WithdrawERC721(Profile from, string tokenAddress, BigInteger tokenId)
         {
             var function = GetFunctionWithdrawTokenERC721();
             var receipt = await BCComm.EvaluateOnBC(web3, from, function, tokenAddress, tokenId);
@@ -261,7 +261,7 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Cancels ERC223 order
         /// </summary>
-        /// <param name="from">Account that cancels order (must be creator of order)</param>
+        /// <param name="from">Profile that cancels order (must be creator of order)</param>
         /// <param name="tokenGet">currency</param>
         /// <param name="amountGet">price</param>
         /// <param name="tokenGive">item to sell</param>
@@ -270,7 +270,7 @@ namespace Hoard.BC.Contracts
         /// <param name="nonce">transaction number</param>
         /// <returns></returns>
         public async Task<bool> CancelOrder(
-            AccountInfo from,
+            Profile from,
             string tokenGet,
             BigInteger amountGet,
             string tokenGive,
@@ -286,7 +286,7 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Cancels ERC721 order
         /// </summary>
-        /// <param name="from">Account that cancels order (must be creator of order)</param>
+        /// <param name="from">Profile that cancels order (must be creator of order)</param>
         /// <param name="tokenGet">currency</param>
         /// <param name="amountGet">price</param>
         /// <param name="tokenGive">item to sell</param>
@@ -295,7 +295,7 @@ namespace Hoard.BC.Contracts
         /// <param name="nonce">transaction number</param>
         /// <returns></returns>
         public async Task<bool> CancelOrderERC721(
-            AccountInfo from,
+            Profile from,
             string tokenGet,
             BigInteger amountGet,
             string tokenGive,

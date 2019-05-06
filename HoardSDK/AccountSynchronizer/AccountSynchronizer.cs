@@ -19,6 +19,9 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
+using NBitcoin;
+using System.IO;
+using System.Collections.Concurrent;
 
 namespace Hoard
 {
@@ -43,8 +46,14 @@ namespace Hoard
                 /// Encryption key generation
                 GenerateEncryptionKey,
 
-                /// Transfer keystore
-                TransferKeystore,
+                /// Transfer keystore request
+                TransferKeystoreRequest,
+
+                /// Transfer keystore answer
+                TransferKeystoreAnswer,
+
+                /// Custom data
+                TransferCustomData
             }
 
             /// Internal message id
@@ -54,7 +63,7 @@ namespace Hoard
             public int length;
 
             /// message data
-            public string data;
+            public byte[] data;
         }
 
         /// <summary>
@@ -67,11 +76,12 @@ namespace Hoard
         }
 
         static private int MaxRange = 10;
+        static private int KeyStrength = 256;
 
         /// <summary>
         /// Time out in seconds
         /// </summary>
-        static protected int MessageTimeOut = 30;
+        static public int MessageTimeOut = (WhisperService.MAX_WAIT_TIME_IN_MS / 1000);
 
         /// <summary>
         /// Maximal time in seconds to be spent on proof of work
@@ -86,7 +96,12 @@ namespace Hoard
         /// <summary>
         /// Maximal message chunk size
         /// </summary>
-        static protected int ChunkSize = 256;
+        static protected int ChunkSize = 128;
+
+        /// <summary>
+        /// Master key
+        /// </summary>
+        static public readonly string MasterKey = "xprv9s21ZrQH143K37MjeFycYaN4PVgP7AD6V8pS8mH3UJspeUUfF4pkQdh3gFTY9f1NPTKMEQkCZiE91uoiRDhZh65Kkytn8bkG1Xi5YfstAqH";
 
         /// <summary>
         /// 
@@ -103,6 +118,13 @@ namespace Hoard
         /// </summary>
         protected string OriginalPin = "";
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected string mDateTime;
+
+        private string SubscriptionId = "";
+
         /// Confirmation Pin
         public string ConfirmationPin
         {
@@ -117,15 +139,16 @@ namespace Hoard
         {
             WhisperService = new WhisperService(url);
             ConfirmationPin = "";
+            mDateTime = "";
         }
 
-        private bool IsFairRandom(byte number, byte range)
+        static private bool IsFairRandom(byte number, byte range)
         {
             int fullSetOfValues = Byte.MaxValue / range;
             return number < range * fullSetOfValues;
         }
 
-        private int GenerateDigit(int range)
+        static private int GenerateDigit(int range)
         {
             Debug.Assert(range > 0);
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
@@ -213,14 +236,98 @@ namespace Hoard
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="privatekey"></param>
+        /// <param name="data"></param>
+        /// <param name="iv"></param>
+        /// <returns></returns>
+        public static byte[] AESEncrypt(byte[] privatekey, byte[] data, byte[] iv)
+        {
+            // Create a new AesManaged.    
+            AesManaged aes = new AesManaged();
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.KeySize = KeyStrength;
+
+            // Create encryptor    
+            ICryptoTransform encryptor = aes.CreateEncryptor(privatekey, iv);
+
+            // Create MemoryStream    
+            MemoryStream ms = new MemoryStream();
+
+            // Create crypto stream using the CryptoStream class. This class is the key to encryption    
+            // and encrypts and decrypts data from any given stream. In this case, we will pass a memory stream    
+            // to encrypt    
+            CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+            cs.Write(data, 0, data.Length);
+            cs.Close();
+
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="privatekey"></param>
+        /// <param name="iv"></param>
+        /// <param name="dataEncrypted"></param>
+        /// <returns></returns>
+        public static byte[] AESDecrypt(byte[] privatekey, byte[] dataEncrypted, byte[] iv)
+        {
+            // Create AesManaged    
+            AesManaged aes = new AesManaged();
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.KeySize = KeyStrength;
+
+            // Create a decryptor    
+            ICryptoTransform decryptor = aes.CreateDecryptor(privatekey, iv);
+
+            // Create the streams used for decryption.    
+            MemoryStream ms = new MemoryStream();
+
+            CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Write);
+            cs.Write(dataEncrypted, 0, dataEncrypted.Length);
+            cs.Close();
+
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="publicKey"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        //public static byte[] RSAEncrypt(byte[] publicKey, byte[] data)
+        //{
+        //    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(); 
+        //    rsa.FromXmlString(publicKey);  
+        //    return rsa.Encrypt(data, false);
+        //}
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="privateKey"></param>
+        /// <param name="encryptedData"></param>
+        /// <returns></returns>
+        //public static byte[] RSADecrypt(byte[] privateKey, byte[] encryptedData)
+        //{
+        //    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(); 
+        //    rsa.FromXmlString(privateKey);
+        //    return rsa.Decrypt(encryptedData, false);
+        //}
+
+        /// <summary>
         /// Establishes connection with geth
         /// --wsorigins="*" --ws --wsport "port" --shh --rpc --rpcport "port" --rpcapi personal,db,eth,net,web3,shh
         /// </summary>
         /// <returns></returns>
         public async Task<bool> Initialize()
         {
-            await WhisperService.Connect();
-            return true;
+            return await WhisperService.Connect();
         }
 
         /// <summary>
@@ -229,6 +336,14 @@ namespace Hoard
         public async Task Shutdown()
         {
             await WhisperService.Close();
+        }
+
+        /// <summary>
+        /// Clears synchronizer state
+        /// </summary>
+        public void Clear()
+        {
+            OnClear();
         }
 
         /// <summary>
@@ -242,8 +357,8 @@ namespace Hoard
             InternalData internalMsg = new InternalData();
             internalMsg.id = id;
             internalMsg.length = data.Length;
-            internalMsg.data = Encoding.ASCII.GetString(data);
-            return Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(internalMsg));
+            internalMsg.data = data;
+            return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(internalMsg));
         }
 
         /// <summary>
@@ -259,13 +374,21 @@ namespace Hoard
             try
             {
                 byte[] data = msg.GetDecodedMessage();
-                string textData = Encoding.ASCII.GetString(data);
+                string textData = Encoding.UTF8.GetString(data);
                 InternalData internalMessage = JsonConvert.DeserializeObject<InternalData>(textData);
                 OnTranslateMessage(internalMessage);
             }
-            catch(Exception e)
+            catch(Exception)
             {
             }
+        }
+
+        private string PackHashedPin(byte[] hashedPin)
+        {
+            Debug.Assert(hashedPin.Length >= 4);
+            byte[] packedPin = new byte[4];
+            Array.Copy(hashedPin, packedPin, packedPin.Length);
+            return BitConverter.ToString(packedPin).Replace("-", string.Empty);
         }
 
         /// <summary>
@@ -275,7 +398,23 @@ namespace Hoard
         /// <returns></returns>
         protected string ConvertPinToTopic(string pin)
         {
-            return "0x" + pin;
+            SHA256 sha256 = new SHA256Managed();
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            return "0x" + PackHashedPin(hashedPin);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static byte[] GenerateIV(string pin)
+        {
+            byte[] iv = new byte[16];
+            SHA256 sha256 = new SHA256Managed();
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            Debug.Assert(hashedPin.Length >= 16);
+            Array.Copy(hashedPin, iv, iv.Length);
+            return iv;
         }
 
         ///
@@ -283,7 +422,7 @@ namespace Hoard
         {
         }
 
-        private byte[] CalculateSeed(byte[] seed)
+        private static byte[] CalculateSeed(byte[] seed)
         {
             int val = 0;
             for(int i = 0; i < seed.Length; i++)
@@ -301,30 +440,36 @@ namespace Hoard
         /// 
         /// </summary>
         /// <returns></returns>
-        protected EthECKey GenerateKey(byte[] seed)
+        static public byte[] GenerateKey(byte[] seed)
         {
             byte[] newSeed = CalculateSeed(seed);
-            SecureRandom secureRandom = SecureRandom.GetInstance("SHA256PRNG", false);
-            secureRandom.SetSeed(newSeed);
-            var gen = new ECKeyPairGenerator();
-            var keyGenParam = new KeyGenerationParameters(secureRandom, 256);
-            gen.Init(keyGenParam);
-            var keyPair = gen.GenerateKeyPair();
-            var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
-            if (privateBytes.Length != 32)
+            string path = "m";
+            for(int i = 0; i < newSeed.Length; i++)
             {
-                return GenerateKey(newSeed);
-            }
-            return new EthECKey(privateBytes, true);
+                path += "/";
+                path += newSeed[i].ToString();
+             }
+            //SecureRandom secureRandom = SecureRandom.GetInstance("SHA256PRNG", false);
+            //secureRandom.SetSeed(newSeed);
+            //var gen = new ECKeyPairGenerator();
+            //var keyGenParam = new KeyGenerationParameters(secureRandom, KeyStrength);
+            //gen.Init(keyGenParam);
+            //var keyPair = gen.GenerateKeyPair();
+            //var privateBytes = ((ECPrivateKeyParameters)keyPair.Private).D.ToByteArray();
+            //Debug.Print("path: " + path + "\n");
+            ExtKey childKey = ExtKey.Parse(MasterKey).Derive(new KeyPath(path));
+            var privateBytes = childKey.PrivateKey.ToBytes();
+            Debug.Assert(privateBytes.Length == 32);
+            return privateBytes;
         }
 
         /// <summary>
         /// Generates 8-digits pin
         /// </summary>
         /// <returns></returns>
-        public string GeneratePin()
+        static public string GeneratePin()
         {
-            OnClear();
+            //OnClear(); 
 
             int digitsToGenerate = 8;
             string pin = "";
@@ -334,6 +479,23 @@ namespace Hoard
                 digitsToGenerate--;
             }
             return pin;
+        }
+
+        private async Task<string> Subscribe(string pin)
+        {
+            string[] topic = new string[1];
+            topic[0] = ConvertPinToTopic(pin);
+            OriginalPin = pin;
+            SHA256 sha256 = new SHA256Managed();
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
+            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, true);
+            return await WhisperService.Subscribe(msgCriteria);
+        }
+
+        private async Task<bool> Unsubscribe(string subscriptionId)
+        {
+            return await WhisperService.Unsubscribe(subscriptionId);
         }
 
         /// <summary>
@@ -347,9 +509,10 @@ namespace Hoard
             topic[0] = ConvertPinToTopic(pin);
             OriginalPin = pin;
             SHA256 sha256 = new SHA256Managed();
-            var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
-            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.ASCII.GetString(hashedPin));
-            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, false);
+            var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
+            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
+            WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, true);
+            SubscriptionId = await WhisperService.Subscribe(msgCriteria);
             return await WhisperService.CreateNewMessageFilter(msgCriteria);
         }
 
@@ -359,53 +522,34 @@ namespace Hoard
         /// </summary>
         public async Task UnregisterMessageFilter(string filter)
         {
-            bool res = await WhisperService.DeleteMessageFilter(filter);
-            res = await WhisperService.DeleteSymetricKey(SymKeyId);
+            bool res = true;
+            if (SubscriptionId != "")
+            {
+                res = await WhisperService.Unsubscribe(SubscriptionId);
+            }
+            if (filter != "")
+            {
+                res = await WhisperService.DeleteMessageFilter(filter);
+            }
+            if (SymKeyId != "")
+            {
+                res = await WhisperService.DeleteSymetricKey(SymKeyId);
+            }
         }
 
         /// <summary>
-        /// Gathers messages
+        /// 
         /// </summary>
-        /// <param name="filter">Message filter</param>
         /// <returns></returns>
-        public async Task<bool> Update(string filter)
+        public void ProcessMessage()
         {
-            List<WhisperService.ReceivedData> objects = await WhisperService.ReceiveMessage(filter);
-            foreach (WhisperService.ReceivedData obj in objects)
+            ConcurrentQueue<WhisperService.ReceivedData> receivedMessagesQueue = WhisperService.GetReceivedMessages();
+            while (receivedMessagesQueue.Count > 0)
             {
-                TranslateMessage(obj);
+                WhisperService.ReceivedData rd = null;
+                if (receivedMessagesQueue.TryDequeue(out rd))
+                    TranslateMessage(rd);
             }
-            return true;
         }
-
-        //public bool SendPin(string pin)
-        //{
-        //    SHA256 sha256 = new SHA256Managed();
-        //    var hashedPin = sha256.ComputeHash(Encoding.ASCII.GetBytes(pin));
-        //    bool res = WhisperService.CheckConnection().Result;
-        //    if (res)
-        //    {
-        //        string[] topic = { "0x07678231" };
-        //        string privKey = "";// WhisperService.GetPrivateKey(ActualKeyId);
-        //        string sig = "";// WhisperService.GetPublicKey(ActualKeyId);
-        //        string symKeyId = WhisperService.GenerateSymetricKeyFromPassword("dupa").Result;
-        //        WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(symKeyId, privKey, sig, 2.01f, topic, false);
-        //        //string filter = WhisperService.Subscribe(msgCriteria);
-        //        string filter = WhisperService.CreateNewMessageFilter(msgCriteria).Result;
-
-        //        string symKeyId2 = WhisperService.GenerateSymetricKeyFromPassword("dupa").Result;
-        //        WhisperService.SubscriptionCriteria msgCriteria2 = new WhisperService.SubscriptionCriteria(symKeyId2, privKey, sig, 2.01f, topic, false);
-        //        string filter2 = WhisperService.CreateNewMessageFilter(msgCriteria2).Result;
-        //        WhisperService.MessageDesc msg = new WhisperService.MessageDesc(symKeyId, "", "", 7, topic[0], hashedPin, "", 2, 2.01f, "");
-        //        string resStr = WhisperService.SendMessage(msg).Result;
-        //        List<WhisperService.ReceivedData> objects = WhisperService.ReceiveMessage(filter2).Result;
-        //        foreach(WhisperService.ReceivedData obj in objects)
-        //        {
-        //            byte[] data = obj.GetDecodedMessage();
-        //            string str = Encoding.ASCII.GetString(data);
-        //        }
-        //    }
-        //    return true;
-        //}
     }
 }

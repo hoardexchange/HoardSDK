@@ -47,12 +47,12 @@ namespace HoardTests.CryptKittyTests
             Game = game;
         }
 
-        public async Task<bool> Connect()
+        public async Task<Result> Connect()
         {
             Client = new RestClient("https://api.cryptokitties.co");
             Client.AutomaticDecompression = false;
 
-            return true;
+            return Result.Ok;
         }
 
         public string[] GetItemTypes()
@@ -60,17 +60,17 @@ namespace HoardTests.CryptKittyTests
             return new string[] {"CryptoKitty"};
         }
 
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo playerID)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile)
         {
             List<GameItem> items = new List<GameItem>();
 
-            var request = new RestRequest("kitties?owner_wallet_address=" + playerID.ID + "&limit=10&offset=0", Method.GET);
+            var request = new RestRequest("kitties?owner_wallet_address=" + profile.ID + "&limit=10&offset=0", Method.GET);
             request.AddDecompressionMethod(DecompressionMethods.None);
             var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                System.Diagnostics.Debug.Fail("unable to get kitties by owner from " + Client.BaseUrl + ", Request: " + "kitties?owner_wallet_address=" + playerID.ID + "&limit=1&offset=0" + ", response: " + response.ErrorMessage + " StatusCode: " + response.StatusCode);
+                System.Diagnostics.Debug.Fail("unable to get kitties by owner from " + Client.BaseUrl + ", Request: " + "kitties?owner_wallet_address=" + profile.ID + "&limit=1&offset=0" + ", response: " + response.ErrorMessage + " StatusCode: " + response.StatusCode);
                 return null;
             }
 
@@ -84,9 +84,9 @@ namespace HoardTests.CryptKittyTests
 
             foreach (var kitty in userKitties.kitties)
             {
-                if (await validateOwnerOnBC(playerID, kitty.id))
+                if (await validateOwnerOnBC(profile, kitty.id))
                 {
-                    GameItem gi = new GameItem(Game, "CK", new Metadata(playerID.ID, ulong.Parse(kitty.id), "CK_DNA"));
+                    GameItem gi = new GameItem(Game, "CK", new Metadata(profile.ID, ulong.Parse(kitty.id), "CK_DNA"));
                     gi.State = Encoding.Unicode.GetBytes(kitty.image_url);//this should be dna!
                 }
             }
@@ -95,41 +95,47 @@ namespace HoardTests.CryptKittyTests
 
         }
 
+        public async Task<GameItemType> GetItemTypeInfo(string type)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo playerID, string itemType)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType)
         {
             if (itemType == GetItemTypes()[0])
-                return await GetPlayerItems(playerID);
+                return await GetPlayerItems(profile);
             throw new ArgumentException();
         }
 
-        private async Task<bool> validateOwnerOnBC(AccountInfo player, string tokenId)
+        private async Task<bool> validateOwnerOnBC(Profile profile, string tokenId)
         {
             BigInteger tokenBigInt = new BigInteger(Encoding.Unicode.GetBytes(tokenId));
 
-            ERC721GameItemContract contract =  ((Hoard.BC.BCComm)HoardService.Instance.BCComm).GetContract<ERC721GameItemContract>("0x06012c8cf97BEaD5deAe237070F9587f8E7A266d");
+            Hoard.BC.BCComm bcComm = (Hoard.BC.BCComm)HoardService.Instance.BCComm;
+            ERC721GameItemContract contract =  ((ERC721GameItemContract)bcComm.GetContract(typeof(ERC721GameItemContract), "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d"));
 
             BigInteger owner = await contract.OwnerOf(tokenBigInt);
             
-            return (player.ID == owner.ToString());
+            return (profile.ID == owner.ToString());
         }
 
-        public Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        public Task<GameItem[]> GetPlayerItems(Profile profile, string itemType, ulong firstItemIndex, ulong itemsToGather)
         {
             throw new NotImplementedException();
         }
 
-        public Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        public Task<ulong> GetPlayerItemsAmount(Profile profile, string itemType)
         {
             throw new NotImplementedException();
         }
 
 
-        public Task<bool> Transfer(AccountInfo addressFrom, HoardID addressTo, GameItem item, BigInteger amount)
+        public Task<bool> Transfer(Profile from, string addressTo, GameItem item, BigInteger amount)
         {
             throw new NotImplementedException();
         }

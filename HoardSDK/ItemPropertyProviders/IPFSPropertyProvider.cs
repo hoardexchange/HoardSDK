@@ -1,8 +1,6 @@
 ﻿using Hoard.DistributedStorage;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,16 +20,21 @@ namespace Hoard.ItemPropertyProviders
         }
 
         /// <inheritdoc/>
-        public bool FetchGameItemProperties(GameItem item)
+        public async Task<Result> FetchGameItemProperties(GameItem item)
         {
-            // FIXME: handle unsuccessful data download
+            try
+            {
+                byte[] globalData = await Client.DownloadBytesAsync(item.State);
+                string globalJson = Encoding.UTF8.GetString(globalData);
 
-            byte[] globalData = Client.DownloadBytesAsync(item.State).Result;
-            string globalJson = Encoding.UTF8.GetString(globalData);
-
-            item.Properties = JsonConvert.DeserializeObject<ItemProperties>(globalJson);
-
-            return true;
+                item.Properties = JsonConvert.DeserializeObject<ItemProperties>(globalJson);
+                return Result.Ok;
+            }
+            catch (Exception ex)
+            {
+                ErrorCallbackProvider.ReportError(ex.ToString());
+            }
+            return Result.Error;
         }
     }
 }

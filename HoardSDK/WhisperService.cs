@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Collections.Concurrent;
 
 namespace Hoard
 {    
@@ -170,6 +171,11 @@ namespace Hoard
             /// Recipient public key
             public string recipientPublicKey;
 
+            static ReceivedData()
+            {
+                new ReceivedData();//to force code generators create proper code for reflection (JSON deserialize)
+            }
+
             /// Returns decoded message
             public byte[] GetDecodedMessage()
             {
@@ -183,18 +189,23 @@ namespace Hoard
         private string Answer;
         private string Error;
         private bool IsConnected = false;
+        private ConcurrentQueue<ReceivedData> ReceivedMessagesQueue = new ConcurrentQueue<ReceivedData>();
 
-        static private string JsonVersion = "2.0";
-        static private int JsonId = 1;
+        static readonly private string JsonVersion = "2.0";
+        static readonly private int JsonId = 1;
 
-        static private int MAX_WAIT_TIME_IN_MS = 30000;
+        /// <summary>
+        /// Message timeout
+        /// </summary>
+        static readonly public int MAX_WAIT_TIME_IN_MS = 120000;
 
         /// <summary>
         /// Constructor
         /// </summary>
         public WhisperService(string url)
         {
-            WhisperClient = new WebSocket(url);
+            WhisperClient = new WebSocket(url, "whisper-protocol");
+            WhisperClient.WaitTime = TimeSpan.FromSeconds(3);
             ResponseEvent = new ManualResetEvent(false);
             ConnectionEvent = new ManualResetEvent(false);
         }
@@ -213,11 +224,11 @@ namespace Hoard
                     Error = "";
                     if (e.IsBinary)
                     {
-                        Trace.TraceInformation("Message received: " + e.RawData);
+                        ErrorCallbackProvider.ReportInfo("Message received: " + e.RawData);
                     }
                     else if (e.IsText)
                     {
-                        Trace.TraceInformation("Message received: " + e.Data);
+                        ErrorCallbackProvider.ReportInfo("Message received: " + e.Data);
                         JToken message = null;
                         JObject json = JObject.Parse(e.Data);
                         json.TryGetValue("error", out message);
@@ -227,10 +238,30 @@ namespace Hoard
                         }
                         else
                         {
-                            json.TryGetValue("result", out message);
-                            if (message != null)
+                            JToken method = null;
+                            json.TryGetValue("method", out method);
+                            if ((method != null) && (method.ToString() == "shh_subscription"))
                             {
-                                Answer = message.ToString();
+                                JToken prms = null;
+                                json.TryGetValue("params", out prms);
+                                if (prms != null)
+                                {
+                                    JObject jsonParams = prms.ToObject<JObject>();
+                                    JToken result = "";
+                                    jsonParams.TryGetValue("result", out result);
+                                    if (result != null)
+                                    {
+                                        ReceivedMessagesQueue.Enqueue(JsonConvert.DeserializeObject<ReceivedData>(result.ToString()));
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                json.TryGetValue("result", out message);
+                                if (message != null)
+                                {
+                                    Answer = message.ToString();
+                                }
                             }
                         }
                         ResponseEvent.Set();
@@ -238,21 +269,21 @@ namespace Hoard
                 };
                 WhisperClient.OnOpen += (sender, e) =>
                 {
-                    Trace.TraceInformation("Connection established");
+                    ErrorCallbackProvider.ReportInfo("Connection established");
                     IsConnected = true;
                     ResponseEvent.Set();
                     ConnectionEvent.Set();
                 };
                 WhisperClient.OnClose += (sender, e) =>
                 {
-                    Trace.TraceInformation("Connection closed");
+                    ErrorCallbackProvider.ReportInfo("Connection closed");
                     IsConnected = false;
                     ResponseEvent.Set();
                     ConnectionEvent.Set();
                 };
                 WhisperClient.OnError += (sender, e) =>
                 {
-                    Trace.TraceError("Connection error!");
+                    ErrorCallbackProvider.ReportError("Connection error!");
                 };
                 WhisperClient.Connect();
                 if (ConnectionEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
@@ -276,15 +307,21 @@ namespace Hoard
 
         private bool BuildAndSendRequest(string function, JArray additionalParams, out string outMessage)
         {
+            outMessage = "";
             try
             {
-                ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
+                if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+                {
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
+                    throw new WebException("Whisper connection error!");
+                }
+
                 ResponseEvent.Reset();
 
                 if (IsConnected == false)
                 {
-                    outMessage = "Connection error!";
-                    return false;
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
+                    throw new WebException("Whisper connection error!");
                 }
                 
                 JObject jobj = new JObject();
@@ -295,12 +332,18 @@ namespace Hoard
                     jobj.Add("params", additionalParams);
                 }
                 jobj.Add("id", JsonId);
-                WhisperClient.Send(Encoding.ASCII.GetBytes(jobj.ToString()));
-                ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS);
+                //string msg = jobj.ToString();
+                WhisperClient.Send(Encoding.UTF8.GetBytes(jobj.ToString()));
+                if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
+                {
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
+                    throw new WebException("Whisper connection error!");
+                }
+
                 if (Error != "")
                 {
-                    outMessage = Error;
-                    return false;
+                    ErrorCallbackProvider.ReportError("Whisper error! " + Error);
+                    throw new WebException("Whisper error! " + Error);
                 }
                 else
                 {
@@ -308,9 +351,9 @@ namespace Hoard
                     return true;
                 }
             }
-            catch (Exception e)
+            catch (WebSocketException ex)
             {
-                outMessage = "Unknown exception";
+                ErrorCallbackProvider.ReportError("Whisper unknown exception:\n" + ex.Message);
                 return false;
             }
         }
@@ -735,6 +778,14 @@ namespace Hoard
                 }
                 return "";
             });
-        }        
+        }  
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        public ConcurrentQueue<ReceivedData> GetReceivedMessages()
+        {
+            return ReceivedMessagesQueue;
+        }
     }
 }

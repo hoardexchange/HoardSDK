@@ -65,16 +65,16 @@ namespace Hoard
         /// Request game item transfer to player.
         /// </summary>
         /// <param name="sender">Transfer address of sender.</param>
-        /// <param name="recipient">Transfer address of recipient.</param>
+        /// <param name="recipientID">Transfer address of recipient.</param>
         /// <param name="item">Game item to be transfered.</param>
         /// <param name="amount">Amount of game item to be transfered.</param>
         /// <returns>Async task that transfer game item to the other player.</returns>
-        public async Task<bool> RequestGameItemTransfer(AccountInfo sender, HoardID recipient, GameItem item, BigInteger amount)
+        public async Task<bool> RequestGameItemTransfer(Profile sender, HoardID recipientID, GameItem item, BigInteger amount)
         {
             IGameItemProvider gameItemProvider = GetGameItemProvider(item);
-            if (gameItemProvider != null && sender != null && recipient != null)
+            if (gameItemProvider != null && sender != null && recipientID != null)
             {
-                return await gameItemProvider.Transfer(sender, recipient, item, amount);
+                return await gameItemProvider.Transfer(sender, recipientID, item, amount);
             }
 
             return false;
@@ -115,42 +115,46 @@ namespace Hoard
         /// Connects to BC and fills missing options.
         /// </summary>
         /// <param name="options">Hoard service options.</param>
-        /// <returns>True if initialization succeeds.</returns>
-        public bool Initialize(HoardServiceOptions options)
+        /// <returns>Result code.</returns>
+        public async Task<Result> Initialize(HoardServiceOptions options)
         {
             Options = options;
 
             //access point to block chain - a must have
             BCComm = BCCommFactory.Create(Options);
-            Tuple<bool,string> result = BCComm.Connect().Result;
+            Tuple<bool,string> result = await BCComm.Connect();
             if (!result.Item1)
-                return false;
+            {
+                ErrorCallbackProvider.ReportError("Node not available!");
+                return Result.ConnectionError;
+            }
 
-            Trace.TraceInformation(result.Item2);
-            
+            ErrorCallbackProvider.ReportInfo(result.Item2);
+
             //our default GameItemProvider
             if (Options.Game != GameID.kInvalidID)
             {
-                if (!RegisterHoardGame(Options.Game))
-                    return false;
+                Result rslt = await RegisterHoardGame(Options.Game);
+                if (rslt != Result.Ok)
+                    return rslt;
             }
 
             DefaultGame = Options.Game;
 
             //init exchange service
             IExchangeService exchange = new HoardExchangeService(this);
-            if (exchange.Init().Result)
+            if (await exchange.Init())
             {
                 ExchangeService = exchange;
             }
 
-            return true;
+            return Result.Ok;
         }
 
         /// <summary>
         /// Shutdown Hoard service.
         /// </summary>
-        public bool Shutdown()
+        public Result Shutdown()
         {
             DefaultGame = GameID.kInvalidID;
             ExchangeService = null;
@@ -158,21 +162,20 @@ namespace Hoard
             BCComm = null;
             Providers.Clear();
 
-            return true;
+            return Result.Ok;
         }
 
         /// <summary>
         /// Register default HoardBackend connector with BC fallback.
         /// </summary>
         /// <param name="game"></param>
-        public bool RegisterHoardGame(GameID game)
+        public async Task<Result> RegisterHoardGame(GameID game)
         {
             //assumig this is a hoard game we can use a default hoard provider that connects to Hoard game server backend
             HoardGameItemProvider provider = new HoardGameItemProvider(game);
             //for security reasons (or fallback in case server is down) we will pass a BC provider
             provider.SecureProvider = GameItemProviderFactory.CreateSecureProvider(game, BCComm);
-
-            return RegisterGame(game, provider);
+            return await RegisterGame(game, provider);
         }
 
         /// <summary>
@@ -180,7 +183,7 @@ namespace Hoard
         /// </summary>
         /// <param name="game"></param>
         /// <param name="provider"></param>
-        public bool RegisterGame(GameID game, IGameItemProvider provider)
+        public async Task<Result> RegisterGame(GameID game, IGameItemProvider provider)
         {
             if (!Providers.ContainsKey(game))
             {
@@ -191,34 +194,39 @@ namespace Hoard
                 // - only when secure check should happen 
                 // - when original GameItemProvider fails
                 // - switch original to SecureProvider upon direct request
-                if (BCComm.RegisterHoardGame(game).Result)
+                Result result = await BCComm.RegisterHoardGame(game);
+                if (result == Result.Ok)
                 {
-                    if (provider.Connect().Result)
+                    if (DefaultGame == GameID.kInvalidID)
+                        DefaultGame = game;
+
+                    result = await provider.Connect();
+                    if (result == Result.Ok)
                     {
                         Providers.Add(game, provider);
-                        return true;
                     }
                 }
+                return result;
             }
             else
             {
-                Trace.TraceError($"Game {game.ID} already registered!");
+                ErrorCallbackProvider.ReportError($"Game {game.ID} already registered!");
             }
-            return false;
+            return Result.Error;
         }
 
         /// <summary>
         /// Register provider of resolving item state and filling properties.
         /// </summary>
         /// <param name="provider">Provider to be registered.</param>
-        public bool RegisterItemPropertyProvider(IItemPropertyProvider provider)
+        public Result RegisterItemPropertyProvider(IItemPropertyProvider provider)
         {
             if (!ItemPropertyProviders.Contains(provider))
             {
                 ItemPropertyProviders.Add(provider);
-                return true;
+                return Result.Ok;
             }
-            return false;
+            return Result.Error;
         }
 
         #region PRIVATE SECTION
@@ -288,6 +296,15 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Retrieves number of Hoard games registered on the platform
+        /// </summary>
+        /// <returns></returns>
+        public async Task<UInt64> GetHoardGameCount()
+        {
+            return await BCComm.GetHoardGameCount();
+        }
+
+        /// <summary>
         /// Check if game exists on the Hoard Platform.
         /// </summary>
         /// <param name="game"></param>
@@ -308,17 +325,17 @@ namespace Hoard
         /// <summary>
         /// Returns the ethers owned by the player.
         /// </summary>
-        /// <param name="account">Account to query</param>
+        /// <param name="profile">Profile to query</param>
         /// <returns></returns>
-        public async Task<float> GetBalance(AccountInfo account)
+        public async Task<float> GetBalance(Profile profile)
         {
             try
             {
-                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetBalance(account.ID)));
+                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetBalance(profile.ID)));
             }
             catch(Exception ex)
             {
-                Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.ReportError(ex.ToString());
                 return 0;
             }
         }
@@ -335,7 +352,7 @@ namespace Hoard
         //    }
         //    catch (Exception ex)
         //    {
-        //        Trace.TraceError(ex.ToString());
+        //        ErrorCallbackProvider.ReportError(ex.ToString());
         //        return "0x0";
         //    }
         //}
@@ -343,17 +360,17 @@ namespace Hoard
         /// <summary>
         /// Returns the Hoard tokens amount owned by the player.
         /// </summary>
-        /// <param name="account">Account to query</param>
+        /// <param name="profile">Profile to query</param>
         /// <returns></returns>
-        public async Task<BigInteger> GetHRDAmount(AccountInfo account)
+        public async Task<BigInteger> GetHRDAmount(Profile profile)
         {
             try
             {
-                return await BCComm.GetHRDBalance(account.ID);
+                return await BCComm.GetHRDBalance(profile.ID);
             }
             catch (Exception ex)
             {
-                Trace.TraceError(ex.ToString());
+                ErrorCallbackProvider.ReportError(ex.ToString());
                 return 0;
             }
         }
@@ -361,40 +378,30 @@ namespace Hoard
         /// <summary>
         /// Returns all Game Items owned by player's subaacount in default game (one passed in options to Initialize method).
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile)
         {
-            return await GetPlayerItems(account, DefaultGame).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Returns all Game Items owned by player in default game (one passed in options to Initialize method).
-        /// </summary>
-        /// <param name="user">user which game items to return</param>
-        /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(User user)
-        {
-            return await GetPlayerItems(user, DefaultGame).ConfigureAwait(false);
+            return await GetPlayerItems(profile, DefaultGame).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Returns all Game Items owned by player's subaccount in particular game
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="gameID"></param>
         /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, GameID gameID)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, GameID gameID)
         {
             List<GameItem> items = new List<GameItem>();
             if (Providers.ContainsKey(gameID))
             {
                 IGameItemProvider c = Providers[gameID];
-                items.AddRange(await c.GetPlayerItems(account).ConfigureAwait(false));
+                items.AddRange(await c.GetPlayerItems(profile).ConfigureAwait(false));
             }
             else
             {
-                Trace.TraceWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
+                ErrorCallbackProvider.ReportWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
             }
             return items.ToArray();
         }
@@ -402,23 +409,23 @@ namespace Hoard
         /// <summary>
         /// Returns all Game Items owned by player's subaccount in particular game
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="gameID"></param>
-        /// <param name="firstItemIndex">Start index for items pack</param>
-        /// <param name="itemsToGather">Number of items to gather</param>
+        /// <param name="page">Page number</param>
+        /// <param name="itemsPerPage">Number of items per page</param>
         /// <param name="itemType">Item type</param>
         /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, GameID gameID, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, GameID gameID, string itemType, ulong page, ulong itemsPerPage)
         {
             List<GameItem> items = new List<GameItem>();
             if (Providers.ContainsKey(gameID))
             {
                 IGameItemProvider c = Providers[gameID];
-                items.AddRange(await c.GetPlayerItems(account, itemType, firstItemIndex, itemsToGather).ConfigureAwait(false));
+                items.AddRange(await c.GetPlayerItems(profile, itemType, page, itemsPerPage).ConfigureAwait(false));
             }
             else
             {
-                Trace.TraceWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
+                ErrorCallbackProvider.ReportWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
             }
             return items.ToArray();
         }
@@ -426,34 +433,22 @@ namespace Hoard
         /// <summary>
         /// Returns amount of all items of the specified type belonging to a particular player with given type
         /// </summary>
-        /// <param name="account"></param>
+        /// <param name="profile"></param>
         /// <param name="gameID"></param>
         /// <param name="itemType">Item type</param>
         /// <returns></returns>
-        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, GameID gameID, string itemType)
+        public async Task<ulong> GetPlayerItemsAmount(Profile profile, GameID gameID, string itemType)
         {
             if (Providers.ContainsKey(gameID))
             {
                 IGameItemProvider c = Providers[gameID];
-                return await c.GetPlayerItemsAmount(account, itemType).ConfigureAwait(false);
+                return await c.GetPlayerItemsAmount(profile, itemType).ConfigureAwait(false);
+            }
+            else
+            {
+                ErrorCallbackProvider.ReportWarning($"Game [{gameID.Name}] could not be found. Have you registered it properly?");
             }
             return await Task.FromResult<ulong>(0);
-        }
-
-        /// <summary>
-        /// Returns all Game Items owned by playerin particular game
-        /// </summary>
-        /// <param name="user"></param>
-        /// <param name="gameID"></param>
-        /// <returns></returns>
-        public async Task<GameItem[]> GetPlayerItems(User user, GameID gameID)
-        {
-            List<GameItem> items = new List<GameItem>();
-            foreach (AccountInfo account in user.Accounts)
-            {
-                items.AddRange(await GetPlayerItems(account, gameID).ConfigureAwait(false));
-            }
-            return items.ToArray();
         }
 
         /// <summary>
@@ -475,17 +470,17 @@ namespace Hoard
         /// <summary>
         /// Fills properties for given Game Item.
         /// </summary>
-        /// <param name="item"></param>
+        /// <param name="item">item to fetch properties for</param>
         /// <returns></returns>
-        public bool FetchItemProperties(GameItem item)
+        public async Task<Result> FetchItemProperties(GameItem item)
         {
             //find compatible provider
             IItemPropertyProvider pp = GetItemPropertyProvider(item);
             if (pp != null)
             {
-                return pp.FetchGameItemProperties(item);
+                return await pp.FetchGameItemProperties(item);
             }
-            return false;
+            return Result.Error;
         }
     }
 }

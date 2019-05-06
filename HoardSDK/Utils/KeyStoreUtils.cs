@@ -1,7 +1,9 @@
 ﻿using Nethereum.Web3.Accounts;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Hoard.Utils
 {
@@ -13,10 +15,21 @@ namespace Hoard.Utils
         /// <summary>
         /// Description for creating an account
         /// </summary>
-        public class AccountDesc
+        public class ProfileDesc
         {
+            /// <summary>
+            /// 
+            /// </summary>
             public string Address;
+
+            /// <summary>
+            /// 
+            /// </summary>
             public string PrivKey;
+
+            /// <summary>
+            /// 
+            /// </summary>
             public string Name;
 
             /// <summary>
@@ -25,7 +38,7 @@ namespace Hoard.Utils
             /// <param name="name">Account name</param>
             /// <param name="address">Account public address</param>
             /// <param name="privKey">Account decrypted private key</param>
-            public AccountDesc(string name, string address, string privKey)
+            public ProfileDesc(string name, string address, string privKey)
             {
                 Name = name;
                 Address = address;
@@ -34,28 +47,25 @@ namespace Hoard.Utils
         }
 
         /// <summary>
-        /// Iterates through all accounts in specified folder
+        /// 
         /// </summary>
-        /// <param name="user">User whose accounts to iterate</param>
-        /// <param name="accountsDir">folder with key store data</param>
-        /// <param name="enumFunc">action to call for each account</param>
-        public static void EnumerateAccounts(User user, string accountsDir, Action<string> enumFunc)
+        /// <param name="profilesDir"></param>
+        /// <param name="enumFunc"></param>
+        /// <returns></returns>
+        public static async Task EnumerateProfiles(string profilesDir, Func<string, Task> enumFunc)
         {
-            string hashedName = Helper.Keccak256HexHashString(user.UserName);
-            string path = Path.Combine(accountsDir, hashedName);
+            ErrorCallbackProvider.ReportInfo(string.Format("Loading profiles from path: {0}", profilesDir));
 
-            System.Diagnostics.Trace.TraceInformation(string.Format("Loading accounts from path: {0}", path));
-
-            if (!Directory.Exists(path))
+            if (!Directory.Exists(profilesDir))
             {
-                System.Diagnostics.Trace.TraceWarning("Not found any account files.");
+                ErrorCallbackProvider.ReportWarning("Not found any profile files.");
                 return;
             }
 
-            var accountsFiles = Directory.GetFiles(path, "*.keystore");
+            var accountsFiles = Directory.GetFiles(profilesDir, "*.keystore");
             if (accountsFiles.Length == 0)
             {
-                System.Diagnostics.Trace.TraceWarning("Not found any account files.");
+                ErrorCallbackProvider.ReportWarning("Not found any profiles files.");
                 return;
             }
 
@@ -63,63 +73,262 @@ namespace Hoard.Utils
             {
                 string fileName = Path.GetFileName(fullPath);
                 if ((fileName != null) && (fileName != System.String.Empty))
-                    enumFunc(fileName);
+                {
+                    await enumFunc(fileName);
+                }
             }
         }
 
         /// <summary>
         /// Loads account information for the user
         /// </summary>
-        /// <param name="user">User to load account for</param>
         /// <param name="userInputProvider">Provider with user credentials</param>
         /// <param name="filename">filename of the file with account to load</param>
-        /// <param name="accountsDir">folder where the key store files are stored</param>
+        /// <param name="profilesDir">folder where the key store files are stored</param>
         /// <returns>description making an account</returns>
-        public static AccountDesc LoadAccount(User user, IUserInputProvider userInputProvider, string filename, string accountsDir)
+        public static async Task<ProfileDesc> LoadProfile(IUserInputProvider userInputProvider, string filename, string profilesDir)
         {
-            string hashedName = Helper.Keccak256HexHashString(user.UserName);
-            var accountsFiles = Directory.GetFiles(Path.Combine(accountsDir, hashedName), filename);
-            if (accountsFiles.Length == 0)
+            if (!Directory.Exists(profilesDir))
+            {
                 return null;
-            System.Diagnostics.Trace.TraceInformation(string.Format("Loading account {0}", accountsFiles[0]), "INFO");
+            }
 
-            string json = File.ReadAllText(accountsFiles[0]);
+            var profileFiles = Directory.GetFiles(profilesDir, filename);
+            if (profileFiles.Length == 0)
+            {
+                return null;
+            }
+            ErrorCallbackProvider.ReportInfo(string.Format("Loading profiles {0}", profileFiles[0]));
+
+            string json = File.ReadAllText(profileFiles[0]);
             var details = JObject.Parse(json);
             if (details == null)
+            {
                 return null;
+            }
             string address = details["address"].Value<string>();
-            string password = userInputProvider.RequestInput(user, eUserInputType.kPassword, address).Result;
             string name = "";
             if (details["name"] != null)
+            {
                 name = details["name"].Value<string>();
+            }
+            string password = await userInputProvider.RequestInput(name, new HoardID(address), eUserInputType.kPassword, address);
             var account = Account.LoadFromKeyStore(json, password);
 
-            return new AccountDesc(name, account.Address, account.PrivateKey);
+            return new ProfileDesc(name, account.Address, account.PrivateKey);
         }
 
         /// <summary>
-        /// Create new account for user.
+        /// 
         /// </summary>
-        /// <param name="user">User for which to create account</param>
-        /// <param name="name">Name of new account</param>
-        /// <param name="password">Password for encrypting the account</param>
-        /// <param name="accountsDir">folder where to store key store data</param>
+        /// <param name="id"></param>
+        /// <param name="profilesDir"></param>
         /// <returns></returns>
-        public static Tuple<string, string> CreateAccount(User user, string name, string password, string accountsDir)
+        public static string LoadEncryptedProfile(HoardID id, string profilesDir)
         {
-            string hashedName = Helper.Keccak256HexHashString(user.UserName);
-            string path = Path.Combine(accountsDir, hashedName);
+            if (!Directory.Exists(profilesDir))
+        {
+                ErrorCallbackProvider.ReportWarning("Not found any profile files.");
+                return null;
+            }
+
+            var profileFiles = Directory.GetFiles(profilesDir, "*.keystore");
+            if (profileFiles.Length == 0)
+            {
+                ErrorCallbackProvider.ReportWarning("Not found any profiles files.");
+                return null;
+            }
+
+            foreach (var fullPath in profileFiles)
+            {
+                string fileName = Path.GetFileName(fullPath);
+                if ((fileName != null) && (fileName != System.String.Empty))
+                {
+                    string json = File.ReadAllText(fullPath);
+                    var details = JObject.Parse(json);
+                    if (details == null)
+                    {
+                        continue;
+                    }
+                    string address = details["address"].Value<string>();
+                    if (new HoardID(address) == id)
+                    {
+                        return json;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userInputProvider"></param>
+        /// <param name="addressOrName"></param>
+        /// <param name="profilesDir"></param>
+        /// <returns></returns>
+        public static async Task<ProfileDesc> RequestProfile(IUserInputProvider userInputProvider, string addressOrName, string profilesDir)
+        {
+            if (!Directory.Exists(profilesDir))
+            {
+                ErrorCallbackProvider.ReportWarning("Not found any profile files.");
+                return null;
+            }
+
+            var profileFiles = Directory.GetFiles(profilesDir, "*.keystore");
+            if (profileFiles.Length == 0)
+            {
+                ErrorCallbackProvider.ReportWarning("Not found any profiles files.");
+                return null;
+            }
+
+            string providedAddress = addressOrName;
+            if (!providedAddress.StartsWith("0x"))
+            {
+                providedAddress = "0x" + providedAddress;
+            }
+            bool isValidAddress = Nethereum.Util.AddressUtil.Current.IsValidEthereumAddressHexFormat(providedAddress);
+            foreach (var fullPath in profileFiles)
+            {
+                string fileName = Path.GetFileName(fullPath);
+                if ((fileName != null) && (fileName != System.String.Empty))
+                {
+                    string json = File.ReadAllText(fullPath);
+                    var details = JObject.Parse(json);
+                    if (details == null)
+                    {
+                        continue;
+                    }
+                    string address = details["address"].Value<string>();
+                    string profileName = "";
+                    if (details["name"] != null)
+                    {
+                        profileName = details["name"].Value<string>();
+                    }
+                    if (((isValidAddress == true) && (address == providedAddress)) || ((isValidAddress == false) && (profileName == addressOrName)))
+                    {
+                        ErrorCallbackProvider.ReportInfo(string.Format("Loading account {0}", fileName));
+                        string password = await userInputProvider.RequestInput(profileName, new HoardID(address), eUserInputType.kPassword, address);
+                        var account = Account.LoadFromKeyStore(json, password);
+                        return new ProfileDesc(profileName, account.Address, account.PrivateKey);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Create new profile.
+        /// </summary>
+        /// <param name="name">Name of new profile</param>
+        /// <param name="password">Password for encrypting the profile</param>
+        /// <param name="profilesDir">folder where to store key store data</param>
+        /// <returns></returns>
+        public static Tuple<string, string> CreateProfile(string name, string password, string profilesDir)
+        {
             //generate new secure random key
             var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
 
-            if (!Directory.Exists(path))
+            if (!Directory.Exists(profilesDir))
             {
-                Directory.CreateDirectory(path);
+                Directory.CreateDirectory(profilesDir);
             }
 
-            string accountFile = CreateAccountKeyStoreFile(ecKey, password, name, path);
+            string accountFile = CreateAccountKeyStoreFile(ecKey, password, name, profilesDir);
 
             return new Tuple<string, string>(ecKey.GetPublicAddress(), ecKey.GetPrivateKey());
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userInputProvider"></param>
+        /// <param name="id"></param>
+        /// <param name="profilesDir"></param>
+        /// <param name="checkPassword"></param>
+        /// <returns></returns>
+        public static async Task<bool> DeleteProfile(IUserInputProvider userInputProvider, HoardID id, string profilesDir, bool checkPassword)
+            {
+            if (!Directory.Exists(profilesDir))
+            {
+                return false;
+            }
+
+            string[] files = Directory.GetFiles(profilesDir, "*.keystore");
+            foreach (string file in files)
+            {
+                StreamReader jsonReader = new StreamReader(file);
+                JObject jobj = JObject.Parse(jsonReader.ReadToEnd());
+                jsonReader.Close();
+                JToken valueAddress;
+                if (jobj.TryGetValue("address", out valueAddress))
+                {
+                    HoardID actualId = new HoardID(valueAddress.Value<string>());
+                    if (id == actualId)
+                    {
+                        Account account = null;
+                        if (checkPassword)
+                        {
+                            string password = await userInputProvider.RequestInput(null, id, eUserInputType.kPassword, valueAddress.Value<string>());
+                            account = Account.LoadFromKeyStore(jobj.ToString(), password);
+                        }
+                        if (!checkPassword || (account != null))
+                        {
+                        File.Delete(file);
+                        return true;
+                    }
+                        return false;
+            }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="oldPassword"></param>
+        /// <param name="newPassword"></param>
+        /// <param name="profilesDir"></param>
+        /// <returns></returns>
+        public static string ChangePassword(HoardID id, string oldPassword, string newPassword, string profilesDir)
+        {
+            if (!Directory.Exists(profilesDir))
+            {
+                return null;
+            }
+
+            string[] files = Directory.GetFiles(profilesDir, "*.keystore");
+            foreach (string file in files)
+            {
+                StreamReader jsonReader = new StreamReader(file);
+                JObject jobj = JObject.Parse(jsonReader.ReadToEnd());
+                jsonReader.Close();
+                JToken valueAddress;
+                JToken name;
+                if (jobj.TryGetValue("address", out valueAddress) && jobj.TryGetValue("name", out name))
+                {
+                    HoardID actualId = new HoardID(valueAddress.Value<string>());
+                    if (id == actualId)
+                    {
+                        Account account = Account.LoadFromKeyStore(jobj.ToString(), oldPassword);
+                        if (account == null)
+                        {
+                            return null;
+                        }
+                        string newFile = CreateAccountKeyStoreFile(new Nethereum.Signer.EthECKey(account.PrivateKey), newPassword, name.Value<string>(), profilesDir);
+                        if (newFile != null)
+                        {
+                            File.Delete(file);
+                        }
+                        return newFile;
+                    }
+                }
+            }
+            return null;
         }
 
         private static string CreateAccountKeyStoreFile(Nethereum.Signer.EthECKey ecKey, string password, string name, string path)
@@ -128,11 +337,17 @@ namespace Hoard.Utils
             var address = ecKey.GetPublicAddress();
 
             //Create a store service, to encrypt and save the file using the web3 standard
-            var service = new Nethereum.KeyStore.KeyStoreService();
-            var encryptedKey = service.EncryptAndGenerateDefaultKeyStoreAsJson(password, ecKey.GetPrivateKeyAsBytes(), address).ToLower();
+            var service = new HoardKeyStoreScryptService();
+            var encryptedKey = service.EncryptAndGenerateKeyStoreAsJson(password, ecKey.GetPrivateKeyAsBytes(), address).ToLower();
+            if (encryptedKey == null)
+            {
+                return null;
+            }
             var keystoreJsonObject = JObject.Parse(encryptedKey);
             if (keystoreJsonObject == null)
+            {
                 return null;
+            }
             keystoreJsonObject.Add("name", name);
             encryptedKey = keystoreJsonObject.ToString();
             string id = keystoreJsonObject["id"].Value<string>();

@@ -7,6 +7,42 @@ using System.Threading.Tasks;
 namespace Hoard
 {
     /// <summary>
+    /// Result code
+    /// </summary>
+    public enum Result
+    {
+        /// <summary>
+        /// Success
+        /// </summary>
+        Ok = 0,
+
+        /// <summary>
+        /// Failure
+        /// </summary>
+        Error,
+
+        /// <summary>
+        /// Connection error
+        /// </summary>
+        ConnectionError,
+
+        /// <summary>
+        /// Game not found
+        /// </summary>
+        GameNotFoundError,
+
+        /// <summary>
+        /// Contract not found
+        /// </summary>
+        ContractNotFoundError,
+
+        /// <summary>
+        /// Invalid contract
+        /// </summary>
+        InvalidContractError,
+    }
+
+    /// <summary>
     /// Hoard identifier (20 byte integer).
     /// </summary>
     public class HoardID
@@ -24,7 +60,8 @@ namespace Hoard
             if (value.StartsWith("0x"))
                 value = value.Substring(2);
 
-            BigInteger bigValue = BigInteger.Parse(value, System.Globalization.NumberStyles.AllowHexSpecifier);
+            // ensure id is always positive integer
+            BigInteger bigValue = BigInteger.Parse("00" + value, System.Globalization.NumberStyles.AllowHexSpecifier);
 
             //validity check
             BigInteger maxUValue = BigInteger.Pow(2, 160) - 1;
@@ -53,7 +90,8 @@ namespace Hoard
         /// <inheritdoc/>
         public override string ToString()
         {
-            return Value.ToString("x");
+            var ret = Value.ToString("x");
+            return ret.Substring(ret.Length - 40);
         }
 
         /// <summary>
@@ -85,6 +123,28 @@ namespace Hoard
             return addr.Value;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="addr1"></param>
+        /// <param name="addr2"></param>
+        /// <returns></returns>
+        public static bool operator ==(HoardID addr1, HoardID addr2)
+        {
+            return (addr1?.ToString() == addr2?.ToString());
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="addr1"></param>
+        /// <param name="addr2"></param>
+        /// <returns></returns>
+        public static bool operator !=(HoardID addr1, HoardID addr2)
+        {
+            return (addr1?.ToString() != addr2?.ToString());
+        }
+
         /// <inheritdoc/>
         public override bool Equals(object obj)
         {
@@ -103,98 +163,42 @@ namespace Hoard
     /// <summary>
     /// User account basic information.
     /// </summary>
-    public abstract class AccountInfo
+    public abstract class Profile
     {
         /// <summary>
-        /// HoardID of this account (public address)
+        /// HoardID of user profile (public address)
         /// </summary>
         public HoardID ID { get; private set; } = null;
-        /// <summary>
-        /// Name of this account (for convenience)
-        /// </summary>
-        public string Name { get; private set; } = null;
-        /// <summary>
-        /// Owner of this account
-        /// </summary>
-        public User Owner;
 
         /// <summary>
-        /// Basic constructor of account
+        /// Name of user profile (for convenience)
+        /// </summary>
+        public string Name { get; private set; } = null;
+
+        /// <summary>
+        /// Basic constructor of user profile
         /// </summary>
         /// <param name="name">Name</param>
         /// <param name="id">Identifier (public address)</param>
-        /// <param name="user">Owner of account</param>
-        public AccountInfo(string name, HoardID id, User user)
+        public Profile(string name, HoardID id)
         {
             Name = name;
             ID = id;
-            Owner = user;
         }
 
         /// <summary>
-        /// Sign any transaction with account
+        /// Sign any transaction with user profile
         /// </summary>
         /// <param name="input">input arguments</param>
         /// <returns>signed transaction string</returns>
         public abstract Task<string> SignTransaction(byte[] input);
 
         /// <summary>
-        /// Sign any message with account
+        /// Sign any message with user profile
         /// </summary>
         /// <param name="input">input arguments</param>
         /// <returns>signed message</returns>
         public abstract Task<string> SignMessage(byte[] input);
-
-        /// <summary>
-        /// Makes this account active one.
-        /// </summary>
-        /// <returns></returns>
-        public abstract Task<AccountInfo> Activate();
-    }
-
-    /// <summary>
-    /// Hoard user.
-    /// </summary>
-    public class User
-    {
-        /// <summary>
-        /// Name of user
-        /// </summary>
-        public string UserName { get; private set; } = "";
-        /// <summary>
-        /// HoardId (public address) of Hoard user
-        /// </summary>
-        public string HoardId { get; internal set; } = "";
-        /// <summary>
-        /// List of user accounts (that hold ownership data)
-        /// </summary>
-        public List<AccountInfo> Accounts { get; private set; } = new List<AccountInfo>();
-        /// <summary>
-        /// Default account. If not specified this account will be used as default for all user operations.
-        /// </summary>
-        public AccountInfo ActiveAccount { get; private set; } = null;
-
-        /// <summary>
-        /// Basic constructor
-        /// </summary>
-        /// <param name="name">User name</param>
-        /// <param name="hoardId">TODO: specify!!</param>
-        public User(string name, string hoardId = "")
-        {
-            UserName = name;
-            HoardId = hoardId;
-        }
-
-        /// <summary>
-        /// Sets default account for user
-        /// </summary>
-        /// <param name="account"></param>
-        /// <returns></returns>
-        public async Task<bool> ChangeActiveAccount(AccountInfo account)
-        {
-            ActiveAccount = await account.Activate();
-            return ActiveAccount != null;
-        }
     }
 
     internal class BigIntegerHexConverter : System.ComponentModel.TypeConverter
@@ -224,9 +228,9 @@ namespace Hoard
         /// </summary>
         public string Name { get; set; }
         /// <summary>
-        /// Developer's name of the game
+        /// Unique name identifier of the game
         /// </summary>
-        public string GameDevName { get; set; }
+        public string Symbol { get; set; }
         /// <summary>
         /// Url of game server
         /// </summary>
@@ -260,13 +264,13 @@ namespace Hoard
         /// <summary>
         /// Creates a proper GameID from name (calculates proper ID)
         /// </summary>
-        /// <param name="gameDevName">Developer's name of the game</param>
+        /// <param name="symbol">Unique name identifier of the game</param>
         /// <returns>GameID object</returns>
-        public static GameID FromName(string gameDevName)
+        public static GameID FromName(string symbol)
         {
             var sha3 = new Org.BouncyCastle.Crypto.Digests.KeccakDigest(256);
             byte[] hashb = new byte[sha3.GetDigestSize()];
-            byte[] value = System.Text.Encoding.UTF8.GetBytes(gameDevName);
+            byte[] value = System.Text.Encoding.UTF8.GetBytes(symbol);
             sha3.Reset();
             sha3.BlockUpdate(value, 0, value.Length);
             sha3.DoFinal(hashb, 0);
@@ -276,7 +280,7 @@ namespace Hoard
                 v = v + (BigInteger.One << 256);//make it always positive
             }
             GameID game = new GameID(v);
-            game.GameDevName = gameDevName;
+            game.Symbol = symbol;
             return game;
         }
 
@@ -341,6 +345,46 @@ namespace Hoard
                 return !Equals(game1, game2);
 
             return !(game1.Equals(game2));
+        }
+    }
+
+    /// <summary>
+    /// Item type information used for queries.
+    /// </summary>
+    public class GameItemType
+    {
+        /// <summary>
+        /// Name of the item type
+        /// </summary>
+        public string Name { get; private set; }
+        /// <summary>
+        /// Symbol of item
+        /// </summary>
+        public string Symbol { get; private set; }
+        /// <summary>
+        /// Type of the item
+        /// </summary>
+        public string Type { get; private set; }
+        /// <summary>
+        /// Type of Item state
+        /// </summary>
+        public string StateType { get; private set; }
+        /// <summary>
+        /// Totoal available supply of items
+        /// </summary>
+        public BigInteger TotalSupply { get; private set; }
+
+        /// <summary>
+        /// Basic constructor
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="symbol"></param>
+        /// <param name="type"></param>
+        public GameItemType(string name, string symbol, string type)
+        {
+            Name = name;
+            Symbol = symbol;
+            Type = type;
         }
     }
 }

@@ -64,9 +64,9 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("name");
         }
 
-        private Function GetFunctionDevName()
+        private Function GetFunctionSymbol()
         {
-            return contract.GetFunction("devName");
+            return contract.GetFunction("symbol");
         }
 
         private Function GetFunctionOwner()
@@ -88,13 +88,13 @@ namespace Hoard.BC.Contracts
         /// Sets new Game Server URL in contract
         /// </summary>
         /// <param name="url">new URL of Game Server</param>
-        /// <param name="account">signer account</param>
+        /// <param name="profile">signer profile</param>
         /// <returns>receipt of the transaction</returns>
-        public async Task<TransactionReceipt> SetGameServerURLAsync(string url, AccountInfo account)
+        public async Task<TransactionReceipt> SetGameServerURLAsync(string url, Profile profile)
         {
             var function = GetFunctionSetGameSrvURL();
 
-            return await BCComm.EvaluateOnBC(web3, account, function, url);
+            return await BCComm.EvaluateOnBC(web3, profile, function, url);
         }
 
         /// <summary>
@@ -140,12 +140,12 @@ namespace Hoard.BC.Contracts
         }
 
         /// <summary>
-        /// Returns developer inner name of this game (ID is based on this name)
+        /// Returns game symbol (unique name identifier)
         /// </summary>
         /// <returns></returns>
-        public Task<string> GetDevName()
+        public Task<string> GetSymbol()
         {
-            var function = GetFunctionDevName();
+            var function = GetFunctionSymbol();
             return function.CallAsync<string>();
         }
 

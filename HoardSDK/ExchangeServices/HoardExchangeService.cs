@@ -36,7 +36,7 @@ namespace Hoard.ExchangeServices
 
                 return true;
             }
-            System.Diagnostics.Trace.TraceError($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
+            ErrorCallbackProvider.ReportError($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
             return false;
         }
 
@@ -49,19 +49,19 @@ namespace Hoard.ExchangeServices
         }
 
         /// <inheritdoc/>
-        public Task<bool> Deposit(AccountInfo account, GameItem item, BigInteger amount)
+        public Task<bool> Deposit(Profile profile, GameItem item, BigInteger amount)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc/>
-        public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, AccountInfo account)
+        public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, Profile profile)
         {
             var jsonStr = await GetJson(
                             string.Format("exchange/orders/{0},{1},{2}",
                             gaGet != null ? gaGet.Metadata.Get<string>("OwnerAddress") : "",
                             gaGive != null ? gaGive.Metadata.Get<string>("OwnerAddress") : "",
-                            account != null ? account.ID : ""), null);
+                            profile != null ? profile.ID : ""), null);
 
             if (!string.IsNullOrEmpty(jsonStr))
             {
@@ -90,19 +90,19 @@ namespace Hoard.ExchangeServices
         }
 
         /// <inheritdoc/>
-        public Task<bool> Order(AccountInfo account, GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
+        public Task<bool> Order(Profile profile, GameItem getItem, GameItem giveItem, ulong blockTimeDuration)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc/>
-        public Task<bool> Trade(AccountInfo account, Order order)
+        public Task<bool> Trade(Profile profile, Order order)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc/>
-        public Task<bool> Withdraw(AccountInfo account, GameItem item)
+        public Task<bool> Withdraw(Profile profile, GameItem item)
         {
             throw new NotImplementedException();
         }

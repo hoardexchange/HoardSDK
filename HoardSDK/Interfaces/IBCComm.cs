@@ -32,7 +32,7 @@ namespace Hoard.Interfaces
         /// </summary>
         /// <param name="game">[in/out] game object must contain valid ID. Other fields will be retrieved from platform</param>
         /// <returns></returns>
-        Task<bool> RegisterHoardGame(GameID game);
+        Task<Result> RegisterHoardGame(GameID game);
 
         /// <summary>
         /// Removes game from system. Call when you are finished with using that game
@@ -64,5 +64,11 @@ namespace Hoard.Interfaces
         /// </summary>
         /// <returns></returns>
         Task<string> GetHoardExchangeContractAddress();
+
+        /// <summary>
+        /// Retrieves number of Hoard games registered on the platform
+        /// </summary>
+        /// <returns></returns>
+        Task<UInt64> GetHoardGameCount();
     }
 }

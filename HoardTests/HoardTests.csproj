@@ -68,7 +68,7 @@
       <DependentUpon>PINWindow.cs</DependentUpon>
     </Compile>
     <Compile Include="HW\TrezorWalletTest.cs" />
-    <Compile Include="IPCTests.cs" />
+    <Compile Include="IdenticonTest.cs" />
     <Compile Include="NethereumRpcClient.cs" />
     <Compile Include="Plasma\HoardServiceTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -93,7 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Hoard.NethereumCore">
-      <Version>3.1.0</Version>
+      <Version>3.1.62</Version>
     </PackageReference>
     <PackageReference Include="ini-parser">
       <Version>2.5.2</Version>

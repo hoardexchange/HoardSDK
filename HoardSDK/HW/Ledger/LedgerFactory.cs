@@ -25,7 +25,7 @@ namespace Hoard.HW.Ledger
         /// </summary>
         /// <param name="derivationPath">path to get specific wallet (usually DerivationPath.BIP44)</param>
         /// <returns></returns>
-        public static async Task<LedgerWallet> GetLedgerWalletAsync(string derivationPath = DerivationPath.BIP44)
+        public static async Task<LedgerWallet> GetLedgerWalletAsync(string derivationPath)
         {
             var hidDevice = await Helpers.GetHIDDeviceAsync(DeviceInfo, UsageSpecification);
             if (hidDevice != null)

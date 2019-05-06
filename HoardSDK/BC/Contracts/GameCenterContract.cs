@@ -37,6 +37,11 @@ namespace Hoard.BC.Contracts
             this.contract = web3.Eth.GetContract(ABI, address);
         }
 
+        public Function GetFunctionOwner()
+        {
+            return contract.GetFunction("owner");
+        }
+
         public Function GetFunctionName()
         {
             return contract.GetFunction("name");
@@ -135,34 +140,34 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<bool>(gameID);
         }
 
-        public async Task<TransactionReceipt> AddGameAsync(string gameAddr, AccountInfo account)
+        public async Task<TransactionReceipt> AddGameAsync(string gameAddr, Profile profile)
         {
             var function = GetFunctionAddGame();
-            return await BCComm.EvaluateOnBC(web3, account, function, gameAddr);
+            return await BCComm.EvaluateOnBC(web3, profile, function, gameAddr);
         }
 
-        public async Task<TransactionReceipt> AddAdminAsync(string adminAddr, AccountInfo account)
+        public async Task<TransactionReceipt> AddAdminAsync(string adminAddr, Profile profile)
         {
             var function = GetFunctionAddAdmin();
-            return await BCComm.EvaluateOnBC(web3, account, function, adminAddr);
+            return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
         }
 
-        public async Task<TransactionReceipt> RemoveAdminAsync(string adminAddr, AccountInfo account)
+        public async Task<TransactionReceipt> RemoveAdminAsync(string adminAddr, Profile profile)
         {
             var function = GetFunctionRemoveAdmin();
-            return await BCComm.EvaluateOnBC(web3, account, function, adminAddr);
+            return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
         }
 
-        public async Task<TransactionReceipt> SetExchangeAddressAsync(string address, AccountInfo account)
+        public async Task<TransactionReceipt> SetExchangeAddressAsync(string address, Profile profile)
         {
             var function = GetFunctionSetExchangeAddress();
-            return await BCComm.EvaluateOnBC(web3, account, function, address);
+            return await BCComm.EvaluateOnBC(web3, profile, function, address);
         }
 
-        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(string address, AccountInfo account)
+        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(string address, Profile profile)
         {
             var function = GetFunctionSetHoardTokenAddress();
-            return await BCComm.EvaluateOnBC(web3, account, function, address);
+            return await BCComm.EvaluateOnBC(web3, profile, function, address);
         }
 
         public async Task<string> GetExchangeAddressAsync()
@@ -180,6 +185,12 @@ namespace Hoard.BC.Contracts
         public async Task<string> GetHoardTokenAddressAsync()
         {
             var function = GetFunctionHoardTokenAddress();
+            return await function.CallAsync<string>();
+        }
+
+        public async Task<string> GetContractOwner()
+        {
+            var function = GetFunctionOwner();
             return await function.CallAsync<string>();
         }
     }

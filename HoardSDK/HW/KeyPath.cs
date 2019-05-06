@@ -10,22 +10,58 @@ namespace Hoard.HW
     public static class DerivationPath
     {
         /// <summary>
-        /// Main path for Trezor and Ledger wallets
-        /// deconstruction:
-        /// 44 - BIP 44 Purpose
-        /// 60 - Ethereum's coin type (0x3c)
-        /// 00 - Account 0
-        /// 00 - Chain 0
+        /// Known types of chain (based on that a different chain should be accesssed)
         /// </summary>
-        public const string BIP44 = "m/44'/60'/0'/0";
+        public enum ChainType
+        {
+            /// <summary>
+            /// Bitcoin
+            /// </summary>
+            kBTC = 0,
+            /// <summary>
+            /// Ethereum
+            /// </summary>
+            kETH = 60,
+            /// <summary>
+            /// xDai
+            /// </summary>
+            kXDAI = 700,
+        }
+
         /// <summary>
-        /// Legacy path for Ledger wallet (use BIP44 instead of this one)
-        /// deconstruction:
-        /// 44 - BIP 44 Purpose
-        /// 60 - Ethereum's coin type (0x3c)
-        /// 00 - Account 0
+        /// Default BIP44 path
         /// </summary>
-        public const string BIP44LedgerLegacy = "m/44'/60'/0'";
+        public static string DefaultBIP44
+        {
+            get
+            {
+                return CreateBIP44Path(ChainType.kETH, 0, 0);
+            }
+        }
+
+        /// <summary>
+        /// Creates derivatin path for Trezor and Ledger wallets in BIP44 format m/44'/coinType'/account'/subchain
+        /// </summary>
+        /// <param name="chainType">type of coin (60 for ETH used as default)</param>
+        /// <param name="accountIdx">account index, 0 as default</param>
+        /// <param name="subchain">0 for external (default), 1 for internal</param>
+        /// <returns>BIP44 derivation path</returns>
+        public static string CreateBIP44Path(int chainType, int accountIdx, int subchain)
+        {
+            return string.Format("m/44'/{0}'/{1}'/{2}", chainType, accountIdx, subchain);
+        }
+
+        /// <summary>
+        /// Creates derivatin path for Trezor and Ledger wallets in BIP44 format m/44'/coinType'/account'/subchain
+        /// </summary>
+        /// <param name="chainType">type of coin (kETH used as default)</param>
+        /// <param name="accountIdx">account index, 0 as default</param>
+        /// <param name="subchain">0 for external (default), 1 for internal</param>
+        /// <returns>BIP44 derivation path</returns>
+        public static string CreateBIP44Path(ChainType chainType, int accountIdx, int subchain)
+        {
+            return CreateBIP44Path((int)chainType, accountIdx, subchain);
+        }
     }
 
     internal class KeyPath

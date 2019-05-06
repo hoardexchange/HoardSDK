@@ -6,6 +6,7 @@ using Org.BouncyCastle.Math;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,8 +25,7 @@ namespace Hoard
         // -1 - not confirmed
         private int ConfirmationStatus; 
 
-        private EthECKey EncryptionKey;
-        private List<string> MessageChunks;
+        private byte[] EncryptionKey;
 
         /// <summary>
         /// Address of requested key
@@ -46,7 +46,6 @@ namespace Hoard
             PublicAddressToTransfer = "";
             Interlocked.Exchange(ref ConfirmationPinReceiwed, 0);
             Interlocked.Exchange(ref ConfirmationStatus, 0);
-            MessageChunks = new List<string>();
         }
 
         //private static Tuple<string, Nethereum.Web3.Accounts.Account> FindKeystore(string pass, string userAddress)
@@ -95,16 +94,23 @@ namespace Hoard
             {
                 case InternalData.InternalMessageId.ConfirmationPin:
                     {
-                        ConfirmationPin = internalMessage.data;
+                        ConfirmationPin = Encoding.UTF8.GetString(internalMessage.data);
+                        int index = ConfirmationPin.IndexOf("|");
+                        string pin = ConfirmationPin.Substring(0, index);
+                        mDateTime = ConfirmationPin.Substring(index+1);
+                        ConfirmationPin = pin;
+
                         Interlocked.Exchange(ref ConfirmationPinReceiwed, 1);
                     }
                     break;
-                case InternalData.InternalMessageId.TransferKeystore:
+                case InternalData.InternalMessageId.TransferKeystoreRequest:
                     {
-                        byte[] data = WhisperService.HexStringToByteArray(internalMessage.data.Substring(2));
-                        string textData = Encoding.ASCII.GetString(data);
+                        string textData = Encoding.UTF8.GetString(internalMessage.data);
                         KeyRequestData keyRequestData = JsonConvert.DeserializeObject<KeyRequestData>(textData);
-                        if (EncryptionKey.GetPublicAddress() == keyRequestData.EncryptionKeyPublicAddress)
+                        SHA256 sha256 = new SHA256Managed();
+                        string address1 = BitConverter.ToString(sha256.ComputeHash(EncryptionKey)).Replace("-", string.Empty).ToLower();
+                        string address2 = keyRequestData.EncryptionKeyPublicAddress.ToLower();
+                        if (address1 == address2)
                         {
                             Interlocked.Exchange(ref ConfirmationStatus, 1);
                         }
@@ -126,6 +132,7 @@ namespace Hoard
         {
             ConfirmationPin = "";
             PublicAddressToTransfer = "";
+            mDateTime = "";
             Interlocked.Exchange(ref ConfirmationPinReceiwed, 0);
             Interlocked.Exchange(ref ConfirmationStatus, 0);
         }
@@ -136,7 +143,7 @@ namespace Hoard
         /// <returns></returns>
         public async Task<string> GenerateEncryptionKey()
         {
-            EncryptionKey = GenerateKey(Encoding.ASCII.GetBytes(OriginalPin));
+            EncryptionKey = GenerateKey(Encoding.UTF8.GetBytes(OriginalPin + mDateTime));
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
             byte[] msgData = new byte[1];
@@ -146,27 +153,27 @@ namespace Hoard
             return await WhisperService.SendMessage(msg);
         }
 
-        private int SplitMessage(string fullMessage, int chunkSize, ref List<string> outChunks)
+        private int SplitMessage(byte[] fullMessage, int chunkSize, ref List<byte[]> outChunks)
         {
-            int startIndex = 0;
-            if ((startIndex + chunkSize) > fullMessage.Length)
+            int offset = 0;
+            if ((offset + chunkSize) > fullMessage.Length)
             {
-                chunkSize = fullMessage.Length - startIndex;
+                chunkSize = fullMessage.Length - offset;
             }
-            string chunk = fullMessage.Substring(startIndex, chunkSize);
-            outChunks.Add(chunk);
-            startIndex += chunkSize;
-            while (startIndex < fullMessage.Length)
+            outChunks.Add(new byte[chunkSize]);
+            Buffer.BlockCopy(fullMessage, offset, outChunks[outChunks.Count-1], 0, chunkSize);
+            offset += chunkSize;
+            while (offset < fullMessage.Length)
             {
-                if ((startIndex + chunkSize) > fullMessage.Length)
+                if ((offset + chunkSize) > fullMessage.Length)
                 {
-                    chunkSize = fullMessage.Length - startIndex;
+                    chunkSize = fullMessage.Length - offset;
                 }
                 if (chunkSize > 0)
                 {
-                    chunk = fullMessage.Substring(startIndex, chunkSize);
-                    outChunks.Add(chunk);
-                    startIndex += chunkSize;
+                    outChunks.Add(new byte[chunkSize]);
+                    Buffer.BlockCopy(fullMessage, offset, outChunks[outChunks.Count - 1], 0, chunkSize);
+                    offset += chunkSize;
                 }
             }
             return outChunks.Count;
@@ -181,21 +188,50 @@ namespace Hoard
         {
             string[] topic = new string[1];
             topic[0] = ConvertPinToTopic(OriginalPin);
-            byte[] encryptedData = Encrypt(EncryptionKey, Encoding.ASCII.GetBytes(keyStoreData));
-            string hexStringData = BitConverter.ToString(encryptedData).Replace("-", string.Empty).ToLower();
-            int chunks = SplitMessage(hexStringData, ChunkSize, ref MessageChunks);
-            Debug.Assert(MessageChunks.Count <= 255);
-            byte[] numChunks = new byte[1];
-            byte[] id = new byte[1];
-            numChunks[0] = (byte)MessageChunks.Count;
-            string maxChunks = BitConverter.ToString(numChunks).Replace("-", string.Empty).ToLower();
-            for (int i = 0; i < MessageChunks.Count; i++)
+            byte[] encryptedData = AESEncrypt(EncryptionKey, Encoding.UTF8.GetBytes(keyStoreData), GenerateIV(OriginalPin));
+            List<byte[]> chunks = new List<byte[]>();
+            SplitMessage(encryptedData, ChunkSize, ref chunks);
+            byte[] numChunks = BitConverter.GetBytes(chunks.Count);
+            for (int i = 0; i < chunks.Count; i++)
             {
-                Debug.Print("chunk[" + i.ToString() + "] " + MessageChunks[i]);
-                id[0] = (byte)i;
-                string chunkId = BitConverter.ToString(id).Replace("-", string.Empty).ToLower();
-                byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystore, Encoding.ASCII.GetBytes("0x" + chunkId + maxChunks + MessageChunks[i]));
+                byte[] chunkId = BitConverter.GetBytes(i);
+                byte[] length = BitConverter.GetBytes(chunks[i].Length);
+                byte[] dtsData = new byte[chunks[i].Length + 4 + 4 + 4];
+                Buffer.BlockCopy(chunkId, 0, dtsData, 0, 4);
+                Buffer.BlockCopy(numChunks, 0, dtsData, 4, 4);
+                Buffer.BlockCopy(length, 0, dtsData, 8, 4);
+                Buffer.BlockCopy(chunks[i], 0, dtsData, 12, chunks[i].Length);
+                byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreAnswer, dtsData);
                 WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
+                string res = await WhisperService.SendMessage(msg);
+            }
+            return "Message sent";
+        }
+
+        /// <summary>
+        /// Sends custom data
+        /// </summary>
+        /// <param name="data">Custom data</param>
+        /// <returns></returns>
+        public async Task<string> SendEncryptedData(byte[] data)
+        {
+            string[] topic = new string[1];
+            topic[0] = ConvertPinToTopic(OriginalPin);
+            byte[] encryptedData = AESEncrypt(EncryptionKey, data, GenerateIV(OriginalPin));
+            List<byte[]> chunks = new List<byte[]>();
+            SplitMessage(encryptedData, ChunkSize, ref chunks);
+            byte[] numChunks = BitConverter.GetBytes(chunks.Count);
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                byte[] chunkId = BitConverter.GetBytes(i);
+                byte[] length = BitConverter.GetBytes(chunks[i].Length);
+                byte[] dtsData = new byte[chunks[i].Length + 4 + 4 + 4];
+                Buffer.BlockCopy(chunkId, 0, dtsData, 0, 4);
+                Buffer.BlockCopy(numChunks, 0, dtsData, 4, 4);
+                Buffer.BlockCopy(length, 0, dtsData, 8, 4);
+                Buffer.BlockCopy(chunks[i], 0, dtsData, 12, chunks[i].Length);
+                byte[] pack = BuildMessage(InternalData.InternalMessageId.TransferCustomData, dtsData);
+                WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], pack, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
                 string res = await WhisperService.SendMessage(msg);
             }
             return "Message sent";

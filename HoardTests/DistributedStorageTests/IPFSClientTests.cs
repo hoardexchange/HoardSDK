@@ -20,6 +20,7 @@ namespace HoardTests.DistributedStorageTests
         }
 
         [Fact]
+        [Trait("Category", "Unit")]
         public void UploadDownloadTest()
         {
             string data = "Hello world!";

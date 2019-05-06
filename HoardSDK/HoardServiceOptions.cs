@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace Hoard
 {
@@ -20,6 +21,10 @@ namespace Hoard
         /// Blockchain client configuration
         /// </summary>
         public BCClientConfig BCClient;
+        /// <summary>
+        /// Whisper web socket server
+        /// </summary>
+        public string WhisperAddress;
         /// <summary>
         /// The address of main Hoard Game Center contract
         /// </summary>
@@ -120,15 +125,12 @@ namespace Hoard
         /// <param name="bcClientOptions"></param>
         public HoardServiceOptions(HoardServiceConfig cfg, BCClientOptions bcClientOptions)
         {
-            if (string.IsNullOrEmpty(cfg.GameID))
-            {
-                Game = GameID.kInvalidID;
+            Game = GameID.kInvalidID;
+            if (!string.IsNullOrEmpty(cfg.GameID))
+                Game = new GameID(System.Numerics.BigInteger.Parse(cfg.GameID, NumberStyles.AllowHexSpecifier));
+
+            if (!string.IsNullOrEmpty(cfg.GameBackendUrl))
                 Game.Url = cfg.GameBackendUrl;
-            }
-            else
-            {
-                Game = new GameID(System.Numerics.BigInteger.Parse(cfg.GameID, System.Globalization.NumberStyles.HexNumber));
-            }
 
             if (!string.IsNullOrEmpty(cfg.ExchangeServiceUrl))
                 ExchangeServiceUrl = cfg.ExchangeServiceUrl;

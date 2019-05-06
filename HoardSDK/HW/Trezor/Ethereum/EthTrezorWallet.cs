@@ -9,12 +9,13 @@ namespace Hoard.HW.Trezor.Ethereum
     /// </summary>
     internal class EthTrezorWallet : TrezorWallet
     {
-        private class HDWalletAccountInfo : AccountInfo
+        //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
+        private class HDWalletProfile : Profile
         {
             private EthTrezorWallet Wallet;
 
-            public HDWalletAccountInfo(string name, HoardID id, EthTrezorWallet wallet, User user)
-                : base(name, id, user)
+            public HDWalletProfile(string name, HoardID id, EthTrezorWallet wallet)
+                : base(name, id)
             {
                 Wallet = wallet;
             }
@@ -28,16 +29,12 @@ namespace Hoard.HW.Trezor.Ethereum
             {
                 return await Wallet.SignTransaction(input, this);
             }
-
-            public override async Task<AccountInfo> Activate()
-            {
-                return await Wallet.ActivateAccount(Owner, this);
-            }
         }
         private KeyPath keyPath;
         private byte[] derivation;
         private uint[] indices;
 
+        //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
         public EthTrezorWallet(IHidDevice hidDevice, string derivationPath, IUserInputProvider pinInputProvider, uint index = 0) 
             : base(hidDevice, derivationPath, pinInputProvider)
         {
@@ -46,36 +43,23 @@ namespace Hoard.HW.Trezor.Ethereum
             derivation = keyPath.ToBytes();
         }
 
-        public override async Task<bool> RequestAccounts(User user)
+        public override async Task<Profile> RequestProfile(string name)
         {
             var output = await SendRequestAsync(EthGetAddress.Request(indices));
             var address = new HoardID(EthGetAddress.GetAddress(output));
-            user.Accounts.Add(new HDWalletAccountInfo(AccountInfoName, address, this, user));
-            return true;
+            return new HDWalletProfile(name, address, this);
         }
 
-        public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, AccountInfo accountInfo)
+        public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
         {
             var output = await SendRequestAsync(EthSignTransaction.Request(indices, rlpEncodedTransaction));
             return EthSignTransaction.GetRLPEncoded(output, rlpEncodedTransaction);
         }
 
-        public override async Task<string> SignMessage(byte[] message, AccountInfo accountInfo)
+        public override async Task<string> SignMessage(byte[] message, Profile profile)
         {
             var output = await SendRequestAsync(EthSignMessage.Request(indices, message));
             return EthSignMessage.GetRLPEncoded(output, message);
-        }
-
-        public override async Task<AccountInfo> ActivateAccount(User user, AccountInfo accountInfo)
-        {
-            return await Task.Run(() =>
-            {
-                if (user.Accounts.Contains(accountInfo))
-                {
-                    return accountInfo;
-                }
-                return null;
-            });
         }
     }
 }

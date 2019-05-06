@@ -28,7 +28,7 @@ namespace Hoard.GameItemProviders
         private List<ContractInterfaceID> interfaceIDs = new List<ContractInterfaceID>();
 
         /// <summary>
-        /// Game identifier (only items for thi game will be proccessed)
+        /// Game identifier (only items for this game will be proccessed)
         /// </summary>
         public GameID Game { get; private set; }
 
@@ -55,44 +55,58 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account)
+        public async Task<GameItemType> GetItemTypeInfo(string itemType)
+        {
+            if (ItemContracts.ContainsKey(itemType))
+            {
+                string name = await ItemContracts[itemType].GetName();
+                string stateType = Encoding.UTF8.GetString(await ItemContracts[itemType].GetTokenStateType());
+                BigInteger supply = await ItemContracts[itemType].GetTotalSupply();
+
+                return new GameItemType(name, itemType, stateType);
+            }
+            return null;
+        }
+
+        /// <inheritdoc/>
+        public async Task<GameItem[]> GetPlayerItems(Profile profile)
         {
             List<GameItem> items = new List<GameItem>();
             foreach (var contract in ItemContracts.Values)
             {
-                items.AddRange(await contract.GetGameItems(account));
+                items.AddRange(await contract.GetGameItems(profile));
             }
             return items.ToArray();
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType, ulong firstItemIndex, ulong itemsToGather)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType, ulong page, ulong itemsPerPage)
         {
             List<GameItem> items = new List<GameItem>();
             if (ItemContracts.ContainsKey(itemType))
             {
-                items.AddRange(await ItemContracts[itemType].GetGameItems(account, firstItemIndex, itemsToGather));
+                items.AddRange(await ItemContracts[itemType].GetGameItems(profile, page, itemsPerPage));
             }
             return items.ToArray();
         }
 
         /// <inheritdoc/>
-        public async Task<ulong> GetPlayerItemsAmount(AccountInfo account, string itemType)
+        public async Task<ulong> GetPlayerItemsAmount(Profile profile, string itemType)
         {
             if (ItemContracts.ContainsKey(itemType))
             {
-                return (ulong)(await ItemContracts[itemType].GetBalanceOf(account.ID).ConfigureAwait(false));
+                return (ulong)(await ItemContracts[itemType].GetBalanceOf(profile.ID).ConfigureAwait(false));
             }
             return await Task.FromResult<ulong>(0);
         }
 
         /// <inheritdoc/>
-        public async Task<GameItem[]> GetPlayerItems(AccountInfo account, string itemType)
+        public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType)
         {
             List<GameItem> items = new List<GameItem>();
             if (ItemContracts.ContainsKey(itemType))
             {
-                items.AddRange(await ItemContracts[itemType].GetGameItems(account));
+                items.AddRange(await ItemContracts[itemType].GetGameItems(profile));
             }
             return items.ToArray();
         }
@@ -110,14 +124,14 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public Task<bool> Transfer(AccountInfo from, HoardID addressTo, GameItem item, BigInteger amount)
+        public Task<bool> Transfer(Profile from, string addressTo, GameItem item, BigInteger amount)
         {
             GameItemContract gameItemContract = ItemContracts[item.Symbol];
             return gameItemContract.Transfer(from, addressTo, item, amount);
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Connect()
+        public async Task<Result> Connect()
         {
             ItemContracts.Clear();
             return await RegisterHoardGameContracts();
@@ -127,7 +141,7 @@ namespace Hoard.GameItemProviders
         /// <summary>
         /// Helper function to automatically register all contracts for given game
         /// </summary>
-        public async Task<bool> RegisterHoardGameContracts()
+        public async Task<Result> RegisterHoardGameContracts()
         {
             string[] contracts = await BCComm.GetGameItemContracts(Game);
             if (contracts != null)
@@ -141,14 +155,13 @@ namespace Hoard.GameItemProviders
                     }
                     else
                     {
-                        // TODO: handle contracts that does not implement ERC165?
-                        throw new NotImplementedException();
+                        return Result.InvalidContractError;
                     }
                 }
-                return true;
+                return Result.Ok;
             }
-            System.Diagnostics.Trace.TraceError($"Cannot find any contracts for Game: {Game.ID}!");
-            return false;
+            ErrorCallbackProvider.ReportError($"Cannot find any contracts for Game: {Game.ID}!");
+            return Result.ContractNotFoundError;
         }
 
         /// <summary>
@@ -164,13 +177,13 @@ namespace Hoard.GameItemProviders
         private void RegisterGameItemContract(string symbol, GameItemContract contract)
         {
             System.Diagnostics.Debug.Assert(!ItemContracts.ContainsKey(symbol),
-                string.Format("ERROR: contract with this symbol has been already regisered for Game: '{0}' with ID {1}",Game.Name,Game.ID));
+                string.Format("ERROR: contract with this symbol has been already registered for Game: '{0}' with ID {1}",Game.Name,Game.ID));
             ItemContracts.Add(symbol, contract);
         }
 
         private async Task<GameItemContract> GetGameItemContractByInterface(string contractAddress)
         {
-            SupportsInterfaceWithLookupContract interfaceContract = BCComm.GetContract<SupportsInterfaceWithLookupContract>(contractAddress);
+            SupportsInterfaceWithLookupContract interfaceContract = (SupportsInterfaceWithLookupContract)BCComm.GetContract(typeof(SupportsInterfaceWithLookupContract), contractAddress);
 
             ContractInterfaceID currentInterfaceId = null;
 
