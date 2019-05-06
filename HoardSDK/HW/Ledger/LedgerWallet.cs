@@ -8,7 +8,7 @@ using static Hoard.HW.Ledger.APDU;
 namespace Hoard.HW.Ledger
 {
     /// <summary>
-    /// Base class for LedgerWallet access. Implements IAccountService
+    /// Base class for LedgerWallet access. Implements IProfileService
     /// </summary>
     public abstract class LedgerWallet : IProfileService
     {

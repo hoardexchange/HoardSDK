@@ -1,5 +1,7 @@
-﻿using Hoard.ExchangeServices;
+﻿using Hoard.BC;
+using Hoard.ExchangeServices;
 using Hoard.GameItemProviders;
+using Hoard.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -43,7 +45,7 @@ namespace Hoard
         /// <summary>
         /// Communication channel with block chain.
         /// </summary>
-        public BC.BCComm BCComm { get; private set; } = null;
+        public IBCComm BCComm { get; private set; } = null;
 
         private Dictionary<GameID, IGameItemProvider> Providers = new Dictionary<GameID, IGameItemProvider>();
 
@@ -119,7 +121,7 @@ namespace Hoard
             Options = options;
 
             //access point to block chain - a must have
-            BCComm = new BC.BCComm(Options.RpcClient, Options.GameCenterContract);
+            BCComm = BCCommFactory.Create(Options);
             Tuple<bool,string> result = await BCComm.Connect();
             if (!result.Item1)
             {
@@ -172,7 +174,7 @@ namespace Hoard
             //assumig this is a hoard game we can use a default hoard provider that connects to Hoard game server backend
             HoardGameItemProvider provider = new HoardGameItemProvider(game);
             //for security reasons (or fallback in case server is down) we will pass a BC provider
-            provider.SecureProvider = new BCGameItemProvider(game, BCComm);
+            provider.SecureProvider = GameItemProviderFactory.CreateSecureProvider(game, BCComm);
             return await RegisterGame(game, provider);
         }
 
@@ -329,7 +331,7 @@ namespace Hoard
         {
             try
             {
-                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetETHBalance(profile.ID)));
+                return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetBalance(profile.ID)));
             }
             catch(Exception ex)
             {
@@ -338,22 +340,22 @@ namespace Hoard
             }
         }
 
-        /// <summary>
-        /// Returns the Hoard tokens contract address.
-        /// </summary>
-        /// <returns></returns>
-        public async Task<string> GetHRDAddress()
-        {
-            try
-            {
-                return await BCComm.GetHRDAddress();
-            }
-            catch (Exception ex)
-            {
-                ErrorCallbackProvider.ReportError(ex.ToString());
-                return "0x0";
-            }
-        }
+        ///// <summary>
+        ///// Returns the Hoard tokens contract address.
+        ///// </summary>
+        ///// <returns></returns>
+        //public async Task<string> GetHRDAddress()
+        //{
+        //    try
+        //    {
+        //        return await BCComm.GetHRDAddress();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        ErrorCallbackProvider.ReportError(ex.ToString());
+        //        return "0x0";
+        //    }
+        //}
 
         /// <summary>
         /// Returns the Hoard tokens amount owned by the player.

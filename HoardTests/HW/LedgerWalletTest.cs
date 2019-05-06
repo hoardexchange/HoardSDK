@@ -4,6 +4,7 @@ using Hoard.HW.Ledger;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using Nethereum.Signer;
+using Nethereum.Util;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -61,26 +62,49 @@ namespace HoardTests.HW
         [Fact]
         public async Task SignTransaction()
         {
+            HoardID to = new HoardID("0x4bc1EF56d94c766A49153A102096E56fAE2004e1");
             var nonce = 324.ToBytesForRLPEncoding();
             var gasPrice = 10000000000000.ToBytesForRLPEncoding();
             var startGas = 21000.ToBytesForRLPEncoding();
-            var to = "0x4bc1EF56d94c766A49153A102096E56fAE2004e1".HexToByteArray();
             var value = 10000.ToBytesForRLPEncoding();
             var data = "".HexToByteArray();
 
-            var txData = new byte[][] { nonce, gasPrice, startGas, to, value, data };
-            var tx = new RLPSigner(txData);
-            
-            var rlpEncoded = await signer.SignTransaction(tx.GetRLPEncodedRaw(), null);
+            var txEncoded = new List<byte[]>();
+            txEncoded.Add(RLP.EncodeElement(nonce));
+            txEncoded.Add(RLP.EncodeElement(gasPrice));
+            txEncoded.Add(RLP.EncodeElement(startGas));
+            txEncoded.Add(RLP.EncodeElement(to.ToHexByteArray()));
+            txEncoded.Add(RLP.EncodeElement(value));
+            txEncoded.Add(RLP.EncodeElement(data));
+
+            var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
+
+            var rlpEncoded = await signer.SignTransaction(rlpEncodedTransaction, null);
             Assert.True(rlpEncoded != null);
             Assert.True(rlpEncoded.Length > 0);
 
             var user = await signer.RequestProfile("LedgerUser");
 
-            tx = new RLPSigner(rlpEncoded.HexToByteArray(), 6);
-            var account = new HoardID(EthECKey.RecoverFromSignature(tx.Signature, tx.RawHash).GetPublicAddress());
-            Assert.Equal(user.ID, account);
-            Assert.Equal(tx.Data[3].ToHex().ToLower().EnsureHexPrefix(), "0x4bc1EF56d94c766A49153A102096E56fAE2004e1".ToLower());
+//<<<<<<< HEAD
+//            var decodedRlpEncoded = RLP.Decode(rlpEncoded.HexToByteArray());
+//            var decodedRlpCollection = (RLPCollection)decodedRlpEncoded[0];
+
+//            var signature = EthECDSASignatureFactory.FromComponents(
+//                decodedRlpCollection[txEncoded.Count+1].RLPData,
+//                decodedRlpCollection[txEncoded.Count+2].RLPData,
+//                decodedRlpCollection[txEncoded.Count].RLPData
+//            );
+
+//            var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
+
+//            var account = new HoardID(EthECKey.RecoverFromSignature(signature, rawHash).GetPublicAddress());
+//            Assert.Equal(user.ID, account);
+//=======
+//            tx = new RLPSigner(rlpEncoded.HexToByteArray(), 6);
+//            var account = new HoardID(EthECKey.RecoverFromSignature(tx.Signature, tx.RawHash).GetPublicAddress());
+//            Assert.Equal(user.ID, account);
+//            Assert.Equal(tx.Data[3].ToHex().ToLower().EnsureHexPrefix(), "0x4bc1EF56d94c766A49153A102096E56fAE2004e1".ToLower());
+//>>>>>>> development
         }
     }
 }

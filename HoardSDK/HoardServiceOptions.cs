@@ -18,9 +18,9 @@ namespace Hoard
         /// </summary>
         public string GameBackendUrl;
         /// <summary>
-        /// URL of network access client (localhost or testnet main access client URL)
+        /// Blockchain client configuration
         /// </summary>
-        public string ClientUrl;
+        public BCClientConfig BCClient;
         /// <summary>
         /// Whisper web socket server
         /// </summary>
@@ -93,10 +93,6 @@ namespace Hoard
         /// </summary>
         public GameID Game { get; set; } = GameID.kInvalidID;
         /// <summary>
-        /// Rpc client - accessor for the Hoard network
-        /// </summary>
-        public Nethereum.JsonRpc.Client.IClient RpcClient { get; set; } = null;        
-        /// <summary>
         /// Address of Hoard Game Contract
         /// </summary>
         public string GameCenterContract { get; set; } = "";
@@ -112,6 +108,10 @@ namespace Hoard
         /// ID of game client for authentication purposes [Optional]
         /// /// TODO: move this to provider specific settings
         public string HoardAuthServiceClientId { get; set; } = "HoardTestAuthClient";
+        /// <summary>
+        /// Blockchain client options
+        /// </summary>
+        public BCClientOptions BCClientOptions;
 
         /// <summary>
         /// Creates a new options object with default values
@@ -122,8 +122,8 @@ namespace Hoard
         /// Creates new options objects with values parsed from string configuration data
         /// </summary>
         /// <param name="cfg">configuration file</param>
-        /// <param name="rpcClient"></param>
-        public HoardServiceOptions(HoardServiceConfig cfg, Nethereum.JsonRpc.Client.IClient rpcClient)
+        /// <param name="bcClientOptions"></param>
+        public HoardServiceOptions(HoardServiceConfig cfg, BCClientOptions bcClientOptions)
         {
             Game = GameID.kInvalidID;
             if (!string.IsNullOrEmpty(cfg.GameID))
@@ -141,7 +141,7 @@ namespace Hoard
             if (!string.IsNullOrEmpty(cfg.HoardAuthServiceClientId))
                 HoardAuthServiceClientId = cfg.HoardAuthServiceClientId;
 
-            RpcClient = rpcClient;
+            BCClientOptions = bcClientOptions;
 
             GameCenterContract = cfg.GameCenterContract;
         }

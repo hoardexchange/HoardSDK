@@ -1,7 +1,11 @@
 {
 	"GameID":null,
 	"GameBackendUrl":"",
-	"ClientUrl":"http://localhost:8545",
+	"BCClient":
+    {
+        "Type": "Ethereum",
+        "ClientUrl": "http://localhost:8545"
+    },
 	"AccountsDir":null,
 	"GameCenterContract":"0x0"
 }

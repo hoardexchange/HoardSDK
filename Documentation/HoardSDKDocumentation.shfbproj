@@ -27,7 +27,8 @@
       <Argument Key="maxVersionParts" Value="" xmlns="" />
     </TransformComponentArguments>
     <DocumentationSources>
-      <DocumentationSource sourceFile="..\HoardSDK\HoardSDK.csproj" />
+      <DocumentationSource sourceFile="..\HoardSDK\bin\Release\net461\HoardSDK.dll" />
+      <DocumentationSource sourceFile="..\HoardSDK\bin\Release\net461\HoardSDK.xml" />
     </DocumentationSources>
     <HelpFileFormat>HtmlHelp1</HelpFileFormat>
     <SyntaxFilters>C#</SyntaxFilters>

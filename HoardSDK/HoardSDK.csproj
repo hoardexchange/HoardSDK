@@ -4,9 +4,6 @@
     <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="HoardSDK.xml" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Hid.Net">
       <Version>1.4.1</Version>
     </PackageReference>
@@ -45,6 +42,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DocumentationFile>HoardSDK.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <DefineConstants>TRACE;TESUJI_PLASMA</DefineConstants>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
