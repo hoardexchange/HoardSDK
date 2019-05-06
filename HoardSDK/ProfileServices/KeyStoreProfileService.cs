@@ -175,12 +175,12 @@ namespace Hoard
         /// <param name="profilesDir"></param>
         /// <param name="profileData"></param>
         /// <returns></returns>
-        public static Task<bool> SaveProfile(string userName, string profilesDir, string profileData)
+        public static async Task<bool> SaveProfile(string userName, string profilesDir, string profileData)
         {
             var accountJsonObject = JObject.Parse(profileData);
             if (accountJsonObject == null)
             {
-                return Task.FromResult<bool>(false);
+                return false;
             }
 
             string id = accountJsonObject["id"].Value<string>();
@@ -189,11 +189,11 @@ namespace Hoard
             //save the File
             using (var newfile = File.CreateText(Path.Combine(profilesDir, fileName)))
             {
-                newfile.Write(profileData);
-                newfile.Flush();
+                await newfile.WriteAsync(profileData);
+                await newfile.FlushAsync();
             }
 
-            return Task.FromResult<bool>(true);
+            return true;
         }
     }
 }
