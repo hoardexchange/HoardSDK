@@ -240,7 +240,7 @@ namespace Hoard.BC
         }
 
         /// <inheritdoc/>
-        public async Task<UInt64> GetHoardGameCount()
+        public async Task<ulong> GetHoardGameCount()
         {
             return await gameCenter.GetGameCount();
         }
@@ -302,6 +302,19 @@ namespace Hoard.BC
             }
             ErrorCallbackProvider.ReportError("Cannot get proper Hoard Token contract!");
             return false;
+        }
+
+        /// <summary>
+        /// Transfer HRD amount to another account
+        /// </summary>
+        /// <param name="from">sender profile</param>
+        /// <param name="to">receiver address</param>
+        /// <param name="amount">amount to send</param>
+        /// <returns>true if transfer was successful, false otherwise</returns>
+        public async Task<bool> TransferETH(Profile from, string to, BigInteger amount)
+        {
+            var receipt = await EvaluateOnBC(web, from, to, new HexBigInteger(Nethereum.Util.UnitConversion.Convert.ToWei(amount)));
+            return receipt.Status.Value == 1;
         }
 
         /// <summary>
