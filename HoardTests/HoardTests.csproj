@@ -82,6 +82,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\HardwareWalletProviders\HardwareWalletProviders.csproj">
+      <Project>{1073ec20-71bf-402d-8237-e66a6bd0a26d}</Project>
+      <Name>HardwareWalletProviders</Name>
+    </ProjectReference>
     <ProjectReference Include="..\HoardSDK\HoardSDK.csproj">
       <Project>{c9517a0e-ec39-4e8b-951a-6cfc4a7c76e3}</Project>
       <Name>HoardSDK</Name>

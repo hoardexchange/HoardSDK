@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoardTests", "HoardTests\Ho
 EndProject
 Project("{7CF6DF6D-3B04-46F8-A40B-537D21BCA0B4}") = "HoardSDKDocumentation", "Documentation\HoardSDKDocumentation.shfbproj", "{D733BF8F-732F-45F2-8036-ED305DAEA7F6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Providers", "Providers", "{F4EC0C48-167F-49EC-B704-25B14CAAF226}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HardwareWalletProviders", "HardwareWalletProviders\HardwareWalletProviders.csproj", "{1073EC20-71BF-402D-8237-E66A6BD0A26D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,9 +72,24 @@ Global
 		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|x64.Build.0 = Release|Any CPU
 		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|x86.ActiveCfg = Release|Any CPU
 		{D733BF8F-732F-45F2-8036-ED305DAEA7F6}.Release|x86.Build.0 = Release|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Debug|x64.Build.0 = Debug|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Debug|x86.Build.0 = Debug|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Release|x64.ActiveCfg = Release|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Release|x64.Build.0 = Release|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Release|x86.ActiveCfg = Release|Any CPU
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1073EC20-71BF-402D-8237-E66A6BD0A26D} = {F4EC0C48-167F-49EC-B704-25B14CAAF226}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6A370560-AC67-44A7-8C94-8190E1E99E66}

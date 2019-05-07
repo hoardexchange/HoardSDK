@@ -1,4 +1,5 @@
-﻿using Hoard.HW.Ledger.Ethereum;
+﻿using Device.Net;
+using Hoard.HW.Ledger.Ethereum;
 using System.Threading.Tasks;
 
 namespace Hoard.HW.Ledger
@@ -8,11 +9,11 @@ namespace Hoard.HW.Ledger
     /// </summary>
     public static class LedgerFactory
     {
-        private static DeviceInfo[] DeviceInfo = new DeviceInfo[]
+        private static FilterDeviceDefinition[] DeviceInfo = new FilterDeviceDefinition[]
         {
-            new DeviceInfo(0x2c97, 0x0000, "HIDBlue"),
-            new DeviceInfo(0x2c97, 0x0001, "HIDNanoS"),
-            new DeviceInfo(0x2581, 0x3b7c, "WinHID")
+            new FilterDeviceDefinition{DeviceType= DeviceType.Hid, VendorId= 0x2c97, ProductId=0x0000, Label="HIDBlue" },
+            new FilterDeviceDefinition{DeviceType= DeviceType.Hid, VendorId= 0x2c97, ProductId=0x0001, Label="HIDNanoS" },
+            new FilterDeviceDefinition{DeviceType= DeviceType.Hid, VendorId= 0x2581, ProductId=0x3b7c, Label="WinHID" }
         };
 
         private static readonly UsageSpecification[] UsageSpecification = new[] 

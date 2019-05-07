@@ -1,4 +1,5 @@
-﻿using Hid.Net;
+﻿using Device.Net;
+using Hid.Net;
 using System;
 using System.Threading.Tasks;
 
@@ -35,7 +36,7 @@ namespace Hoard.HW.Trezor.Ethereum
         private uint[] indices;
 
         //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
-        public EthTrezorWallet(IHidDevice hidDevice, string derivationPath, IUserInputProvider pinInputProvider, uint index = 0) 
+        public EthTrezorWallet(IDevice hidDevice, string derivationPath, IUserInputProvider pinInputProvider, uint index = 0) 
             : base(hidDevice, derivationPath, pinInputProvider)
         {
             keyPath = new KeyPath(derivationPath).Derive(index);

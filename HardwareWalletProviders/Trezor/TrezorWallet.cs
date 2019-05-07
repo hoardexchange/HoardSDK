@@ -1,4 +1,5 @@
-﻿using Hid.Net;
+﻿using Device.Net;
+using Hid.Net;
 using Hoard.HW.Trezor.Ethereum;
 using System;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace Hoard.HW.Trezor
         /// <summary>
         /// HID device accessor
         /// </summary>
-        public IHidDevice HIDDevice { get; }
+        public IDevice HIDDevice { get; }
         /// <summary>
         /// Path name for this wallet
         /// </summary>
@@ -40,7 +41,7 @@ namespace Hoard.HW.Trezor
         /// <param name="hidDevice">HID device accessor</param>
         /// <param name="derivationPath">path name for specific wallet</param>
         /// <param name="_pinInputProvider">provider for PIN</param>
-        protected TrezorWallet(IHidDevice hidDevice, string derivationPath, IUserInputProvider _pinInputProvider)
+        protected TrezorWallet(IDevice hidDevice, string derivationPath, IUserInputProvider _pinInputProvider)
         {
             HIDDevice = hidDevice;
             DerivationPath = derivationPath;
@@ -122,6 +123,8 @@ namespace Hoard.HW.Trezor
         {
             var byteArray = Helpers.ProtoBufSerialize(request);
             var size = byteArray.Length;
+
+            await HIDDevice.WriteAsync(new byte[1]);
 
             var id = (int)GetEnumValue("MessageType" + request.GetType().Name);
             var data = new byte[size + 1024]; // 32768);

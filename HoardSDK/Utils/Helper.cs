@@ -32,7 +32,7 @@ namespace Hoard.Utils
             return result.ToString();
         }
 
-        internal static byte[][] ToBytes(this RLPCollection collection)
+        public static byte[][] ToBytes(this RLPCollection collection)
         {
             var data = new byte[collection.Count][];
             for (var i = 0; i < collection.Count; ++i)

@@ -1,4 +1,5 @@
-﻿using Hid.Net;
+﻿using Device.Net;
+using Hid.Net;
 using System;
 using System.IO;
 using System.Threading;
@@ -20,7 +21,7 @@ namespace Hoard.HW.Ledger
         /// <summary>
         /// HID device accessor
         /// </summary>
-        public IHidDevice HIDDevice { get; }
+        public IDevice HIDDevice { get; }
         /// <summary>
         /// Path name for this wallet
         /// </summary>
@@ -37,7 +38,7 @@ namespace Hoard.HW.Ledger
         /// </summary>
         /// <param name="hidDevice">HID device accessor</param>
         /// <param name="derivationPath">path name for specific wallet</param>
-        protected LedgerWallet(IHidDevice hidDevice, string derivationPath)
+        protected LedgerWallet(IDevice hidDevice, string derivationPath)
         {
             HIDDevice = hidDevice;
             DerivationPath = derivationPath;

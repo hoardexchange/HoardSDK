@@ -1,7 +1,6 @@
-﻿using Hid.Net;
+﻿using Device.Net;
 using ProtoBuf;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,27 +9,19 @@ namespace Hoard.HW
 {
     internal static class Helpers
     {
-        public static async Task<IHidDevice> GetHIDDeviceAsync(DeviceInfo[] deviceInfo, UsageSpecification[] usageSpecification)
+        public static async Task<IDevice> GetHIDDeviceAsync(FilterDeviceDefinition[] deviceInfo, UsageSpecification[] usageSpecification)
         {
-            var devices = new List<DeviceInformation>();
+            //WindowsUsbDeviceFactory.Register();
+            Hid.Net.Windows.WindowsHidDeviceFactory.Register();
 
-            var collection = WindowsHidDevice.GetConnectedDeviceInformations();
+            var devices = await DeviceManager.Current.GetDevicesAsync(deviceInfo);
 
-            foreach (var ids in deviceInfo)
-            {
-                devices.AddRange(collection.Where(c => c.VendorId == ids.VendorId && c.ProductId == ids.ProductId));
-            }
-
-            var deviceFound = devices.FirstOrDefault(d =>
-                    usageSpecification == null ||
-                    usageSpecification.Length == 0 ||
-                    usageSpecification.Any(u => d.UsagePage == u.UsagePage && d.Usage == u.Usage));
+            var deviceFound = devices.FirstOrDefault();
 
             if (deviceFound != null)
             {
-                var hidDevice = new WindowsHidDevice(deviceFound);
-                await hidDevice.InitializeAsync();
-                return hidDevice;
+                await deviceFound.InitializeAsync();
+                return deviceFound;
             }
 
             return null;

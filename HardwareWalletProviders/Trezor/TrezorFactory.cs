@@ -8,10 +8,11 @@ namespace Hoard.HW.Trezor
     /// </summary>
     public static class TrezorFactory
     {
-        private static DeviceInfo[] DeviceInfo = new DeviceInfo[]
+        private static Device.Net.FilterDeviceDefinition[] DeviceInfo = new Device.Net.FilterDeviceDefinition[]
         {
-            new DeviceInfo(0x534c, 0x0001, "HIDOne"),
-            new DeviceInfo(0x1209, 0x53C1, "HIDModelT")
+            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Hid, VendorId= 0x534C, ProductId=0x0001, Label="Trezor One Firmware 1.6.x" },
+            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Hid, VendorId= 0x1209, ProductId=0x53C1, Label="Trezor One Firmware 1.7.x" },
+            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Hid, VendorId= 0x1209, ProductId=0x53C0, Label="Model T" }
         };
 
         private static readonly UsageSpecification[] UsageSpecification = new[]

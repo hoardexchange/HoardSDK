@@ -41,7 +41,7 @@ namespace Hoard.HW.Ledger.Ethereum
         private byte[] derivation;
 
         //TODO: Profile should keep derivation and key path and index , wallet should not have any account related state!
-        public EthLedgerWallet(IHidDevice hidDevice, string derivationPath, uint index = 0) : base(hidDevice, derivationPath)
+        public EthLedgerWallet(Device.Net.IDevice hidDevice, string derivationPath, uint index = 0) : base(hidDevice, derivationPath)
         {
             keyPath = new KeyPath(derivationPath).Derive(index);
             derivation = keyPath.ToBytes();
