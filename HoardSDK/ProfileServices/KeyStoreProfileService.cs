@@ -96,7 +96,7 @@ namespace Hoard
             if (profilesDir != null)
                 ProfilesDir = profilesDir;
             else
-                ProfilesDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Hoard", "profiles");
+                ProfilesDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Hoard", "Profiles");
         }
 
         /// <summary>
@@ -131,11 +131,11 @@ namespace Hoard
         /// Deletes profile
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="checkPassword"></param>
+        /// <param name="passwordNeeded"></param>
         /// <returns></returns>
-        public async Task<bool> DeleteProfile(HoardID id, bool checkPassword = false)
+        public async Task<bool> DeleteProfile(HoardID id, bool passwordNeeded = false)
         {
-            return await KeyStoreUtils.DeleteProfile(UserInputProvider, id, ProfilesDir, checkPassword);
+            return await KeyStoreUtils.DeleteProfile(UserInputProvider, id, ProfilesDir, passwordNeeded);
         }
 
         /// <summary>
@@ -170,16 +170,15 @@ namespace Hoard
         /// <summary>
         /// Saves account to selected directory.
         /// </summary>
-        /// <param name="userName"></param>
         /// <param name="profilesDir"></param>
         /// <param name="profileData"></param>
         /// <returns></returns>
-        public static async Task<bool> SaveProfile(string userName, string profilesDir, string profileData)
+        public static async Task<string> SaveProfile(string profilesDir, string profileData)
         {
             var accountJsonObject = JObject.Parse(profileData);
             if (accountJsonObject == null)
             {
-                return false;
+                return null;
             }
 
             string id = accountJsonObject["id"].Value<string>();
@@ -192,7 +191,7 @@ namespace Hoard
                 await newfile.FlushAsync();
             }
 
-            return true;
+            return fileName;
         }
     }
 }

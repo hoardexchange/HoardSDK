@@ -247,10 +247,10 @@ namespace Hoard.Utils
         /// <param name="userInputProvider"></param>
         /// <param name="id"></param>
         /// <param name="profilesDir"></param>
-        /// <param name="checkPassword"></param>
+        /// <param name="passwordNeeded"></param>
         /// <returns></returns>
-        public static async Task<bool> DeleteProfile(IUserInputProvider userInputProvider, HoardID id, string profilesDir, bool checkPassword)
-            {
+        public static async Task<bool> DeleteProfile(IUserInputProvider userInputProvider, HoardID id, string profilesDir, bool passwordNeeded)
+        {
             if (!Directory.Exists(profilesDir))
             {
                 return false;
@@ -269,18 +269,18 @@ namespace Hoard.Utils
                     if (id == actualId)
                     {
                         Account account = null;
-                        if (checkPassword)
+                        if (passwordNeeded)
                         {
                             string password = await userInputProvider.RequestInput(null, id, eUserInputType.kPassword, valueAddress.Value<string>());
                             account = Account.LoadFromKeyStore(jobj.ToString(), password);
                         }
-                        if (!checkPassword || (account != null))
+                        if (!passwordNeeded || (account != null))
                         {
-                        File.Delete(file);
-                        return true;
-                    }
+                            File.Delete(file);
+                            return true;
+                        }
                         return false;
-            }
+                    }
                 }
             }
             return false;
