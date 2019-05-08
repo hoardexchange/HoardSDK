@@ -1,12 +1,6 @@
-﻿using Hoard.Utils.Base58Check;
-using Nethereum.Signer;
-using Newtonsoft.Json;
-using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Math;
+﻿using Nethereum.Hex.HexConvertors.Extensions;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -19,10 +13,16 @@ namespace Hoard
     /// </summary>
     public class AccountSynchronizerApplicant : AccountSynchronizer
     {
-        private byte[] DecryptionKey;
-        private byte[][] EncryptedKeystoreData;
-        private int KeystoreReceived;
-        private string DecryptedKeystoreData;
+        private int keeperPublicKeyReceived;
+
+        private int keystoreReceived;
+
+        private string decryptedKeystoreData;
+
+        private byte[][] encryptedKeystoreData = null;
+        private byte[] fullEncryptedKeystoreData = null;
+
+        private byte[] keeperPublicKey = new byte[0];
 
         /// <summary>
         /// Constructor
@@ -30,96 +30,48 @@ namespace Hoard
         public AccountSynchronizerApplicant(string url) : base(url)
         {
             WhisperService = new WhisperService(url);
-            ConfirmationPin = "";
-            DecryptedKeystoreData = "";
-            Interlocked.Exchange(ref KeystoreReceived, 0);
+            decryptedKeystoreData = "";
+            Interlocked.Exchange(ref keystoreReceived, 0);
             OnClear();
+
+            GenerateKeyPair();
         }
-
-        private byte[] GenerateDecryptionKey()
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool KeeperPublicKeyReceived()
         {
-            return GenerateKey(Encoding.UTF8.GetBytes(OriginalPin + mDateTime));
-        }
-
-        private async Task<string> SendTransferRequest(byte[] key)
-        {
-            string[] topic = new string[1];
-            topic[0] = ConvertPinToTopic(OriginalPin);
-            KeyRequestData keyRequestData = new KeyRequestData();
-            SHA256 sha256 = new SHA256Managed();
-            keyRequestData.EncryptionKeyPublicAddress = BitConverter.ToString(sha256.ComputeHash(key)).Replace("-", string.Empty).ToLower();
-            string requestDataText = JsonConvert.SerializeObject(keyRequestData);
-            byte[] data = BuildMessage(InternalData.InternalMessageId.TransferKeystoreRequest, Encoding.UTF8.GetBytes(requestDataText));
-            WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
-            return await WhisperService.SendMessage(msg);
-        }
-
-        private void AggregateMessage(byte[] data)
-        {
-            UInt32 id = BitConverter.ToUInt32(data, 0);
-            UInt32 chunks = BitConverter.ToUInt32(data, 4);
-            UInt32 length = BitConverter.ToUInt32(data, 8);
-            if (EncryptedKeystoreData == null)
-            {
-                Debug.Assert(chunks > 0);
-                EncryptedKeystoreData = new byte[chunks][];
-            }
-            Debug.Assert(id < EncryptedKeystoreData.Length);
-            EncryptedKeystoreData[id] = new byte[length];
-            Buffer.BlockCopy(data, 12, EncryptedKeystoreData[id], 0, EncryptedKeystoreData[id].Length);
-
-            bool messageNotFinished = false;
-            int fullDataSize = 0;
-            for(int  i = 0; i < EncryptedKeystoreData.Length; i++)
-            {
-                if (EncryptedKeystoreData[i] == null)
-                {
-                    messageNotFinished = true;
-                    break;
-                }
-                else
-                {
-                    Debug.Assert(EncryptedKeystoreData[i] != null);
-                    fullDataSize += EncryptedKeystoreData[i].Length;
-                }
-            }
-            if (messageNotFinished)
-            {
-                return;
-            }
-
-            byte[] fullEncryptedData = new byte[fullDataSize];
-            int offset = 0;
-            for (int i = 0; i < EncryptedKeystoreData.Length; i++)
-            {
-                Buffer.BlockCopy(EncryptedKeystoreData[i], 0, fullEncryptedData, offset, EncryptedKeystoreData[i].Length);
-                offset += EncryptedKeystoreData[i].Length;
-            }
-            byte[] decrypted = AESDecrypt(DecryptionKey, fullEncryptedData, GenerateIV(OriginalPin));
-            DecryptedKeystoreData = Encoding.UTF8.GetString(decrypted);
-            Debug.Print("Decrypted Message: " + DecryptedKeystoreData);
-            Interlocked.Exchange(ref KeystoreReceived, 1);
-            EncryptedKeystoreData = null;
+            return (Interlocked.CompareExchange(ref keeperPublicKeyReceived, keeperPublicKeyReceived, 0) != 0);
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="internalMessage"></param>
-        protected override async Task OnTranslateMessage(InternalData internalMessage)
+        protected override void OnTranslateMessage(InternalData internalMessage)
         {
             switch (internalMessage.id)
             {
-                case InternalData.InternalMessageId.GenerateEncryptionKey:
+                case InternalData.InternalMessageId.KeeperPublicKey:
                     {
-                        DecryptionKey = GenerateDecryptionKey();                        
-                        await SendTransferRequest(DecryptionKey);
+                        keeperPublicKey = internalMessage.data;
+                        Interlocked.Exchange(ref keeperPublicKeyReceived, 1);
                     }
                     break;
                 case InternalData.InternalMessageId.TransferKeystoreAnswer:
                 case InternalData.InternalMessageId.TransferCustomData:
                     {
                         AggregateMessage(internalMessage.data);
+
+                        if (keeperPublicKey != null && fullEncryptedKeystoreData != null)
+                        {
+                            byte[] decryptedData = DecryptData(keeperPublicKey, fullEncryptedKeystoreData);
+                            decryptedKeystoreData = Encoding.UTF8.GetString(decryptedData);
+                            Debug.Print("Decrypted Message: " + decryptedKeystoreData);
+                            Interlocked.Exchange(ref keystoreReceived, 1);
+                        }
                     }
                     break;
                 default:
@@ -127,32 +79,65 @@ namespace Hoard
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        private void AggregateMessage(byte[] data)
+        {
+            UInt32 id = BitConverter.ToUInt32(data, 0);
+            UInt32 chunks = BitConverter.ToUInt32(data, 4);
+            UInt32 length = BitConverter.ToUInt32(data, 8);
+            if (encryptedKeystoreData == null)
+            {
+                Debug.Assert(chunks > 0);
+                encryptedKeystoreData = new byte[chunks][];
+            }
+            Debug.Assert(id < encryptedKeystoreData.Length);
+            encryptedKeystoreData[id] = new byte[length];
+            Buffer.BlockCopy(data, 12, encryptedKeystoreData[id], 0, encryptedKeystoreData[id].Length);
+
+            bool messageNotFinished = false;
+            int fullDataSize = 0;
+            for (int i = 0; i < encryptedKeystoreData.Length; i++)
+            {
+                if (encryptedKeystoreData[i] == null)
+                {
+                    messageNotFinished = true;
+                    break;
+                }
+                else
+                {
+                    Debug.Assert(encryptedKeystoreData[i] != null);
+                    fullDataSize += encryptedKeystoreData[i].Length;
+                }
+            }
+
+            if (messageNotFinished)
+            {
+                return;
+            }
+
+            fullEncryptedKeystoreData = new byte[fullDataSize];
+            int offset = 0;
+            for (int i = 0; i < encryptedKeystoreData.Length; i++)
+            {
+                Buffer.BlockCopy(encryptedKeystoreData[i], 0, fullEncryptedKeystoreData, offset, encryptedKeystoreData[i].Length);
+                offset += encryptedKeystoreData[i].Length;
+            }
+        }
+
         protected override void OnClear()
         {
-            ConfirmationPin = "";
-            EncryptedKeystoreData = null;
-            DecryptedKeystoreData = "";
-            mDateTime = "";
-            Interlocked.Exchange(ref KeystoreReceived, 0);
+            Interlocked.Exchange(ref keeperPublicKeyReceived, 0);
+            Interlocked.Exchange(ref keystoreReceived, 0);
+            decryptedKeystoreData = "";
         }
 
         /// <summary>
         /// Sends confirmation pin to paired device
         /// </summary>
-        /// <param name="confirmationPin">Confirmation Pin</param>
         /// <returns></returns>
-        public async Task<string> SendConfirmationPin(string confirmationPin)
+        public async Task<string> SendPublicKey()
         {
-            string[] topic = new string[1];
-            topic[0] = ConvertPinToTopic(OriginalPin);
-            mDateTime = DateTime.Now.ToString();
-            string pinAndDate = confirmationPin + "|" + mDateTime;
-            byte[] data = BuildMessage(InternalData.InternalMessageId.ConfirmationPin, Encoding.UTF8.GetBytes(pinAndDate));
-            WhisperService.MessageDesc msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic[0], data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
-            return await WhisperService.SendMessage(msg);
+            byte[] data = BuildMessage(InternalData.InternalMessageId.ApplicantPublicKey, publicKey);
+            return await SendMessage(data);
         }
 
         /// <summary>
@@ -161,7 +146,7 @@ namespace Hoard
         /// <returns></returns>
         public bool IsKeyStoreReceived()
         {
-            return (Interlocked.CompareExchange(ref KeystoreReceived, KeystoreReceived, 0) != 0);
+            return (Interlocked.CompareExchange(ref keystoreReceived, keystoreReceived, 0) != 0);
         }
 
         /// <summary>
@@ -169,7 +154,18 @@ namespace Hoard
         /// </summary>
         public string GetKeystoreReceivedData()
         {
-            return DecryptedKeystoreData;
+            return decryptedKeystoreData;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public string GetConfirmationHash()
+        {
+            SHA256 sha256 = new SHA256Managed();
+            byte[] hash = sha256.ComputeHash(GetSymmetricKey(keeperPublicKey));
+            return hash.ToHex(false).Substring(0, 10);
         }
     }
 }

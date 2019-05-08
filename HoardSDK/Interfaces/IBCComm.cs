@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 
 namespace Hoard.Interfaces
 {
+    /// <summary>
+    /// Main interface for block chain communication
+    /// </summary>
     public interface IBCComm
     {
         /// <summary>

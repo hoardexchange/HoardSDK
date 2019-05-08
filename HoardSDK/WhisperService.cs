@@ -184,7 +184,6 @@ namespace Hoard
         private ClientWebSocket WhisperClient = null;
         private TimeSpan TimeOut = TimeSpan.FromSeconds(3);
         private string Url = null;
-        private string Answer;
         private string Error;
 
         static readonly private string JsonVersion = "2.0";

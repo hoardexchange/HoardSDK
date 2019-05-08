@@ -4,6 +4,7 @@ using Nethereum.Signer;
 using Org.BouncyCastle.Crypto.Digests;
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Hoard.Utils
@@ -60,5 +61,64 @@ namespace Hoard.Utils
             sha3.DoFinal(hash, 0);
             return ToHex(hash, false);
         }
+
+        /// <param name="privatekey"></param>
+        /// <param name="data"></param>
+        /// <param name="iv"></param>
+        /// <returns></returns>
+        public static byte[] AESEncrypt(byte[] privatekey, byte[] data, byte[] iv, int keyStrength)
+        {
+            // Create a new AesManaged.    
+            AesManaged aes = new AesManaged();
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.KeySize = keyStrength;
+
+            // Create encryptor    
+            ICryptoTransform encryptor = aes.CreateEncryptor(privatekey, iv);
+
+            // Create MemoryStream    
+            System.IO.MemoryStream ms = new System.IO.MemoryStream();
+
+            // Create crypto stream using the CryptoStream class. This class is the key to encryption    
+            // and encrypts and decrypts data from any given stream. In this case, we will pass a memory stream    
+            // to encrypt    
+            CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+            cs.Write(data, 0, data.Length);
+            cs.Close();
+
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// 
+        /// Constructor
+        /// </summary>
+        /// <param name="privatekey"></param>
+        /// <param name="iv"></param>
+        /// <param name="dataEncrypted"></param>
+        /// <returns></returns>
+        public static byte[] AESDecrypt(byte[] privatekey, byte[] dataEncrypted, byte[] iv, int keyStrength)
+        {
+            // Create AesManaged    
+            AesManaged aes = new AesManaged();
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.KeySize = keyStrength;
+
+            // Create a decryptor    
+            ICryptoTransform decryptor = aes.CreateDecryptor(privatekey, iv);
+
+            // Create the streams used for decryption.    
+            System.IO.MemoryStream ms = new System.IO.MemoryStream();
+
+            CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Write);
+            cs.Write(dataEncrypted, 0, dataEncrypted.Length);
+            cs.Close();
+
+            return ms.ToArray();
+        }
+
+
     }
 }
