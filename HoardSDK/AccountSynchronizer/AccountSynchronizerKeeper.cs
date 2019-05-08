@@ -88,7 +88,7 @@ namespace Hoard
         /// 
         /// </summary>
         /// <param name="internalMessage"></param>
-        protected override void OnTranslateMessage(InternalData internalMessage)
+        protected override async Task OnTranslateMessage(InternalData internalMessage)
         {
             switch (internalMessage.id)
             {

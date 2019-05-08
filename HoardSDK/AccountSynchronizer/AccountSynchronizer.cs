@@ -28,7 +28,7 @@ namespace Hoard
     /// <summary>
     /// Class for transfer and synchronize accounts between different devices
     /// </summary>
-    public class AccountSynchronizer
+    public abstract class AccountSynchronizer
     {
         /// <summary>
         /// Internal message data
@@ -365,18 +365,16 @@ namespace Hoard
         /// 
         /// </summary>
         /// <param name="internalMessage"></param>
-        protected virtual void OnTranslateMessage(InternalData internalMessage)
-        {
-        }
+        protected abstract Task OnTranslateMessage(InternalData internalMessage);
 
-        private void TranslateMessage(WhisperService.ReceivedData msg)
+        private async Task TranslateMessage(WhisperService.ReceivedData msg)
         {
             try
             {
                 byte[] data = msg.GetDecodedMessage();
                 string textData = Encoding.UTF8.GetString(data);
                 InternalData internalMessage = JsonConvert.DeserializeObject<InternalData>(textData);
-                OnTranslateMessage(internalMessage);
+                await OnTranslateMessage(internalMessage);
             }
             catch(Exception)
             {
@@ -512,7 +510,7 @@ namespace Hoard
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
             SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
             WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, topic, true);
-            SubscriptionId = await WhisperService.Subscribe(msgCriteria);
+            //SubscriptionId = await WhisperService.Subscribe(msgCriteria);
             return await WhisperService.CreateNewMessageFilter(msgCriteria);
         }
 
@@ -541,15 +539,20 @@ namespace Hoard
         /// 
         /// </summary>
         /// <returns></returns>
-        public void ProcessMessage()
+        public async Task ProcessMessage(string filterId)
         {
-            ConcurrentQueue<WhisperService.ReceivedData> receivedMessagesQueue = WhisperService.GetReceivedMessages();
-            while (receivedMessagesQueue.Count > 0)
+            var receivedMessagesQueue = await WhisperService.ReceiveMessage(filterId);
+            //ConcurrentQueue<WhisperService.ReceivedData> receivedMessagesQueue = WhisperService.GetReceivedMessages();
+            foreach(var msg in receivedMessagesQueue)
+            {
+                await TranslateMessage(msg);
+            }
+            /*while (receivedMessagesQueue.Count > 0)
             {
                 WhisperService.ReceivedData rd = null;
-                if (receivedMessagesQueue.TryDequeue(out rd))
+                if (receivedMessagesQueue.(out rd))
                     TranslateMessage(rd);
-            }
+            }*/
         }
     }
 }

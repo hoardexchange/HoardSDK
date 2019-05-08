@@ -17,6 +17,8 @@ namespace HoardTests.AccountTools
     /// </summary>
     public class AccountSynchronizerTest
     {
+        private static readonly string NodeUrl = "ws://ws.eth-rpc.hoard.exchange";
+
         public AccountSynchronizerTest()
         {
         }
@@ -25,74 +27,74 @@ namespace HoardTests.AccountTools
         [Trait("Category", "Unit")]
         public async Task GeneratePin()
         {
-            //AccountSynchronizer AccountSync = new AccountSynchronizer("ws://10.30.8.228:8546");
-            //bool res = AccountSync.Initialize().Result;
-            //for (int i = 0; i < 100; i++)
-            //{
-            //    string pin = AccountSynchronizer.GeneratePin();
-            //    Assert.Equal(8, pin.Length);
-            //}
-            //await AccountSync.Shutdown();
+            AccountSynchronizer AccountSync = new AccountSynchronizerKeeper(NodeUrl);
+            bool res = AccountSync.Initialize().Result;
+            for (int i = 0; i < 100; i++)
+            {
+                string pin = AccountSynchronizer.GeneratePin();
+                Assert.Equal(8, pin.Length);
+            }
+            await AccountSync.Shutdown();
         }
 
         [Fact]
         [Trait("Category", "Unit")]
         public async Task TransferKey()
         {
-            //AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper("ws://localhost:8546");
-            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant("ws://localhost:8546");
-            //bool res = AccountSyncKeeper.Initialize().Result;
-            //res = AccountSyncApplicant.Initialize().Result;
-            //if (res)
-            //{
-            //    string pin = AccountSynchronizer.GeneratePin();
-            //    string filterFrom = AccountSyncKeeper.RegisterMessageFilter(pin).Result;
-            //    string filterTo = AccountSyncApplicant.RegisterMessageFilter(pin).Result;
-            //    string confirmationPin = AccountSynchronizer.GeneratePin();
-            //    string msg = AccountSyncApplicant.SendConfirmationPin(confirmationPin).Result;
-            //    while (true)
-            //    {
-            //        AccountSyncApplicant.ProcessMessage();
-            //        AccountSyncKeeper.ProcessMessage();
-            //        if (AccountSyncKeeper.ConfirmationPinReceived())
-            //        {
-            //            msg = AccountSyncKeeper.GenerateEncryptionKey().Result;
-            //            break;
-            //        }
-            //    }
+            AccountSynchronizerKeeper AccountSyncKeeper = new AccountSynchronizerKeeper(NodeUrl);
+            AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant(NodeUrl);
+            bool res = await AccountSyncKeeper.Initialize();
+            res = AccountSyncApplicant.Initialize().Result;
+            if (res)
+            {
+                string pin = AccountSynchronizer.GeneratePin();
+                string filterFrom = await AccountSyncKeeper.RegisterMessageFilter(pin);
+                string filterTo = await AccountSyncApplicant.RegisterMessageFilter(pin);
+                string confirmationPin = AccountSynchronizer.GeneratePin();
+                string msg = await AccountSyncApplicant.SendConfirmationPin(confirmationPin);
+                while (true)
+                {
+                    await AccountSyncApplicant.ProcessMessage(filterTo);
+                    await AccountSyncKeeper.ProcessMessage(filterFrom);
+                    if (AccountSyncKeeper.ConfirmationPinReceived())
+                    {
+                        msg = await AccountSyncKeeper.GenerateEncryptionKey();
+                        break;
+                    }
+                }
 
-            //    int confirmation = 0;
-            //    while (true)
-            //    {
-            //        AccountSyncApplicant.ProcessMessage();
-            //        AccountSyncKeeper.ProcessMessage();
-            //        confirmation = AccountSyncKeeper.GetConfirmationStatus();
-            //        if (confirmation != 0)
-            //        {
-            //            break;
-            //        }
-            //    }
-            //    if (confirmation == 1)
-            //    {
-            //        string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
-            //        msg = AccountSyncKeeper.EncryptAndTransferKeystore(keyStoreData).Result;
-            //    }
-            //    while (true)
-            //    {
-            //        AccountSyncApplicant.ProcessMessage();
-            //        AccountSyncKeeper.ProcessMessage();
-            //        if (AccountSyncApplicant.IsKeyStoreReceived())
-            //        {
-            //            string data = AccountSyncApplicant.GetKeystoreReceivedData();
-            //            break;
-            //        }
-            //    }
+                int confirmation = 0;
+                while (true)
+                {
+                    await AccountSyncApplicant.ProcessMessage(filterTo);
+                    await AccountSyncKeeper.ProcessMessage(filterFrom);
+                    confirmation = AccountSyncKeeper.GetConfirmationStatus();
+                    if (confirmation != 0)
+                    {
+                        break;
+                    }
+                }
+                if (confirmation == 1)
+                {
+                    string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
+                    msg = await AccountSyncKeeper.EncryptAndTransferKeystore(keyStoreData);
+                }
+                while (true)
+                {
+                    await AccountSyncApplicant.ProcessMessage(filterTo);
+                    await AccountSyncKeeper.ProcessMessage(filterFrom);
+                    if (AccountSyncApplicant.IsKeyStoreReceived())
+                    {
+                        string data = AccountSyncApplicant.GetKeystoreReceivedData();
+                        break;
+                    }
+                }
 
-            //    await AccountSyncApplicant.UnregisterMessageFilter(filterTo);
-            //    await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
-            //}
-            //await AccountSyncApplicant.Shutdown();
-            //await AccountSyncKeeper.Shutdown();
+                await AccountSyncApplicant.UnregisterMessageFilter(filterTo);
+                await AccountSyncKeeper.UnregisterMessageFilter(filterFrom);
+            }
+            await AccountSyncApplicant.Shutdown();
+            await AccountSyncKeeper.Shutdown();
         }
 
         [Fact]
@@ -143,7 +145,7 @@ namespace HoardTests.AccountTools
         [Trait("Category", "Unit")]
         public async Task ReceiveKeyWhisperJS()
         {
-            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant("ws://localhost:8546");
+            //AccountSynchronizerApplicant AccountSyncApplicant = new AccountSynchronizerApplicant(NodeUrl);
             //bool res = AccountSyncApplicant.Initialize().Result;
             //if (res)
             //{

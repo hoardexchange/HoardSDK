@@ -106,17 +106,14 @@ namespace Hoard
         /// 
         /// </summary>
         /// <param name="internalMessage"></param>
-        protected override void OnTranslateMessage(InternalData internalMessage)
+        protected override async Task OnTranslateMessage(InternalData internalMessage)
         {
             switch (internalMessage.id)
             {
                 case InternalData.InternalMessageId.GenerateEncryptionKey:
                     {
                         DecryptionKey = GenerateDecryptionKey();                        
-                        SendTransferRequest(DecryptionKey).ContinueWith(async (task)=>
-                        {
-                            string msg = await task;//TODO: is this really needed?
-                        });
+                        await SendTransferRequest(DecryptionKey);
                     }
                     break;
                 case InternalData.InternalMessageId.TransferKeystoreAnswer:

@@ -2,15 +2,13 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using WebSocketSharp;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Collections.Concurrent;
+using System.Net.WebSockets;
+using System.Linq;
 
 namespace Hoard
 {    
@@ -183,13 +181,11 @@ namespace Hoard
             }
         }
 
-        private WebSocket WhisperClient = null;
-        private ManualResetEvent ResponseEvent = null;
-        private ManualResetEvent ConnectionEvent = null;
+        private ClientWebSocket WhisperClient = null;
+        private TimeSpan TimeOut = TimeSpan.FromSeconds(3);
+        private string Url = null;
         private string Answer;
         private string Error;
-        private bool IsConnected = false;
-        private ConcurrentQueue<ReceivedData> ReceivedMessagesQueue = new ConcurrentQueue<ReceivedData>();
 
         static readonly private string JsonVersion = "2.0";
         static readonly private int JsonId = 1;
@@ -204,10 +200,8 @@ namespace Hoard
         /// </summary>
         public WhisperService(string url)
         {
-            WhisperClient = new WebSocket(url, "whisper-protocol");
-            WhisperClient.WaitTime = TimeSpan.FromSeconds(3);
-            ResponseEvent = new ManualResetEvent(false);
-            ConnectionEvent = new ManualResetEvent(false);
+            Url = url;
+            WhisperClient = new ClientWebSocket();
         }
 
         /// <summary>
@@ -215,22 +209,74 @@ namespace Hoard
         /// </summary>
         public async Task<bool> Connect()
         {
-            return await Task.Run(() =>
+            using (var cts = new CancellationTokenSource(TimeOut))
             {
-                ConnectionEvent.Reset();
-                WhisperClient.OnMessage += (sender, e) =>
+                await WhisperClient.ConnectAsync(new Uri(Url), cts.Token);
+            }
+
+            if (WhisperClient.State != WebSocketState.Open)
+            {
+                ErrorCallbackProvider.ReportError("Cannot connect to destination host: "+Url);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Closes connection
+        /// </summary>
+        public async Task Close()
+        {
+            await WhisperClient.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+        }
+
+        private async Task<T> BuildAndSendRequest<T>(string function, JArray additionalParams, T defaultValue)
+        {
+            try
+            {
+                if (WhisperClient.State != WebSocketState.Open)
                 {
-                    Answer = "";
-                    Error = "";
-                    if (e.IsBinary)
+                    ErrorCallbackProvider.ReportError("Whisper connection error!");
+                    throw new WebException("Whisper connection error!");
+                }
+
+                JObject jobj = new JObject();
+                jobj.Add("jsonrpc", JsonVersion);
+                jobj.Add("method", function);
+                if (additionalParams != null)
+                {
+                    jobj.Add("params", additionalParams);
+                }
+                jobj.Add("id", JsonId);
+                using (var cts = new CancellationTokenSource(TimeOut))
+                {
+                    await WhisperClient.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(jobj.ToString())), WebSocketMessageType.Text, true, cts.Token);
+
+                    //read in 1K chunks
+                    WebSocketReceiveResult rcvResult = null;
+                    System.IO.MemoryStream msgBytes = new System.IO.MemoryStream(1024);
+                    do
                     {
-                        ErrorCallbackProvider.ReportInfo("Message received: " + e.RawData);
+                        var rcvBytes = new byte[1024];
+                        var rcvBuffer = new ArraySegment<byte>(rcvBytes);
+
+                        rcvResult = await WhisperClient.ReceiveAsync(rcvBuffer, cts.Token);
+
+                        msgBytes.Write(rcvBuffer.Array, rcvBuffer.Offset, rcvResult.Count);
+                    } while (!rcvResult.EndOfMessage);
+
+                    if (rcvResult.MessageType == WebSocketMessageType.Binary)
+                    {
+                        ErrorCallbackProvider.ReportError("Expected text, received binary data: " + msgBytes);
+                        return defaultValue;
                     }
-                    else if (e.IsText)
+                    else if (rcvResult.MessageType == WebSocketMessageType.Text)
                     {
-                        ErrorCallbackProvider.ReportInfo("Message received: " + e.Data);
+                        string jsonMsg = Encoding.UTF8.GetString(msgBytes.ToArray());
+
                         JToken message = null;
-                        JObject json = JObject.Parse(e.Data);
+                        JObject json = JObject.Parse(jsonMsg);
                         json.TryGetValue("error", out message);
                         if (message != null)
                         {
@@ -251,7 +297,9 @@ namespace Hoard
                                     jsonParams.TryGetValue("result", out result);
                                     if (result != null)
                                     {
-                                        ReceivedMessagesQueue.Enqueue(JsonConvert.DeserializeObject<ReceivedData>(result.ToString()));
+                                        if (message.Type == JTokenType.Array || message.Type == JTokenType.Object)
+                                            return JsonConvert.DeserializeObject<T>(result.ToString());
+                                        return result.Value<T>();
                                     }
                                 }
                             }
@@ -260,115 +308,36 @@ namespace Hoard
                                 json.TryGetValue("result", out message);
                                 if (message != null)
                                 {
-                                    Answer = message.ToString();
+                                    if (message.Type == JTokenType.Array || message.Type == JTokenType.Object)
+                                        return JsonConvert.DeserializeObject<T>(message.ToString());
+                                    return message.Value<T>();
                                 }
                             }
                         }
-                        ResponseEvent.Set();
                     }
+                    ErrorCallbackProvider.ReportError("Conection was closed");
+                    return defaultValue;
                 };
-                WhisperClient.OnOpen += (sender, e) =>
-                {
-                    ErrorCallbackProvider.ReportInfo("Connection established");
-                    IsConnected = true;
-                    ResponseEvent.Set();
-                    ConnectionEvent.Set();
-                };
-                WhisperClient.OnClose += (sender, e) =>
-                {
-                    ErrorCallbackProvider.ReportInfo("Connection closed");
-                    IsConnected = false;
-                    ResponseEvent.Set();
-                    ConnectionEvent.Set();
-                };
-                WhisperClient.OnError += (sender, e) =>
-                {
-                    ErrorCallbackProvider.ReportError("Connection error!");
-                };
-                WhisperClient.Connect();
-                if (ConnectionEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
-                {
-                    return IsConnected;
-                }
-                return false;
-            });
-        }
-
-        /// <summary>
-        /// Closes connection
-        /// </summary>
-        public async Task Close()
-        {
-            await Task.Run(() =>
-            {
-                WhisperClient.Close();
-            });
-        }
-
-        private bool BuildAndSendRequest(string function, JArray additionalParams, out string outMessage)
-        {
-            outMessage = "";
-            try
-            {
-                if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
-                {
-                    ErrorCallbackProvider.ReportError("Whisper connection error!");
-                    throw new WebException("Whisper connection error!");
-                }
-
-                ResponseEvent.Reset();
-
-                if (IsConnected == false)
-                {
-                    ErrorCallbackProvider.ReportError("Whisper connection error!");
-                    throw new WebException("Whisper connection error!");
-                }
-                
-                JObject jobj = new JObject();
-                jobj.Add("jsonrpc", JsonVersion);
-                jobj.Add("method", function);
-                if (additionalParams != null)
-                {
-                    jobj.Add("params", additionalParams);
-                }
-                jobj.Add("id", JsonId);
-                //string msg = jobj.ToString();
-                WhisperClient.Send(Encoding.UTF8.GetBytes(jobj.ToString()));
-                if (!ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
-                {
-                    ErrorCallbackProvider.ReportError("Whisper connection error!");
-                    throw new WebException("Whisper connection error!");
-                }
-
-                if (Error != "")
-                {
-                    ErrorCallbackProvider.ReportError("Whisper error! " + Error);
-                    throw new WebException("Whisper error! " + Error);
-                }
-                else
-                {
-                    outMessage = Answer;
-                    return true;
-                }
             }
             catch (WebSocketException ex)
             {
                 ErrorCallbackProvider.ReportError("Whisper unknown exception:\n" + ex.Message);
-                return false;
+                return defaultValue;
+            }
+            catch (Exception ex)
+            {
+                ErrorCallbackProvider.ReportError("Unknown exception:\n" + ex.Message);
+                return defaultValue;
             }
         }
 
-        /// <summary>
-        /// Check connection
-        /// </summary>
-        /// <returns></returns>
-        public async Task<bool> CheckConnection()
+            /// <summary>
+            /// Check connection
+            /// </summary>
+            /// <returns></returns>
+            public async Task<bool> CheckConnection()
         {
-            return await Task.Run(() =>
-            {
-                string outMessage = "";
-                return BuildAndSendRequest("shh_info", null, out outMessage);
-            });
+            return !string.IsNullOrEmpty(await BuildAndSendRequest<string>("shh_info", null, string.Empty));
         }
 
         /// <summary>
@@ -377,15 +346,7 @@ namespace Hoard
         /// <returns>version number</returns>
         public async Task<string> CheckVersion()
         {
-            return await Task.Run(() =>
-            {
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_version", null, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            return await BuildAndSendRequest<string>("shh_version", null, string.Empty);
         }
 
         /// <summary>
@@ -396,13 +357,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> SetMaxMessageSize(int maxMessageSize)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(maxMessageSize);
-                string outMessage = "";
-                return BuildAndSendRequest("shh_setMaxMessageSize", jarrayObj, out outMessage);
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(maxMessageSize);
+            return await BuildAndSendRequest<bool>("shh_setMaxMessageSize", jarrayObj, false);
         }
 
         /// <summary>
@@ -412,13 +369,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> SetMinPov(float minPov)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(minPov);
-                string outMessage = "";
-                return BuildAndSendRequest("shh_setMinPoW", jarrayObj, out outMessage);
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(minPov);
+            return await BuildAndSendRequest<bool>("shh_setMinPoW", jarrayObj, false);
         }
 
         /// <summary>
@@ -428,13 +381,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> MarkTrustedPeer(string enode)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(enode);
-                string outMessage = "";
-                return BuildAndSendRequest("shh_markTrustedPeer", jarrayObj, out outMessage);
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(enode);
+            return await BuildAndSendRequest<bool>("shh_markTrustedPeer", jarrayObj, false);
         }
 
         /// <summary>
@@ -443,15 +392,7 @@ namespace Hoard
         /// <returns></returns>
         public async Task<string> GenerateKeyPair()
         {
-            return await Task.Run(() =>
-            {
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_newKeyPair", null, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            return await BuildAndSendRequest<string>("shh_newKeyPair", null, string.Empty);
         }
 
         /// <summary>
@@ -461,13 +402,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> AddPrivateKey(string privKey)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(privKey);
-                string outMessage = "";
-                return BuildAndSendRequest("shh_addPrivateKey", jarrayObj, out outMessage);
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(privKey);
+            return !string.IsNullOrEmpty(await BuildAndSendRequest("shh_addPrivateKey", jarrayObj, string.Empty));
         }
 
         /// <summary>
@@ -477,13 +414,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> DeleteKeyPair(string keyPairId)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(keyPairId);
-                string outMessage = "";
-                return BuildAndSendRequest("shh_deleteKeyPair", jarrayObj, out outMessage);
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(keyPairId);
+            return await BuildAndSendRequest("shh_deleteKeyPair", jarrayObj, false);
         }
 
         /// <summary>
@@ -493,17 +426,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> HasKeyPair(string keyPairId)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(keyPairId);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_hasKeyPair", jarrayObj, out outMessage))
-                {
-                    return (outMessage.ToLower() == "true") ? true : false;
-                }
-                return false;
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(keyPairId);
+            return await BuildAndSendRequest("shh_hasKeyPair", jarrayObj, false);
         }
 
         /// <summary>
@@ -513,17 +438,9 @@ namespace Hoard
         /// <returns>public key</returns>
         public async Task<string> GetPublicKey(string keyPairId)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(keyPairId);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_getPublicKey", jarrayObj, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(keyPairId);
+            return await BuildAndSendRequest("shh_getPublicKey", jarrayObj, string.Empty);
         }
 
         /// <summary>
@@ -533,17 +450,9 @@ namespace Hoard
         /// <returns>private key</returns>
         public async Task<string> GetPrivateKey(string keyPairId)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(keyPairId);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_getPrivateKey", jarrayObj, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(keyPairId);
+            return await BuildAndSendRequest("shh_getPrivateKey", jarrayObj, string.Empty);
         }
 
         /// <summary>
@@ -553,15 +462,7 @@ namespace Hoard
         /// <returns>Key ID</returns>
         public async Task<string> GenerateSymetricKey()
         {
-            return await Task.Run(() =>
-            {
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_newSymKey", null, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            return await BuildAndSendRequest("shh_newSymKey", null, string.Empty);
         }
 
         /// <summary>
@@ -571,17 +472,9 @@ namespace Hoard
         /// <returns>Key ID</returns>
         public async Task<string> AddSymetricKey(string rawSymKey)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(rawSymKey);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_addSymKey", jarrayObj, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(rawSymKey);
+            return await BuildAndSendRequest("shh_addSymKey", jarrayObj, string.Empty);
         }
 
         /// <summary>
@@ -591,17 +484,9 @@ namespace Hoard
         /// <returns>Key ID</returns>
         public async Task<string> GenerateSymetricKeyFromPassword(string password)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(password);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_generateSymKeyFromPassword", jarrayObj, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(password);
+            return await BuildAndSendRequest("shh_generateSymKeyFromPassword", jarrayObj, string.Empty);
         }
 
         /// <summary>
@@ -611,17 +496,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> HasSymetricKey(string keyId)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(keyId);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_hasSymKey", jarrayObj, out outMessage))
-                {
-                    return (outMessage.ToLower() == "true") ? true : false;
-                }
-                return false;
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(keyId);
+            return await BuildAndSendRequest("shh_hasSymKey", jarrayObj, false);
         }
 
         /// <summary>
@@ -631,17 +508,9 @@ namespace Hoard
         /// <returns>symetric key</returns>
         public async Task<string> GetSymetricKey(string keyId)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(keyId);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_getSymKey", jarrayObj, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(keyId);
+            return await BuildAndSendRequest("shh_getSymKey", jarrayObj, string.Empty);
         }
 
         /// <summary>
@@ -651,13 +520,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> DeleteSymetricKey(string keyId)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(keyId);
-                string outMessage = "";
-                return BuildAndSendRequest("shh_deleteSymKey", jarrayObj, out outMessage);
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(keyId);
+            return await BuildAndSendRequest("shh_deleteSymKey", jarrayObj, false);
         }
 
         /// <summary>
@@ -671,19 +536,11 @@ namespace Hoard
         /// <returns>subscription id</returns>
         public async Task<string> Subscribe(SubscriptionCriteria filters, string id = "messages")
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(id);
-                var outObject = (JObject)JToken.FromObject(filters);
-                jarrayObj.Add(outObject);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_subscribe", jarrayObj, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(id);
+            var outObject = (JObject)JToken.FromObject(filters);
+            jarrayObj.Add(outObject);
+            return await BuildAndSendRequest("shh_subscribe", jarrayObj, string.Empty);
         }
 
         /// <summary>
@@ -693,13 +550,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> Unsubscribe(string subscriptionId)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(subscriptionId);
-                string outMessage = "";
-                return BuildAndSendRequest("shh_unsubscribe", jarrayObj, out outMessage);
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(subscriptionId);
+            return await BuildAndSendRequest("shh_unsubscribe", jarrayObj, false);
         }
 
         /// <summary>
@@ -709,18 +562,10 @@ namespace Hoard
         /// <returns>filter identifier</returns>
         public async Task<string> CreateNewMessageFilter(SubscriptionCriteria filters)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                var outObject = (JObject)JToken.FromObject(filters);
-                jarrayObj.Add(outObject);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_newMessageFilter", jarrayObj, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            JArray jarrayObj = new JArray();
+            var outObject = (JObject)JToken.FromObject(filters);
+            jarrayObj.Add(outObject);
+            return await BuildAndSendRequest("shh_newMessageFilter", jarrayObj, string.Empty);
         }
 
         /// <summary>
@@ -730,13 +575,9 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> DeleteMessageFilter(string filterIdentifier)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(filterIdentifier);
-                string outMessage = "";
-                return BuildAndSendRequest("shh_deleteMessageFilter", jarrayObj, out outMessage);
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(filterIdentifier);
+            return await BuildAndSendRequest("shh_deleteMessageFilter", jarrayObj, false);
         }
 
         /// <summary>
@@ -746,17 +587,9 @@ namespace Hoard
         /// <returns>Array of messages</returns>
         public async Task<List<ReceivedData>> ReceiveMessage(string filterIdentifier)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                jarrayObj.Add(filterIdentifier);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_getFilterMessages", jarrayObj, out outMessage))
-                {
-                    return JsonConvert.DeserializeObject<List<ReceivedData>>(outMessage);
-                }
-                return null;
-            });
+            JArray jarrayObj = new JArray();
+            jarrayObj.Add(filterIdentifier);
+            return await BuildAndSendRequest<List<ReceivedData>>("shh_getFilterMessages", jarrayObj, null);
         }
 
         /// <summary>
@@ -766,18 +599,10 @@ namespace Hoard
         /// <returns>message hash</returns>
         public async Task<string> SendMessage(MessageDesc msg)
         {
-            return await Task.Run(() =>
-            {
-                JArray jarrayObj = new JArray();
-                var outObject = (JObject)JToken.FromObject(msg);
-                jarrayObj.Add(outObject);
-                string outMessage = "";
-                if (BuildAndSendRequest("shh_post", jarrayObj, out outMessage))
-                {
-                    return outMessage;
-                }
-                return "";
-            });
+            JArray jarrayObj = new JArray();
+            var outObject = (JObject)JToken.FromObject(msg);
+            jarrayObj.Add(outObject);
+            return await BuildAndSendRequest("shh_post", jarrayObj, string.Empty);
         }  
         
         /// <summary>
@@ -785,7 +610,9 @@ namespace Hoard
         /// </summary>
         public ConcurrentQueue<ReceivedData> GetReceivedMessages()
         {
-            return ReceivedMessagesQueue;
+            return null;
+            //WhisperClient.ReceiveAsync()
+            //return ReceivedMessagesQueue;
         }
     }
 }
