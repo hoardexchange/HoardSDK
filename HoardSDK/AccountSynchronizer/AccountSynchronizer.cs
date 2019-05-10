@@ -91,7 +91,7 @@ namespace Hoard
         /// <summary>
         /// 
         /// </summary>
-        protected string SubscriptionId = "";
+        protected string SubscriptionId = string.Empty;
 
         /// <summary>
         /// 
@@ -126,20 +126,30 @@ namespace Hoard
         }
         
         /// <summary>
-        /// Establishes connection with geth
+        /// Establishes connection with geth and subscribes for messages with given pin
         /// --wsorigins="*" --ws --wsport "port" --shh --rpc --rpcport "port" --rpcapi personal,db,eth,net,web3,shh
         /// </summary>
+        /// <param name="pin">pin to subscribe to</param>
         /// <returns></returns>
-        public async Task<bool> Initialize()
+        public async Task<bool> Initialize(string pin)
         {
-            return await WhisperService.Connect();
+            bool result = await WhisperService.Connect();
+            if (result)
+            {
+                WhisperService.OnSubscriptionMessage += TranslateMessage;
+                SubscriptionId = await Subscribe(pin);
+            }
+            return result;
         }
 
         /// <summary>
-        /// Closes connection with geth
+        /// Closes connection with geth and unsubscribes from node
         /// </summary>
         public async Task Shutdown()
         {
+            if (!string.IsNullOrEmpty(SubscriptionId))
+                await Unsubscribe(SubscriptionId);
+
             await WhisperService.Close();
         }
 
@@ -176,18 +186,12 @@ namespace Hoard
         /// 
         /// </summary>
         /// <param name="msg"></param>
-        private void TranslateMessage(WhisperService.ReceivedData msg)
+        protected void TranslateMessage(WhisperService.SubscriptionResponse msg)
         {
-            try
-            {
-                byte[] data = msg.GetDecodedMessage();
-                string textData = Encoding.UTF8.GetString(data);
-                InternalData internalMessage = JsonConvert.DeserializeObject<InternalData>(textData);
-                OnTranslateMessage(internalMessage);
-            }
-            catch (Exception)
-            {
-            }
+            byte[] data = msg.GetDecodedMessage();
+            string textData = Encoding.UTF8.GetString(data);
+            InternalData internalMessage = JsonConvert.DeserializeObject<InternalData>(textData);
+            OnTranslateMessage(internalMessage);
         }
 
         /// <summary>
@@ -213,10 +217,10 @@ namespace Hoard
         }
 
         /// <summary>
-        /// 
+        /// Subscribes for messages on with topic generated from pin
         /// </summary>
-        /// <param name="pin"></param>
-        /// <returns></returns>
+        /// <param name="pin">pin to create topic from</param>
+        /// <returns>subscription id</returns>
         public async Task<string> Subscribe(string pin)
         {
             topic = ConvertPinToTopic(pin);
@@ -229,7 +233,7 @@ namespace Hoard
         }
 
         /// <summary>
-        /// 
+        /// Unsubscribe from listening on given id
         /// </summary>
         /// <param name="subscriptionId"></param>
         /// <returns></returns>
@@ -250,7 +254,6 @@ namespace Hoard
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
             SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
             WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, new string[] { topic }, true);
-            //SubscriptionId = await WhisperService.Subscribe(msgCriteria);
             return await WhisperService.CreateNewMessageFilter(msgCriteria);
         }
 
@@ -281,17 +284,10 @@ namespace Hoard
         public async Task ProcessMessage(string filterId)
         {
             var receivedMessagesQueue = await WhisperService.ReceiveMessage(filterId);
-            //ConcurrentQueue<WhisperService.ReceivedData> receivedMessagesQueue = WhisperService.GetReceivedMessages();
             foreach(var msg in receivedMessagesQueue)
             {
                 TranslateMessage(msg);
             }
-            /*while (receivedMessagesQueue.Count > 0)
-            {
-                WhisperService.ReceivedData rd = null;
-                if (receivedMessagesQueue.(out rd))
-                    TranslateMessage(rd);
-            }*/
         }
 
         /// <summary>

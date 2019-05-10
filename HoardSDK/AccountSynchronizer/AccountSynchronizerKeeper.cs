@@ -21,7 +21,6 @@ namespace Hoard
         /// </summary>
         public AccountSynchronizerKeeper(string url) : base(url)
         {
-            WhisperService = new WhisperService(url);
             Interlocked.Exchange(ref applicantPublicKeyReceived, 0);
 
             GenerateKeyPair();
@@ -53,6 +52,20 @@ namespace Hoard
                 default:
                     break;
             }
+        }
+
+        /// <summary>
+        /// Waits for public key from keeper and returns confirmation hash
+        /// </summary>
+        /// <returns>confirmation hash</returns>
+        public async Task<string> AcquireConfirmationHash()
+        {
+            while (!ApplicantPublicKeyReceived())
+            {
+                var msg = await WhisperService.ReceiveMessages();
+                TranslateMessage(msg);
+            }
+            return GetConfirmationHash();
         }
 
         /// <summary>

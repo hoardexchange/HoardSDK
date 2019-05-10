@@ -29,7 +29,6 @@ namespace Hoard
         /// </summary>
         public AccountSynchronizerApplicant(string url) : base(url)
         {
-            WhisperService = new WhisperService(url);
             decryptedKeystoreData = "";
             Interlocked.Exchange(ref keystoreReceived, 0);
             OnClear();
@@ -77,6 +76,34 @@ namespace Hoard
                 default:
                     break;
             }
+        }
+
+        /// <summary>
+        /// Waits for keystore data from keeper
+        /// </summary>
+        /// <returns>encrypted keystore data</returns>
+        public async Task<string> AcquireKeystoreData()
+        {
+            while (!IsKeyStoreReceived())
+            {
+                var msg = await WhisperService.ReceiveMessages();
+                TranslateMessage(msg);
+            }
+            return GetKeystoreReceivedData();
+        }
+
+        /// <summary>
+        /// Waits for public key from keeper and returns confirmation hash
+        /// </summary>
+        /// <returns>confirmation hash</returns>
+        public async Task<string> AcquireConfirmationHash()
+        {
+            while (!KeeperPublicKeyReceived())
+            {
+                var msg = await WhisperService.ReceiveMessages();
+                TranslateMessage(msg);
+            }
+            return GetConfirmationHash();
         }
 
         private void AggregateMessage(byte[] data)
