@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace Hoard.GameItemProviders
 {
+    /// <summary>
+    /// Game Item provider for Plasma sidechain
+    /// </summary>
     public class PlasmaGameItemProvider : IGameItemProvider
     {
         /// <summary>

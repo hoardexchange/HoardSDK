@@ -33,6 +33,11 @@ namespace Hoard.Utils
             return result.ToString();
         }
 
+        /// <summary>
+        /// Helper function to convert RLP to byte array
+        /// </summary>
+        /// <param name="collection">RLP object</param>
+        /// <returns></returns>
         public static byte[][] ToBytes(this RLPCollection collection)
         {
             var data = new byte[collection.Count][];
@@ -48,7 +53,7 @@ namespace Hoard.Utils
         }
 
         /// <summary>
-        /// 
+        /// Keccak256 hashing algorithm
         /// </summary>
         /// <param name="StringIn"></param>
         /// <returns></returns>
@@ -62,9 +67,11 @@ namespace Hoard.Utils
             return ToHex(hash, false);
         }
 
+        /// <summary>AES encryption algorithm</summary>
         /// <param name="privatekey"></param>
         /// <param name="data"></param>
         /// <param name="iv"></param>
+        /// <param name="keyStrength"></param>
         /// <returns></returns>
         public static byte[] AESEncrypt(byte[] privatekey, byte[] data, byte[] iv, int keyStrength)
         {
@@ -91,12 +98,12 @@ namespace Hoard.Utils
         }
 
         /// <summary>
-        /// 
-        /// Constructor
+        /// AES decryption algorithm
         /// </summary>
         /// <param name="privatekey"></param>
         /// <param name="iv"></param>
         /// <param name="dataEncrypted"></param>
+        /// <param name="keyStrength">key strtength</param>
         /// <returns></returns>
         public static byte[] AESDecrypt(byte[] privatekey, byte[] dataEncrypted, byte[] iv, int keyStrength)
         {

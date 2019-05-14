@@ -9,7 +9,6 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using WebSocketSharp;
 
 namespace Hoard
 {
@@ -18,6 +17,28 @@ namespace Hoard
     /// </summary>
     public class HoardProfileService : IProfileService
     {
+        //TODO: FIXME: reimplement this (we are not using websocketsharp anymore)
+        //Or remove this if we won't ever use hoard profile services
+        private class WebSocket
+        {
+            public class MessageEventArgs: EventArgs
+            {
+                public bool IsText { get; set; }
+                public bool IsBinary { get; set; }
+                public byte[] RawData { get; }
+                public byte[] Data { get; }
+            }
+            public event Action<object, MessageEventArgs> OnMessage;
+            public event Action<object, EventArgs> OnError;
+            public event Action<object, EventArgs> OnOpen;
+            public event Action<object, EventArgs> OnClose;
+
+            public WebSocket(string url, string name) { throw new NotImplementedException(); }
+            public void Connect() { throw new NotImplementedException(); }
+            public void Send(byte[] data) { throw new NotImplementedException(); }
+            public void Close() { throw new NotImplementedException(); }
+        }
+
         private enum MessageId
         {
             kUnknown = 0,

@@ -100,7 +100,11 @@ namespace Hoard.Utils
             }
             ErrorCallbackProvider.ReportInfo(string.Format("Loading profiles {0}", profileFiles[0]));
 
-            string json = File.ReadAllText(profileFiles[0]);
+            string json = null;
+            using (var reader = File.OpenText(profileFiles[0]))
+            {
+                json = await reader.ReadToEndAsync();
+            }
             var details = JObject.Parse(json);
             if (details == null)
             {
@@ -124,7 +128,7 @@ namespace Hoard.Utils
         /// <param name="id"></param>
         /// <param name="profilesDir"></param>
         /// <returns></returns>
-        public static string LoadEncryptedProfile(HoardID id, string profilesDir)
+        public static async Task<string> LoadEncryptedProfile(HoardID id, string profilesDir)
         {
             if (!Directory.Exists(profilesDir))
         {
@@ -144,7 +148,11 @@ namespace Hoard.Utils
                 string fileName = Path.GetFileName(fullPath);
                 if ((fileName != null) && (fileName != System.String.Empty))
                 {
-                    string json = File.ReadAllText(fullPath);
+                    string json = null;
+                    using (var reader = File.OpenText(fullPath))
+                    {
+                        json = await reader.ReadToEndAsync();
+                    }
                     var details = JObject.Parse(json);
                     if (details == null)
                     {

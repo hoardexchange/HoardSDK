@@ -52,20 +52,23 @@ namespace HoardTests.AccountTools
             await keeper.SendPublicKey();
 
             //3. wait for confirmations
-            string hashKeeper = await keeper.AcquireConfirmationHash();
-            string hashApplicant = await applicant.AcquireConfirmationHash();
-            
+            using (var cts = new System.Threading.CancellationTokenSource(new System.TimeSpan(0,0,30)))
+            {
+                string hashKeeper = await keeper.AcquireConfirmationHash(cts.Token);
+                string hashApplicant = await applicant.AcquireConfirmationHash(cts.Token);
 
-            Assert.Equal(hashApplicant, hashKeeper);
 
-            //4. keeper sends keystore file
-            string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
-            string retMsg = await keeper.EncryptAndTransferKeystore(Encoding.UTF8.GetBytes(keyStoreData));
+                Assert.Equal(hashApplicant, hashKeeper);
 
-            //5. applicant receives keystore
-            string data = await applicant.AcquireKeystoreData();
+                //4. keeper sends keystore file
+                string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
+                string retMsg = await keeper.EncryptAndTransferKeystore(Encoding.UTF8.GetBytes(keyStoreData));
 
-            Assert.Equal(keyStoreData, data);
+                //5. applicant receives keystore
+                string data = await applicant.AcquireKeystoreData(cts.Token);
+
+                Assert.Equal(keyStoreData, data);
+            }
 
             await keeper.Shutdown();
             await applicant.Shutdown();            
@@ -75,17 +78,21 @@ namespace HoardTests.AccountTools
         //[Trait("Category", "Unit")]
         public async Task TransferKeyWhisperJS()
         {
-            AccountSynchronizerKeeper keeper = new AccountSynchronizerKeeper("ws://localhost:8546");
-            bool res = await keeper.Initialize(TestPIN);
+            AccountSynchronizerKeeper keeper = new AccountSynchronizerKeeper(NodeUrl);
+            bool res = await keeper.Initialize(TestPIN.ToUpper());
             if (res)
-            {
-                await keeper.SendPublicKey();
-                string confirmationHash = await keeper.AcquireConfirmationHash();
-
-                if (!string.IsNullOrEmpty(confirmationHash))
+            {                
+                using (var cts = new System.Threading.CancellationTokenSource(new System.TimeSpan(0, 0, 30)))
                 {
-                    string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
-                    await keeper.EncryptAndTransferKeystore(Encoding.UTF8.GetBytes(keyStoreData));
+                    string confirmationHash = await keeper.AcquireConfirmationHash(cts.Token);
+
+                    await keeper.SendPublicKey();
+
+                    if (!string.IsNullOrEmpty(confirmationHash))
+                    {
+                        string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
+                        await keeper.EncryptAndTransferKeystore(Encoding.UTF8.GetBytes(keyStoreData));
+                    }
                 }
             }
             await keeper.Shutdown();
@@ -96,12 +103,16 @@ namespace HoardTests.AccountTools
         public async Task ReceiveKeyWhisperJS()
         {
             AccountSynchronizerApplicant applicant = new AccountSynchronizerApplicant(NodeUrl);
-            bool res = await applicant.Initialize(TestPIN);
+            string pin = TestPIN.ToUpper();
+            bool res = await applicant.Initialize(TestPIN.ToUpper());
             if (res)
             {
                 await applicant.SendPublicKey();
-                string confirmationHash = await applicant.AcquireConfirmationHash();
-                string keystore = await applicant.AcquireKeystoreData();
+                using (var cts = new System.Threading.CancellationTokenSource(new System.TimeSpan(0, 0, 30)))
+                {
+                    string confirmationHash = await applicant.AcquireConfirmationHash(cts.Token);
+                    string keystore = await applicant.AcquireKeystoreData(cts.Token);
+                }
             }
             await applicant.Shutdown();
         }

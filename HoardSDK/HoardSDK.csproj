@@ -14,8 +14,6 @@
     <PackageReference Include="RestSharp">
       <Version>106.5.4</Version>
     </PackageReference>
-    <PackageReference Include="websocketsharp.core" Version="1.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" Condition="'$(TargetFramework)' == 'net46'" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>

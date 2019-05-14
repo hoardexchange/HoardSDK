@@ -79,40 +79,32 @@ namespace Hoard
         static protected float MinimalPowTarget = 3.03f;
 
         /// <summary>
-        /// 
+        /// Internal WhisperService
         /// </summary>
         protected WhisperService WhisperService = null;
 
         /// <summary>
-        /// 
+        /// Symmetric key generated on Whisper node
         /// </summary>
-        protected string SymKeyId = "";
+        private string SymKeyId = string.Empty;
 
         /// <summary>
-        /// 
+        /// Subscription ID from Whisper node
         /// </summary>
-        protected string SubscriptionId = string.Empty;
+        private string SubscriptionId = string.Empty;
 
         /// <summary>
-        /// 
-        /// </summary>
-        protected AsymmetricCipherKeyPair KeyPair = null;
-
-        /// <summary>
-        /// 
+        /// Public key
         /// </summary>
         protected byte[] publicKey = new byte[0];
 
         /// <summary>
-        /// 
+        /// Publick key
         /// </summary>
         public byte[] PublicKey { get { return publicKey; } }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected string topic = "";
-
+        private AsymmetricCipherKeyPair KeyPair = null;
+        private string topic = "";
         private X9ECParameters X9 = null;
         private ECDomainParameters EcSpec = null;
 
@@ -123,20 +115,21 @@ namespace Hoard
         {
             WhisperService = new WhisperService(url);
             X9 = ECNamedCurveTable.GetByName("prime239v1");
+            GenerateKeyPair();
         }
         
         /// <summary>
-        /// Establishes connection with geth and subscribes for messages with given pin
+        /// Establishes connection with geth and subscribes for messages with given pin (if provided)
         /// --wsorigins="*" --ws --wsport "port" --shh --rpc --rpcport "port" --rpcapi personal,db,eth,net,web3,shh
         /// </summary>
-        /// <param name="pin">pin to subscribe to</param>
+        /// <param name="pin">pin to subscribe to. If set to null or empty.
+        /// No subscription will take place and user should call Subscribe or Registerfilter manually</param>
         /// <returns></returns>
-        public async Task<bool> Initialize(string pin)
+        public async Task<bool> Initialize(string pin = null)
         {
             bool result = await WhisperService.Connect();
-            if (result)
-            {
-                WhisperService.OnSubscriptionMessage += TranslateMessage;
+            if (result && !string.IsNullOrEmpty(pin))
+            {                
                 SubscriptionId = await Subscribe(pin);
             }
             return result;
@@ -149,7 +142,6 @@ namespace Hoard
         {
             if (!string.IsNullOrEmpty(SubscriptionId))
                 await Unsubscribe(SubscriptionId);
-
             await WhisperService.Close();
         }
 
@@ -222,12 +214,13 @@ namespace Hoard
         /// <param name="pin">pin to create topic from</param>
         /// <returns>subscription id</returns>
         public async Task<string> Subscribe(string pin)
-        {
+        {            
             topic = ConvertPinToTopic(pin);
             SHA256 sha256 = new SHA256Managed();
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
             SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
             WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, new string[] { topic }, true);
+            WhisperService.OnSubscriptionMessage += TranslateMessage;
             SubscriptionId = await WhisperService.Subscribe(msgCriteria);
             return SubscriptionId;
         }
@@ -239,7 +232,11 @@ namespace Hoard
         /// <returns></returns>
         public async Task<bool> Unsubscribe(string subscriptionId)
         {
-            return await WhisperService.Unsubscribe(subscriptionId);
+            if (WhisperService.IsConnected)
+            {
+                return await WhisperService.Unsubscribe(subscriptionId);
+            }
+            return false;
         }
 
         /// <summary>
@@ -278,22 +275,7 @@ namespace Hoard
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public async Task ProcessMessage(string filterId)
-        {
-            var receivedMessagesQueue = await WhisperService.ReceiveMessage(filterId);
-            foreach(var msg in receivedMessagesQueue)
-            {
-                TranslateMessage(msg);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public void GenerateKeyPair()
+        private void GenerateKeyPair()
         {
             IAsymmetricCipherKeyPairGenerator g = GeneratorUtilities.GetKeyPairGenerator("ECIES");
             //TODO ?
@@ -311,24 +293,24 @@ namespace Hoard
         }
 
         /// <summary>
-        /// 
+        /// Encrypts data using receiver public key and own keypair
         /// </summary>
-        /// <param name="receiverPublicKeyBytes"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public byte[] EncryptData(byte[] receiverPublicKeyBytes, byte[] data)
+        /// <param name="receiverPublicKeyBytes">key to encrypt with</param>
+        /// <param name="data">data to encrypt</param>
+        /// <returns>encrypted data</returns>
+        protected byte[] EncryptData(byte[] receiverPublicKeyBytes, byte[] data)
         {
             IesEngine iesEngine = CreateIesEngine(true, receiverPublicKeyBytes);
             return iesEngine.ProcessBlock(data, 0, data.Length);
         }
 
         /// <summary>
-        /// 
+        /// Decrypts data using receiver public key and own keypair
         /// </summary>
-        /// <param name="senderPublicKeyBytes"></param>
-        /// <param name="encodedData"></param>
-        /// <returns></returns>
-        public byte[] DecryptData(byte[] senderPublicKeyBytes, byte[] encodedData)
+        /// <param name="senderPublicKeyBytes">key to decrypt with</param>
+        /// <param name="encodedData">data to decrypt</param>
+        /// <returns>decrypted data</returns>
+        protected byte[] DecryptData(byte[] senderPublicKeyBytes, byte[] encodedData)
         {
             IesEngine iesEngine = CreateIesEngine(false, senderPublicKeyBytes);
             return iesEngine.ProcessBlock(encodedData, 0, encodedData.Length);
@@ -354,11 +336,11 @@ namespace Hoard
         }
 
         /// <summary>
-        /// 
+        /// Creates symmetric key from sender's public key and own key pair
         /// </summary>
         /// <param name="publicKeyBytes"></param>
         /// <returns></returns>
-        public byte[] GetSymmetricKey(byte[] publicKeyBytes)
+        protected byte[] GetSymmetricKey(byte[] publicKeyBytes)
         {
             ECPublicKeyParameters publicKey = new ECPublicKeyParameters(X9.Curve.DecodePoint(publicKeyBytes), EcSpec);
 

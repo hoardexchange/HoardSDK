@@ -44,7 +44,9 @@ namespace Hoard
             return result;
         }
 
-        //public delegate void SubscriptionMessageCB(SubscriptionResponse);
+        /// <summary>
+        /// Called when new subscription message is translated
+        /// </summary>
         public event Action<SubscriptionResponse> OnSubscriptionMessage;
 
         /// <summary>
@@ -183,9 +185,18 @@ namespace Hoard
                 return HexStringToByteArray(payload.Substring(2));
             }
         }
+                
+        /// <summary>
+        /// Defulat timeout for operations
+        /// </summary>
+        public static readonly TimeSpan DefaultTimeOut = TimeSpan.FromSeconds(3);
 
-        private ClientWebSocket WhisperClient = null;
-        private TimeSpan TimeOut = TimeSpan.FromSeconds(3);
+        /// <summary>
+        /// Returns true if it is connected to host
+        /// </summary>
+        public bool IsConnected { get { return WhisperClient.State == WebSocketState.Open; } }
+
+        private ClientWebSocket WhisperClient = null;        
         private string Url = null;
         private string Error;
         
@@ -213,9 +224,17 @@ namespace Hoard
         /// </summary>
         public async Task<bool> Connect()
         {
-            using (var cts = new CancellationTokenSource(TimeOut))
+            using (var cts = new CancellationTokenSource(DefaultTimeOut))
             {
-                await WhisperClient.ConnectAsync(new Uri(Url), cts.Token);
+                try
+                {
+                    await WhisperClient.ConnectAsync(new Uri(Url), cts.Token);
+                }
+                catch(TimeoutException)
+                {
+                    ErrorCallbackProvider.ReportError("Connection timedout!");
+                    return false;
+                }
             }
 
             if (WhisperClient.State != WebSocketState.Open)
@@ -232,7 +251,8 @@ namespace Hoard
         /// </summary>
         public async Task Close()
         {
-            await WhisperClient.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+            if (WhisperClient.State == WebSocketState.Open)
+                await WhisperClient.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
         }
 
         private async Task<WebSocketReceiveResult> InternalReceiveAsync(System.IO.Stream stream, CancellationToken ctok)
@@ -250,7 +270,7 @@ namespace Hoard
             return rcvResult;
         }
 
-        private async Task<SubscriptionResponse> ReceiveSubscriptionResponse()
+        private async Task<SubscriptionResponse> ReceiveSubscriptionResponse(CancellationToken token)
         {
             if (WhisperClient.State != WebSocketState.Open)
             {
@@ -260,54 +280,51 @@ namespace Hoard
 
             while (true)
             {
-                using (var cts = new CancellationTokenSource(TimeOut))
+                //read in 1K chunks                    
+                System.IO.MemoryStream msgBytes = new System.IO.MemoryStream(1024);
+                WebSocketReceiveResult rcvResult = await InternalReceiveAsync(msgBytes,token);
+
+                //we are skipping all messages that are not subscriptions
+                if (rcvResult.MessageType == WebSocketMessageType.Text)
                 {
-                    //read in 1K chunks                    
-                    System.IO.MemoryStream msgBytes = new System.IO.MemoryStream(1024);
-                    WebSocketReceiveResult rcvResult = await InternalReceiveAsync(msgBytes,cts.Token);
+                    string jsonMsg = Encoding.UTF8.GetString(msgBytes.ToArray());
+                    ErrorCallbackProvider.ReportInfo(jsonMsg);
 
-                    //we are skipping all messages that are not subscriptions
-                    if (rcvResult.MessageType == WebSocketMessageType.Text)
+                    JToken message = null;
+                    JObject json = JObject.Parse(jsonMsg);
+                    json.TryGetValue("error", out message);
+                    if (message != null)
                     {
-                        string jsonMsg = Encoding.UTF8.GetString(msgBytes.ToArray());
-                        ErrorCallbackProvider.ReportInfo(jsonMsg);
-
-                        JToken message = null;
-                        JObject json = JObject.Parse(jsonMsg);
-                        json.TryGetValue("error", out message);
-                        if (message != null)
+                        Error = message.ToString();
+                        ErrorCallbackProvider.ReportError("Received error from Whisper service: " + Error);
+                    }
+                    else
+                    {
+                        json.TryGetValue("method", out JToken method);
+                        if ((method != null) && (method.ToString() == "shh_subscription"))
                         {
-                            Error = message.ToString();
-                            ErrorCallbackProvider.ReportError("Received error from Whisper service: " + Error);
+                            JToken prms = null;
+                            json.TryGetValue("params", out prms);
+                            if (prms != null)
+                            {
+                                JObject jsonParams = prms.ToObject<JObject>();
+                                jsonParams.TryGetValue("result", out message);
+                                if (message != null)
+                                {
+                                    return JsonConvert.DeserializeObject<SubscriptionResponse>(message.ToString());
+                                }
+                            }
                         }
                         else
                         {
-                            json.TryGetValue("method", out JToken method);
-                            if ((method != null) && (method.ToString() == "shh_subscription"))
-                            {
-                                JToken prms = null;
-                                json.TryGetValue("params", out prms);
-                                if (prms != null)
-                                {
-                                    JObject jsonParams = prms.ToObject<JObject>();
-                                    jsonParams.TryGetValue("result", out message);
-                                    if (message != null)
-                                    {
-                                        return JsonConvert.DeserializeObject<SubscriptionResponse>(message.ToString());
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                ErrorCallbackProvider.ReportWarning("Expected notification but got: "+jsonMsg);
-                            }
+                            ErrorCallbackProvider.ReportWarning("Expected notification but got: "+jsonMsg);
                         }
                     }
                 }
             }
         }
 
-        private async Task<T> ReceiveResponse<T>(int reqId, T defaultValue)
+        private async Task<T> ReceiveResponse<T>(int reqId, T defaultValue, CancellationToken ctoken)
         {
             if (WhisperClient.State != WebSocketState.Open)
             {
@@ -317,75 +334,80 @@ namespace Hoard
 
             //wait for requested response (or timeout)
             while (true)
-            {
-                using (var cts = new CancellationTokenSource(TimeOut))
+            {    
+                //read in 1K chunks                    
+                System.IO.MemoryStream msgBytes = new System.IO.MemoryStream(1024);
+                WebSocketReceiveResult rcvResult = await InternalReceiveAsync(msgBytes, ctoken);
+
+                if (rcvResult.MessageType == WebSocketMessageType.Binary)
                 {
-                    //read in 1K chunks                    
-                    System.IO.MemoryStream msgBytes = new System.IO.MemoryStream(1024);
-                    WebSocketReceiveResult rcvResult = await InternalReceiveAsync(msgBytes, cts.Token);
+                    throw new NotSupportedException("Binary data is not supported!");
+                }
+                else if (rcvResult.MessageType == WebSocketMessageType.Text)
+                {
+                    string jsonMsg = Encoding.UTF8.GetString(msgBytes.ToArray());
+                    ErrorCallbackProvider.ReportInfo(jsonMsg);
 
-                    if (rcvResult.MessageType == WebSocketMessageType.Binary)
+                    JObject json = JObject.Parse(jsonMsg);
+                    json.TryGetValue("error", out JToken error);
+                    if (error != null)
                     {
-                        throw new NotSupportedException("Binary data is not supported!");
+                        Error = error.ToString();
+                        ErrorCallbackProvider.ReportError("Received error from Whisper service: " + Error);
                     }
-                    else if (rcvResult.MessageType == WebSocketMessageType.Text)
+                    else
                     {
-                        string jsonMsg = Encoding.UTF8.GetString(msgBytes.ToArray());
-                        ErrorCallbackProvider.ReportInfo(jsonMsg);
-
-                        JObject json = JObject.Parse(jsonMsg);
-                        json.TryGetValue("error", out JToken error);
-                        if (error != null)
+                        json.TryGetValue("result", out JToken result);
+                        if (result != null)
                         {
-                            Error = error.ToString();
-                            ErrorCallbackProvider.ReportError("Received error from Whisper service: " + Error);
-                        }
-                        else
-                        {
-                            json.TryGetValue("result", out JToken result);
-                            if (result != null)
+                            json.TryGetValue("id", out JToken respId);
+                            if (respId.Value<int>() == reqId)
                             {
-                                json.TryGetValue("id", out JToken respId);
-                                if (respId.Value<int>() == reqId)
-                                {
-                                    if (result.Type == JTokenType.Array || result.Type == JTokenType.Object)
-                                        return JsonConvert.DeserializeObject<T>(result.ToString());
-                                    return result.Value<T>();
-                                }
-                                else
-                                {
-                                    ErrorCallbackProvider.ReportError("Waiting for response with ID: " + reqId + " but got " + respId.Value<int>());
-                                }
+                                if (result.Type == JTokenType.Array || result.Type == JTokenType.Object)
+                                    return JsonConvert.DeserializeObject<T>(result.ToString());
+                                return result.Value<T>();
                             }
                             else
                             {
-                                json.TryGetValue("method", out JToken method);
-                                if ((method != null) && (method.ToString() == "shh_subscription"))
+                                ErrorCallbackProvider.ReportError("Waiting for response with ID: " + reqId + " but got " + respId.Value<int>());
+                            }
+                        }
+                        else
+                        {
+                            json.TryGetValue("method", out JToken method);
+                            if ((method != null) && (method.ToString() == "shh_subscription"))
+                            {
+                                json.TryGetValue("params", out JToken prms);
+                                if (prms != null)
                                 {
-                                    json.TryGetValue("params", out JToken prms);
-                                    if (prms != null)
+                                    JObject jsonParams = prms.ToObject<JObject>();
+                                    jsonParams.TryGetValue("result", out JToken message);
+                                    if (message != null)
                                     {
-                                        JObject jsonParams = prms.ToObject<JObject>();
-                                        jsonParams.TryGetValue("result", out JToken message);
-                                        if (message != null)
-                                        {
-                                            OnSubscriptionMessage?.Invoke(JsonConvert.DeserializeObject<SubscriptionResponse>(message.ToString()));
-                                        }
+                                        OnSubscriptionMessage?.Invoke(JsonConvert.DeserializeObject<SubscriptionResponse>(message.ToString()));
                                     }
                                 }
                             }
                         }
                     }
-                    else
-                    {
-                        ErrorCallbackProvider.ReportWarning("Conection was closed!");
-                        return defaultValue;
-                    }
+                }
+                else
+                {
+                    ErrorCallbackProvider.ReportWarning("Conection was closed!");
+                    return defaultValue;
                 }
             }
         }
 
         private async Task<T> BuildAndSendRequest<T>(string function, JArray additionalParams, T defaultValue)
+        {
+            using (var cts = new CancellationTokenSource(DefaultTimeOut))
+            {
+                return await BuildAndSendRequest<T>(function, additionalParams, defaultValue, cts.Token);
+            }
+        }
+
+        private async Task<T> BuildAndSendRequest<T>(string function, JArray additionalParams, T defaultValue, CancellationToken ctoken)
         {
             try
             {
@@ -403,12 +425,8 @@ namespace Hoard
                     jobj.Add("params", additionalParams);
                 }
                 jobj.Add("id", ++JsonId);
-                using (var cts = new CancellationTokenSource(TimeOut))
-                {
-                    ErrorCallbackProvider.ReportInfo("SEND: "+jobj.ToString());
-                    await WhisperClient.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(jobj.ToString())), WebSocketMessageType.Text, true, cts.Token);
-                };
-                return await ReceiveResponse<T>(JsonId, defaultValue);
+                await WhisperClient.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(jobj.ToString())), WebSocketMessageType.Text, true, ctoken);
+                return await ReceiveResponse<T>(JsonId, defaultValue, ctoken);
             }
             catch (WebSocketException ex)
             {
@@ -696,11 +714,12 @@ namespace Hoard
         }  
         
         /// <summary>
-        /// 
+        /// Returns one SubscriptionResponse message sent from Whisper
         /// </summary>
-        public async Task<SubscriptionResponse> ReceiveMessages()
+        /// <param name="token">optional cancellation token, default will wait forever</param>
+        public async Task<SubscriptionResponse> ReceiveMessages(CancellationToken token)
         {
-            return await ReceiveSubscriptionResponse();
+            return await ReceiveSubscriptionResponse(token);
         }
     }
 }

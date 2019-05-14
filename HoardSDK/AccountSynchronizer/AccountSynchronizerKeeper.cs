@@ -12,7 +12,7 @@ namespace Hoard
     /// </summary>
     public class AccountSynchronizerKeeper : AccountSynchronizer
     {
-        private int applicantPublicKeyReceived;
+        private int senderKeyReceived;
 
         private byte[] applicantPublicKey = new byte[0];
         
@@ -21,18 +21,16 @@ namespace Hoard
         /// </summary>
         public AccountSynchronizerKeeper(string url) : base(url)
         {
-            Interlocked.Exchange(ref applicantPublicKeyReceived, 0);
-
-            GenerateKeyPair();
+            Interlocked.Exchange(ref senderKeyReceived, 0);
         }
 
         /// <summary>
         /// Checks if key keeper received confirmation pin
         /// </summary>
         /// <returns></returns>
-        public bool ApplicantPublicKeyReceived()
+        public bool IsSenderKeyReceived()
         {
-            return (Interlocked.CompareExchange(ref applicantPublicKeyReceived, applicantPublicKeyReceived, 0) != 0);
+            return (Interlocked.CompareExchange(ref senderKeyReceived, senderKeyReceived, 0) != 0);
         }
         
         /// <summary>
@@ -46,7 +44,7 @@ namespace Hoard
                 case InternalData.InternalMessageId.ApplicantPublicKey:
                     {
                         applicantPublicKey = internalMessage.data;
-                        Interlocked.Exchange(ref applicantPublicKeyReceived, 1);
+                        Interlocked.Exchange(ref senderKeyReceived, 1);
                     }
                     break;
                 default:
@@ -58,11 +56,11 @@ namespace Hoard
         /// Waits for public key from keeper and returns confirmation hash
         /// </summary>
         /// <returns>confirmation hash</returns>
-        public async Task<string> AcquireConfirmationHash()
+        public async Task<string> AcquireConfirmationHash(CancellationToken token)
         {
-            while (!ApplicantPublicKeyReceived())
+            while (!IsSenderKeyReceived())
             {
-                var msg = await WhisperService.ReceiveMessages();
+                var msg = await WhisperService.ReceiveMessages(token);
                 TranslateMessage(msg);
             }
             return GetConfirmationHash();
@@ -73,7 +71,7 @@ namespace Hoard
         /// </summary>
         protected override void OnClear()
         {
-            Interlocked.Exchange(ref applicantPublicKeyReceived, 0);
+            Interlocked.Exchange(ref senderKeyReceived, 0);
         }
 
         /// <summary>

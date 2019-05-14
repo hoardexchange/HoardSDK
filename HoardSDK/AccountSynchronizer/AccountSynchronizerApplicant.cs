@@ -13,11 +13,14 @@ namespace Hoard
     /// </summary>
     public class AccountSynchronizerApplicant : AccountSynchronizer
     {
-        private int keeperPublicKeyReceived;
+        private int senderKeyReceived;
 
         private int keystoreReceived;
 
-        private string decryptedKeystoreData;
+        /// <summary>
+        /// Decrypted key store data
+        /// </summary>
+        public string DecryptedKeystoreData { get; private set; } = string.Empty;
 
         private byte[][] encryptedKeystoreData = null;
         private byte[] fullEncryptedKeystoreData = null;
@@ -29,20 +32,17 @@ namespace Hoard
         /// </summary>
         public AccountSynchronizerApplicant(string url) : base(url)
         {
-            decryptedKeystoreData = "";
             Interlocked.Exchange(ref keystoreReceived, 0);
             OnClear();
-
-            GenerateKeyPair();
         }
         
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        public bool KeeperPublicKeyReceived()
+        public bool IsSenderKeyReceived()
         {
-            return (Interlocked.CompareExchange(ref keeperPublicKeyReceived, keeperPublicKeyReceived, 0) != 0);
+            return (Interlocked.CompareExchange(ref senderKeyReceived, senderKeyReceived, 0) != 0);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Hoard
                 case InternalData.InternalMessageId.KeeperPublicKey:
                     {
                         keeperPublicKey = internalMessage.data;
-                        Interlocked.Exchange(ref keeperPublicKeyReceived, 1);
+                        Interlocked.Exchange(ref senderKeyReceived, 1);
                     }
                     break;
                 case InternalData.InternalMessageId.TransferKeystoreAnswer:
@@ -67,8 +67,8 @@ namespace Hoard
                         if (keeperPublicKey != null && fullEncryptedKeystoreData != null)
                         {
                             byte[] decryptedData = DecryptData(keeperPublicKey, fullEncryptedKeystoreData);
-                            decryptedKeystoreData = Encoding.UTF8.GetString(decryptedData);
-                            Debug.Print("Decrypted Message: " + decryptedKeystoreData);
+                            DecryptedKeystoreData = Encoding.UTF8.GetString(decryptedData);
+                            Debug.Print("Decrypted Message: " + DecryptedKeystoreData);
                             Interlocked.Exchange(ref keystoreReceived, 1);
                         }
                     }
@@ -82,25 +82,25 @@ namespace Hoard
         /// Waits for keystore data from keeper
         /// </summary>
         /// <returns>encrypted keystore data</returns>
-        public async Task<string> AcquireKeystoreData()
+        public async Task<string> AcquireKeystoreData(CancellationToken token)
         {
             while (!IsKeyStoreReceived())
             {
-                var msg = await WhisperService.ReceiveMessages();
+                var msg = await WhisperService.ReceiveMessages(token);
                 TranslateMessage(msg);
             }
-            return GetKeystoreReceivedData();
+            return DecryptedKeystoreData;
         }
 
         /// <summary>
         /// Waits for public key from keeper and returns confirmation hash
         /// </summary>
         /// <returns>confirmation hash</returns>
-        public async Task<string> AcquireConfirmationHash()
+        public async Task<string> AcquireConfirmationHash(CancellationToken token)
         {
-            while (!KeeperPublicKeyReceived())
+            while (!IsSenderKeyReceived())
             {
-                var msg = await WhisperService.ReceiveMessages();
+                var msg = await WhisperService.ReceiveMessages(token);
                 TranslateMessage(msg);
             }
             return GetConfirmationHash();
@@ -150,11 +150,14 @@ namespace Hoard
             }
         }
 
+        /// <summary>
+        /// Clears internal state
+        /// </summary>
         protected override void OnClear()
         {
-            Interlocked.Exchange(ref keeperPublicKeyReceived, 0);
+            Interlocked.Exchange(ref senderKeyReceived, 0);
             Interlocked.Exchange(ref keystoreReceived, 0);
-            decryptedKeystoreData = "";
+            DecryptedKeystoreData = string.Empty;
         }
 
         /// <summary>
@@ -174,14 +177,6 @@ namespace Hoard
         public bool IsKeyStoreReceived()
         {
             return (Interlocked.CompareExchange(ref keystoreReceived, keystoreReceived, 0) != 0);
-        }
-
-        /// <summary>
-        /// Returns encrypted keystore data
-        /// </summary>
-        public string GetKeystoreReceivedData()
-        {
-            return decryptedKeystoreData;
         }
 
         /// <summary>
