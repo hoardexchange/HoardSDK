@@ -100,6 +100,25 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Enumerates existing profiles
+        /// </summary>
+        /// <returns>list of found profiles</returns>
+        public async Task<KeyStoreUtils.ProfileDesc[]> EnumerateProfiles()
+        {
+            List<KeyStoreUtils.ProfileDesc> profiles = new List<KeyStoreUtils.ProfileDesc>();
+            await KeyStoreUtils.EnumerateProfiles(ProfilesDir, async (fileName) => {
+                StreamReader jsonReader = new StreamReader(Path.Combine(ProfilesDir, fileName));
+                JObject jobj = JObject.Parse(await jsonReader.ReadToEndAsync());
+                jsonReader.Close();
+                if (jobj.TryGetValue("address", out JToken valueAddress) && jobj.TryGetValue("name", out JToken valueName))
+                {
+                    profiles.Add(new KeyStoreUtils.ProfileDesc(valueName.Value<string>(), valueAddress.Value<string>(), string.Empty));
+                }
+            });
+            return profiles.ToArray();
+        }
+
+        /// <summary>
         /// Helper function to create Profile object based on privateKey
         /// </summary>
         /// <param name="name">name of profile</param>
@@ -136,18 +155,6 @@ namespace Hoard
         public async Task<bool> DeleteProfile(HoardID id, bool passwordNeeded = false)
         {
             return await KeyStoreUtils.DeleteProfile(UserInputProvider, id, ProfilesDir, passwordNeeded);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="oldPassword"></param>
-        /// <param name="newPassword"></param>
-        /// <returns></returns>
-        public Task<string> ChangePassword(HoardID id, string oldPassword, string newPassword)
-        {
-            return Task.FromResult<string>(KeyStoreUtils.ChangePassword(id, oldPassword, newPassword, ProfilesDir));
         }
 
         /// <summary>
@@ -192,6 +199,18 @@ namespace Hoard
             }
 
             return fileName;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="oldPassword"></param>
+        /// <param name="newPassword"></param>
+        /// <returns></returns>
+        public Task<string> ChangePassword(HoardID id, string oldPassword, string newPassword)
+        {
+            return Task.FromResult<string>(KeyStoreUtils.ChangePassword(id, oldPassword, newPassword, ProfilesDir));
         }
     }
 }
