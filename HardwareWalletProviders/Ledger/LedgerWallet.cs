@@ -50,12 +50,6 @@ namespace Hoard.HW.Ledger
         /// <ineritdoc/>
         abstract public Task<Profile> RequestProfile(string name);
 
-        /// <ineritdoc/>
-        abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile);
-
-        /// <ineritdoc/>
-        abstract public Task<string> SignMessage(byte[] message, Profile profile);
-
         //-------------------------
         private static byte[] GetRequestDataPacket(Stream stream, int packetIndex)
         {

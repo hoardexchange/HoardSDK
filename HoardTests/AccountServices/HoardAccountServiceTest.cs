@@ -41,9 +41,9 @@ namespace HoardTests.AccountServices
         public async Task SignMessage()
         {
             var message = "Hello world";
-            var signature = await hoardAccountServiceTestUser.SignMessage(message.ToBytesForRLPEncoding());
-            var msgSigner = new EthereumMessageSigner();
-            var addressRec = new HoardID(msgSigner.EncodeUTF8AndEcRecover(message, signature));
+            var byteMsg = message.ToBytesForRLPEncoding();
+            var signature = await hoardAccountServiceTestUser.SignMessage(byteMsg);
+            var addressRec = Helper.RecoverHoardId(byteMsg, signature);
             Assert.Equal(hoardAccountServiceTestUser.ID, addressRec);
         }
 
@@ -60,8 +60,7 @@ namespace HoardTests.AccountServices
             var txData = new byte[][] { nonce, gasPrice, startGas, to.ToHexByteArray(), value, data };
             var tx = new RLPSigner(txData);
             var signature = await hoardAccountServiceTestUser.SignTransaction(tx.GetRLPEncodedRaw());
-            EthECDSASignature sig = Nethereum.Signer.MessageSigner.ExtractEcdsaSignature(signature);
-            var addressRec = new HoardID(EthECKey.RecoverFromSignature(sig, tx.RawHash).GetPublicAddress());
+            var addressRec = Helper.RecoverHoardId(signature);
             Assert.Equal(hoardAccountServiceTestUser.ID, addressRec);
         }
     }

@@ -75,33 +75,36 @@ namespace Hoard
         }
 
         /// <summary>
-        /// 
+        /// Sends exchange key
         /// </summary>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<string> SendPublicKey()
+        public async Task<string> SendPublicKey(CancellationToken ctoken)
         {
             byte[] data = BuildMessage(InternalData.InternalMessageId.KeeperPublicKey, publicKey);
-            return await SendMessage(data);
+            return await SendMessage(data, ctoken);
         }
 
         /// <summary>
         /// Excrypts selected keystore and sends it to applicant
         /// </summary>
         /// <param name="keyStoreData"></param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<string> EncryptAndTransferKeystore(byte[] keyStoreData)
+        public async Task<string> EncryptAndTransferKeystore(byte[] keyStoreData, CancellationToken ctoken)
         {
-            return await SendEncryptedData(InternalData.InternalMessageId.TransferKeystoreAnswer, keyStoreData);
+            return await SendEncryptedData(InternalData.InternalMessageId.TransferKeystoreAnswer, keyStoreData, ctoken);
         }
 
         /// <summary>
         /// Sends custom data
         /// </summary>
         /// <param name="customData">Custom data</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<string> SendEncryptedData(byte[] customData)
+        public async Task<string> SendEncryptedData(byte[] customData, CancellationToken ctoken)
         {
-            return await SendEncryptedData(InternalData.InternalMessageId.TransferCustomData, customData);
+            return await SendEncryptedData(InternalData.InternalMessageId.TransferCustomData, customData, ctoken);
         }
 
         /// <summary>
@@ -115,7 +118,7 @@ namespace Hoard
             return hash.ToHex(false).Substring(0, 10);
         }
 
-        private async Task<string> SendEncryptedData(InternalData.InternalMessageId messageId, byte[] customData)
+        private async Task<string> SendEncryptedData(InternalData.InternalMessageId messageId, byte[] customData, CancellationToken ctoken)
         {
             byte[] encryptedData = EncryptData(applicantPublicKey, customData);
 
@@ -134,7 +137,7 @@ namespace Hoard
                 Buffer.BlockCopy(chunks[i], 0, dtsData, 12, chunks[i].Length);
                 byte[] data = BuildMessage(messageId, dtsData);
 
-                await SendMessage(data);
+                await SendMessage(data, ctoken);
             }
             return "Message sent";
         }

@@ -54,12 +54,6 @@ namespace Hoard.HW.Trezor
         /// <ineritdoc/>
         abstract public Task<Profile> RequestProfile(string name);
 
-        /// <ineritdoc/>
-        abstract public Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile);
-
-        /// <ineritdoc/>
-        abstract public Task<string> SignMessage(byte[] message, Profile profile);
-
         /// <summary>
         /// Initializes the wallet. Call this when first using Trezor device.
         /// </summary>

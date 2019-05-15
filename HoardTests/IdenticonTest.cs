@@ -12,7 +12,7 @@ namespace HoardTests
 
         [Fact]
         [Trait("Category", "Unit")]
-        public async Task TestIdenticon()
+        public void TestIdenticon()
         {
             Profile PlayerAccount = KeyStoreProfileService.CreateProfileDirect(
                 "TestPlayer",

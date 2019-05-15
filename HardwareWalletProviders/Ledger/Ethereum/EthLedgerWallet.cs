@@ -59,7 +59,7 @@ namespace Hoard.HW.Ledger.Ethereum
             return null;
         }
 
-        public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
+        private async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
         {
             uint txLength = (uint)rlpEncodedTransaction.Length;
             uint bytesToCopy = Math.Min(0xff - (uint)derivation.Length, txLength);
@@ -90,7 +90,7 @@ namespace Hoard.HW.Ledger.Ethereum
             return null;
         }
 
-        public override async Task<string> SignMessage(byte[] message, Profile profile)
+        private async Task<string> SignMessage(byte[] message, Profile profile)
         {
             uint msgLength = (uint)message.Length;
             uint bytesToCopy = Math.Min(0xff - (uint)derivation.Length - sizeof(int), msgLength);

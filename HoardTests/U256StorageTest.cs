@@ -17,7 +17,7 @@ namespace HoardTests
 
         [Fact]
         [Trait("Category", "Unit")]
-        public async Task PackAndUnpackData()
+        public void PackAndUnpackData()
         {
             const bool b1 = true;
             const byte u8_1 = 0x13;

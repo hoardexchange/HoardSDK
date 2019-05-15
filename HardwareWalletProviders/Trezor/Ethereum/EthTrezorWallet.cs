@@ -51,13 +51,13 @@ namespace Hoard.HW.Trezor.Ethereum
             return new HDWalletProfile(name, address, this);
         }
 
-        public override async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
+        private async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
         {
             var output = await SendRequestAsync(EthSignTransaction.Request(indices, rlpEncodedTransaction));
             return EthSignTransaction.GetRLPEncoded(output, rlpEncodedTransaction);
         }
 
-        public override async Task<string> SignMessage(byte[] message, Profile profile)
+        private async Task<string> SignMessage(byte[] message, Profile profile)
         {
             var output = await SendRequestAsync(EthSignMessage.Request(indices, message));
             return EthSignMessage.GetRLPEncoded(output, message);

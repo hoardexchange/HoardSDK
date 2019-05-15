@@ -185,11 +185,6 @@ namespace Hoard
                 return HexStringToByteArray(payload.Substring(2));
             }
         }
-                
-        /// <summary>
-        /// Defulat timeout for operations
-        /// </summary>
-        public static readonly TimeSpan DefaultTimeOut = TimeSpan.FromSeconds(3);
 
         /// <summary>
         /// Returns true if it is connected to host
@@ -222,19 +217,16 @@ namespace Hoard
         /// <summary>
         /// Establishes connection
         /// </summary>
-        public async Task<bool> Connect()
+        public async Task<bool> Connect(CancellationToken token)
         {
-            using (var cts = new CancellationTokenSource(DefaultTimeOut))
+            try
             {
-                try
-                {
-                    await WhisperClient.ConnectAsync(new Uri(Url), cts.Token);
-                }
-                catch(TimeoutException)
-                {
-                    ErrorCallbackProvider.ReportError("Connection timedout!");
-                    return false;
-                }
+                await WhisperClient.ConnectAsync(new Uri(Url), token);
+            }
+            catch(TimeoutException)
+            {
+                ErrorCallbackProvider.ReportError("Connection timedout!");
+                return false;
             }
 
             if (WhisperClient.State != WebSocketState.Open)
@@ -354,6 +346,7 @@ namespace Hoard
                     {
                         Error = error.ToString();
                         ErrorCallbackProvider.ReportError("Received error from Whisper service: " + Error);
+                        return defaultValue;
                     }
                     else
                     {
@@ -399,14 +392,6 @@ namespace Hoard
             }
         }
 
-        private async Task<T> BuildAndSendRequest<T>(string function, JArray additionalParams, T defaultValue)
-        {
-            using (var cts = new CancellationTokenSource(DefaultTimeOut))
-            {
-                return await BuildAndSendRequest<T>(function, additionalParams, defaultValue, cts.Token);
-            }
-        }
-
         private async Task<T> BuildAndSendRequest<T>(string function, JArray additionalParams, T defaultValue, CancellationToken ctoken)
         {
             try
@@ -443,18 +428,18 @@ namespace Hoard
         /// Check connection
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> CheckConnection()
+        public async Task<bool> CheckConnection(CancellationToken ctoken)
         {
-            return !string.IsNullOrEmpty(await BuildAndSendRequest<string>("shh_info", null, string.Empty));
+            return !string.IsNullOrEmpty(await BuildAndSendRequest<string>("shh_info", null, string.Empty, ctoken));
         }
 
         /// <summary>
         /// Returns the current version number
         /// </summary>
         /// <returns>version number</returns>
-        public async Task<string> CheckVersion()
+        public async Task<string> CheckVersion(CancellationToken ctoken)
         {
-            return await BuildAndSendRequest<string>("shh_version", null, string.Empty);
+            return await BuildAndSendRequest<string>("shh_version", null, string.Empty, ctoken);
         }
 
         /// <summary>
@@ -462,105 +447,114 @@ namespace Hoard
         /// Whisper message size can never exceed the limit imposed by the underlying P2P protocol (10 Mb)
         /// </summary>
         /// <param name="maxMessageSize">Message size in bytes</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> SetMaxMessageSize(int maxMessageSize)
+        public async Task<bool> SetMaxMessageSize(int maxMessageSize, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(maxMessageSize);
-            return await BuildAndSendRequest<bool>("shh_setMaxMessageSize", jarrayObj, false);
+            return await BuildAndSendRequest<bool>("shh_setMaxMessageSize", jarrayObj, false, ctoken);
         }
 
         /// <summary>
         /// Sets the minimal PoW required by this node
         /// </summary>
         /// <param name="minPov">The new PoW requirement</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> SetMinPov(float minPov)
+        public async Task<bool> SetMinPov(float minPov, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(minPov);
-            return await BuildAndSendRequest<bool>("shh_setMinPoW", jarrayObj, false);
+            return await BuildAndSendRequest<bool>("shh_setMinPoW", jarrayObj, false, ctoken);
         }
 
         /// <summary>
         /// Marks specific peer trusted, which will allow it to send historic (expired) messages
         /// </summary>
         /// <param name="enode">Enode of the trusted peer</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> MarkTrustedPeer(string enode)
+        public async Task<bool> MarkTrustedPeer(string enode, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(enode);
-            return await BuildAndSendRequest<bool>("shh_markTrustedPeer", jarrayObj, false);
+            return await BuildAndSendRequest<bool>("shh_markTrustedPeer", jarrayObj, false, ctoken);
         }
 
         /// <summary>
         /// Generates a new public and private key pair for message decryption and encryption
         /// </summary>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<string> GenerateKeyPair()
+        public async Task<string> GenerateKeyPair(CancellationToken ctoken)
         {
-            return await BuildAndSendRequest<string>("shh_newKeyPair", null, string.Empty);
+            return await BuildAndSendRequest<string>("shh_newKeyPair", null, string.Empty, ctoken);
         }
 
         /// <summary>
         /// Stores the key pair, and returns its ID
         /// </summary>
         /// <param name="privKey">private key as HEX bytes</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> AddPrivateKey(string privKey)
+        public async Task<bool> AddPrivateKey(string privKey, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(privKey);
-            return !string.IsNullOrEmpty(await BuildAndSendRequest("shh_addPrivateKey", jarrayObj, string.Empty));
+            return !string.IsNullOrEmpty(await BuildAndSendRequest("shh_addPrivateKey", jarrayObj, string.Empty, ctoken));
         }
 
         /// <summary>
         /// Deletes the specifies key if it exists
         /// </summary>
         /// <param name="keyPairId">ID of key pair</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> DeleteKeyPair(string keyPairId)
+        public async Task<bool> DeleteKeyPair(string keyPairId, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(keyPairId);
-            return await BuildAndSendRequest("shh_deleteKeyPair", jarrayObj, false);
+            return await BuildAndSendRequest("shh_deleteKeyPair", jarrayObj, false, ctoken);
         }
 
         /// <summary>
         /// Checks if the whisper node has a private key of a key pair matching the given ID
         /// </summary>
         /// <param name="keyPairId">ID of key pair</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> HasKeyPair(string keyPairId)
+        public async Task<bool> HasKeyPair(string keyPairId, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(keyPairId);
-            return await BuildAndSendRequest("shh_hasKeyPair", jarrayObj, false);
+            return await BuildAndSendRequest("shh_hasKeyPair", jarrayObj, false, ctoken);
         }
 
         /// <summary>
         /// Returns the public key for identity ID
         /// </summary>
         /// <param name="keyPairId">ID of key pair</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>public key</returns>
-        public async Task<string> GetPublicKey(string keyPairId)
+        public async Task<string> GetPublicKey(string keyPairId, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(keyPairId);
-            return await BuildAndSendRequest("shh_getPublicKey", jarrayObj, string.Empty);
+            return await BuildAndSendRequest("shh_getPublicKey", jarrayObj, string.Empty, ctoken);
         }
 
         /// <summary>
         /// Returns the private key for identity ID
         /// </summary>
         /// <param name="keyPairId">ID of key pair</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>private key</returns>
-        public async Task<string> GetPrivateKey(string keyPairId)
+        public async Task<string> GetPrivateKey(string keyPairId, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(keyPairId);
-            return await BuildAndSendRequest("shh_getPrivateKey", jarrayObj, string.Empty);
+            return await BuildAndSendRequest("shh_getPrivateKey", jarrayObj, string.Empty, ctoken);
         }
 
         /// <summary>
@@ -568,69 +562,74 @@ namespace Hoard
         /// Can be used encrypting and decrypting messages where the key is known to both parties
         /// </summary>
         /// <returns>Key ID</returns>
-        public async Task<string> GenerateSymetricKey()
+        public async Task<string> GenerateSymetricKey(CancellationToken ctoken)
         {
-            return await BuildAndSendRequest("shh_newSymKey", null, string.Empty);
+            return await BuildAndSendRequest("shh_newSymKey", null, string.Empty, ctoken);
         }
 
         /// <summary>
         /// Stores the key, and returns its ID
         /// </summary>
         /// <param name="rawSymKey">The raw key for symmetric encryption as HEX bytes</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>Key ID</returns>
-        public async Task<string> AddSymetricKey(string rawSymKey)
+        public async Task<string> AddSymetricKey(string rawSymKey, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(rawSymKey);
-            return await BuildAndSendRequest("shh_addSymKey", jarrayObj, string.Empty);
+            return await BuildAndSendRequest("shh_addSymKey", jarrayObj, string.Empty, ctoken);
         }
 
         /// <summary>
         /// Generates the key from password, stores it, and returns its ID
         /// </summary>
         /// <param name="password">Password</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>Key ID</returns>
-        public async Task<string> GenerateSymetricKeyFromPassword(string password)
+        public async Task<string> GenerateSymetricKeyFromPassword(string password, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(password);
-            return await BuildAndSendRequest("shh_generateSymKeyFromPassword", jarrayObj, string.Empty);
+            return await BuildAndSendRequest("shh_generateSymKeyFromPassword", jarrayObj, string.Empty, ctoken);
         }
 
         /// <summary>
         /// Returns true if there is a key associated with the name string. Otherwise, returns false
         /// </summary>
         /// <param name="keyId">key ID</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> HasSymetricKey(string keyId)
+        public async Task<bool> HasSymetricKey(string keyId, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(keyId);
-            return await BuildAndSendRequest("shh_hasSymKey", jarrayObj, false);
+            return await BuildAndSendRequest("shh_hasSymKey", jarrayObj, false, ctoken);
         }
 
         /// <summary>
         /// Returns the symmetric key associated with the given ID
         /// </summary>
         /// <param name="keyId">key ID</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>symetric key</returns>
-        public async Task<string> GetSymetricKey(string keyId)
+        public async Task<string> GetSymetricKey(string keyId, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(keyId);
-            return await BuildAndSendRequest("shh_getSymKey", jarrayObj, string.Empty);
+            return await BuildAndSendRequest("shh_getSymKey", jarrayObj, string.Empty, ctoken);
         }
 
         /// <summary>
         /// Deletes the key associated with the name string if it exists
         /// </summary>
         /// <param name="keyId">key Id</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> DeleteSymetricKey(string keyId)
+        public async Task<bool> DeleteSymetricKey(string keyId, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(keyId);
-            return await BuildAndSendRequest("shh_deleteSymKey", jarrayObj, false);
+            return await BuildAndSendRequest("shh_deleteSymKey", jarrayObj, false, ctoken);
         }
 
         /// <summary>
@@ -641,85 +640,91 @@ namespace Hoard
         /// <param name="filters">message filters</param>
         /// <param name="id">identifier of function call. In case of Whisper must contain the value "messages"
         /// This might be the case in some very rare cases, e.g. if you intend to communicate to MailServers, etc</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>subscription id</returns>
-        public async Task<string> Subscribe(SubscriptionCriteria filters, string id = "messages")
+        public async Task<string> Subscribe(SubscriptionCriteria filters, CancellationToken ctoken, string id = "messages")
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(id);
             var outObject = (JObject)JToken.FromObject(filters);
             jarrayObj.Add(outObject);
-            return await BuildAndSendRequest("shh_subscribe", jarrayObj, string.Empty);
+            return await BuildAndSendRequest("shh_subscribe", jarrayObj, string.Empty, ctoken);
         }
 
         /// <summary>
         /// Cancels and removes an existing subscription
         /// </summary>
         /// <param name="subscriptionId">subscription ID</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> Unsubscribe(string subscriptionId)
+        public async Task<bool> Unsubscribe(string subscriptionId, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(subscriptionId);
-            return await BuildAndSendRequest("shh_unsubscribe", jarrayObj, false);
+            return await BuildAndSendRequest("shh_unsubscribe", jarrayObj, false, ctoken);
         }
 
         /// <summary>
         /// Create a new filter within the node. This filter can be used to poll for new messages that match the set of criteria
         /// </summary>
         /// <param name="filters">Message filters</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>filter identifier</returns>
-        public async Task<string> CreateNewMessageFilter(SubscriptionCriteria filters)
+        public async Task<string> CreateNewMessageFilter(SubscriptionCriteria filters, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             var outObject = (JObject)JToken.FromObject(filters);
             jarrayObj.Add(outObject);
-            return await BuildAndSendRequest("shh_newMessageFilter", jarrayObj, string.Empty);
+            return await BuildAndSendRequest("shh_newMessageFilter", jarrayObj, string.Empty, ctoken);
         }
 
         /// <summary>
         /// Uninstall a message filter in the node
         /// </summary>
         /// <param name="filterIdentifier">filter identifier as returned when the filter was created</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> DeleteMessageFilter(string filterIdentifier)
+        public async Task<bool> DeleteMessageFilter(string filterIdentifier, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(filterIdentifier);
-            return await BuildAndSendRequest("shh_deleteMessageFilter", jarrayObj, false);
+            return await BuildAndSendRequest("shh_deleteMessageFilter", jarrayObj, false, ctoken);
         }
 
         /// <summary>
         /// Retrieve messages that match the filter criteria and are received between the last time this function was called and now
         /// </summary>
         /// <param name="filterIdentifier">ID of filter that was created with shh_newMessageFilter</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>Array of messages</returns>
-        public async Task<List<SubscriptionResponse>> ReceiveMessage(string filterIdentifier)
+        public async Task<List<SubscriptionResponse>> ReceiveMessage(string filterIdentifier, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             jarrayObj.Add(filterIdentifier);
-            return await BuildAndSendRequest<List<SubscriptionResponse>>("shh_getFilterMessages", jarrayObj, null);
+            return await BuildAndSendRequest<List<SubscriptionResponse>>("shh_getFilterMessages", jarrayObj, null, ctoken);
         }
 
         /// <summary>
         /// Creates a whisper message and injects it into the network for distribution
         /// </summary>
         /// <param name="msg">Message</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>message hash</returns>
-        public async Task<string> SendMessage(MessageDesc msg)
+        public async Task<string> SendMessage(MessageDesc msg, CancellationToken ctoken)
         {
             JArray jarrayObj = new JArray();
             var outObject = (JObject)JToken.FromObject(msg);
             jarrayObj.Add(outObject);
-            return await BuildAndSendRequest("shh_post", jarrayObj, string.Empty);
-        }  
-        
+            return await BuildAndSendRequest("shh_post", jarrayObj, string.Empty, ctoken);
+        }
+
         /// <summary>
         /// Returns one SubscriptionResponse message sent from Whisper
         /// </summary>
-        /// <param name="token">optional cancellation token, default will wait forever</param>
-        public async Task<SubscriptionResponse> ReceiveMessages(CancellationToken token)
+        /// <param name="ctoken">cancellation token</param>
+        public async Task<SubscriptionResponse> ReceiveMessages(CancellationToken ctoken)
         {
-            return await ReceiveSubscriptionResponse(token);
+            return await ReceiveSubscriptionResponse(ctoken);
         }
     }
 }

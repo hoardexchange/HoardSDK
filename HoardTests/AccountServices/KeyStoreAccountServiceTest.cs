@@ -1,8 +1,6 @@
 ﻿using Hoard;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
-using Nethereum.Signer;
-using Nethereum.Util;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
@@ -38,11 +36,10 @@ namespace HoardTests.AccountServices
         public async Task SignMessage()
         {
             var message = "Hello world";
-            var signature = await user.SignMessage(message.ToBytesForRLPEncoding());
-            
-            var msgSigner = new EthereumMessageSigner();
-            var addressRec = new HoardID(msgSigner.EncodeUTF8AndEcRecover(message, signature));
-            Assert.Equal(user.ID, addressRec);
+            var byteMsg = message.ToBytesForRLPEncoding();
+            var signature = await user.SignMessage(byteMsg);            
+            HoardID account = Hoard.Utils.Helper.RecoverHoardId(byteMsg, signature);
+            Assert.Equal(user.ID, account);
         }
 
         [Fact]
@@ -68,21 +65,8 @@ namespace HoardTests.AccountServices
 
             var rlpEncoded = await user.SignTransaction(rlpEncodedTransaction);
 
-            Assert.True(rlpEncoded != null);
-            Assert.True(rlpEncoded.Length > 0);
+            HoardID account = Hoard.Utils.Helper.RecoverHoardId(rlpEncoded);
 
-            var decodedRlpEncoded = RLP.Decode(rlpEncoded.HexToByteArray());
-            var decodedRlpCollection = (RLPCollection)decodedRlpEncoded[0];
-
-            var signature = EthECDSASignatureFactory.FromComponents(
-                decodedRlpCollection[2].RLPData,
-                decodedRlpCollection[3].RLPData,
-                decodedRlpCollection[1].RLPData
-            );
-
-            var rawHash = new Sha3Keccack().CalculateHash(rlpEncodedTransaction);
-
-            var account = new HoardID(EthECKey.RecoverFromSignature(signature, rawHash).GetPublicAddress());
             Assert.Equal(user.ID, account);
         }
     }

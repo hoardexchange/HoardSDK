@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hoard
@@ -117,20 +118,33 @@ namespace Hoard
             X9 = ECNamedCurveTable.GetByName("prime239v1");
             GenerateKeyPair();
         }
-        
+
         /// <summary>
-        /// Establishes connection with geth and subscribes for messages with given pin (if provided)
+        /// Establishes connection with geth. Call Subscribe or Registerfilter manually
         /// --wsorigins="*" --ws --wsport "port" --shh --rpc --rpcport "port" --rpcapi personal,db,eth,net,web3,shh
         /// </summary>
-        /// <param name="pin">pin to subscribe to. If set to null or empty.
-        /// No subscription will take place and user should call Subscribe or Registerfilter manually</param>
+        /// <param name="ctoken">cancelation token</param>
         /// <returns></returns>
-        public async Task<bool> Initialize(string pin = null)
+        public async Task<bool> Initialize(CancellationToken ctoken)
         {
-            bool result = await WhisperService.Connect();
-            if (result && !string.IsNullOrEmpty(pin))
-            {                
-                SubscriptionId = await Subscribe(pin);
+            bool result = await WhisperService.Connect(ctoken);
+            return result;
+        }
+
+        /// <summary>
+        /// Establishes connection with geth and subscribes for messages with given pin
+        /// --wsorigins="*" --ws --wsport "port" --shh --rpc --rpcport "port" --rpcapi personal,db,eth,net,web3,shh
+        /// </summary>
+        /// <param name="pin">pin to subscribe to.</param>
+        /// <param name="ctoken">cancelation token</param>
+        /// <returns></returns>
+        public async Task<bool> Initialize(string pin, CancellationToken ctoken)
+        {
+            bool result = await WhisperService.Connect(ctoken);
+            if (result)
+            {
+                SubscriptionId = await Subscribe(pin, ctoken);
+                result = !string.IsNullOrEmpty(SubscriptionId);
             }
             return result;
         }
@@ -138,10 +152,15 @@ namespace Hoard
         /// <summary>
         /// Closes connection with geth and unsubscribes from node
         /// </summary>
-        public async Task Shutdown()
+        public async Task Shutdown(CancellationToken ctoken)
         {
-            if (!string.IsNullOrEmpty(SubscriptionId))
-                await Unsubscribe(SubscriptionId);
+            if (WhisperService.IsConnected)
+            {
+                if (!string.IsNullOrEmpty(SubscriptionId))
+                    await Unsubscribe(SubscriptionId, ctoken);
+                if (!string.IsNullOrEmpty(SymKeyId))
+                    await WhisperService.DeleteSymetricKey(SymKeyId, ctoken);
+            }
             await WhisperService.Close();
         }
 
@@ -212,16 +231,18 @@ namespace Hoard
         /// Subscribes for messages on with topic generated from pin
         /// </summary>
         /// <param name="pin">pin to create topic from</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns>subscription id</returns>
-        public async Task<string> Subscribe(string pin)
+        public async Task<string> Subscribe(string pin, CancellationToken ctoken)
         {            
             topic = ConvertPinToTopic(pin);
             SHA256 sha256 = new SHA256Managed();
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
-            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
+            if (string.IsNullOrEmpty(SymKeyId))
+                SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin), ctoken);
             WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, new string[] { topic }, true);
             WhisperService.OnSubscriptionMessage += TranslateMessage;
-            SubscriptionId = await WhisperService.Subscribe(msgCriteria);
+            SubscriptionId = await WhisperService.Subscribe(msgCriteria, ctoken);
             return SubscriptionId;
         }
 
@@ -229,49 +250,52 @@ namespace Hoard
         /// Unsubscribe from listening on given id
         /// </summary>
         /// <param name="subscriptionId"></param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<bool> Unsubscribe(string subscriptionId)
+        public async Task<bool> Unsubscribe(string subscriptionId, CancellationToken ctoken)
         {
-            if (WhisperService.IsConnected)
+            bool res = true;
+            if (!string.IsNullOrEmpty(SymKeyId))
             {
-                return await WhisperService.Unsubscribe(subscriptionId);
+                res = await WhisperService.DeleteSymetricKey(SymKeyId, ctoken);
             }
-            return false;
+            return res && await WhisperService.Unsubscribe(subscriptionId, ctoken);
         }
 
         /// <summary>
         /// Registers message filter generated from pin
         /// </summary>
         /// <param name="pin">Pin</param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<string> RegisterMessageFilter(string pin)
+        public async Task<string> RegisterMessageFilter(string pin, CancellationToken ctoken)
         {
             topic = ConvertPinToTopic(pin);
             SHA256 sha256 = new SHA256Managed();
             var hashedPin = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
-            SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin));
+            if (string.IsNullOrEmpty(SymKeyId))
+                SymKeyId = await WhisperService.GenerateSymetricKeyFromPassword(Encoding.UTF8.GetString(hashedPin), ctoken);
             WhisperService.SubscriptionCriteria msgCriteria = new WhisperService.SubscriptionCriteria(SymKeyId, "", "", 2.01f, new string[] { topic }, true);
-            return await WhisperService.CreateNewMessageFilter(msgCriteria);
+            return await WhisperService.CreateNewMessageFilter(msgCriteria, ctoken);
         }
 
         /// <summary>
         /// Unregisters message filter
         /// <param name="filter">Message filter</param>
+        /// <param name="ctoken">cancellation token</param>
         /// </summary>
-        public async Task UnregisterMessageFilter(string filter)
+        public async Task UnregisterMessageFilter(string filter, CancellationToken ctoken)
         {
             bool res = true;
-            if (SubscriptionId != "")
+            if (!string.IsNullOrEmpty(filter))
             {
-                res = await WhisperService.Unsubscribe(SubscriptionId);
+                res = await WhisperService.DeleteMessageFilter(filter, ctoken);
+                filter = string.Empty;
             }
-            if (filter != "")
+            if (!string.IsNullOrEmpty(SymKeyId))
             {
-                res = await WhisperService.DeleteMessageFilter(filter);
-            }
-            if (SymKeyId != "")
-            {
-                res = await WhisperService.DeleteSymetricKey(SymKeyId);
+                res = await WhisperService.DeleteSymetricKey(SymKeyId, ctoken);
+                SymKeyId = string.Empty;
             }
         }
 
@@ -354,11 +378,12 @@ namespace Hoard
         /// 
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="ctoken">cancellation token</param>
         /// <returns></returns>
-        public async Task<string> SendMessage(byte[] data )
+        public async Task<string> SendMessage(byte[] data, CancellationToken ctoken)
         {
             var msg = new WhisperService.MessageDesc(SymKeyId, "", "", MessageTimeOut, topic, data, "", MaximalProofOfWorkTime, MinimalPowTarget, "");
-            return await WhisperService.SendMessage(msg);
+            return await WhisperService.SendMessage(msg, ctoken);
         }
     }
 }

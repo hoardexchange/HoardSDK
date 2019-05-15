@@ -164,10 +164,10 @@ namespace Hoard
         /// Sends confirmation pin to paired device
         /// </summary>
         /// <returns></returns>
-        public async Task<string> SendPublicKey()
+        public async Task<string> SendPublicKey(CancellationToken ctoken)
         {
             byte[] data = BuildMessage(InternalData.InternalMessageId.ApplicantPublicKey, publicKey);
-            return await SendMessage(data);
+            return await SendMessage(data, ctoken);
         }
 
         /// <summary>
