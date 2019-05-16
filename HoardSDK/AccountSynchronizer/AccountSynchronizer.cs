@@ -112,9 +112,9 @@ namespace Hoard
         /// <summary>
         /// Constructor
         /// </summary>
-        public AccountSynchronizer(string url)
+        public AccountSynchronizer(IWebSocketProvider webSocketProvider)
         {
-            WhisperService = new WhisperService(url);
+            WhisperService = new WhisperService(webSocketProvider);
             X9 = ECNamedCurveTable.GetByName("prime239v1");
             GenerateKeyPair();
         }
