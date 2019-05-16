@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Linq;
+using System.Diagnostics;
 
 namespace Hoard
 {    
@@ -186,14 +186,13 @@ namespace Hoard
             }
         }
 
+        private IWebSocketProvider WebSocketProvider = null;
+        private string Error;
+
         /// <summary>
         /// Returns true if it is connected to host
         /// </summary>
-        public bool IsConnected { get { return WhisperClient.State == WebSocketState.Open; } }
-
-        private ClientWebSocket WhisperClient = null;        
-        private string Url = null;
-        private string Error;
+        public bool IsConnected { get { return (WebSocketProvider != null) && WebSocketProvider.IsConnectionOpen(); } }        
         
         private ConcurrentQueue<SubscriptionResponse> SubscriptionMessagesQueue = new ConcurrentQueue<SubscriptionResponse>();
 
@@ -208,10 +207,10 @@ namespace Hoard
         /// <summary>
         /// Constructor
         /// </summary>
-        public WhisperService(string url)
+        public WhisperService(IWebSocketProvider webSocketProvider)
         {
-            Url = url;
-            WhisperClient = new ClientWebSocket();
+            WebSocketProvider = webSocketProvider;
+            Debug.Assert(WebSocketProvider != null);
         }
 
         /// <summary>
@@ -219,23 +218,7 @@ namespace Hoard
         /// </summary>
         public async Task<bool> Connect(CancellationToken token)
         {
-            try
-            {
-                await WhisperClient.ConnectAsync(new Uri(Url), token);
-            }
-            catch(TimeoutException)
-            {
-                ErrorCallbackProvider.ReportError("Connection timedout!");
-                return false;
-            }
-
-            if (WhisperClient.State != WebSocketState.Open)
-            {
-                ErrorCallbackProvider.ReportError("Cannot connect to destination host: "+Url);
-                return false;
-            }
-
-            return true;
+            return await WebSocketProvider.Connect(token);
         }
 
         /// <summary>
@@ -243,28 +226,12 @@ namespace Hoard
         /// </summary>
         public async Task Close()
         {
-            if (WhisperClient.State == WebSocketState.Open)
-                await WhisperClient.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-        }
-
-        private async Task<WebSocketReceiveResult> InternalReceiveAsync(System.IO.Stream stream, CancellationToken ctok)
-        {
-            WebSocketReceiveResult rcvResult = null;
-            do
-            {
-                var rcvBytes = new byte[1024];
-                var rcvBuffer = new ArraySegment<byte>(rcvBytes);
-
-                rcvResult = await WhisperClient.ReceiveAsync(rcvBuffer, ctok);
-
-                stream.Write(rcvBuffer.Array, rcvBuffer.Offset, rcvResult.Count);
-            } while (!rcvResult.EndOfMessage);
-            return rcvResult;
+            await WebSocketProvider.Close();
         }
 
         private async Task<SubscriptionResponse> ReceiveSubscriptionResponse(CancellationToken token)
         {
-            if (WhisperClient.State != WebSocketState.Open)
+            if (IsConnected == false)
             {
                 ErrorCallbackProvider.ReportError("Whisper connection error!");
                 throw new WebException("Whisper connection error!");
@@ -272,14 +239,12 @@ namespace Hoard
 
             while (true)
             {
-                //read in 1K chunks                    
-                System.IO.MemoryStream msgBytes = new System.IO.MemoryStream(1024);
-                WebSocketReceiveResult rcvResult = await InternalReceiveAsync(msgBytes,token);
+                byte[] msgBytes = await WebSocketProvider.Receive(token);
 
                 //we are skipping all messages that are not subscriptions
-                if (rcvResult.MessageType == WebSocketMessageType.Text)
+                if (msgBytes != null)
                 {
-                    string jsonMsg = Encoding.UTF8.GetString(msgBytes.ToArray());
+                    string jsonMsg = Encoding.UTF8.GetString(msgBytes);
                     ErrorCallbackProvider.ReportInfo(jsonMsg);
 
                     JToken message = null;
@@ -318,7 +283,7 @@ namespace Hoard
 
         private async Task<T> ReceiveResponse<T>(int reqId, T defaultValue, CancellationToken ctoken)
         {
-            if (WhisperClient.State != WebSocketState.Open)
+            if (IsConnected == false)
             {
                 ErrorCallbackProvider.ReportError("Whisper connection error!");
                 throw new WebException("Whisper connection error!");
@@ -326,18 +291,12 @@ namespace Hoard
 
             //wait for requested response (or timeout)
             while (true)
-            {    
-                //read in 1K chunks                    
-                System.IO.MemoryStream msgBytes = new System.IO.MemoryStream(1024);
-                WebSocketReceiveResult rcvResult = await InternalReceiveAsync(msgBytes, ctoken);
-
-                if (rcvResult.MessageType == WebSocketMessageType.Binary)
+            {
+                byte[] msgBytes = await WebSocketProvider.Receive(ctoken);
+                
+                if (msgBytes != null)
                 {
-                    throw new NotSupportedException("Binary data is not supported!");
-                }
-                else if (rcvResult.MessageType == WebSocketMessageType.Text)
-                {
-                    string jsonMsg = Encoding.UTF8.GetString(msgBytes.ToArray());
+                    string jsonMsg = Encoding.UTF8.GetString(msgBytes);
                     ErrorCallbackProvider.ReportInfo(jsonMsg);
 
                     JObject json = JObject.Parse(jsonMsg);
@@ -396,7 +355,7 @@ namespace Hoard
         {
             try
             {
-                if (WhisperClient.State != WebSocketState.Open)
+                if (IsConnected == false)
                 {
                     ErrorCallbackProvider.ReportError("Whisper connection error!");
                     throw new WebException("Whisper connection error!");
@@ -410,7 +369,7 @@ namespace Hoard
                     jobj.Add("params", additionalParams);
                 }
                 jobj.Add("id", ++JsonId);
-                await WhisperClient.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(jobj.ToString())), WebSocketMessageType.Text, true, ctoken);
+                await WebSocketProvider.Send(Encoding.UTF8.GetBytes(jobj.ToString()), ctoken);
                 return await ReceiveResponse<T>(JsonId, defaultValue, ctoken);
             }
             catch (WebSocketException ex)

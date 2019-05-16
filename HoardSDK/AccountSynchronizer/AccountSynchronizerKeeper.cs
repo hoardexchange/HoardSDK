@@ -19,7 +19,7 @@ namespace Hoard
         /// <summary>
         /// Constructor
         /// </summary>
-        public AccountSynchronizerKeeper(string url) : base(url)
+        public AccountSynchronizerKeeper(IWebSocketProvider webSocketProvider) : base(webSocketProvider)
         {
             Interlocked.Exchange(ref senderKeyReceived, 0);
         }

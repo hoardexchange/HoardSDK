@@ -36,8 +36,8 @@ namespace HoardTests.AccountTools
         public async Task TransferKey()
         {
             bool res = false;
-            AccountSynchronizerKeeper keeper = new AccountSynchronizerKeeper(NodeUrl);
-            AccountSynchronizerApplicant applicant = new AccountSynchronizerApplicant(NodeUrl);
+            AccountSynchronizerKeeper keeper = new AccountSynchronizerKeeper(new SystemWebSocketProvider(NodeUrl));
+            AccountSynchronizerApplicant applicant = new AccountSynchronizerApplicant(new SystemWebSocketProvider(NodeUrl));
 
             string pin = keeper.PublicKey.ToHex(false).Substring(0, 8);
 
@@ -78,7 +78,7 @@ namespace HoardTests.AccountTools
         //[Trait("Category", "Unit")]
         public async Task TransferKeyWhisperJS()
         {
-            AccountSynchronizerKeeper keeper = new AccountSynchronizerKeeper(NodeUrl);
+            AccountSynchronizerKeeper keeper = new AccountSynchronizerKeeper(new SystemWebSocketProvider(NodeUrl));
             using (var cts = new System.Threading.CancellationTokenSource(new System.TimeSpan(0, 0, 45)))
             {
                 bool res = await keeper.Initialize(TestPIN.ToUpper(), cts.Token);
@@ -102,7 +102,7 @@ namespace HoardTests.AccountTools
         //[Trait("Category", "Unit")]
         public async Task ReceiveKeyWhisperJS()
         {
-            AccountSynchronizerApplicant applicant = new AccountSynchronizerApplicant(NodeUrl);
+            AccountSynchronizerApplicant applicant = new AccountSynchronizerApplicant(new SystemWebSocketProvider(NodeUrl));
             string pin = TestPIN.ToUpper();
             using (var cts = new System.Threading.CancellationTokenSource(new System.TimeSpan(0, 0, 45)))
             {

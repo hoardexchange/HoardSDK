@@ -30,7 +30,7 @@ namespace Hoard
         /// <summary>
         /// Constructor
         /// </summary>
-        public AccountSynchronizerApplicant(string url) : base(url)
+        public AccountSynchronizerApplicant(IWebSocketProvider webSocketProvider) : base(webSocketProvider)
         {
             Interlocked.Exchange(ref keystoreReceived, 0);
             OnClear();
