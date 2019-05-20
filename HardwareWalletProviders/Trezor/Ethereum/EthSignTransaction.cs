@@ -30,8 +30,8 @@ namespace Hoard.HW.Trezor.Ethereum
         public bool ShouldSerializeGasLimit() => GasLimit != null;
         public void ResetGasLimit() => GasLimit = null;
 
-        [ProtoBuf.ProtoMember(5, Name = @"to")]
-        public byte[] To { get; set; }
+        [ProtoBuf.ProtoMember(11, Name = @"to")]
+        public string To { get; set; }
         public bool ShouldSerializeTo() => To != null;
         public void ResetTo() => To = null;
 
@@ -126,7 +126,7 @@ namespace Hoard.HW.Trezor.Ethereum
                 Nonce = decodedRlpCollection[0].RLPData,
                 GasPrice = decodedRlpCollection[1].RLPData,
                 GasLimit = decodedRlpCollection[2].RLPData,
-                To = decodedRlpCollection[3].RLPData,
+                To = decodedRlpCollection[3].RLPData.ToHex(),
                 Value = decodedRlpCollection[4].RLPData,
                 AddressNs = indices,
             };
@@ -146,11 +146,13 @@ namespace Hoard.HW.Trezor.Ethereum
             {
                 var response = output as EthSignTransactionResponse;
 
-                var decodedList = RLP.Decode(rlpEncodedTransaction);
-                var decodedRlpCollection = (RLPCollection)decodedList[0];
-                var data = decodedRlpCollection.ToBytes();
-                var signer = new RLPSigner(data, response.SignatureR, response.SignatureS, (byte)response.SignatureV);
-                return signer.GetRLPEncoded().ToHex();
+                var encodedData = new System.Collections.Generic.List<byte[]>();
+                encodedData.Add(rlpEncodedTransaction);
+                encodedData.Add(RLP.EncodeElement(new byte[] { (byte)response.SignatureV }));
+                encodedData.Add(RLP.EncodeElement(response.SignatureR));
+                encodedData.Add(RLP.EncodeElement(response.SignatureS));
+
+                return RLP.EncodeList(encodedData.ToArray()).ToHex().EnsureHexPrefix();
             }
 
             return null;

@@ -11,8 +11,7 @@ namespace Hoard.HW
     {
         public static async Task<IDevice> GetHIDDeviceAsync(FilterDeviceDefinition[] deviceInfo, UsageSpecification[] usageSpecification)
         {
-            //WindowsUsbDeviceFactory.Register();
-            Hid.Net.Windows.WindowsHidDeviceFactory.Register();
+            Usb.Net.Windows.WindowsUsbDeviceFactory.Register();
 
             var devices = await DeviceManager.Current.GetDevicesAsync(deviceInfo);
 

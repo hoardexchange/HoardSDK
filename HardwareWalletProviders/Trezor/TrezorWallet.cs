@@ -1,5 +1,4 @@
 ﻿using Device.Net;
-using Hid.Net;
 using Hoard.HW.Trezor.Ethereum;
 using System;
 using System.Linq;
@@ -118,7 +117,7 @@ namespace Hoard.HW.Trezor
             var byteArray = Helpers.ProtoBufSerialize(request);
             var size = byteArray.Length;
 
-            await HIDDevice.WriteAsync(new byte[1]);
+            //await HIDDevice.WriteAsync(new byte[1]);
 
             var id = (int)GetEnumValue("MessageType" + request.GetType().Name);
             var data = new byte[size + 1024]; // 32768);

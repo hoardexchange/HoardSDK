@@ -1,5 +1,4 @@
-﻿using Hid.Net;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace Hoard.HW.Ledger.Ethereum

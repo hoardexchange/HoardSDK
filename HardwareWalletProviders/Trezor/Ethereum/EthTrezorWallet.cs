@@ -1,6 +1,4 @@
 ﻿using Device.Net;
-using Hid.Net;
-using System;
 using System.Threading.Tasks;
 
 namespace Hoard.HW.Trezor.Ethereum

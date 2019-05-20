@@ -10,9 +10,9 @@ namespace Hoard.HW.Trezor
     {
         private static Device.Net.FilterDeviceDefinition[] DeviceInfo = new Device.Net.FilterDeviceDefinition[]
         {
-            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Hid, VendorId= 0x534C, ProductId=0x0001, Label="Trezor One Firmware 1.6.x" },
-            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Hid, VendorId= 0x1209, ProductId=0x53C1, Label="Trezor One Firmware 1.7.x" },
-            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Hid, VendorId= 0x1209, ProductId=0x53C0, Label="Model T" }
+            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Usb, VendorId= 0x534C, ProductId=0x0001, Label="Trezor One Firmware 1.6.x" },
+            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Usb, VendorId= 0x1209, ProductId=0x53C1, Label="Trezor One Firmware 1.7.x" },
+            new Device.Net.FilterDeviceDefinition{ DeviceType = Device.Net.DeviceType.Usb, VendorId= 0x1209, ProductId=0x53C0, Label="Model T" }
         };
 
         private static readonly UsageSpecification[] UsageSpecification = new[]

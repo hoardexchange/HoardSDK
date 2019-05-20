@@ -32,8 +32,8 @@ namespace Hoard.HW.Trezor.Ethereum
         ProtoBuf.IExtension ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
             => ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
 
-        [ProtoBuf.ProtoMember(1, Name = @"address", IsRequired = true)]
-        public byte[] Address { get; set; }
+        [ProtoBuf.ProtoMember(2, Name = @"address", IsRequired = true)]
+        public string Address { get; set; }
 
     }
 
@@ -48,15 +48,7 @@ namespace Hoard.HW.Trezor.Ethereum
         {
             if(output is EthAddressResponse)
             {
-                var response = output as EthAddressResponse;
-
-                var sb = new StringBuilder();
-                foreach (var c in response.Address)
-                {
-                    sb.Append(c.ToString("X2").ToLower());
-                }
-
-                return "0x" + sb.ToString();
+                return (output as EthAddressResponse).Address;
             }
 
             return "";

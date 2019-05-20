@@ -11,9 +11,9 @@ namespace Hoard.HW.Ledger
     {
         private static FilterDeviceDefinition[] DeviceInfo = new FilterDeviceDefinition[]
         {
-            new FilterDeviceDefinition{DeviceType= DeviceType.Hid, VendorId= 0x2c97, ProductId=0x0000, Label="HIDBlue" },
-            new FilterDeviceDefinition{DeviceType= DeviceType.Hid, VendorId= 0x2c97, ProductId=0x0001, Label="HIDNanoS" },
-            new FilterDeviceDefinition{DeviceType= DeviceType.Hid, VendorId= 0x2581, ProductId=0x3b7c, Label="WinHID" }
+            new FilterDeviceDefinition{DeviceType= DeviceType.Usb, VendorId= 0x2c97, ProductId=0x0000, Label="HIDBlue" },
+            new FilterDeviceDefinition{DeviceType= DeviceType.Usb, VendorId= 0x2c97, ProductId=0x0001, Label="HIDNanoS" },
+            new FilterDeviceDefinition{DeviceType= DeviceType.Usb, VendorId= 0x2581, ProductId=0x3b7c, Label="WinHID" }
         };
 
         private static readonly UsageSpecification[] UsageSpecification = new[] 

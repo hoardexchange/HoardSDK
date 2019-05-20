@@ -53,7 +53,7 @@ namespace HoardTests.HW
         [Fact]
         public async Task DisplayAddress()
         {
-            var response = await signer.RequestProfile("TrezorUser");
+            var response = await signer.RequestProfile(TrezorWallet.AccountInfoName);
             Assert.True(response != null);
             Assert.True(response.Name == TrezorWallet.AccountInfoName);
         }
@@ -78,7 +78,7 @@ namespace HoardTests.HW
 
             for (var i = 0; i < messages.Count; ++i)
             {
-                var response = await signer.RequestProfile("TrezorUser");
+                var response = await signer.RequestProfile(TrezorWallet.AccountInfoName);
 
                 var signature = await response.SignMessage(messages[i]);
 
@@ -107,13 +107,13 @@ namespace HoardTests.HW
 
             var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
 
-            var user = await signer.RequestProfile("TrezorUser");
+            var user = await signer.RequestProfile(TrezorWallet.AccountInfoName);
 
             var rlpEncoded = await user.SignTransaction(rlpEncodedTransaction);
             Assert.True(rlpEncoded != null);
             Assert.True(rlpEncoded.Length > 0);
 
-            
+            //TODO: check!
 
             var account = Hoard.Utils.Helper.RecoverHoardId(rlpEncoded);
             Assert.Equal(user.ID, account);
