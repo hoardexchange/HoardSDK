@@ -352,21 +352,20 @@ namespace Hoard.BC
 
         private bool IsResponseSuccess(JObject responseJson)
         {
-            if (responseJson.ContainsKey("success"))
-            {
-                JToken success;
-                responseJson.TryGetValue("success", out success);
+            JToken success;
+            if (responseJson.TryGetValue("success", out success))
                 return (success.Value<bool>() == true);
-            }
             return false;
+            
         }
 
         private string GetResponseData(string responseString)
         {
             var result = JObject.Parse(responseString);
-            if (result.ContainsKey("data"))
+            JToken data;
+            if (result.TryGetValue("data", out data))
             {
-                return result.GetValue("data").ToString();
+                data.ToString();
             }
             return "";
         }

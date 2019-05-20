@@ -5,9 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Hoard.NethereumCore">
-      <Version>3.1.63</Version>
+      <Version>3.1.64</Version>
     </PackageReference>
-    <PackageReference Include="Json.Net.Unity3D" Version="9.0.1" />
     <PackageReference Include="Portable.BouncyCastle">
       <Version>1.8.4</Version>
     </PackageReference>
