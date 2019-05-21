@@ -13,6 +13,11 @@ namespace Hoard
 
     internal class BCClientConfigConverter : JsonConverter
     {
+        static BCClientConfigConverter()
+        {
+            new BCClientConfigConverter();
+        }
+
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             JToken jObject = JToken.ReadFrom(reader);
@@ -51,6 +56,7 @@ namespace Hoard
     /// Blockchain client configuration read from json Hoard config file
     /// </summary>
     [JsonConverter(typeof(BCClientConfigConverter))]
+    [Serializable]
     public abstract class BCClientConfig
     {
         /// <summary>
@@ -62,6 +68,7 @@ namespace Hoard
     /// <summary>
     /// Ethereum blockchain client configuration data
     /// </summary>
+    [Serializable]
     public class EthereumClientConfig : BCClientConfig
     {
         /// <summary>
@@ -75,13 +82,13 @@ namespace Hoard
         /// <summary>
         /// URL of ethereum network access client (localhost or testnet main access client URL)
         /// </summary>
-        [JsonProperty("ClientUrl")]
-        public string ClientUrl { get; set; }
+        public string ClientUrl;
     }
 
     /// <summary>
     /// Plasma blockchain client configuration data
     /// </summary>
+    [Serializable]
     public class PlasmaClientConfig : BCClientConfig
     {
         /// <summary>
@@ -95,20 +102,17 @@ namespace Hoard
         /// <summary>
         /// URL of ethereum network access client (localhost or testnet main access client URL)
         /// </summary>
-        [JsonProperty("ClientUrl")]
-        public string ClientUrl { get; set; }
+        public string ClientUrl;
 
         /// <summary>
         /// URL of Plasma child chain node
         /// </summary>
-        [JsonProperty("ChildChainUrl")]
-        public string ChildChainUrl { get; set; }
+        public string ChildChainUrl;
 
         /// <summary>
         /// URL of Plasma watcher
         /// </summary>
-        [JsonProperty("WatcherUrl")]
-        public string WatcherUrl { get; set; }
+        public string WatcherUrl;
     }
 
     /// <summary>
