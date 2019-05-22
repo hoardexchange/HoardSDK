@@ -5,25 +5,37 @@ using System.Threading.Tasks;
 
 namespace PlasmaCore.RPC.Transaction
 {
-    public class GetAllTransactions
+    /// <summary>
+    /// RPC request handler - fetches all transaction data
+    public class GetAllTransactions : RPCRequestHandlerBase
     {
         static private string route = "transaction.all";
 
-        private IClient client;
+        /// <summary>
+        /// Constructs RPC request handler
+        /// </summary>
+        /// <param name="client">RPC client</param>
+        public GetAllTransactions(IClient client) : base(client) { }
 
-        public GetAllTransactions(IClient _client)
+        /// <summary>
+        /// Returns all transaction data filtered by optional parameters
+        /// </summary>
+        /// <param name="address">account address (optional)</param>
+        /// <param name="blknum">block number (optional)</param>
+        /// <param name="limit">result limit (optional)</param>
+        /// <returns></returns>
+        public async Task<TransactionsData[]> SendRequestAsync(string address = null, UInt64? blknum = null, UInt32? limit = null)
         {
-            client = _client;
-        }
+            RPCRequest request = new RPCRequest(route);
 
-        public async Task<TransactionsData[]> SendRequestAsync(string address, UInt64 blknum, UInt32 limit)
-        {
-            if (address == null) throw new ArgumentNullException(nameof(address));
+            if (address != null)
+                request.Parameters.Add("address", address.EnsureHexPrefix());
 
-            RpcRequest request = new RpcRequest(route);
-            request.Parameters.Add("address", address.EnsureHexPrefix());
-            request.Parameters.Add("blknum", blknum);
-            request.Parameters.Add("limit", limit);
+            if (blknum != null)
+                request.Parameters.Add("blknum", blknum);
+
+            if (limit != null)
+                request.Parameters.Add("limit", limit);
 
             return await client.SendRequestAsync<TransactionsData[]>(request);
         }

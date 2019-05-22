@@ -2,6 +2,9 @@
 
 namespace PlasmaCore.RPC.OutputData
 {
+    /// <summary>
+    /// Response class for in-flight exit data request
+    /// </summary>
     public class InFlightExitData
     {
         [JsonProperty(propertyName: "in_flight_tx")]

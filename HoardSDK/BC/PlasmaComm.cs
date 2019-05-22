@@ -3,15 +3,12 @@ using Hoard.BC.Plasma;
 using Hoard.Interfaces;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using PlasmaCore;
 using PlasmaCore.RPC.OutputData;
 using PlasmaCore.UTXO;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -20,7 +17,7 @@ using System.Threading.Tasks;
 namespace Hoard.BC
 {
     /// <summary>
-    /// Utility class for child chain (plasma) communication
+    /// Utility class for Plasma communication
     /// </summary>
     public class PlasmaComm : IBCComm
     {
@@ -37,12 +34,12 @@ namespace Hoard.BC
         /// Creates PlasmaComm object.
         /// </summary>
         /// <param name="_bcComm">Ethereum blockchain communication</param>
-        /// <param name="childChainClient"></param>
         /// <param name="watcherClient"></param>
-        public PlasmaComm(BCComm _bcComm, PlasmaCore.RPC.IClient childChainClient, PlasmaCore.RPC.IClient watcherClient)
+        /// <param name="childChainClient"></param>
+        public PlasmaComm(BCComm _bcComm, PlasmaCore.RPC.IClient watcherClient, PlasmaCore.RPC.IClient childChainClient)
         {
             bcComm = _bcComm;
-            plasmaApiService = new PlasmaAPIService(childChainClient, watcherClient);
+            plasmaApiService = new PlasmaAPIService(watcherClient, childChainClient);
         }
 
         /// <inheritdoc/>

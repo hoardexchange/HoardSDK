@@ -4,6 +4,9 @@ using System.Numerics;
 
 namespace PlasmaCore.RPC.OutputData
 {
+    /// <summary>
+    /// Response class for competitor request
+    /// </summary>
     public class CompetitorData
     {
         [JsonProperty(propertyName: "in_flight_txbytes")]

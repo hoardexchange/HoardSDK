@@ -38,13 +38,13 @@ namespace PlasmaCore.RPC
             CreateNewHttpClient();
         }
 
-        public async Task<T> SendRequestAsync<T>(RpcRequest request)
+        public async Task<T> SendRequestAsync<T>(RPCRequest request)
         {
             var response = await SendAsync(request);
             return response.GetData<T>();
         }
 
-        protected async Task<RpcResponse> SendAsync(RpcRequest request)
+        protected async Task<RPCResponse> SendAsync(RPCRequest request)
         {
             var httpClient = GetOrCreateHttpClient();
             var httpContent = new StringContent(request.Parameters.ToString(), Encoding.UTF8, "application/json");
@@ -61,7 +61,7 @@ namespace PlasmaCore.RPC
             using (var reader = new JsonTextReader(streamReader))
             {
                 var serializer = JsonSerializer.Create(_jsonSerializerSettings);
-                var message = serializer.Deserialize<RpcResponse>(reader);
+                var message = serializer.Deserialize<RPCResponse>(reader);
 
                 return message;
             }

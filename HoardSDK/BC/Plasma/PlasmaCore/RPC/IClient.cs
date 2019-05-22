@@ -2,8 +2,17 @@
 
 namespace PlasmaCore.RPC
 {
+    /// <summary>
+    /// RPC Client interface
+    /// </summary>
     public interface IClient
     {
-        Task<T> SendRequestAsync<T>(RpcRequest request);
+        /// <summary>
+        /// Sends request and returns response
+        /// </summary>
+        /// <typeparam name="T">response type</typeparam>
+        /// <param name="request">RPC request</param>
+        /// <returns></returns>
+        Task<T> SendRequestAsync<T>(RPCRequest request);
     }
 }

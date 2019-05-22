@@ -4,6 +4,9 @@ using System.Numerics;
 
 namespace PlasmaCore.RPC.OutputData
 {
+    /// <summary>
+    /// Response class for canonical proof request
+    /// </summary>
     public class CanonicalProofData
     {
         [JsonProperty(propertyName: "in_flight_txbytes")]

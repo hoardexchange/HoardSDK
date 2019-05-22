@@ -6,31 +6,31 @@ using System.Threading.Tasks;
 namespace PlasmaCore.RPC.InFlightExit
 {
     /// <summary>
-    /// RPC request handler - proves transaction is canonical
+    /// RPC request handler - fetches exit data for an in-flight exit
     /// </summary>
-    public class ProveCanonical : RPCRequestHandlerBase
+    public class GetInFlightExit : RPCRequestHandlerBase
     {
-        static private string route = "in_flight_exit.get_competitor";
+        static private string route = "in_flight_exit.get_data";
 
         /// <summary>
         /// Constructs RPC request handler
         /// </summary>
         /// <param name="client">RPC client</param>
-        public ProveCanonical(IClient client) : base(client) { }
+        public GetInFlightExit(IClient client) : base(client) { }
 
         /// <summary>
-        /// Proves transaction is canonical
+        /// Returns exit data for an in-flight exit
         /// </summary>
         /// <param name="txBytes">in-flight transaction bytes body</param>
         /// <returns></returns>
-        public async Task<CanonicalProofData> SendRequestAsync(string txBytes)
+        public async Task<InFlightExitData> SendRequestAsync(string txBytes)
         {
             if (txBytes == null) throw new ArgumentNullException(nameof(txBytes));
 
             RPCRequest request = new RPCRequest(route);
             request.Parameters.Add("txBytes", txBytes.EnsureHexPrefix());
 
-            return await client.SendRequestAsync<CanonicalProofData>(request);
+            return await client.SendRequestAsync<InFlightExitData>(request);
         }
     }
 }

@@ -6,22 +6,29 @@ using System.Threading.Tasks;
 
 namespace PlasmaCore.RPC.UTXO
 {
-    public class GetExitData
+    /// <summary>
+    /// RPC request handler - fetches exit data for a given utxo
+    /// </summary>
+    public class GetExitData : RPCRequestHandlerBase
     {
         static private string route = "utxo.get_exit_data";
 
-        private IClient client;
+        /// <summary>
+        /// Constructs RPC request handler
+        /// </summary>
+        /// <param name="client">RPC client</param>
+        public GetExitData(IClient client) : base(client) { }
 
-        public GetExitData(IClient _client)
-        {
-            client = _client;
-        }
-
+        /// <summary>
+        /// Returns exit data for a given utxo
+        /// </summary>
+        /// <param name="position">utxo position</param>
+        /// <returns></returns>
         public async Task<ExitData> SendRequestAsync(BigInteger position)
         {
             if (position == null) throw new ArgumentNullException(nameof(position));
             
-            RpcRequest request = new RpcRequest(route);
+            RPCRequest request = new RPCRequest(route);
             request.Parameters.Add("utxo_pos", new JValue(position));
 
             return await client.SendRequestAsync<ExitData>(request);

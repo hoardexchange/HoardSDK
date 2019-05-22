@@ -4,13 +4,13 @@ using PlasmaCore.RPC.OutputData.Balance;
 namespace PlasmaCore.RPC.OutputData
 {
     /// <summary>
-    /// Description of currency data
+    /// Response class for account balance request
     /// </summary>
     [JsonConverter(typeof(BalanceConverter))]
     public class BalanceData
     {
         /// <summary>
-        /// Token currency
+        /// Currency
         /// </summary>
         [JsonProperty(propertyName: "currency")]
         public string Currency { get; private set; }

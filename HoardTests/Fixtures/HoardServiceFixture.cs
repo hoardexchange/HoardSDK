@@ -70,10 +70,16 @@ namespace HoardTests.Fixtures
             else
             {
                 var plasmaConfig = config.BCClient as PlasmaClientConfig;
+
+                PlasmaCore.RPC.RpcClient watcherClient = new PlasmaCore.RPC.RpcClient(new Uri(plasmaConfig.WatcherUrl));
+                PlasmaCore.RPC.RpcClient childChainClient = null;
+                if (plasmaConfig.ChildChainUrl != null && plasmaConfig.ChildChainUrl != string.Empty)
+                    childChainClient = new PlasmaCore.RPC.RpcClient(new Uri(plasmaConfig.ChildChainUrl));
+
                 clientOpts = new PlasmaClientOptions(
                     new Nethereum.JsonRpc.Client.RpcClient(new Uri(plasmaConfig.ClientUrl)),
-                    new PlasmaCore.RPC.RpcClient(new Uri(plasmaConfig.ChildChainUrl)),
-                    new PlasmaCore.RPC.RpcClient(new Uri(plasmaConfig.WatcherUrl))
+                    watcherClient,
+                    childChainClient
                 );
             }
 

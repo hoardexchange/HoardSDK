@@ -7,12 +7,12 @@ using System.Numerics;
 namespace PlasmaCore.UTXO
 {
     /// <summary>
-    /// Description of Plasma Unspent Transaction Output 
+    /// Response class for unspent transaction output request
     /// </summary>
     [JsonConverter(typeof(UTXOConverter))]
     public class UTXOData
     {
-        public static readonly string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+        private static readonly string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
         /// <summary>
         /// Transaction index within the block
@@ -69,7 +69,7 @@ namespace PlasmaCore.UTXO
         }
 
         /// <summary>
-        /// Returns transaction input data
+        /// Returns transaction rlp encoded data
         /// </summary>
         /// <returns></returns>
         public virtual List<byte[]> GetRLPEncoded()

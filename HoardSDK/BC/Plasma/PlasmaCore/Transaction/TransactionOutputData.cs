@@ -4,11 +4,11 @@ using System.Numerics;
 namespace PlasmaCore.Transaction
 {
     /// <summary>
-    /// Description of Plasma transaction output data
+    /// Description of plasma transaction output data
     /// </summary>
     public abstract class TransactionOutputData
     {
-        public static readonly string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+        private static readonly string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
         /// <summary>
         /// Receiver of the transaction
@@ -36,20 +36,5 @@ namespace PlasmaCore.Transaction
         /// </summary>
         /// <returns></returns>
         public abstract List<byte[]> GetRLPEncoded();
-
-        /// <summary>
-        /// Gets empty fungible currency output
-        /// </summary>
-        public static TransactionOutputData Empty
-        {
-            get
-            {
-                return new FCTransactionOutputData(
-                    ZERO_ADDRESS,
-                    ZERO_ADDRESS,
-                    BigInteger.Zero
-                );
-            }
-        }
     }
 }

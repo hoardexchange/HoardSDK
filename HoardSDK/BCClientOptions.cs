@@ -164,13 +164,13 @@ namespace Hoard
         /// Creates Plasma client options object.
         /// </summary>
         /// <param name="rpcClient">JsonRpc client implementation</param>
-        /// <param name="childChainClient">Plasma child chain client</param>
         /// <param name="watcherClient">Plasma watcher client</param>
-        public PlasmaClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient, PlasmaCore.RPC.IClient childChainClient, PlasmaCore.RPC.IClient watcherClient)
+        /// <param name="childChainClient">Plasma child chain client (optional)</param>
+        public PlasmaClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient, PlasmaCore.RPC.IClient watcherClient, PlasmaCore.RPC.IClient childChainClient = null)
         {
             RpcClient = rpcClient;
-            ChildChainClient = childChainClient;
             WatcherClient = watcherClient;
+            ChildChainClient = childChainClient;
         }
     }
 }

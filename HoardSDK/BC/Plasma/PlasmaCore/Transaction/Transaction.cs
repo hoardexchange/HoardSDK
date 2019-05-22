@@ -57,9 +57,10 @@ namespace PlasmaCore.Transaction
                 signatures[i] = string.Empty;
             }
 
+            // FIXME for now there are only fungible currencies on plasma, fix it later
             for (Int32 i = 0; i < outputs.Length; ++i)
             {
-                outputs[i] = TransactionOutputData.Empty;
+                outputs[i] = FCTransactionOutputData.Empty;
             }
         }
 

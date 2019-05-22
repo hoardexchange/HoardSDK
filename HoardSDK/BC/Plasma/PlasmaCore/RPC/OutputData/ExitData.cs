@@ -3,6 +3,9 @@ using System.Numerics;
 
 namespace PlasmaCore.RPC.OutputData
 {
+    /// <summary>
+    /// Response class for exit data request
+    /// </summary>
     public class ExitData
     {
         [JsonProperty(propertyName: "utxo_pos")]

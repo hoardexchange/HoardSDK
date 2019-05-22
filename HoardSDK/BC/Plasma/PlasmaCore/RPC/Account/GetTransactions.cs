@@ -5,22 +5,30 @@ using System.Threading.Tasks;
 
 namespace PlasmaCore.RPC.Account
 {
-    public class GetTransactions
+    /// <summary>
+    /// RPC request handler - fetches transaction data of given address
+    /// </summary>
+    public class GetTransactions : RPCRequestHandlerBase
     {
         static private string route = "account.get_transactions";
 
-        private IClient client;
+        /// <summary>
+        /// Constructs RPC request handler
+        /// </summary>
+        /// <param name="client">RPC client</param>
+        public GetTransactions(IClient client) : base(client) { }
 
-        public GetTransactions(IClient _client)
-        {
-            client = _client;
-        }
-
+        /// <summary>
+        /// Returns transactions data of given address
+        /// </summary>
+        /// <param name="address">account address</param>
+        /// <param name="limit">result limit</param>
+        /// <returns></returns>
         public async Task<TransactionsData[]> SendRequestAsync(string address, uint limit)
         {
             if (address == null) throw new ArgumentNullException(nameof(address));
 
-            RpcRequest request = new RpcRequest(route);
+            RPCRequest request = new RPCRequest(route);
             request.Parameters.Add("address", address.EnsureHexPrefix());
             request.Parameters.Add("limit", limit);
 

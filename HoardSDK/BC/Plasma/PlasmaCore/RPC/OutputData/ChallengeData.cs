@@ -4,6 +4,9 @@ using System.Numerics;
 
 namespace PlasmaCore.RPC.OutputData
 {
+    /// <summary>
+    /// Response class for challenge request
+    /// </summary>
     public class ChallengeData
     {
         [JsonProperty(propertyName: "input_index")]

@@ -5,22 +5,29 @@ using System.Threading.Tasks;
 
 namespace PlasmaCore.RPC.InFlightExit
 {
-    public class GetCompetitor
+    /// <summary>
+    /// RPC request handler - fetches a competitor to an in-flight exit
+    /// </summary>
+    public class GetCompetitor : RPCRequestHandlerBase
     {
         static private string route = "in_flight_exit.get_competitor";
 
-        private IClient client;
+        /// <summary>
+        /// Constructs RPC request handler
+        /// </summary>
+        /// <param name="client">RPC client</param>
+        public GetCompetitor(IClient client) : base(client) { }
 
-        public GetCompetitor(IClient _client)
-        {
-            client = _client;
-        }
-
+        /// <summary>
+        /// Returns a competitor to an in-flight exit
+        /// </summary>
+        /// <param name="txBytes">in-flight transaction bytes body</param>
+        /// <returns></returns>
         public async Task<CompetitorData> SendRequestAsync(string txBytes)
         {
             if (txBytes == null) throw new ArgumentNullException(nameof(txBytes));
 
-            RpcRequest request = new RpcRequest(route);
+            RPCRequest request = new RPCRequest(route);
             request.Parameters.Add("txBytes", txBytes.EnsureHexPrefix());
 
             return await client.SendRequestAsync<CompetitorData>(request);

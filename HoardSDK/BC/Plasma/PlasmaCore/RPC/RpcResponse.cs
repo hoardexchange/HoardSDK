@@ -4,33 +4,40 @@ using System;
 
 namespace PlasmaCore.RPC
 {
-    public class RpcResponse
+    /// <summary>
+    /// RPC response data
+    /// </summary>
+    public class RPCResponse
     {
+        /// <summary>
+        /// Response version
+        /// </summary>
         [JsonProperty(propertyName: "version")]
         public string Version { get; protected set; }
 
+        /// <summary>
+        /// Response success status
+        /// </summary>
         [JsonProperty(propertyName: "success")]
         public bool Success { get; protected set; }
 
+        /// <summary>
+        /// Response data
+        /// </summary>
         [JsonProperty(propertyName: "data")]
         public JToken Data { get; protected set; }
 
-        public RpcResponse(JToken data)
-        {
-            Success = true;
-            Data = data;
-        }
-
-        public T GetData<T>(bool returnDefaultIfNull = true, JsonSerializerSettings settings = null)
+        /// <summary>
+        /// Deserializes response data into given type
+        /// </summary>
+        /// <typeparam name="T">response data type</typeparam>
+        /// <param name="settings">json serializer settings</param>
+        /// <returns></returns>
+        public T GetData<T>(JsonSerializerSettings settings = null)
         {
             if (Data == null)
-            {
-                if (!returnDefaultIfNull && default(T) != null)
-                {
-                    throw new Exception("Unable to convert the result (null) to type " + typeof(T));
-                }
                 return default(T);
-            }
+
             try
             {
                 if (settings == null)
@@ -45,11 +52,11 @@ namespace PlasmaCore.RPC
             }
             catch (FormatException ex)
             {
-                throw new FormatException("Invalid format when trying to convert the result to type " + typeof(T), ex);
+                throw new FormatException("Invalid format", ex);
             }
             catch (Exception ex)
             {
-                throw new Exception("Unable to convert the result to type " + typeof(T), ex);
+                throw new Exception("Unable to deserialize object", ex);
             }
         }
     }

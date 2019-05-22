@@ -4,7 +4,7 @@ using System.Numerics;
 namespace PlasmaCore.RPC.OutputData
 {
     /// <summary>
-    /// Description of token data
+    /// Response class for account balance request (fungible currencies)
     /// </summary>
     public class FCBalanceData : BalanceData
     {

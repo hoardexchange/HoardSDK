@@ -2,6 +2,9 @@
 
 namespace PlasmaCore.RPC.OutputData
 {
+    /// <summary>
+    /// Response class for an unsuccessful request
+    /// </summary>
     public class ErrorData
     {
         public class MessageData

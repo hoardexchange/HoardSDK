@@ -5,19 +5,19 @@ using System.Numerics;
 namespace PlasmaCore.Transaction
 {
     /// <summary>
-    /// Plasma transaction builder helper class
+    /// Plasma transaction builder helper class (fungible currencies)
     /// </summary>
     public static class FCTransactionBuilder
     {
         /// <summary>
-        /// Builds the simplest, the most common fungible transaction (one fungible currency, one receiver, one sender)
+        /// Builds the simplest, the most common transaction (one fungible currency, one receiver, one sender)
         /// </summary>
-        /// <param name="addrees">account of tokens owner</param>
+        /// <param name="addreesFrom">account of owner</param>
         /// <param name="addressTo">address of destination account</param>
         /// <param name="utxos">input utxos satisfing given amount</param>
-        /// <param name="amount">amount of tokens to transfer</param>
-        /// <param name="currency">currency of tokens to transfer</param>
-        /// <returns>RLP encoded signed transaction</returns>
+        /// <param name="amount">amount to transfer</param>
+        /// <param name="currency">currency of transfer</param>
+        /// <returns></returns>
         public static Transaction Build(string addreesFrom, string addressTo, UTXOData[] utxos, BigInteger amount, string currency)
         {
             UTXOData[] inputUtxos = Array.FindAll(utxos, x => (x is FCUTXOData) && (x.Currency == currency));

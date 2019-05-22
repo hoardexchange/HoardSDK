@@ -10,8 +10,10 @@ namespace PlasmaCore.Transaction
     /// </summary>
     public class FCTransactionOutputData : TransactionOutputData
     {
+        private static readonly string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
         /// <summary>
-        /// 
+        /// Amount of the transaction
         /// </summary>
         public BigInteger Amount { get; protected set; }
 
@@ -35,6 +37,21 @@ namespace PlasmaCore.Transaction
             data.Add(RLP.EncodeElement(Currency.HexToByteArray()));
             data.Add(RLP.EncodeElement(Amount.ToBytesForRLPEncoding()));
             return data;
+        }
+
+        /// <summary>
+        /// Returns empty transaction output data
+        /// </summary>
+        public static FCTransactionOutputData Empty
+        {
+            get
+            {
+                return new FCTransactionOutputData(
+                    ZERO_ADDRESS,
+                    ZERO_ADDRESS,
+                    BigInteger.Zero
+                );
+            }
         }
     }
 }

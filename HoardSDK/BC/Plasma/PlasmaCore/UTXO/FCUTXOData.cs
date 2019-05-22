@@ -4,12 +4,10 @@ using System.Numerics;
 namespace PlasmaCore.UTXO
 {
     /// <summary>
-    /// Description of Plasma fungible currency Unspent Transaction Output (ether, ERC20)
+    /// Response class for unspent transaction output request (fungible currencies - ether, ERC20)
     /// </summary>
     public class FCUTXOData : UTXOData
     {
-        private static BigInteger U256_MAX_VALUE = BigInteger.Pow(2, 256);
-
         /// <summary>
         /// Amount of tokens
         /// </summary>

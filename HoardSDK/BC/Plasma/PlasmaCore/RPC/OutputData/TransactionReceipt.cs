@@ -6,7 +6,7 @@ using System.Numerics;
 namespace PlasmaCore.RPC.OutputData
 {
     /// <summary>
-    /// Description of Plasma transaction receipt
+    /// Response class for submit transaction request
     /// </summary>
     public class TransactionReceipt
     {
