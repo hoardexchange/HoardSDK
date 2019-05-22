@@ -38,7 +38,7 @@ namespace HoardTests.AccountServices
             var message = "Hello world";
             var byteMsg = message.ToBytesForRLPEncoding();
             var signature = await user.SignMessage(byteMsg);            
-            HoardID account = Hoard.Utils.Helper.RecoverHoardId(byteMsg, signature);
+            HoardID account = Hoard.Utils.Helper.RecoverHoardIdFromMessage(byteMsg, signature);
             Assert.Equal(user.ID, account);
         }
 
@@ -63,9 +63,8 @@ namespace HoardTests.AccountServices
 
             var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
 
-            var rlpEncoded = await user.SignTransaction(rlpEncodedTransaction);
-
-            HoardID account = Hoard.Utils.Helper.RecoverHoardId(rlpEncoded);
+            var signature = await user.SignTransaction(rlpEncodedTransaction);
+            HoardID account = Hoard.Utils.Helper.RecoverHoardIdFromTransaction(signature, rlpEncodedTransaction);
 
             Assert.Equal(user.ID, account);
         }

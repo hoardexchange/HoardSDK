@@ -1,5 +1,7 @@
 ﻿using Hoard.Utils;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
+using Nethereum.Util;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -445,12 +447,12 @@ namespace Hoard
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="rlpEncodedTransaction"></param>
+        /// <param name="input"></param>
         /// <param name="profile"></param>
         /// <returns></returns>
-        public Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
+        public Task<string> SignTransaction(byte[] input, Profile profile)
         {
-            return SignTransactionInternal(rlpEncodedTransaction, profile);
+            return SignTransactionInternal(input, profile);
         }
 
         /// <summary>
@@ -461,6 +463,7 @@ namespace Hoard
         /// <returns></returns>
         public static Task<string> SignMessageInternal(byte[] input, Profile profile)
         {
+            //TODO check if it is still working
             var signer = new Nethereum.Signer.EthereumMessageSigner();
             MemoryStream ms = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(ms);
@@ -475,7 +478,7 @@ namespace Hoard
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
                 if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
-                    return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
+                    return Task.FromResult(socketData.ReceivedSignature.ToHex(true));
             }
             return Task.FromResult<string>("");
         }
@@ -483,20 +486,18 @@ namespace Hoard
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="rlpEncodedTransaction"></param>
+        /// <param name="input"></param>
         /// <param name="profile"></param>
         /// <returns></returns>
-        public static Task<string> SignTransactionInternal(byte[] rlpEncodedTransaction, Profile profile)
+        public static Task<string> SignTransactionInternal(byte[] input, Profile profile)
         {
+            //TODO check if it is still working
             MemoryStream ms = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(ms);
             writer.Write(MessagePrefix);
             writer.Write((UInt32)MessageId.kSignTransaction);
-            var decodedList = RLP.Decode(rlpEncodedTransaction);
-            var decodedRlpCollection = (RLPCollection)decodedList[0];
-            var data = decodedRlpCollection.ToBytes();
-            var signer = new Nethereum.Signer.RLPSigner(data);
-            writer.Write(signer.RawHash, 0, (int)Helper.kHash);
+            var rawHash = new Sha3Keccack().CalculateHash(input);
+            writer.Write(rawHash, 0, (int)Helper.kHash);
             Debug.Assert((HoardProfile)profile != null);
             SocketData socketData = null;
             if (SignerClients.TryGetValue(profile.Name, out socketData))
@@ -505,7 +506,7 @@ namespace Hoard
                 socketData.ResponseEvent.Reset();
                 socketData.Socket.Send(ms.ToArray());
                 if (socketData.ResponseEvent.WaitOne(MAX_WAIT_TIME_IN_MS))
-                    return Task.FromResult<string>(BitConverter.ToString(socketData.ReceivedSignature).Replace("-", string.Empty).ToLower());
+                    return Task.FromResult(socketData.ReceivedSignature.ToHex(true));
             }
             return Task.FromResult<string>("");
         }

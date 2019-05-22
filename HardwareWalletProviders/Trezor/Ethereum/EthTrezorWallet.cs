@@ -52,7 +52,7 @@ namespace Hoard.HW.Trezor.Ethereum
         private async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
         {
             var output = await SendRequestAsync(EthSignTransaction.Request(indices, rlpEncodedTransaction));
-            return EthSignTransaction.GetRLPEncoded(output, rlpEncodedTransaction);
+            return EthSignTransaction.GetSignature(output);
         }
 
         private async Task<string> SignMessage(byte[] message, Profile profile)

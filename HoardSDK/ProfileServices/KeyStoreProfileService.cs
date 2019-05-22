@@ -1,6 +1,5 @@
 ﻿using Hoard.Utils;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.RLP;
+using Nethereum.Signer;
 using Nethereum.Util;
 using Newtonsoft.Json.Linq;
 using System;
@@ -38,22 +37,14 @@ namespace Hoard
             /// Sign transaction with the private key
             /// </summary>
             /// <param name="input">input arguments</param>
-            /// <returns>signed transaction string</returns>
+            /// <returns>transaction signature string</returns>
             public override Task<string> SignTransaction(byte[] input)
             {
                 //CPU-bound
                 var ecKey = new Nethereum.Signer.EthECKey(Decode(EncryptedPrivateKey));
-
                 var rawHash = new Sha3Keccack().CalculateHash(input);
                 var signature = ecKey.SignAndCalculateV(rawHash);
-
-                var encodedData = new List<byte[]>();
-                encodedData.Add(input);
-                encodedData.Add(RLP.EncodeElement(signature.V));
-                encodedData.Add(RLP.EncodeElement(signature.R));
-                encodedData.Add(RLP.EncodeElement(signature.S));
-
-                return Task.FromResult(RLP.EncodeList(encodedData.ToArray()).ToHex().EnsureHexPrefix());
+                return Task.FromResult(EthECDSASignature.CreateStringSignature(signature));
             }
 
             /// <summary>

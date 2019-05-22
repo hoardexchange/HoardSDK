@@ -53,7 +53,7 @@ namespace HoardTests.HW
             {                
                 var user = await signer.RequestProfile("LedgerUser");
                 var signature = await user.SignMessage(messages[i]);
-                var addressRec = Hoard.Utils.Helper.RecoverHoardId(messages[i], signature);
+                var addressRec = Hoard.Utils.Helper.RecoverHoardIdFromMessage(messages[i], signature);
                 Assert.Equal(user.ID, addressRec);
             }
         }
@@ -80,13 +80,9 @@ namespace HoardTests.HW
 
             var user = await signer.RequestProfile("LedgerUser");
 
-            var rlpEncoded = await user.SignTransaction(rlpEncodedTransaction);
-            Assert.True(rlpEncoded != null);
-            Assert.True(rlpEncoded.Length > 0);
+            var signature = await user.SignTransaction(rlpEncodedTransaction);
+            var account = Hoard.Utils.Helper.RecoverHoardIdFromTransaction(signature, rlpEncodedTransaction);
 
-            
-
-            var account = Hoard.Utils.Helper.RecoverHoardId(rlpEncoded);
             Assert.Equal(user.ID, account);
         }
     }

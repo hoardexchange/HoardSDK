@@ -4,6 +4,7 @@ using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
 using Nethereum.Signer;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -34,6 +35,7 @@ namespace HoardTests.AccountServices
             {
                 hoardAccountServiceTestUser = signer.RequestProfile("hoard").Result;
             }
+            Assert.NotNull(hoardAccountServiceTestUser);
         }
 
         [Fact]
@@ -43,7 +45,7 @@ namespace HoardTests.AccountServices
             var message = "Hello world";
             var byteMsg = message.ToBytesForRLPEncoding();
             var signature = await hoardAccountServiceTestUser.SignMessage(byteMsg);
-            var addressRec = Helper.RecoverHoardId(byteMsg, signature);
+            var addressRec = Helper.RecoverHoardIdFromMessage(byteMsg, signature);
             Assert.Equal(hoardAccountServiceTestUser.ID, addressRec);
         }
 
@@ -57,11 +59,21 @@ namespace HoardTests.AccountServices
             var startGas = 21000.ToBytesForRLPEncoding();
             var value = 10000.ToBytesForRLPEncoding();
             var data = "".HexToByteArray();
-            var txData = new byte[][] { nonce, gasPrice, startGas, to.ToHexByteArray(), value, data };
-            var tx = new RLPSigner(txData);
-            var signature = await hoardAccountServiceTestUser.SignTransaction(tx.GetRLPEncodedRaw());
-            var addressRec = Helper.RecoverHoardId(signature);
-            Assert.Equal(hoardAccountServiceTestUser.ID, addressRec);
+
+            var txEncoded = new List<byte[]>();
+            txEncoded.Add(RLP.EncodeElement(nonce));
+            txEncoded.Add(RLP.EncodeElement(gasPrice));
+            txEncoded.Add(RLP.EncodeElement(startGas));
+            txEncoded.Add(RLP.EncodeElement(to.ToHexByteArray()));
+            txEncoded.Add(RLP.EncodeElement(value));
+            txEncoded.Add(RLP.EncodeElement(data));
+
+            var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
+
+            var signature = await hoardAccountServiceTestUser.SignTransaction(rlpEncodedTransaction);
+            HoardID account = Helper.RecoverHoardIdFromTransaction(signature, rlpEncodedTransaction);
+
+            Assert.Equal(hoardAccountServiceTestUser.ID, account);
         }
     }
 }

@@ -129,23 +129,15 @@ namespace Hoard.Utils
         /// <summary>
         /// Returns HoardID that signed this transaction
         /// </summary>
-        /// <param name="signedTransaction">signed tranasaction string (from Profile.SignTransaction)</param>
+        /// <param name="signatureStr"></param>
+        /// <param name="rlpEncodedTransaction"></param>
         /// <returns>Signer of this transaction</returns>
-        public static HoardID RecoverHoardId(string signedTransaction)
+        public static HoardID RecoverHoardId(string signatureStr, byte[] rlpEncodedTransaction)
         {
-            if (string.IsNullOrEmpty(signedTransaction))
+            if (string.IsNullOrEmpty(signatureStr))
                 return null;
 
-            var decodedRlpEncoded = RLP.Decode(signedTransaction.HexToByteArray());
-            var decodedRlpCollection = (RLPCollection)decodedRlpEncoded[0];
-
-            var signature = EthECDSASignatureFactory.FromComponents(
-                decodedRlpCollection[2].RLPData,
-                decodedRlpCollection[3].RLPData,
-                decodedRlpCollection[1].RLPData
-            );
-
-            byte[] rlpEncodedTransaction = decodedRlpCollection[0].RLPData;
+            var signature = EthECDSASignatureFactory.ExtractECDSASignature(signatureStr);
 
             var rawHash = new Nethereum.Util.Sha3Keccack().CalculateHash(rlpEncodedTransaction);
 
@@ -163,6 +155,5 @@ namespace Hoard.Utils
             var msgSigner = new EthereumMessageSigner();
             return new HoardID(msgSigner.EcRecover(message, signature));
         }
-
     }
 }
