@@ -3,12 +3,12 @@ using Hoard.BC.Plasma;
 using Hoard.Interfaces;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using PlasmaCore;
+using PlasmaCore.RPC.OutputData;
+using PlasmaCore.UTXO;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace Hoard.BC
 {
     /// <summary>
-    /// Utility class for child chain (plasma) communication
+    /// Utility class for Plasma communication
     /// </summary>
     public class PlasmaComm : IBCComm
     {
@@ -26,38 +26,20 @@ namespace Hoard.BC
         /// </summary>
         public static string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-        private RestClient childChainClient = null;
-        private RestClient watcherClient = null;
-
         private BCComm bcComm = null;
+
+        private PlasmaAPIService plasmaApiService = null;
 
         /// <summary>
         /// Creates PlasmaComm object.
         /// </summary>
         /// <param name="_bcComm">Ethereum blockchain communication</param>
-        /// <param name="childChainUrl">childchain rest client</param>
-        /// <param name="watcherUrl">watcher rest client</param>
-        public PlasmaComm(BCComm _bcComm, string childChainUrl, string watcherUrl)
+        /// <param name="watcherClient"></param>
+        /// <param name="childChainClient"></param>
+        public PlasmaComm(BCComm _bcComm, PlasmaCore.RPC.IClient watcherClient, PlasmaCore.RPC.IClient childChainClient)
         {
             bcComm = _bcComm;
-
-            if (Uri.IsWellFormedUriString(childChainUrl, UriKind.Absolute))
-            {
-                childChainClient = new RestClient(childChainUrl);
-                childChainClient.AutomaticDecompression = false;
-
-                //setup a cookie container for automatic cookies handling
-                childChainClient.CookieContainer = new System.Net.CookieContainer();
-            }
-
-            if (Uri.IsWellFormedUriString(watcherUrl, UriKind.Absolute))
-            {
-                watcherClient = new RestClient(watcherUrl);
-                watcherClient.AutomaticDecompression = false;
-
-                //setup a cookie container for automatic cookies handling
-                watcherClient.CookieContainer = new System.Net.CookieContainer();
-            }
+            plasmaApiService = new PlasmaAPIService(watcherClient, childChainClient);
         }
 
         /// <inheritdoc/>
@@ -125,22 +107,9 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="account">account to query</param>
         /// <returns></returns>
-        public async Task<List<TokenData>> GetTokensData(HoardID account)
+        public async Task<BalanceData[]> GetBalanceData(HoardID account)
         {
-            var data = new JObject();
-            data.Add("address", account.ToString().EnsureHexPrefix());
-
-            var responseString = await SendRequestPost(watcherClient, "account.get_balance", data);
-
-            var responseJson = JObject.Parse(responseString);
-            if (IsResponseSuccess(responseJson))
-            {
-                var responseData = GetResponseData(responseString);
-                return JsonConvert.DeserializeObject<List<TokenData>>(responseData);
-            }
-
-            Trace.Fail(string.Format("Could not get tokens data! {0}", responseJson.Value<string>("description")));
-            return new List<TokenData>();
+            return await plasmaApiService.GetBalance(account);
         }
 
         /// <summary>
@@ -149,27 +118,10 @@ namespace Hoard.BC
         /// <param name="account">account to query</param>
         /// <param name="currency">currency to query</param>
         /// <returns></returns>
-        public async Task<List<TokenData>> GetTokensData(HoardID account, string currency)
+        public async Task<BalanceData[]> GetBalanceData(HoardID account, string currency)
         {
-            var data = new JObject();
-            data.Add("address", account.ToString().EnsureHexPrefix());
-            data.Add("currency", currency.EnsureHexPrefix());
-
-            var responseString = await SendRequestPost(watcherClient, "account.get_balance", data);
-
-            var responseJson = JObject.Parse(responseString);
-            if (IsResponseSuccess(responseJson))
-            {
-                var tokenData = JsonConvert.DeserializeObject<List<TokenData>>(GetResponseData(responseString));
-
-                //TODO: plasma api doesn't support request with currency filter
-                if (tokenData.Exists(x => x.Currency.ToLower() == currency.ToLower()))
-                {
-                    return tokenData.FindAll(x => x.Currency.ToLower() == currency.ToLower());
-                }
-            }
-
-            return new List<TokenData>();
+            var balance = await plasmaApiService.GetBalance(account);
+            return balance.Where(x => x.Currency.RemoveHexPrefix().ToLower() == currency.RemoveHexPrefix().ToLower()).ToArray();
         }
 
         /// <summary>
@@ -177,32 +129,19 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="signedTransaction">RLP encoded signed transaction</param>
         /// <returns></returns>
-        public async Task<bool> SubmitTransaction(string signedTransaction)
+        public async Task<TransactionDetails> SubmitTransaction(string signedTransaction)
         {
-            var data = new JObject();
-            data.Add("transaction", signedTransaction.EnsureHexPrefix());
+            var receipt = await plasmaApiService.SubmitTransaction(signedTransaction);
+            TransactionDetails transaction = null;
 
-            var responseString = await SendRequestPost(childChainClient, "transaction.submit", data);
-
-            var responseJson = JObject.Parse(responseString);
-            if (IsResponseSuccess(responseJson))
+            // timeout
+            do
             {
-                var responseData = GetResponseData(responseString);
-                var receipt = JsonConvert.DeserializeObject<TransactionReceipt>(responseData);
+                Thread.Sleep(1000);
+                transaction = await plasmaApiService.GetTransaction(receipt.TxHash.HexValue);
+            } while (transaction == null);
 
-                TransactionData transaction = null;
-                transaction = await GetTransaction(receipt.TxHash);
-                while (transaction == null)
-                {
-                    Thread.Sleep(1000);
-                    transaction = await GetTransaction(receipt.TxHash);
-                }
-
-                return true;
-            }
-
-            Trace.Fail(string.Format("Could not submit transaction! {0}", responseJson.Value<string>("description")));
-            return false;
+            return transaction;
         }
 
         /// <summary>
@@ -225,11 +164,11 @@ namespace Hoard.BC
         /// <returns></returns>
         protected async Task<BigInteger> GetBalance(HoardID account, string currency)
         {
-            var balances = await GetTokensData(account);
-            var utxoData = balances.FirstOrDefault(x => x.Currency.RemoveHexPrefix() == currency.RemoveHexPrefix());
+            var balances = await GetBalanceData(account);
+            var utxoData = balances.FirstOrDefault(x => x.Currency.RemoveHexPrefix().ToLower() == currency.RemoveHexPrefix().ToLower());
 
             if (utxoData != null)
-                return utxoData.Amount;
+                return (utxoData as FCBalanceData).Amount;
             return 0;
         }
 
@@ -239,34 +178,18 @@ namespace Hoard.BC
         /// <param name="account">account to query</param>
         /// <param name="currency">currency to query</param>
         /// <returns></returns>
-        public async Task<List<UTXOData>> GetUtxos(HoardID account, string currency)
+        public async Task<UTXOData[]> GetUtxos(HoardID account, string currency)
         {
-            var data = new JObject();
-            data.Add("address", account.ToString().EnsureHexPrefix());
-
-            var responseString = await SendRequestPost(watcherClient, "account.get_utxos", data);
-
-            var responseJson = JObject.Parse(responseString);
-            if (IsResponseSuccess(responseJson))
+            var utxos = await plasmaApiService.GetUtxos(account);
+            var result = new List<UTXOData>();
+            foreach (var utxo in utxos)
             {
-                var result = new List<UTXOData>();
-
-                var responseData = GetResponseData(responseString);
-                var utxos = JsonConvert.DeserializeObject<List<UTXOData>>(responseData);
-
-                foreach (var utxo in utxos)
+                if (utxo.Currency.RemoveHexPrefix().ToLower() == currency.RemoveHexPrefix().ToLower())
                 {
-                    if (utxo.Currency == currency)
-                    {
-                        result.Add(utxo);
-                    }
+                    result.Add(utxo);
                 }
-
-                return result;
             }
-
-            Trace.Fail(string.Format("Could not get utxos! {0}", responseJson.Value<string>("description")));
-            return new List<UTXOData>();
+            return result.ToArray();
         }
 
         /// <summary>
@@ -274,20 +197,9 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="txId">transaction hash to query</param>
         /// <returns></returns>
-        protected async Task<TransactionData> GetTransaction(HexBigInteger txId)
+        protected async Task<TransactionDetails> GetTransaction(HexBigInteger txHash)
         {
-            var data = new JObject();
-            data.Add("id", txId.HexValue.EnsureHexPrefix());
-
-            var responseString = await SendRequestPost(watcherClient, "transaction.get", data);
-
-            var responseJson = JObject.Parse(responseString);
-            if (IsResponseSuccess(responseJson))
-            {
-                return JsonConvert.DeserializeObject<TransactionData>(GetResponseData(responseString));
-            }
-
-            return null;
+            return await plasmaApiService.GetTransaction(txHash.HexValue);
         }
 
         /// <summary>
@@ -299,7 +211,7 @@ namespace Hoard.BC
         public GameItemAdapter GetGameItemAdater(GameID game, GameItemContract contract)
         {
             if (contract is ERC223GameItemContract)
-                return (GameItemAdapter)Activator.CreateInstance(typeof(ERC223GameItemAdapter), this, game, contract);
+                return (GameItemAdapter)Activator.CreateInstance(typeof(ERC20GameItemAdapter), this, game, contract);
             else if (contract is ERC721GameItemContract)
                 return (GameItemAdapter)Activator.CreateInstance(typeof(ERC721GameItemAdapter), this, game, contract);
 
@@ -348,26 +260,6 @@ namespace Hoard.BC
             var response = await client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response.Content;
-        }
-
-        private bool IsResponseSuccess(JObject responseJson)
-        {
-            JToken success;
-            if (responseJson.TryGetValue("success", out success))
-                return (success.Value<bool>() == true);
-            return false;
-            
-        }
-
-        private string GetResponseData(string responseString)
-        {
-            var result = JObject.Parse(responseString);
-            JToken data;
-            if (result.TryGetValue("data", out data))
-            {
-                data.ToString();
-            }
-            return "";
         }
     }
 }

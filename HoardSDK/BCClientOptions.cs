@@ -151,26 +151,26 @@ namespace Hoard
         public Nethereum.JsonRpc.Client.IClient RpcClient { get; private set; } = null;
 
         /// <summary>
-        /// Plasma child chain url of Hoard network
+        /// Plasma child chain client of Hoard network
         /// </summary>
-        public string ChildChainUrl { get; private set; } = null;
+        public PlasmaCore.RPC.IClient ChildChainClient { get; private set; } = null;
 
         /// <summary>
-        /// Plasma watcher url of Hoard network
+        /// Plasma watcher client of Hoard network
         /// </summary>
-        public string WatcherUrl { get; private set; } = null;
+        public PlasmaCore.RPC.IClient WatcherClient { get; private set; } = null;
 
         /// <summary>
         /// Creates Plasma client options object.
         /// </summary>
         /// <param name="rpcClient">JsonRpc client implementation</param>
-        /// <param name="childChainUrl">Plasma child chain url</param>
-        /// <param name="watcherUrl">Plasma watcher url</param>
-        public PlasmaClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient, string childChainUrl, string watcherUrl)
+        /// <param name="watcherClient">Plasma watcher client</param>
+        /// <param name="childChainClient">Plasma child chain client (optional)</param>
+        public PlasmaClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient, PlasmaCore.RPC.IClient watcherClient, PlasmaCore.RPC.IClient childChainClient = null)
         {
             RpcClient = rpcClient;
-            ChildChainUrl = childChainUrl;
-            WatcherUrl = watcherUrl;
+            WatcherClient = watcherClient;
+            ChildChainClient = childChainClient;
         }
     }
 }

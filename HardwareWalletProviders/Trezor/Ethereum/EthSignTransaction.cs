@@ -140,19 +140,17 @@ namespace Hoard.HW.Trezor.Ethereum
             return request;
         }
 
-        public static string GetRLPEncoded(object output, byte[] rlpEncodedTransaction)
+        public static string GetSignature(object output)
         {
             if (output is EthSignTransactionResponse)
             {
                 var response = output as EthSignTransactionResponse;
+                var signature = new EthECDSASignature(
+                        new Org.BouncyCastle.Math.BigInteger(response.SignatureR),
+                        new Org.BouncyCastle.Math.BigInteger(response.SignatureS),
+                        new byte[] { (byte)response.SignatureV });
 
-                var encodedData = new System.Collections.Generic.List<byte[]>();
-                encodedData.Add(rlpEncodedTransaction);
-                encodedData.Add(RLP.EncodeElement(new byte[] { (byte)response.SignatureV }));
-                encodedData.Add(RLP.EncodeElement(response.SignatureR));
-                encodedData.Add(RLP.EncodeElement(response.SignatureS));
-
-                return RLP.EncodeList(encodedData.ToArray()).ToHex().EnsureHexPrefix();
+                return EthECDSASignature.CreateStringSignature(signature);
             }
 
             return null;

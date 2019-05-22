@@ -82,7 +82,7 @@ namespace HoardTests.HW
 
                 var signature = await response.SignMessage(messages[i]);
 
-                var addressRec =Hoard.Utils.Helper.RecoverHoardId(messages[i], signature);
+                var addressRec =Hoard.Utils.Helper.RecoverHoardIdFromMessage(messages[i], signature);
                 Assert.Equal(response.ID, addressRec);
             }
         }
@@ -109,13 +109,9 @@ namespace HoardTests.HW
 
             var user = await signer.RequestProfile(TrezorWallet.AccountInfoName);
 
-            var rlpEncoded = await user.SignTransaction(rlpEncodedTransaction);
-            Assert.True(rlpEncoded != null);
-            Assert.True(rlpEncoded.Length > 0);
+            var signature = await user.SignTransaction(rlpEncodedTransaction);
+            HoardID account = Hoard.Utils.Helper.RecoverHoardIdFromTransaction(signature, rlpEncodedTransaction);
 
-            //TODO: check!
-
-            var account = Hoard.Utils.Helper.RecoverHoardId(rlpEncoded);
             Assert.Equal(user.ID, account);
         }
     }

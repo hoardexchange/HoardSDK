@@ -83,7 +83,7 @@ namespace Hoard.HW.Ledger.Ethereum
 
             if (IsSuccess(output.StatusCode))
             {
-                return EthSignTransaction.GetRLPEncoded(output.Data, rlpEncodedTransaction);
+                return EthSignTransaction.GetSignature(output.Data);
             }
 
             return null;

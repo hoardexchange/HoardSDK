@@ -354,22 +354,14 @@ namespace Hoard.BC
 
             string data = function.GetData(functionInput);
             var defaultGasPrice = Nethereum.Signer.TransactionBase.DEFAULT_GAS_PRICE;
-            var trans = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, defaultGasPrice, gas.Value, data);
-            var rlpEncodedTx = trans.GetRLPEncodedRaw();
+            var transaction = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, defaultGasPrice, gas.Value, data);
+            var rlpEncodedTx = transaction.GetRLPEncodedRaw();
+            
+            string signature = await profile.SignTransaction(rlpEncodedTx);
+            transaction.SetSignature(Nethereum.Signer.EthECDSASignatureFactory.ExtractECDSASignature(signature));
 
-            // FIXME? hoard sdk api is not compatible with plasma and ethereum at the same time
-            // SignTransaction should return some struct or only signature
-            // temp fix - encode/decode transaction data
-            string signedTransactionData = await profile.SignTransaction(rlpEncodedTx);
-            if (signedTransactionData == null)
-            {
-                ErrorCallbackProvider.ReportError("Could not sign transaction!");
-                return null;
-            }
-
-            string encodedFlatten = FlattenSignedTransactionData(signedTransactionData);
-
-            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync(encodedFlatten).ConfigureAwait(false);
+            var signedTransaction = transaction.GetRLPEncoded().ToHex(true);
+            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync(signedTransaction).ConfigureAwait(false);
             TransactionReceipt receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
             while (receipt == null)
             {
@@ -390,17 +382,13 @@ namespace Hoard.BC
             var nonceService = new InMemoryNonceService(profile.ID, web.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
-            var trans = new Nethereum.Signer.Transaction(to, amount, nonce);
-            string signedTransactionData = await profile.SignTransaction(trans.GetRLPEncodedRaw());
-            if (signedTransactionData == null)
-            {
-                ErrorCallbackProvider.ReportError("Could not sign transaction!");
-                return null;
-            }
+            var transaction = new Nethereum.Signer.Transaction(to, amount, nonce);
+            var rlpEncodedTx = transaction.GetRLPEncodedRaw();
+            string signature = await profile.SignTransaction(rlpEncodedTx);
+            transaction.SetSignature(Nethereum.Signer.EthECDSASignatureFactory.ExtractECDSASignature(signature));
 
-            string encodedFlatten = FlattenSignedTransactionData(signedTransactionData);
-
-            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync(encodedFlatten);
+            var signedTransaction = transaction.GetRLPEncoded().ToHex(true);
+            string txId = await web.Eth.Transactions.SendRawTransaction.SendRequestAsync(signedTransaction);
             TransactionReceipt receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
             while (receipt == null)
             {
@@ -422,34 +410,6 @@ namespace Hoard.BC
             game.GameOwner = await gameContract.GetOwner();
             game.Url = !url.StartsWith("http") ? "http://" + url : url;
             return game;
-        }
-
-        static private string FlattenSignedTransactionData(string encodedTransactionData)
-        {
-            var encodedFlattenList = new List<byte[]>();
-            RLPCollection rlpDecoded = RLP.Decode(encodedTransactionData.HexToByteArray());
-            if (rlpDecoded.Count == 1)
-            {
-                rlpDecoded = (RLPCollection)rlpDecoded[0];
-                foreach (var rlpItem in (RLPCollection)rlpDecoded[0])
-                {
-                    if (rlpItem.RLPData != null)
-                    {
-                        encodedFlattenList.Add(RLP.EncodeElement(rlpItem.RLPData));
-                    }
-                    else
-                    {
-                        encodedFlattenList.Add(RLP.EncodeElement(0.ToBytesForRLPEncoding()));
-                    }
-                }
-
-                for (int i = 1; i < rlpDecoded.Count; ++i)
-                {
-                    encodedFlattenList.Add(RLP.EncodeElement(rlpDecoded[i].RLPData));
-                }
-            }
-
-            return RLP.EncodeList(encodedFlattenList.ToArray()).ToHex().EnsureHexPrefix();
         }
     }
 }

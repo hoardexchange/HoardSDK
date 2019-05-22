@@ -1,11 +1,12 @@
 ﻿using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
+using System;
 using System.Numerics;
 
-namespace Hoard.BC.Plasma
+namespace PlasmaCore.RPC.OutputData
 {
     /// <summary>
-    /// Description of Plasma transaction receipt
+    /// Response class for submit transaction request
     /// </summary>
     public class TransactionReceipt
     {
@@ -13,13 +14,13 @@ namespace Hoard.BC.Plasma
         /// Block number
         /// </summary>
         [JsonProperty(propertyName: "blknum")]
-        public BigInteger BlkNum { get; private set; }
+        public UInt64 BlkNum { get; private set; }
 
         /// <summary>
         /// Transaction index in the block
         /// </summary>
         [JsonProperty(propertyName: "txindex")]
-        public BigInteger TxIndex { get; private set; }
+        public UInt16 TxIndex { get; private set; }
 
         /// <summary>
         /// Transaction hash

@@ -1,7 +1,4 @@
-﻿using Hoard.Utils;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.RLP;
-using Nethereum.Signer;
+﻿using Nethereum.Signer;
 using System.IO;
 using System.Linq;
 
@@ -18,21 +15,21 @@ namespace Hoard.HW.Ledger.Ethereum
                                 firstBlock ? derivation.Concat(rlpTransactionChunk).ToArray() : rlpTransactionChunk);
         }
 
-        public static string GetRLPEncoded(byte[] signature, byte[] rlpEncodedTransaction)
+        public static string GetSignature(byte[] output)
         {
-            var decodedList = RLP.Decode(rlpEncodedTransaction);
-            var decodedRlpCollection = (RLPCollection)decodedList[0];
-            var data = decodedRlpCollection.ToBytes();
-
-            using (var memory = new MemoryStream(signature))
+            using (var memory = new MemoryStream(output))
             {
                 using (var reader = new BinaryReader(memory))
                 {
-                    byte sigV = reader.ReadByte();
+                    byte[] sigV = reader.ReadBytes(1);
                     byte[] sigR = reader.ReadBytes(32);
                     byte[] sigS = reader.ReadBytes(32);
-                    var signer = new RLPSigner(data, sigR, sigS, sigV);
-                    return signer.GetRLPEncoded().ToHex();
+
+                    var signature = new EthECDSASignature(
+                        new Org.BouncyCastle.Math.BigInteger(sigR), 
+                        new Org.BouncyCastle.Math.BigInteger(sigS), 
+                        sigV);
+                    return EthECDSASignature.CreateStringSignature(signature);
                 }
             }
         }
