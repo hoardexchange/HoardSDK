@@ -353,12 +353,8 @@ namespace Hoard.Utils.QR
 
                 var size = qrCode.ModuleMatrix.Count;
 
-
-                #if NET40
-                    var methods = typeof (MaskPattern).GetMethods();
-                #else
-                    var methods = typeof (MaskPattern).GetTypeInfo().DeclaredMethods;
-                #endif
+                var methods = MaskPattern.Patterns;
+                MaskPattern.PatternFunc patternMethod = new MaskPattern.PatternFunc() { Name = "default", Call = MaskPattern.Pattern1 };
 
                 foreach (var pattern in methods)
                 {
@@ -388,7 +384,7 @@ namespace Hoard.Utils.QR
                             {
                                 if (!IsBlocked(new Rectangle(x, y, 1, 1), blockedModules))
                                 {
-                                    qrTemp.ModuleMatrix[y][x] ^= (bool)pattern.Invoke(null, new object[] { x, y });
+                                    qrTemp.ModuleMatrix[y][x] ^= pattern.Call(x, y);
                                 }
                             }
                         }
@@ -396,21 +392,12 @@ namespace Hoard.Utils.QR
                         var score = MaskPattern.Score(ref qrTemp);
                         if (string.IsNullOrEmpty(patternName) || patternScore > score)
                         {
-                            patternName = pattern.Name;
+                            patternMethod = pattern;
                             patternScore = score;
                         }
 
                     }
                 }
-
-
-
-                #if NET40
-                    var patterMethod = typeof(MaskPattern).GetMethods().First(x => x.Name == patternName);
-                #else
-                    var patterMethod = typeof(MaskPattern).GetTypeInfo().GetDeclaredMethod(patternName);
-                #endif
-
 
                 for (var x = 0; x < size; x++)
                 {
@@ -418,11 +405,11 @@ namespace Hoard.Utils.QR
                     {
                         if (!IsBlocked(new Rectangle(x, y, 1, 1), blockedModules))
                         {
-                            qrCode.ModuleMatrix[y][x] ^= (bool)patterMethod.Invoke(null, new object[] { x, y });
+                            qrCode.ModuleMatrix[y][x] ^= patternMethod.Call(x, y);
                         }
                     }
                 }
-                return Convert.ToInt32(patterMethod.Name.Substring(patterMethod.Name.Length - 1, 1)) - 1;
+                return Convert.ToInt32(patternMethod.Name.Substring(patternMethod.Name.Length - 1, 1)) - 1;
             }
 
 
@@ -587,6 +574,24 @@ namespace Hoard.Utils.QR
 
             private static class MaskPattern
             {
+                public struct PatternFunc
+                {
+                    public string Name;
+                    public Func<int, int, bool> Call;
+                }
+
+                public static PatternFunc[] Patterns =
+                {
+                    new PatternFunc {Name = "Pattern1",Call=Pattern1},
+                    new PatternFunc {Name = "Pattern2",Call=Pattern2},
+                    new PatternFunc {Name = "Pattern3",Call=Pattern3},
+                    new PatternFunc {Name = "Pattern4",Call=Pattern4},
+                    new PatternFunc {Name = "Pattern5",Call=Pattern5},
+                    new PatternFunc {Name = "Pattern6",Call=Pattern6},
+                    new PatternFunc {Name = "Pattern7",Call=Pattern7},
+                    new PatternFunc {Name = "Pattern8",Call=Pattern8},
+                };
+
                 public static bool Pattern1(int x, int y)
                 {
                     return (x + y) % 2 == 0;
