@@ -1,8 +1,10 @@
 ﻿using Hoard.BC.Contracts;
+using Nethereum.Hex.HexConvertors.Extensions;
+using PlasmaCore.RPC.OutputData;
+using PlasmaCore.Transaction;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 
@@ -77,19 +79,17 @@ namespace Hoard.BC.Plasma
     }
 
     /// <summary>
-    /// ERC223 game item adapter using childchain
+    /// ERC20 game item adapter using childchain
     /// </summary>
-    public class ERC223GameItemAdapter : GameItemAdapter
+    public class ERC20GameItemAdapter : GameItemAdapter
     {
-        private TransactionBuilder txBuilder = new TransactionBuilder();
-
         /// <summary>
         /// Constructor of erc223 game item adapter
         /// </summary>
         /// <param name="_plasmaComm">plasma communication</param>
         /// <param name="_game">game that manages these items</param>
         /// <param name="_contract">ethereum game item contract</param>
-        public ERC223GameItemAdapter(PlasmaComm _plasmaComm, GameID _game, GameItemContract _contract)
+        public ERC20GameItemAdapter(PlasmaComm _plasmaComm, GameID _game, GameItemContract _contract)
             : base(_plasmaComm, _game, _contract)
         {
         }
@@ -106,11 +106,15 @@ namespace Hoard.BC.Plasma
                 var currencyAddress = metadata.OwnerAddress;
 
                 var utxos = await plasmaComm.GetUtxos(profileFrom.ID, currencyAddress);
-                var inputUtxos = ERC223UTXOData.FindInputs(utxos, amount);
-                if (inputUtxos != null)
+                if (utxos != null && utxos.Length > 0)
                 {
-                    var signedTransaction = await txBuilder.BuildERC223Transaction(profileFrom, addressTo, inputUtxos, amount);
-                    return await plasmaComm.SubmitTransaction(signedTransaction);
+                    var transaction = FCTransactionBuilder.Build(profileFrom.ID, addressTo, utxos, amount, currencyAddress);
+                    byte[] encodedTransaction = transaction.GetRLPEncodedRaw();
+                    string signature = await profileFrom.SignTransaction(encodedTransaction);
+                    transaction.AddSignature(profileFrom.ID, signature);
+                    byte[] signedTransaction = transaction.GetRLPEncoded();
+                    var details = await plasmaComm.SubmitTransaction(signedTransaction.ToHex());
+                    return (details != null);
                 }
             }
 
@@ -121,13 +125,13 @@ namespace Hoard.BC.Plasma
         public override async Task<GameItem[]> GetGameItems(HoardID address)
         {
             var items = new List<GameItem>();
-            var tokensData = await plasmaComm.GetTokensData(address, contract.Address);
+            var balanceData = await plasmaComm.GetBalanceData(address, contract.Address);
 
             string symbol = await contract.GetSymbol();
             string state = BitConverter.ToString(await (contract as ERC223GameItemContract).GetTokenState());
-            foreach (var tokenData in tokensData)
+            foreach (var data in balanceData)
             {
-                ERC223GameItemContract.Metadata meta = new ERC223GameItemContract.Metadata(contract.Address, tokenData.Amount);
+                ERC223GameItemContract.Metadata meta = new ERC223GameItemContract.Metadata(contract.Address, (data as FCBalanceData).Amount);
                 items.Add(new GameItem(game, symbol, meta));
             }
 
@@ -137,8 +141,8 @@ namespace Hoard.BC.Plasma
         /// <inheritdoc/>
         public override async Task<BigInteger> GetBalanceOf(HoardID address)
         {
-            var tokensData = await plasmaComm.GetTokensData(address, contract.Address);
-            return tokensData.Count;
+            var balanceData = await plasmaComm.GetBalanceData(address, contract.Address);
+            return balanceData.Length;
         }
     }
 
@@ -147,8 +151,6 @@ namespace Hoard.BC.Plasma
     /// </summary>
     public class ERC721GameItemAdapter : GameItemAdapter
     {
-        private TransactionBuilder txBuilder = new TransactionBuilder();
-
         /// <summary>
         /// Constructor of erc721 game item adapter
         /// </summary>
@@ -163,20 +165,25 @@ namespace Hoard.BC.Plasma
         /// <inheritdoc/>
         public override async Task<bool> Transfer(Profile profileFrom, string addressTo, GameItem gameItem, BigInteger amount)
         {
+            // TODO missing erc721 plasma implementation
+            /*
             Debug.Assert(gameItem.Metadata is ERC721GameItemContract.Metadata);
 
             var tokenId = (gameItem.Metadata as ERC721GameItemContract.Metadata).ItemId;
             var currencyAddress = (gameItem.Metadata as ERC721GameItemContract.Metadata).OwnerAddress;
 
             var utxos = await plasmaComm.GetUtxos(profileFrom.ID, currencyAddress);
-            var erc721Utxos = utxos.OfType<ERC721UTXOData>().ToList();
-
-            if (erc721Utxos != null)
+            if (utxos != null && utxos.Length > 0)
             {
-                var signedTransaction = await txBuilder.BuildERC721Transaction(profileFrom, addressTo, erc721Utxos, tokenId);
-                return await plasmaComm.SubmitTransaction(signedTransaction);
-            }
+                var transaction = await NFCTransactionBuilder.Build(profileFrom, addressTo, utxos, currency, tokenId);
+                byte[] encodedTransaction = transaction.GetRLPEncoded();
+                string signature = await profileFrom.SignTransaction(encodedTransaction);
+                transaction.AddSignature(profileFrom.ID, signature);
+                byte[] signedTransaction = transaction.GetSignedRLPEncoded();
+                var details = await plasmaComm.SubmitTransaction(signedTransaction.ToHex());
 
+            }
+            */
             return false;
         }
 
@@ -184,18 +191,22 @@ namespace Hoard.BC.Plasma
         public override async Task<GameItem[]> GetGameItems(HoardID address)
         {
             var items = new List<GameItem>();
-            var tokensData = await plasmaComm.GetTokensData(address, contract.Address);
+
+            // TODO missing erc721 plasma implementation
+            /*
+            var balanceData = await plasmaComm.GetBalanceData(address, contract.Address);
 
             string symbol = await contract.GetSymbol();
-            for (int i = 0; i < tokensData.Count; ++i)
+            foreach(var data in balanceData)
             {
-                ERC721GameItemContract.Metadata meta = new ERC721GameItemContract.Metadata(contract.Address, tokensData[i].TokenId);
+                ERC721GameItemContract.Metadata meta = new ERC721GameItemContract.Metadata(contract.Address, (data as NFCBalanceData).TokenId);
                 GameItem item = new GameItem(game, symbol, meta);
                 
-                item.State = await plasmaComm.GetTokenState(contract.Address, tokensData[i].TokenId);
+                item.State = await plasmaComm.GetTokenState(contract.Address, (data as NFCBalanceData).TokenId);
 
                 items.Add(item);
             }
+            */
 
             return items.ToArray();
         }
@@ -203,8 +214,8 @@ namespace Hoard.BC.Plasma
         /// <inheritdoc/>
         public override async Task<BigInteger> GetBalanceOf(HoardID address)
         {
-            var tokensData = await plasmaComm.GetTokensData(address, contract.Address);
-            return tokensData.Count;
+            var balanceData = await plasmaComm.GetBalanceData(address, contract.Address);
+            return balanceData.Length;
         }
     }
 }

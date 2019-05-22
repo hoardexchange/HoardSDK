@@ -72,8 +72,8 @@ namespace HoardTests.Fixtures
                 var plasmaConfig = config.BCClient as PlasmaClientConfig;
                 clientOpts = new PlasmaClientOptions(
                     new Nethereum.JsonRpc.Client.RpcClient(new Uri(plasmaConfig.ClientUrl)),
-                    plasmaConfig.ChildChainUrl,
-                    plasmaConfig.WatcherUrl
+                    new PlasmaCore.RPC.RpcClient(new Uri(plasmaConfig.ChildChainUrl)),
+                    new PlasmaCore.RPC.RpcClient(new Uri(plasmaConfig.WatcherUrl))
                 );
             }
 

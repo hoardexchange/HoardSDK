@@ -20,7 +20,7 @@ namespace Hoard.BC
             {
                 var clientOpts = options.BCClientOptions as PlasmaClientOptions;
                 var bcComm = new BCComm(clientOpts.RpcClient, options.GameCenterContract);
-                return new PlasmaComm(bcComm, clientOpts.ChildChainUrl, clientOpts.WatcherUrl);
+                return new PlasmaComm(bcComm, clientOpts.ChildChainClient, clientOpts.WatcherClient);
             }
             else if (options.BCClientOptions is EthereumClientOptions)
             {

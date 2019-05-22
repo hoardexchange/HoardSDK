@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.Numerics;
 
-namespace Hoard.BC.Plasma
+namespace PlasmaCore.Transaction
 {
     /// <summary>
     /// Description of transaction data
@@ -24,7 +25,7 @@ namespace Hoard.BC.Plasma
         /// Index of outcome transaction within the block
         /// </summary>
         [JsonProperty(propertyName: "txindex")]
-        public BigInteger TxIndex { get; private set; }
+        public UInt16 TxIndex { get; private set; }
 
         /// <summary>
         /// Outcome transaction hash
@@ -42,7 +43,7 @@ namespace Hoard.BC.Plasma
         /// Outcome transaction timestamp
         /// </summary>
         [JsonProperty(propertyName: "timestamp")]
-        public BigInteger TimeStamp { get; private set; }
+        public UInt64 TimeStamp { get; private set; }
 
         /// <summary>
         /// Owner of second input transaction
@@ -96,7 +97,7 @@ namespace Hoard.BC.Plasma
         /// Ethereum chain height where the block got submitted
         /// </summary>
         [JsonProperty(propertyName: "eth_height")]
-        public BigInteger EthHeight { get; private set; }
+        public UInt64 EthHeight { get; private set; }
 
         /// <summary>
         /// Currency of the transaction

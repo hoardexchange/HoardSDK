@@ -132,7 +132,7 @@ namespace Hoard.Utils
         /// <param name="signatureStr"></param>
         /// <param name="rlpEncodedTransaction"></param>
         /// <returns>Signer of this transaction</returns>
-        public static HoardID RecoverHoardId(string signatureStr, byte[] rlpEncodedTransaction)
+        public static HoardID RecoverHoardIdFromTransaction(string signatureStr, byte[] rlpEncodedTransaction)
         {
             if (string.IsNullOrEmpty(signatureStr))
                 return null;
@@ -150,7 +150,7 @@ namespace Hoard.Utils
         /// <param name="message">message</param>
         /// <param name="signature">signature string (from Profile.SignMessage)</param>
         /// <returns>Signer of the message</returns>
-        public static HoardID RecoverHoardId(byte[] message, string signature)
+        public static HoardID RecoverHoardIdFromMessage(byte[] message, string signature)
         {
             var msgSigner = new EthereumMessageSigner();
             return new HoardID(msgSigner.EcRecover(message, signature));
