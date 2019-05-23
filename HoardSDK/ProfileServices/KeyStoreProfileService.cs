@@ -138,6 +138,21 @@ namespace Hoard
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="privKey"></param>
+        /// <returns></returns>
+        public async Task<Profile> CreateProfile(string name, string privKey)
+        {
+            ErrorCallbackProvider.ReportInfo("Creating user account.");
+            string password = await UserInputProvider.RequestInput(name, null, eUserInputType.kPassword, "new password");
+            Tuple<string, string> accountTuple = KeyStoreUtils.CreateProfile(name, password, privKey, ProfilesDir);
+            Profile profile = new KeyStoreProfile(name, new HoardID(accountTuple.Item1), accountTuple.Item2);
+            return profile;
+        }
+
+        /// <summary>
         /// Deletes profile
         /// </summary>
         /// <param name="id"></param>

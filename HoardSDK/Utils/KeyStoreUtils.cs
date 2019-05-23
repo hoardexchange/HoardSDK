@@ -236,16 +236,34 @@ namespace Hoard.Utils
         /// <returns></returns>
         public static Tuple<string, string> CreateProfile(string name, string password, string profilesDir)
         {
-            //generate new secure random key
-            var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
-
             if (!Directory.Exists(profilesDir))
             {
                 Directory.CreateDirectory(profilesDir);
             }
 
+            //generate new secure random key
+            var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
             string accountFile = CreateAccountKeyStoreFile(ecKey, password, name, profilesDir);
+            return new Tuple<string, string>(ecKey.GetPublicAddress(), ecKey.GetPrivateKey());
+        }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="password"></param>
+        /// <param name="privKey"></param>
+        /// <param name="profilesDir"></param>
+        /// <returns></returns>
+        public static Tuple<string, string> CreateProfile(string name, string password, string privKey, string profilesDir)
+        {
+            if (!Directory.Exists(profilesDir))
+            {
+                Directory.CreateDirectory(profilesDir);
+            }
+
+            var ecKey = new Nethereum.Signer.EthECKey(privKey);
+            string accountFile = CreateAccountKeyStoreFile(ecKey, password, name, profilesDir);
             return new Tuple<string, string>(ecKey.GetPublicAddress(), ecKey.GetPrivateKey());
         }
 
