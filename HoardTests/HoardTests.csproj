@@ -57,6 +57,8 @@
     <Compile Include="Fixtures\HoardExchangeFixture.cs" />
     <Compile Include="Fixtures\HoardServiceFixture.cs" />
     <Compile Include="Fixtures\IPFSFixture.cs" />
+    <Compile Include="Fixtures\MockupPlasmaAPIServiceFixture.cs" />
+    <Compile Include="Fixtures\PlasmaMockupResponses.cs" />
     <Compile Include="GameItemTests.cs" />
     <Compile Include="HoardExchangeTest.cs" />
     <Compile Include="HoardServiceTests.cs" />
@@ -70,6 +72,8 @@
     <Compile Include="HW\TrezorWalletTest.cs" />
     <Compile Include="IdenticonTest.cs" />
     <Compile Include="NethereumRpcClient.cs" />
+    <Compile Include="PlasmaCoreTests\AccountTests.cs" />
+    <Compile Include="PlasmaCoreTests\TransactionBuilderTests.cs" />
     <Compile Include="PlasmaRpcClient.cs" />
     <Compile Include="Plasma\HoardServiceTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

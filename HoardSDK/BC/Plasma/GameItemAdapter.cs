@@ -1,7 +1,7 @@
 ﻿using Hoard.BC.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using PlasmaCore.RPC.OutputData;
-using PlasmaCore.Transaction;
+using PlasmaCore.Transactions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -111,7 +111,7 @@ namespace Hoard.BC.Plasma
                     var transaction = FCTransactionBuilder.Build(profileFrom.ID, addressTo, utxos, amount, currencyAddress);
                     byte[] encodedTransaction = transaction.GetRLPEncodedRaw();
                     string signature = await profileFrom.SignTransaction(encodedTransaction);
-                    transaction.AddSignature(profileFrom.ID, signature);
+                    transaction.SetSignature(profileFrom.ID, signature.HexToByteArray());
                     byte[] signedTransaction = transaction.GetRLPEncoded();
                     var details = await plasmaComm.SubmitTransaction(signedTransaction.ToHex());
                     return (details != null);

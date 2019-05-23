@@ -1,7 +1,5 @@
-﻿using Nethereum.RLP;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace PlasmaCore.UTXO
@@ -12,19 +10,17 @@ namespace PlasmaCore.UTXO
     [JsonConverter(typeof(UTXOConverter))]
     public class UTXOData
     {
-        private static readonly string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-
         /// <summary>
         /// Transaction index within the block
         /// </summary>
         [JsonProperty(propertyName: "txindex")]
-        public UInt16 TxIndex { get; protected set; }
+        public UInt16 TxIndex { get; set; }
 
         /// <summary>
         /// Transaction output index
         /// </summary>
         [JsonProperty(propertyName: "oindex")]
-        public UInt16 OIndex { get; protected set; }
+        public UInt16 OIndex { get; set; }
 
         /// <summary>
         /// Currency of the transaction (all zeroes for ETH)
@@ -36,7 +32,7 @@ namespace PlasmaCore.UTXO
         /// Block number
         /// </summary>
         [JsonProperty(propertyName: "blknum")]
-        public UInt64 BlkNum { get; protected set; }
+        public UInt64 BlkNum { get; set; }
 
         /// <summary>
         /// UTXO position
@@ -49,36 +45,5 @@ namespace PlasmaCore.UTXO
         /// </summary>
         [JsonProperty(propertyName: "owner")]
         public string Owner { get; protected set; }
-
-        /// <summary>
-        /// Gets empty utxo
-        /// </summary>
-        public static UTXOData Empty
-        {
-            get
-            {
-                var utxoData = new UTXOData();
-                utxoData.BlkNum = 0;
-                utxoData.TxIndex = 0;
-                utxoData.OIndex = 0;
-                utxoData.Position = BigInteger.Zero;
-                utxoData.Owner = ZERO_ADDRESS;
-                utxoData.Currency = ZERO_ADDRESS;
-                return utxoData;
-            }
-        }
-
-        /// <summary>
-        /// Returns transaction rlp encoded data
-        /// </summary>
-        /// <returns></returns>
-        public virtual List<byte[]> GetRLPEncoded()
-        {
-            var data = new List<byte[]>();
-            data.Add(RLP.EncodeElement(new BigInteger(BlkNum).ToBytesForRLPEncoding()));
-            data.Add(RLP.EncodeElement(new BigInteger(TxIndex).ToBytesForRLPEncoding()));
-            data.Add(RLP.EncodeElement(new BigInteger(OIndex).ToBytesForRLPEncoding()));
-            return data;
-        }
     }
 }
