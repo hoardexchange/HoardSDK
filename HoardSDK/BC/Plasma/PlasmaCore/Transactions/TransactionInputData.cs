@@ -63,5 +63,14 @@ namespace PlasmaCore.Transactions
             data[2] = RLP.EncodeElement(new BigInteger(OIndex).ToBytesForRLPEncoding());
             return RLP.EncodeList(data);
         }
+
+        /// <summary>
+        /// Returns if transaction input data is empty
+        /// </summary>
+        /// <returns></returns>
+        public bool IsEmpty()
+        {
+            return (BlkNum == 0 && TxIndex == 0 && OIndex == 0);
+        }
     }
 }

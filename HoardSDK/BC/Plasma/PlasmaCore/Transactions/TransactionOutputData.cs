@@ -59,5 +59,16 @@ namespace PlasmaCore.Transactions
             data[2] = RLPEncodedValue;
             return RLP.EncodeList(data);
         }
+
+        /// <summary>
+        /// Returns if transaction output data is empty
+        /// </summary>
+        /// <returns></returns>
+        public bool IsEmpty()
+        {
+            return (Owner == string.Empty.PadLeft(40, '0').EnsureHexPrefix() &&
+                Currency == string.Empty.PadLeft(40, '0').EnsureHexPrefix() &&
+                RLPEncodedValue == RLP.EncodeElement(BigInteger.Zero.ToBytesForRLPEncoding()));
+        }
     }
 }
