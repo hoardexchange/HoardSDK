@@ -26,12 +26,12 @@ namespace PlasmaCore.Transactions
         /// <summary>
         /// List of transaction input utxo data
         /// </summary>
-        private List<TransactionInputData> inputs = new List<TransactionInputData>();
+        public List<TransactionInputData> Inputs { get; protected set; } = new List<TransactionInputData>();
 
         /// <summary>
         /// List of transaction output data
         /// </summary>
-        private List<TransactionOutputData> outputs = new List<TransactionOutputData>();
+        public List<TransactionOutputData> Outputs { get; protected set; }  = new List<TransactionOutputData>();
 
         /// <summary>
         /// List of signatures
@@ -44,7 +44,7 @@ namespace PlasmaCore.Transactions
         /// </summary>
         public Transaction()
         {
-            for (Int32 i = 0; i < inputs.Count; ++i)
+            for (Int32 i = 0; i < Inputs.Count; ++i)
             {
                 signatures[i] = null;
                 senders[i] = null;
@@ -100,13 +100,13 @@ namespace PlasmaCore.Transactions
         /// <param name="data">transaction utxo input data</param>
         public bool AddInput(UTXOData data)
         {
-            if (inputs.Count <= MAX_INPUTS)
+            if (Inputs.Count <= MAX_INPUTS)
             {
                 var tid = new TransactionInputData(data.BlkNum, data.TxIndex, data.OIndex);
                 if (!tid.IsEmpty())
                 {
-                    inputs.Add(tid);
-                    senders[inputs.Count - 1] = data.Owner;
+                    Inputs.Add(tid);
+                    senders[Inputs.Count - 1] = data.Owner;
                     return true;
                 }
             }
@@ -121,12 +121,12 @@ namespace PlasmaCore.Transactions
         /// <param name="oIndex">transaction output index</param>
         public bool AddInput(UInt64 blkNum, UInt16 txIndex, UInt16 oIndex)
         {
-            if (inputs.Count <= MAX_INPUTS)
+            if (Inputs.Count <= MAX_INPUTS)
             {
                 var tid = new TransactionInputData(blkNum, txIndex, oIndex);
                 if (!tid.IsEmpty())
                 {
-                    inputs.Add(tid);
+                    Inputs.Add(tid);
                     return true;
                 }
             }
@@ -142,12 +142,12 @@ namespace PlasmaCore.Transactions
         /// <param name="amount">transaction output amount</param>
         public bool AddOutput(string owner, string currency, BigInteger amount)
         {
-            if (outputs.Count <= MAX_OUTPUTS)
+            if (Outputs.Count <= MAX_OUTPUTS)
             {
                 var tod = new TransactionOutputData(owner, currency, amount.ToBytesForRLPEncoding());
                 if (!tod.IsEmpty())
                 {
-                    outputs.Add(tod);
+                    Outputs.Add(tod);
                     return true;
                 }
             }
@@ -162,7 +162,7 @@ namespace PlasmaCore.Transactions
         public bool SetSignature(string address, byte[] signature)
         {
             bool found = false;
-            for (Int32 i = 0; i < inputs.Count; ++i)
+            for (Int32 i = 0; i < Inputs.Count; ++i)
             {
                 if ((senders[i] != null) && (senders[i].EnsureHexPrefix().ToLower() == address.EnsureHexPrefix().ToLower()))
                 {
@@ -197,7 +197,7 @@ namespace PlasmaCore.Transactions
             var rlpcollection = new List<byte[]>();
 
             var rlpSignatures = new List<byte[]>();
-            for (Int32 i = 0; i < inputs.Count; ++i)
+            for (Int32 i = 0; i < Inputs.Count; ++i)
             {
                 if (signatures[i] != null)
                 {
@@ -213,13 +213,13 @@ namespace PlasmaCore.Transactions
             rlpcollection.Add(RLP.EncodeList(rlpSignatures.ToArray()));
 
             var rlpInputs = new List<byte[]>();
-            inputs.ForEach(x => rlpInputs.Add(x.GetRLPEncoded()));
-            rlpInputs.AddRange(Enumerable.Repeat(new TransactionInputData().GetRLPEncoded(), MAX_INPUTS - inputs.Count));
+            Inputs.ForEach(x => rlpInputs.Add(x.GetRLPEncoded()));
+            rlpInputs.AddRange(Enumerable.Repeat(new TransactionInputData().GetRLPEncoded(), MAX_INPUTS - Inputs.Count));
             rlpcollection.Add(RLP.EncodeList(rlpInputs.ToArray()));
 
             var rlpOutputs = new List<byte[]>();
-            outputs.ForEach(x => rlpOutputs.Add(x.GetRLPEncoded()));
-            rlpOutputs.AddRange(Enumerable.Repeat(new TransactionOutputData().GetRLPEncoded(), MAX_OUTPUTS - outputs.Count));
+            Outputs.ForEach(x => rlpOutputs.Add(x.GetRLPEncoded()));
+            rlpOutputs.AddRange(Enumerable.Repeat(new TransactionOutputData().GetRLPEncoded(), MAX_OUTPUTS - Outputs.Count));
             rlpcollection.Add(RLP.EncodeList(rlpOutputs.ToArray()));
 
             return RLP.EncodeList(rlpcollection.ToArray());
@@ -234,13 +234,13 @@ namespace PlasmaCore.Transactions
             var rlpcollection = new List<byte[]>();
 
             var rlpInputs = new List<byte[]>();
-            inputs.ForEach(x => rlpInputs.Add(x.GetRLPEncoded()));
-            rlpInputs.AddRange(Enumerable.Repeat(new TransactionInputData().GetRLPEncoded(), MAX_INPUTS - inputs.Count));
+            Inputs.ForEach(x => rlpInputs.Add(x.GetRLPEncoded()));
+            rlpInputs.AddRange(Enumerable.Repeat(new TransactionInputData().GetRLPEncoded(), MAX_INPUTS - Inputs.Count));
             rlpcollection.Add(RLP.EncodeList(rlpInputs.ToArray()));
 
             var rlpOutputs = new List<byte[]>();
-            outputs.ForEach(x => rlpOutputs.Add(x.GetRLPEncoded()));
-            rlpOutputs.AddRange(Enumerable.Repeat(new TransactionOutputData().GetRLPEncoded(), MAX_OUTPUTS - outputs.Count));
+            Outputs.ForEach(x => rlpOutputs.Add(x.GetRLPEncoded()));
+            rlpOutputs.AddRange(Enumerable.Repeat(new TransactionOutputData().GetRLPEncoded(), MAX_OUTPUTS - Outputs.Count));
             rlpcollection.Add(RLP.EncodeList(rlpOutputs.ToArray()));
 
             return RLP.EncodeList(rlpcollection.ToArray());

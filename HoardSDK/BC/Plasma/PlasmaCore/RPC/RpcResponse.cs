@@ -35,7 +35,7 @@ namespace PlasmaCore.RPC
         /// <returns></returns>
         public T GetData<T>(JsonSerializerSettings settings = null)
         {
-            if (Data == null)
+            if (Data == null || !Success)
                 return default(T);
 
             try

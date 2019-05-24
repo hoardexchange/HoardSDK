@@ -26,7 +26,7 @@ namespace PlasmaCore.UTXO
         /// Currency of the transaction (all zeroes for ETH)
         /// </summary>
         [JsonProperty(propertyName: "currency")]
-        public string Currency { get; protected set; }
+        public string Currency { get; set; }
 
         /// <summary>
         /// Block number
@@ -38,12 +38,12 @@ namespace PlasmaCore.UTXO
         /// UTXO position
         /// </summary>
         [JsonProperty(propertyName: "utxo_pos")]
-        public BigInteger Position { get; protected set; }
+        public BigInteger Position { get; set; }
 
         /// <summary>
         /// Owner of utxo
         /// </summary>
         [JsonProperty(propertyName: "owner")]
-        public string Owner { get; protected set; }
+        public string Owner { get; set; }
     }
 }

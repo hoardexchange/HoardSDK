@@ -12,6 +12,6 @@ namespace PlasmaCore.UTXO
         /// Amount of tokens
         /// </summary>
         [JsonProperty(propertyName: "amount")]
-        public BigInteger Amount { get; protected set; }
+        public BigInteger Amount { get; set; }
     }
 }

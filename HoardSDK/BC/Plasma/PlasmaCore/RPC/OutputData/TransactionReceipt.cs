@@ -1,7 +1,6 @@
 ﻿using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json;
 using System;
-using System.Numerics;
 
 namespace PlasmaCore.RPC.OutputData
 {
