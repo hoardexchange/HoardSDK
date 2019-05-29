@@ -95,6 +95,17 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Returns hexadecimal string representing the ID
+        /// </summary>
+        /// <param name="withHexPrefix">whether string should start with '0x'</param>
+        /// <returns></returns>
+        public string ToString(bool withHexPrefix)
+        {
+            var ret = ToString();
+            return withHexPrefix?"0x" + ret:ret;
+        }
+
+        /// <summary>
         /// Returns hex byte representation of this object
         /// </summary>
         /// <returns></returns>
