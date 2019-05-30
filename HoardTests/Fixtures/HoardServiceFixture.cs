@@ -73,11 +73,13 @@ namespace HoardTests.Fixtures
 
                 PlasmaCore.RPC.RpcClient watcherClient = new PlasmaCore.RPC.RpcClient(new Uri(plasmaConfig.WatcherUrl));
                 PlasmaCore.RPC.RpcClient childChainClient = null;
+                string rootChainAddress = plasmaConfig.RootChainAddress;
                 if (plasmaConfig.ChildChainUrl != null && plasmaConfig.ChildChainUrl != string.Empty)
                     childChainClient = new PlasmaCore.RPC.RpcClient(new Uri(plasmaConfig.ChildChainUrl));
 
                 clientOpts = new PlasmaClientOptions(
                     new Nethereum.JsonRpc.Client.RpcClient(new Uri(plasmaConfig.ClientUrl)),
+                    rootChainAddress,
                     watcherClient,
                     childChainClient
                 );

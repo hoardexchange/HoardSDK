@@ -3,6 +3,8 @@ using Hoard.BC.Plasma;
 using Hoard.Interfaces;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
+using Nethereum.Web3;
+using Plasma.RootChain.Contracts;
 using PlasmaCore;
 using PlasmaCore.RPC.OutputData;
 using PlasmaCore.UTXO;
@@ -22,24 +24,42 @@ namespace Hoard.BC
     public class PlasmaComm : IBCComm
     {
         /// <summary>
-        /// Zero address (160bits)
+        /// Zero address (160bits) / default ethereum currency
         /// </summary>
         public static string ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+        
+        private Web3 web3 = null;
 
         private BCComm bcComm = null;
 
         private PlasmaAPIService plasmaApiService = null;
 
+        private RootChainContract rootChainContract = null;
+
         /// <summary>
         /// Creates PlasmaComm object.
         /// </summary>
-        /// <param name="_bcComm">Ethereum blockchain communication</param>
-        /// <param name="watcherClient"></param>
-        /// <param name="childChainClient"></param>
-        public PlasmaComm(BCComm _bcComm, PlasmaCore.RPC.IClient watcherClient, PlasmaCore.RPC.IClient childChainClient)
+        /// <param name="ethClient">Ethereum jsonRpc client implementation</param>
+        /// <param name="gameCenterContract">game center contract address</param>
+        /// <param name="watcherClient">watcher client</param>
+        /// <param name="childChainClient">child chain client</param>
+        /// <param name="rootChainAddress">root chain address</param>
+        /// <param name="rootChainAbiVersion">root chain abi version (optional)</param>
+        public PlasmaComm(Nethereum.JsonRpc.Client.IClient ethClient, 
+                        string gameCenterContract, 
+                        PlasmaCore.RPC.IClient watcherClient, 
+                        PlasmaCore.RPC.IClient childChainClient,
+                        string rootChainAddress,
+                        string rootChainAbiVersion = null)
         {
-            bcComm = _bcComm;
+            web3 = new Web3(ethClient);
+            bcComm = new BCComm(ethClient, gameCenterContract);
+
             plasmaApiService = new PlasmaAPIService(watcherClient, childChainClient);
+            if (rootChainAddress != null)
+            {
+                rootChainContract = new RootChainContract(web3, rootChainAddress, rootChainAbiVersion);
+            }
         }
 
         /// <inheritdoc/>
@@ -173,14 +193,24 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Returns UTXOs of given account and currency
+        /// Returns all UTXOs of given account
+        /// </summary>
+        /// <param name="account">account to query</param>
+        /// <returns></returns>
+        public async Task<UTXOData[]> GetUtxos(HoardID account)
+        {
+            return await plasmaApiService.GetUtxos(account);
+        }
+
+        /// <summary>
+        /// Returns UTXOs of given account in given currency
         /// </summary>
         /// <param name="account">account to query</param>
         /// <param name="currency">currency to query</param>
         /// <returns></returns>
         public async Task<UTXOData[]> GetUtxos(HoardID account, string currency)
         {
-            var utxos = await plasmaApiService.GetUtxos(account);
+            var utxos = await GetUtxos(account);
             var result = new List<UTXOData>();
             foreach (var utxo in utxos)
             {
@@ -190,6 +220,28 @@ namespace Hoard.BC
                 }
             }
             return result.ToArray();
+        }
+
+        /// <summary>
+        /// Returns UTXO of given account, currency and amount
+        /// </summary>
+        /// <param name="account">account to query</param>
+        /// <param name="currency">currency to query</param>
+        /// <param name="amount">amount to query</param>
+        /// <returns></returns>
+        public async Task<UTXOData> GetUtxo(HoardID account, string currency, BigInteger amount)
+        {
+            var utxos = await GetUtxos(account);
+            foreach (var utxo in utxos)
+            {
+                if (utxo is FCUTXOData &&
+                    utxo.Currency.RemoveHexPrefix().ToLower() == currency.RemoveHexPrefix().ToLower() &&
+                    (utxo as FCUTXOData).Amount == amount)
+                {
+                    return utxo;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -252,6 +304,104 @@ namespace Hoard.BC
             return await bcComm.GetGameItemContracts(game);
         }
 
+        /// <summary>
+        /// Starts standard exit on the root chain
+        /// </summary>
+        /// <param name="profileFrom"></param>
+        /// <param name="utxoData"></param>
+        /// <param name="exitBond"></param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns></returns>
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> StartStandardExit(Profile profileFrom, UTXOData utxoData, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        {
+            if (rootChainContract != null)
+            {
+                ExitData exitData = await plasmaApiService.GetExitData(utxoData.Position);
+                var transaction = await rootChainContract.StartStandardExit(web3, profileFrom.ID, exitData, exitBond);
+                string signedTransaction = await SignTransaction(profileFrom, transaction);
+                return await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Processes standard exit on the root chain
+        /// </summary>
+        /// <param name="profileFrom"></param>
+        /// <param name="currency">transaction currency</param>
+        /// <param name="topUtxoPosition">starting index of exit</param>
+        /// <param name="exitsToProcess">number exits to process</param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns></returns>
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> ProcessExits(Profile profileFrom, string currency, BigInteger topUtxoPosition, BigInteger exitsToProcess, CancellationTokenSource tokenSource = null)
+        {
+            if (rootChainContract != null)
+            {
+                var transaction = await rootChainContract.ProcessExits(web3, profileFrom.ID, currency, topUtxoPosition, exitsToProcess);
+                string signedTransaction = await SignTransaction(profileFrom, transaction);
+                return await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Deposits given amount of ether to the child chain
+        /// </summary>
+        /// <param name="profileFrom">transaction sender</param>
+        /// <param name="amount">transaction amount</param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns></returns>
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> Deposit(Profile profileFrom, BigInteger amount, CancellationTokenSource tokenSource = null)
+        {
+            if (rootChainContract != null)
+            {
+                var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
+                depositPlasmaTx.AddOutput(profileFrom.ID, ZERO_ADDRESS, amount);
+
+                var depositTx = await rootChainContract.Deposit(web3, profileFrom.ID, depositPlasmaTx.GetRLPEncodedRaw(), amount);
+                string signedDepositTx = await SignTransaction(profileFrom, depositTx);
+                return await SubmitTransactionOnRootChain(web3, signedDepositTx, tokenSource);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Deposits given amount of ERC20 token to the child chain
+        /// </summary>
+        /// <param name="profileFrom">transaction sender</param>
+        /// <param name="currency">transaction currency</param>
+        /// <param name="amount">transaction amount</param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns></returns>
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> Deposit(Profile profileFrom, string currency, BigInteger amount, CancellationTokenSource tokenSource = null)
+        {
+            if (rootChainContract != null)
+            {
+                var erc20Handler = web3.Eth.GetContractHandler(currency);
+                var approveFunc = erc20Handler.GetFunction<Nethereum.StandardTokenEIP20.ContractDefinition.ApproveFunction>();
+
+                var approveInput = new Nethereum.StandardTokenEIP20.ContractDefinition.ApproveFunction();
+                approveInput.Spender = rootChainContract.Address;
+                approveInput.AmountToSend = amount;
+
+                var approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
+                string signedApproveTx = await SignTransaction(profileFrom, approveTx);
+                var receipt = await SubmitTransactionOnRootChain(web3, signedApproveTx, tokenSource);
+
+                if (receipt.Status.Value == 1)
+                {
+                    var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
+                    depositPlasmaTx.AddOutput(profileFrom.ID, currency, amount);
+
+                    var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, depositPlasmaTx.GetRLPEncodedRaw(), amount);
+                    string signedDepositTx = await SignTransaction(profileFrom, depositTx);
+                    return await SubmitTransactionOnRootChain(web3, signedDepositTx, tokenSource);
+                }
+                return receipt;
+            }
+            return null;
+        }
+
         private async Task<string> SendRequestPost(RestClient client, string method, object data)
         {
             var request = new RestRequest(method, Method.POST);
@@ -260,6 +410,29 @@ namespace Hoard.BC
             var response = await client.ExecuteTaskAsync(request).ConfigureAwait(false); ;
 
             return response.Content;
+        }
+
+        private static async Task<string> SignTransaction(Profile profile, Nethereum.Signer.Transaction transaction)
+        {
+            string signature = await profile.SignTransaction(transaction.GetRLPEncodedRaw());
+            transaction.SetSignature(Nethereum.Signer.EthECDSASignatureFactory.ExtractECDSASignature(signature));
+            return transaction.GetRLPEncoded().ToHex(true);
+        }
+
+        private static async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> SubmitTransactionOnRootChain(Web3 web3, string signedTransaction, CancellationTokenSource tokenSource = null)
+        {
+            string txId = await web3.Eth.Transactions.SendRawTransaction.SendRequestAsync(signedTransaction).ConfigureAwait(false);
+            var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
+            while (receipt == null)
+            {
+                if (tokenSource != null && tokenSource.IsCancellationRequested)
+                {
+                    break;
+                }
+                Thread.Sleep(1000);
+                receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
+            }
+            return receipt;
         }
     }
 }

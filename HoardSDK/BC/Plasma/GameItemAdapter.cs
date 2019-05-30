@@ -3,6 +3,7 @@ using Nethereum.Hex.HexConvertors.Extensions;
 using PlasmaCore.RPC.OutputData;
 using PlasmaCore.Transactions;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
@@ -76,6 +77,35 @@ namespace Hoard.BC.Plasma
         /// <param name="address">Account address of the owner</param>
         /// <returns></returns>
         public abstract Task<BigInteger> GetBalanceOf(HoardID address);
+
+        /// <summary>
+        /// Deposits game item to root chain
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="gameItem">item to deposit</param>
+        /// <returns></returns>
+        public abstract Task<bool> Deposit(Profile profileFrom, GameItem gameItem);
+
+        /// <summary>
+        /// Starts standard withdrawal of a given game item
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="gameItem">item to withdraw</param>
+        /// <returns></returns>
+        public abstract Task<bool> StartExit(Profile profileFrom, GameItem gameItem);
+
+        /// <summary>
+        /// Processes game items withdrawal that have completed the challenge period
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <returns></returns>
+        public async Task<bool> ProcessExits(Profile profileFrom)
+        {
+            var receipt = await plasmaComm.ProcessExits(profileFrom, contract.Address, BigInteger.Zero, BigInteger.One);
+            if (receipt != null && receipt.Status.Value == 1)
+                return true;
+            return false;
+        }
     }
 
     /// <summary>
@@ -144,6 +174,36 @@ namespace Hoard.BC.Plasma
             var balanceData = await plasmaComm.GetBalanceData(address, contract.Address);
             return balanceData.Length;
         }
+
+        /// <inheritdoc/>
+        public override async Task<bool> Deposit(Profile profileFrom, GameItem gameItem)
+        {
+            if (gameItem.Metadata is ERC223GameItemContract.Metadata)
+            {
+                var metadata = gameItem.Metadata as ERC223GameItemContract.Metadata;
+                var receipt = await plasmaComm.Deposit(profileFrom, contract.Address, metadata.Balance);
+                if (receipt != null && receipt.Status.Value == 1)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <inheritdoc/>
+        public override async Task<bool> StartExit(Profile profileFrom, GameItem gameItem)
+        {
+            if (gameItem.Metadata is ERC223GameItemContract.Metadata)
+            {
+                var metadata = gameItem.Metadata as ERC223GameItemContract.Metadata;
+                var utxo = await plasmaComm.GetUtxo(profileFrom.ID, contract.Address, metadata.Balance);
+                if(utxo != null)
+                {
+                    var receipt = await plasmaComm.StartStandardExit(profileFrom, utxo);
+                    if (receipt != null && receipt.Status.Value == 1)
+                        return true;
+                }
+            }
+            return false;
+        }
     }
 
     /// <summary>
@@ -165,6 +225,7 @@ namespace Hoard.BC.Plasma
         /// <inheritdoc/>
         public override async Task<bool> Transfer(Profile profileFrom, string addressTo, GameItem gameItem, BigInteger amount)
         {
+            throw new NotImplementedException();
             // TODO missing erc721 plasma implementation
             /*
             Debug.Assert(gameItem.Metadata is ERC721GameItemContract.Metadata);
@@ -190,6 +251,8 @@ namespace Hoard.BC.Plasma
         /// <inheritdoc/>
         public override async Task<GameItem[]> GetGameItems(HoardID address)
         {
+            throw new NotImplementedException();
+
             var items = new List<GameItem>();
 
             // TODO missing erc721 plasma implementation
@@ -216,6 +279,18 @@ namespace Hoard.BC.Plasma
         {
             var balanceData = await plasmaComm.GetBalanceData(address, contract.Address);
             return balanceData.Length;
+        }
+
+        /// <inheritdoc/>
+        public override async Task<bool> Deposit(Profile profileFrom, GameItem gameItem)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc/>
+        public override async Task<bool> StartExit(Profile profileFrom, GameItem gameItem)
+        {
+            throw new NotImplementedException();
         }
     }
 }

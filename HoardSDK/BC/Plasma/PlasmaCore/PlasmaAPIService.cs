@@ -82,10 +82,37 @@ namespace PlasmaCore
             return await getExitData.SendRequestAsync(position);
         }
 
+        /// <summary>
+        /// Returns exit data for an in-flight exit
+        /// </summary>
+        /// <param name="txBytes">in-flight transaction bytes body</param>
+        /// <returns></returns>
         public async Task<InFlightExitData> GetInFlightExitData(string txBytes)
         {
             var getData = new RPC.InFlightExit.GetInFlightExit(watcherClient);
             return await getData.SendRequestAsync(txBytes);
+        }
+
+        /// <summary>
+        /// Returns a competitor to an in-flight exit
+        /// </summary>
+        /// <param name="txBytes">in-flight transaction bytes body</param>
+        /// <returns></returns>
+        public async Task<CompetitorData> GetInFlightExitCompetitor(string txBytes)
+        {
+            var getCompetitor = new RPC.InFlightExit.GetCompetitor(watcherClient);
+            return await getCompetitor.SendRequestAsync(txBytes);
+        }
+
+        /// <summary>
+        /// Returns a proof that transaction is canonical
+        /// </summary>
+        /// <param name="txBytes">in-flight transaction bytes body</param>
+        /// <returns></returns>
+        public async Task<CanonicalProofData> ProveCanonical(string txBytes)
+        {
+            var proveCanonical = new RPC.InFlightExit.ProveCanonical(watcherClient);
+            return await proveCanonical.SendRequestAsync(txBytes);
         }
 
         /// <summary>

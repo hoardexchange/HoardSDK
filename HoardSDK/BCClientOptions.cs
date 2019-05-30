@@ -113,6 +113,11 @@ namespace Hoard
         /// URL of Plasma watcher
         /// </summary>
         public string WatcherUrl;
+
+        /// <summary>
+        /// Address of root chain
+        /// </summary>
+        public string RootChainAddress;
     }
 
     /// <summary>
@@ -161,7 +166,12 @@ namespace Hoard
         public PlasmaCore.RPC.IClient WatcherClient { get; private set; } = null;
 
         /// <summary>
-        /// Creates Plasma client options object.
+        /// Plasma watcher client of Hoard network
+        /// </summary>
+        public string RootChainAddress { get; private set; } = null;
+
+        /// <summary>
+        /// Creates Plasma client options object (without root chain access)
         /// </summary>
         /// <param name="rpcClient">JsonRpc client implementation</param>
         /// <param name="watcherClient">Plasma watcher client</param>
@@ -169,6 +179,26 @@ namespace Hoard
         public PlasmaClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient, PlasmaCore.RPC.IClient watcherClient, PlasmaCore.RPC.IClient childChainClient = null)
         {
             RpcClient = rpcClient;
+            WatcherClient = watcherClient;
+            ChildChainClient = childChainClient;
+            RootChainAddress = null;
+        }
+
+        /// <summary>
+        /// Creates Plasma client options object with root chain access
+        /// </summary>
+        /// <param name="rpcClient">JsonRpc client implementation</param>
+        /// <param name="rootChainAddress">root chain contract address</param>
+        /// <param name="watcherClient">Plasma watcher client</param>
+        /// <param name="childChainClient">Plasma child chain client (optional)</param>
+        public PlasmaClientOptions(
+            Nethereum.JsonRpc.Client.IClient rpcClient, 
+            string rootChainAddress,
+            PlasmaCore.RPC.IClient watcherClient, 
+            PlasmaCore.RPC.IClient childChainClient = null)
+        {
+            RpcClient = rpcClient;
+            RootChainAddress = rootChainAddress;
             WatcherClient = watcherClient;
             ChildChainClient = childChainClient;
         }

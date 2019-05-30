@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Hoard.GameItemProviders
@@ -155,6 +154,39 @@ namespace Hoard.GameItemProviders
 
             ErrorCallbackProvider.ReportError($"Cannot find any contracts for Game: {Game.ID}!");
             return Result.ContractNotFoundError;
+        }
+
+        /// <summary>
+        /// Deposits game item to root chain
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="gameItem">item to deposit</param>
+        /// <returns></returns>
+        public async Task<bool> Deposit(Profile profileFrom, GameItem gameItem)
+        {
+            return await GameItemAdapters[gameItem.Symbol].Deposit(profileFrom, gameItem);
+        }
+
+        /// <summary>
+        /// Starts standard withdrawal of a given game item
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="gameItem">item to withdraw</param>
+        /// <returns></returns>
+        public async Task<bool> StartExit(Profile profileFrom, GameItem gameItem)
+        {
+            return await GameItemAdapters[gameItem.Symbol].StartExit(profileFrom, gameItem);
+        }
+
+        /// <summary>
+        /// Processes game items withdrawal that have completed the challenge period
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="gameItem">item to withdraw</param>
+        /// <returns></returns>
+        public async Task<bool> ProcessExits(Profile profileFrom, GameItem gameItem)
+        {
+            return await GameItemAdapters[gameItem.Symbol].ProcessExits(profileFrom);
         }
 
         private async Task<GameItemAdapter> GetGameItemAdapter(string contractAddress)
