@@ -37,6 +37,39 @@ namespace HoardTests.PlasmaCoreTests
                 await consolidator.ProcessTransactions();
             }
 
+            Assert.Equal(4, (consolidator.MergedUtxo as FCUTXOData).Amount);
+            Assert.Equal(true, consolidator.AllConsolidated);
+            Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
+
+
+            consolidator = new FCConsolidator(PlasmaAPIService, address, currency, utxos);
+            while (consolidator.CanMerge)
+            {
+                foreach (var transaction in consolidator.Transactions)
+                {
+                    var sig = PlasmaCoreTestsHelper.Sign(transaction.GetRLPEncodedRaw(), privateKey);
+                    transaction.SetSignature(address, sig.HexToByteArray());
+                }
+                await consolidator.ProcessTransactions();
+            }
+
+            Assert.Equal(1744, (consolidator.MergedUtxo as FCUTXOData).Amount);
+            Assert.Equal(true, consolidator.AllConsolidated);
+            Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
+
+
+            consolidator = new FCConsolidator(PlasmaAPIService, address, currency, utxos, 9999999);
+            while (consolidator.CanMerge)
+            {
+                foreach (var transaction in consolidator.Transactions)
+                {
+                    var sig = PlasmaCoreTestsHelper.Sign(transaction.GetRLPEncodedRaw(), privateKey);
+                    transaction.SetSignature(address, sig.HexToByteArray());
+                }
+                await consolidator.ProcessTransactions();
+            }
+
+            Assert.Equal(1744, (consolidator.MergedUtxo as FCUTXOData).Amount);
             Assert.Equal(true, consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
         }

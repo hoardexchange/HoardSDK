@@ -345,10 +345,10 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Deposits given amount of ether to the child chain
+        /// Deposits given amount of ether (wei) to the child chain
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
-        /// <param name="amount">amount to send</param>
+        /// <param name="amount">amount of ether (wei) to send</param>
         /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
         public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> Deposit(Profile profileFrom, BigInteger amount, CancellationTokenSource tokenSource = null)
@@ -407,9 +407,10 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
         /// <param name="currency">currency to consolidate</param>
+        /// <param name="amount">amount to consolidate (optional, if null consolidate all utxos)</param>
         /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
-        public async Task<UTXOData> FCConsolidate(Profile profileFrom, string currency, BigInteger amount, CancellationTokenSource tokenSource = null)
+        public async Task<UTXOData> FCConsolidate(Profile profileFrom, string currency, BigInteger? amount = null, CancellationTokenSource tokenSource = null)
         {
             var utxos = await GetUtxos(profileFrom.ID, currency);
             if (utxos.Length > 1)

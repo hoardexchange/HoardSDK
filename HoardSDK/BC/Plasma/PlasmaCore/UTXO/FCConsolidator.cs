@@ -38,7 +38,7 @@ namespace PlasmaCore.UTXO
         {
             get
             {
-                return (MergedUtxo != null) && (balance == (MergedUtxo as FCUTXOData).Amount);
+                return (MergedUtxo != null) && (amount == (MergedUtxo as FCUTXOData).Amount);
             }
         }
 
@@ -50,6 +50,7 @@ namespace PlasmaCore.UTXO
 
         private string owner;
         private string currency;
+        private BigInteger amount;
 
         /// <summary>
         /// Creates default fungible currency consolidator
@@ -58,7 +59,8 @@ namespace PlasmaCore.UTXO
         /// <param name="_owner">consolidation requester address</param>
         /// <param name="_currency">consolidation currency</param>
         /// <param name="_utxos">array of utxo data for consolidation</param>
-        public FCConsolidator(PlasmaAPIService _plasmaAPIService, string _owner, string _currency, UTXOData[] _utxos, BigInteger amount)
+        /// <param name="_amount">amount to consolidate (optional, if null or greater than balance consolidate all utxos)</param>
+        public FCConsolidator(PlasmaAPIService _plasmaAPIService, string _owner, string _currency, UTXOData[] _utxos, BigInteger? _amount = null)
         {
             Transactions = new List<Transaction>();
             MergedUtxo = null;
@@ -66,6 +68,7 @@ namespace PlasmaCore.UTXO
             owner = _owner;
             currency = _currency;
 
+            BigInteger balance = BigInteger.Zero;
             Array.Sort(_utxos, (x, y) => (x as FCUTXOData).Amount.CompareTo((x as FCUTXOData).Amount));
             foreach (var utxo in _utxos)
             {
@@ -73,8 +76,14 @@ namespace PlasmaCore.UTXO
                 {
                     utxoList.Add(utxo);
                     balance += (utxo as FCUTXOData).Amount;
+                    if(_amount.HasValue && balance >= _amount.Value)
+                    {
+                        break;
+                    }
                 }
             }
+
+            amount = (_amount.HasValue && balance >= _amount.Value) ? _amount.Value : balance;
 
             PrepareTransactions();
         }
@@ -116,7 +125,19 @@ namespace PlasmaCore.UTXO
 
             if (utxoList.Count == 1)
             {
-                MergedUtxo = utxoList[0];
+                var fcutxo = (utxoList[0] as FCUTXOData);
+                if (fcutxo.Amount > amount)
+                {
+                    Transaction tx = new Transaction();
+                    tx.AddInput(utxoList[0]);
+                    tx.AddOutput(owner, currency, amount);
+                    tx.AddOutput(owner, currency, fcutxo.Amount - amount);
+                    Transactions.Add(tx);
+                }
+                else if (fcutxo.Amount == amount)
+                {
+                    MergedUtxo = utxoList[0];
+                }
             }
             else if(utxoList.Count > 1)
             {
