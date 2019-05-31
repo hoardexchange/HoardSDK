@@ -5,6 +5,7 @@ using PlasmaCore.RPC.OutputData;
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
+using Nethereum.ABI;
 
 namespace Plasma.RootChain.Contracts
 {
@@ -55,7 +56,7 @@ namespace Plasma.RootChain.Contracts
             return await ContractHelper.CreateTransaction(web3, address,
                 exitBond.HasValue ? exitBond.Value : STANDARD_EXIT_BOND,
                 function,
-                exitData.Position.ToHex(true),
+                exitData.Position,
                 exitData.TxBytes.HexToByteArray(),
                 exitData.Proof.HexToByteArray());
         }

@@ -27,9 +27,9 @@ namespace PlasmaCore.RPC.UTXO
         public async Task<ExitData> SendRequestAsync(BigInteger position)
         {
             if (position == null) throw new ArgumentNullException(nameof(position));
-            
-            RPCRequest request = new RPCRequest(route);
-            request.Parameters.Add("utxo_pos", new JValue(position));
+
+            JObject obj = JObject.Parse(string.Format("{{\"utxo_pos\":{0}}}", position.ToString()));
+            RPCRequest request = new RPCRequest(route, obj);
 
             return await client.SendRequestAsync<ExitData>(request);
         }

@@ -133,7 +133,6 @@ namespace PlasmaCore.Transactions
             return false;
         }
 
-
         /// <summary>
         /// Adds output to transaction
         /// </summary>
@@ -206,7 +205,7 @@ namespace PlasmaCore.Transactions
                 else
                 {
                     // missing signature - cannot return valid encoded transaction
-                    return null;
+                    return new byte[0];
                 }
             }
 

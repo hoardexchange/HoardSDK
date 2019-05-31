@@ -25,7 +25,7 @@ namespace PlasmaCore.RPC.Transaction
         /// <returns></returns>
         public async Task<TransactionReceipt> SendRequestAsync(string transaction)
         {
-            if (transaction == null) throw new ArgumentNullException(nameof(transaction));
+            if (transaction == null || transaction == string.Empty || transaction == "0x") throw new ArgumentException("Invalid transaction data");
 
             RPCRequest request = new RPCRequest(route);
             request.Parameters.Add("transaction", transaction.EnsureHexPrefix());

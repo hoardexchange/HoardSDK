@@ -2,6 +2,7 @@
 using Nethereum.RLP;
 using PlasmaCore.RPC.OutputData;
 using PlasmaCore.Transactions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -9,60 +10,79 @@ using System.Threading.Tasks;
 
 namespace PlasmaCore.UTXO
 {
+    /// <summary>
+    /// Fungible currency consolidator class (use only if operator is trusted) 
+    /// </summary>
     public class FCConsolidator
     {
-        public List<UTXOData> MergedUtxos { get; protected set; }
+        /// <summary>
+        /// Result utxo (merged)
+        /// </summary>
+        public UTXOData MergedUtxo { get; protected set; }
 
+        /// <summary>
+        /// Transaction pending to submit
+        /// </summary>
         public List<Transaction> Transactions { get; protected set; }
 
         // if both CanMerge and AllConsolidated are false at the same time - something went wrong during transaction submition
+        /// <summary>
+        /// Returns if data still needs consolidation
+        /// </summary>
         public bool CanMerge { get; protected set; }
 
+        /// <summary>
+        /// Checks if all data was consolidated - input and output data have equal balances
+        /// </summary>
         public bool AllConsolidated
         {
             get
             {
-                foreach(var utxo in MergedUtxos)
-                {
-                    if (!balances.ContainsKey(utxo.Currency) || balances[utxo.Currency] != (utxo as FCUTXOData).Amount)
-                        return false;
-                }
-                return true;
+                return (MergedUtxo != null) && (balance == (MergedUtxo as FCUTXOData).Amount);
             }
         }
 
         private PlasmaAPIService plasmaAPIService = null;
 
-        private Dictionary<string, List<UTXOData>> utxoDict = new Dictionary<string, List<UTXOData>>();
+        private List<UTXOData> utxoList = new List<UTXOData>();
 
-        private Dictionary<string, BigInteger> balances = new Dictionary<string, BigInteger>();
+        private BigInteger balance = BigInteger.Zero;
 
         private string owner;
+        private string currency;
 
-        public FCConsolidator(PlasmaAPIService _plasmaAPIService, string _owner, UTXOData[] _utxos)
+        /// <summary>
+        /// Creates default fungible currency consolidator
+        /// </summary>
+        /// <param name="_plasmaAPIService">plasma API service</param>
+        /// <param name="_owner">consolidation requester address</param>
+        /// <param name="_currency">consolidation currency</param>
+        /// <param name="_utxos">array of utxo data for consolidation</param>
+        public FCConsolidator(PlasmaAPIService _plasmaAPIService, string _owner, string _currency, UTXOData[] _utxos, BigInteger amount)
         {
             Transactions = new List<Transaction>();
-            MergedUtxos = new List<UTXOData>();
+            MergedUtxo = null;
             plasmaAPIService = _plasmaAPIService;
             owner = _owner;
+            currency = _currency;
 
+            Array.Sort(_utxos, (x, y) => (x as FCUTXOData).Amount.CompareTo((x as FCUTXOData).Amount));
             foreach (var utxo in _utxos)
             {
-                if ((utxo is FCUTXOData) && (utxo.Owner == owner))
+                if ((utxo is FCUTXOData) && (utxo.Owner == owner) && (utxo.Currency == _currency))
                 {
-                    if (!utxoDict.ContainsKey(utxo.Currency))
-                    {
-                        utxoDict.Add(utxo.Currency, new List<UTXOData>());
-                        balances.Add(utxo.Currency, BigInteger.Zero);
-                    }
-                    utxoDict[utxo.Currency].Add(utxo);
-                    balances[utxo.Currency] += (utxo as FCUTXOData).Amount;
+                    utxoList.Add(utxo);
+                    balance += (utxo as FCUTXOData).Amount;
                 }
             }
 
             PrepareTransactions();
         }
 
+        /// <summary>
+        /// Submits signed transactions and queue response utxos
+        /// </summary>
+        /// <returns></returns>
         public async Task ProcessTransactions()
         {
             if (CanMerge)
@@ -80,7 +100,7 @@ namespace PlasmaCore.UTXO
                         utxo.Owner = transaction.Outputs[0].Owner;
                         utxo.Currency = transaction.Outputs[0].Currency;
 
-                        utxoDict[transaction.Outputs[0].Currency].Add(utxo);
+                        utxoList.Add(utxo);
                     }
                 }
 
@@ -92,40 +112,40 @@ namespace PlasmaCore.UTXO
 
         private void PrepareTransactions()
         {
-            foreach (var utxoElem in utxoDict.ToList())
+            var pendingUtxos = new List<UTXOData>();
+
+            if (utxoList.Count == 1)
             {
-                utxoDict[utxoElem.Key] = new List<UTXOData>();
-
-                string currency = utxoElem.Key;
-                if (utxoElem.Value.Count == 1)
+                MergedUtxo = utxoList[0];
+            }
+            else if(utxoList.Count > 1)
+            {
+                var splitUtxo = Split(utxoList, 4);
+                foreach (var utxoGroup in splitUtxo)
                 {
-                    MergedUtxos.Add(utxoElem.Value[0]);
-                }
-                else if(utxoElem.Value.Count > 1)
-                {
-                    var splitUtxo = Split(utxoElem.Value, 4);
-                    foreach (var utxoGroup in splitUtxo)
+                    if (utxoGroup.Count > 1)
                     {
-                        if (utxoGroup.Count > 1)
+                        BigInteger sum = BigInteger.Zero;
+                        Transaction tx = new Transaction();
+                        utxoGroup.ForEach(x =>
                         {
-                            BigInteger sum = BigInteger.Zero;
-                            Transaction tx = new Transaction();
-                            utxoGroup.ForEach(x =>
-                            {
-                                tx.AddInput(x);
-                                sum += (x as FCUTXOData).Amount;
-                            });
-                            tx.AddOutput(owner, currency, sum);
+                            tx.AddInput(x);
+                            sum += (x as FCUTXOData).Amount;
+                        });
+                        tx.AddOutput(owner, currency, sum);
 
-                            Transactions.Add(tx);
-                        }
-                        else
-                        {
-                            utxoDict[currency].Add(utxoGroup[0]);
-                        }
+                        Transactions.Add(tx);
+                    }
+                    else
+                    {
+                        pendingUtxos.Add(utxoGroup[0]);
                     }
                 }
             }
+
+            utxoList.Clear();
+            utxoList.AddRange(pendingUtxos);
+
             CanMerge = (Transactions.Count > 0);
         }
 

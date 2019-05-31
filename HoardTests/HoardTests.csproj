@@ -73,6 +73,8 @@
     <Compile Include="IdenticonTest.cs" />
     <Compile Include="NethereumRpcClient.cs" />
     <Compile Include="PlasmaCoreTests\AccountTests.cs" />
+    <Compile Include="PlasmaCoreTests\ConsolidatorTests.cs" />
+    <Compile Include="PlasmaCoreTests\SignHelper.cs" />
     <Compile Include="PlasmaCoreTests\TransactionBuilderTests.cs" />
     <Compile Include="PlasmaRpcClient.cs" />
     <Compile Include="Plasma\HoardServiceTests.cs" />

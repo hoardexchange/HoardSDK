@@ -307,9 +307,9 @@ namespace Hoard.BC
         /// <summary>
         /// Starts standard exit on the root chain
         /// </summary>
-        /// <param name="profileFrom"></param>
-        /// <param name="utxoData"></param>
-        /// <param name="exitBond"></param>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="utxoData">exit utxo data</param>
+        /// <param name="exitBond">exit transaction bond</param>
         /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
         public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> StartStandardExit(Profile profileFrom, UTXOData utxoData, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
@@ -327,7 +327,7 @@ namespace Hoard.BC
         /// <summary>
         /// Processes standard exit on the root chain
         /// </summary>
-        /// <param name="profileFrom"></param>
+        /// <param name="profileFrom">profile of the sender</param>
         /// <param name="currency">transaction currency</param>
         /// <param name="topUtxoPosition">starting index of exit</param>
         /// <param name="exitsToProcess">number exits to process</param>
@@ -347,8 +347,8 @@ namespace Hoard.BC
         /// <summary>
         /// Deposits given amount of ether to the child chain
         /// </summary>
-        /// <param name="profileFrom">transaction sender</param>
-        /// <param name="amount">transaction amount</param>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="amount">amount to send</param>
         /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
         public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> Deposit(Profile profileFrom, BigInteger amount, CancellationTokenSource tokenSource = null)
@@ -368,9 +368,9 @@ namespace Hoard.BC
         /// <summary>
         /// Deposits given amount of ERC20 token to the child chain
         /// </summary>
-        /// <param name="profileFrom">transaction sender</param>
+        /// <param name="profileFrom">profile of the sender</param>
         /// <param name="currency">transaction currency</param>
-        /// <param name="amount">transaction amount</param>
+        /// <param name="amount">amount to send</param>
         /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
         public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> Deposit(Profile profileFrom, string currency, BigInteger amount, CancellationTokenSource tokenSource = null)
@@ -402,6 +402,43 @@ namespace Hoard.BC
             return null;
         }
 
+        /// <summary>
+        /// Consolidates fungible currency utxo dat into one utxo
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="currency">currency to consolidate</param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns></returns>
+        public async Task<UTXOData> FCConsolidate(Profile profileFrom, string currency, BigInteger amount, CancellationTokenSource tokenSource = null)
+        {
+            var utxos = await GetUtxos(profileFrom.ID, currency);
+            if (utxos.Length > 1)
+            {
+                FCConsolidator consolidator = new FCConsolidator(plasmaApiService, profileFrom.ID, currency, utxos, amount);
+                while (consolidator.CanMerge)
+                {
+                    if (tokenSource != null && tokenSource.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    foreach (var transaction in consolidator.Transactions)
+                    {
+                        string signedTransaction = await SignTransaction(profileFrom, transaction);
+                        await consolidator.ProcessTransactions();
+                    }
+                    await consolidator.ProcessTransactions();
+                }
+
+                return consolidator.MergedUtxo;
+            }
+            else if(utxos.Length == 1)
+            {
+                return utxos[0];
+            }
+            return null;
+        }
+
         private async Task<string> SendRequestPost(RestClient client, string method, object data)
         {
             var request = new RestRequest(method, Method.POST);
@@ -418,6 +455,14 @@ namespace Hoard.BC
             transaction.SetSignature(Nethereum.Signer.EthECDSASignatureFactory.ExtractECDSASignature(signature));
             return transaction.GetRLPEncoded().ToHex(true);
         }
+
+        private static async Task<string> SignTransaction(Profile profile, PlasmaCore.Transactions.Transaction transaction)
+        {
+            string signature = await profile.SignTransaction(transaction.GetRLPEncodedRaw());
+            transaction.SetSignature(profile.ID, signature.HexToByteArray());
+            return transaction.GetRLPEncoded().ToHex(true);
+        }
+
 
         private static async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> SubmitTransactionOnRootChain(Web3 web3, string signedTransaction, CancellationTokenSource tokenSource = null)
         {
