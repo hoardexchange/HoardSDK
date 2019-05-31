@@ -42,8 +42,8 @@ namespace PlasmaCore.Transactions
         /// <param name="value"></param>
         public TransactionOutputData(string owner, string currency, byte[] value)
         {
-            Owner = owner;
-            Currency = currency;
+            Owner = owner.EnsureHexPrefix();
+            Currency = currency.EnsureHexPrefix();
             RLPEncodedValue = RLP.EncodeElement(value);
         }
 

@@ -1,10 +1,8 @@
-﻿using Nethereum.ABI;
-using Nethereum.Contracts;
+﻿using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.NonceServices;
 using Nethereum.Web3;
-using System;
 using System.Numerics;
 using System.Threading.Tasks;
 
@@ -31,14 +29,14 @@ namespace Plasma.RootChain.Contracts
 
         public static async Task<Nethereum.Signer.Transaction> CreateTransaction<TFunctionInput>(Web3 web, string addressFrom, BigInteger amount, Function<TFunctionInput> function, TFunctionInput functionInput)
         {
-            HexBigInteger gas = await function.EstimateGasAsync(functionInput, addressFrom, new HexBigInteger(300000), new HexBigInteger(0));
+            var gasPrice = await web.Eth.GasPrice.SendRequestAsync();
+            HexBigInteger gas = await function.EstimateGasAsync(functionInput, addressFrom.EnsureHexPrefix(), gasPrice, new HexBigInteger(amount));
 
-            var nonceService = new InMemoryNonceService(addressFrom, web.Client);
+            var nonceService = new InMemoryNonceService(addressFrom.EnsureHexPrefix(), web.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             string data = function.GetData(functionInput);
-            var defaultGasPrice = Nethereum.Signer.TransactionBase.DEFAULT_GAS_PRICE;
-            var transaction = new Nethereum.Signer.Transaction(function.ContractAddress, amount, nonce, defaultGasPrice, gas.Value, data);
+            var transaction = new Nethereum.Signer.Transaction(function.ContractAddress, amount, nonce, gasPrice, gas.Value, data);
 
             return transaction;
         }

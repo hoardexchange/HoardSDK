@@ -75,7 +75,7 @@ namespace Plasma.RootChain.Contracts
             var function = GetFunctionProcessExits();
             return await ContractHelper.CreateTransaction(web3, address,
                 function,
-                currency.HexToByteArray(),
+                currency,
                 topUtxoPosition,
                 exitsToProcess);
         }
@@ -106,11 +106,10 @@ namespace Plasma.RootChain.Contracts
         /// <param name="depositTx">deposit transaction data</param>
         /// <param name="amount">amount of deposit</param>
         /// <returns></returns>
-        public async Task<Nethereum.Signer.Transaction> DepositToken(Web3 web3, string address, byte[] depositTx, BigInteger amount)
+        public async Task<Nethereum.Signer.Transaction> DepositToken(Web3 web3, string address, byte[] depositTx)
         {
             var function = GetFunctionDepositFrom();
             return await ContractHelper.CreateTransaction(web3, address,
-                amount,
                 function,
                 depositTx);
         }

@@ -393,7 +393,7 @@ namespace Hoard.BC
                     var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
                     depositPlasmaTx.AddOutput(profileFrom.ID, currency, amount);
 
-                    var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, depositPlasmaTx.GetRLPEncodedRaw(), amount);
+                    var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, depositPlasmaTx.GetRLPEncodedRaw());
                     string signedDepositTx = await SignTransaction(profileFrom, depositTx);
                     return await SubmitTransactionOnRootChain(web3, signedDepositTx, tokenSource);
                 }
