@@ -91,18 +91,7 @@ namespace Hoard
         public override string ToString()
         {
             var ret = Value.ToString("x");
-            return ret.Substring(ret.Length - 40);
-        }
-
-        /// <summary>
-        /// Returns hexadecimal string representing the ID
-        /// </summary>
-        /// <param name="withHexPrefix">whether string should start with '0x'</param>
-        /// <returns></returns>
-        public string ToString(bool withHexPrefix)
-        {
-            var ret = ToString();
-            return withHexPrefix?"0x" + ret:ret;
+            return "0x"+ret.Substring(ret.Length - 40);
         }
 
         /// <summary>
