@@ -38,7 +38,7 @@ namespace HoardTests.PlasmaCoreTests
             }
 
             Assert.Equal(4, (consolidator.MergedUtxo as FCUTXOData).Amount);
-            Assert.Equal(true, consolidator.AllConsolidated);
+            Assert.True(consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
 
 
@@ -54,7 +54,7 @@ namespace HoardTests.PlasmaCoreTests
             }
 
             Assert.Equal(1744, (consolidator.MergedUtxo as FCUTXOData).Amount);
-            Assert.Equal(true, consolidator.AllConsolidated);
+            Assert.True(consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
 
 
@@ -70,7 +70,7 @@ namespace HoardTests.PlasmaCoreTests
             }
 
             Assert.Equal(1744, (consolidator.MergedUtxo as FCUTXOData).Amount);
-            Assert.Equal(true, consolidator.AllConsolidated);
+            Assert.True(consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
         }
     }

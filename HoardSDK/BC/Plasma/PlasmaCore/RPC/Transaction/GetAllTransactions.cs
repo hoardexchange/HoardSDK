@@ -7,6 +7,7 @@ namespace PlasmaCore.RPC.Transaction
 {
     /// <summary>
     /// RPC request handler - fetches all transaction data
+    /// </summary>
     public class GetAllTransactions : RPCRequestHandlerBase
     {
         static private string route = "transaction.all";

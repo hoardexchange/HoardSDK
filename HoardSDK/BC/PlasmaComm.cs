@@ -247,7 +247,7 @@ namespace Hoard.BC
         /// <summary>
         /// Returns transaction data of given transaction hash
         /// </summary>
-        /// <param name="txId">transaction hash to query</param>
+        /// <param name="txHash">transaction hash to query</param>
         /// <returns></returns>
         protected async Task<TransactionDetails> GetTransaction(HexBigInteger txHash)
         {

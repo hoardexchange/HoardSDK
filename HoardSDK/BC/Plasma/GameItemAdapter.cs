@@ -244,8 +244,8 @@ namespace Hoard.BC.Plasma
                 var details = await plasmaComm.SubmitTransaction(signedTransaction.ToHex());
 
             }
-            */
             return false;
+            */
         }
 
         /// <inheritdoc/>
@@ -253,10 +253,9 @@ namespace Hoard.BC.Plasma
         {
             throw new NotImplementedException();
 
-            var items = new List<GameItem>();
-
             // TODO missing erc721 plasma implementation
             /*
+             * var items = new List<GameItem>();
             var balanceData = await plasmaComm.GetBalanceData(address, contract.Address);
 
             string symbol = await contract.GetSymbol();
@@ -269,9 +268,8 @@ namespace Hoard.BC.Plasma
 
                 items.Add(item);
             }
-            */
-
             return items.ToArray();
+            */
         }
 
         /// <inheritdoc/>

@@ -44,7 +44,7 @@ namespace Hoard.HW.Ledger
         }
 
         /// <ineritdoc/>
-        public async Task<Profile> CreateProfile(string name) { return null; }
+        public async Task<Profile> CreateProfile(string name) { return await Task.FromResult<Profile>(null); }
 
         /// <ineritdoc/>
         abstract public Task<Profile> RequestProfile(string name);

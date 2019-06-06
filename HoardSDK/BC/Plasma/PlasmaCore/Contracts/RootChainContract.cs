@@ -104,7 +104,6 @@ namespace Plasma.RootChain.Contracts
         /// <param name="web3">web3 interface</param>
         /// <param name="address">sender address</param>
         /// <param name="depositTx">deposit transaction data</param>
-        /// <param name="amount">amount of deposit</param>
         /// <returns></returns>
         public async Task<Nethereum.Signer.Transaction> DepositToken(Web3 web3, string address, byte[] depositTx)
         {
