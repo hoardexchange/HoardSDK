@@ -1,7 +1,10 @@
 ﻿using Hoard.Utils;
-using Nethereum.Signer;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Util;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,8 +21,11 @@ namespace Hoard
         /// Implementation of AccountInfo that has a direct access to account private key.
         /// </summary>
         private class KeyStoreProfile : Profile
-        {
-            public string EncryptedPrivateKey = null;
+        { 
+            private static readonly SecureRandom Random = new SecureRandom();
+
+            private readonly byte[] localKey = new byte[32];
+            private readonly byte[] encryptedKey = null;
 
             /// <summary>
             /// Creates a new KeyStoreAccount.
@@ -27,10 +33,11 @@ namespace Hoard
             /// <param name="name">Name of account</param>
             /// <param name="id">identifier (public address)</param>
             /// <param name="key">private key</param>
-            public KeyStoreProfile(string name, HoardID id, string key)
+            public KeyStoreProfile(string name, HoardID id, byte[] key)
                 :base(name, id)
             {
-                EncryptedPrivateKey =  Encode(key);
+                Random.NextBytes(localKey);
+                encryptedKey = Encode(key);
             }
 
             /// <summary>
@@ -41,10 +48,10 @@ namespace Hoard
             public override Task<string> SignTransaction(byte[] input)
             {
                 //CPU-bound
-                var ecKey = new Nethereum.Signer.EthECKey(Decode(EncryptedPrivateKey));
+                var ecKey = new Nethereum.Signer.EthECKey(DecodeLocalKey(), true);
                 var rawHash = new Sha3Keccack().CalculateHash(input);
                 var signature = ecKey.SignAndCalculateV(rawHash);
-                return Task.FromResult(EthECDSASignature.CreateStringSignature(signature));
+                return Task.FromResult(Nethereum.Signer.EthECDSASignature.CreateStringSignature(signature));
             }
 
             /// <summary>
@@ -56,20 +63,23 @@ namespace Hoard
             {
                 //CPU-bound
                 var signer = new Nethereum.Signer.EthereumMessageSigner();
-                var ecKey = new Nethereum.Signer.EthECKey(Decode(EncryptedPrivateKey));
+                var ecKey = new Nethereum.Signer.EthECKey(DecodeLocalKey(), true);
                 return Task.FromResult(signer.Sign(input, ecKey));
             }
 
-            private string Encode(string val)
+            private byte[] Encode(byte[] val)
             {
-                //TODO: implement
-                return val;
+                // Initialize AES CTR (counter) mode cipher from the BouncyCastle cryptography library
+                IBufferedCipher cipher = CipherUtilities.GetCipher("AES/CTR/NoPadding");
+                cipher.Init(true, new ParametersWithIV(ParameterUtilities.CreateKeyParameter("AES", localKey), new byte[16]));
+                return cipher.DoFinal(val);
             }
 
-            private string Decode(string val)
+            private byte[] DecodeLocalKey()
             {
-                //TODO: implement
-                return val;
+                IBufferedCipher cipher = CipherUtilities.GetCipher("AES/CTR/NoPadding");
+                cipher.Init(false, new ParametersWithIV(ParameterUtilities.CreateKeyParameter("AES", localKey), new byte[16]));
+                return cipher.DoFinal(encryptedKey);
             }
         }
 
@@ -103,7 +113,7 @@ namespace Hoard
                 jsonReader.Close();
                 if (jobj.TryGetValue("address", out JToken valueAddress) && jobj.TryGetValue("name", out JToken valueName))
                 {
-                    profiles.Add(new KeyStoreUtils.ProfileDesc(valueName.Value<string>(), valueAddress.Value<string>(), string.Empty));
+                    profiles.Add(new KeyStoreUtils.ProfileDesc(valueName.Value<string>(), valueAddress.Value<string>(), null));
                 }
             });
             return profiles.ToArray();
@@ -119,7 +129,7 @@ namespace Hoard
         {
             ErrorCallbackProvider.ReportInfo("Generating user account.");
             var ecKey = new Nethereum.Signer.EthECKey(privateKey);
-            Profile profile = new KeyStoreProfile(name, new HoardID(ecKey.GetPublicAddress()), privateKey);
+            Profile profile = new KeyStoreProfile(name, new HoardID(ecKey.GetPublicAddress()), privateKey.HexToByteArray());
             return profile;
         }
 
@@ -132,8 +142,9 @@ namespace Hoard
         {
             ErrorCallbackProvider.ReportInfo("Generating user account.");
             string password = await UserInputProvider.RequestInput(name, null, eUserInputType.kPassword, "new password");
-            Tuple<string, string> accountTuple = KeyStoreUtils.CreateProfile(name, password, ProfilesDir);
+            Tuple<string, byte[]> accountTuple = KeyStoreUtils.CreateProfile(name, password, ProfilesDir);
             Profile profile = new KeyStoreProfile(name, new HoardID(accountTuple.Item1), accountTuple.Item2);
+            accountTuple.Item2.Initialize();
             return profile;
         }
 
@@ -147,8 +158,9 @@ namespace Hoard
             ErrorCallbackProvider.ReportInfo("Creating user account.");
             string name = await UserInputProvider.RequestInput("", null, eUserInputType.kLogin, "new login");
             string password = await UserInputProvider.RequestInput(name, null, eUserInputType.kPassword, "new password");
-            Tuple<string, string> accountTuple = KeyStoreUtils.CreateProfile(name, password, privKey, ProfilesDir);
+            Tuple<string, byte[]> accountTuple = KeyStoreUtils.CreateProfile(name, password, privKey, ProfilesDir);
             Profile profile = new KeyStoreProfile(name, new HoardID(accountTuple.Item1), accountTuple.Item2);
+            accountTuple.Item2.Initialize();
             return profile;
         }
 

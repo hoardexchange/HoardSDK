@@ -1,7 +1,5 @@
-﻿using Nethereum.Web3.Accounts;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -25,7 +23,7 @@ namespace Hoard.Utils
             /// <summary>
             /// 
             /// </summary>
-            public string PrivKey;
+            public byte[] PrivKey;
 
             /// <summary>
             /// 
@@ -38,7 +36,7 @@ namespace Hoard.Utils
             /// <param name="name">Account name</param>
             /// <param name="address">Account public address</param>
             /// <param name="privKey">Account decrypted private key</param>
-            public ProfileDesc(string name, string address, string privKey)
+            public ProfileDesc(string name, string address, byte[] privKey)
             {
                 Name = name;
                 Address = address;
@@ -117,9 +115,10 @@ namespace Hoard.Utils
                 name = details["name"].Value<string>();
             }
             string password = await userInputProvider.RequestInput(name, new HoardID(address), eUserInputType.kPassword, address);
-            var account = Account.LoadFromKeyStore(json, password);
+            var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
+            var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json),true);
 
-            return new ProfileDesc(name, account.Address, account.PrivateKey);
+            return new ProfileDesc(name, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
         }
 
         /// <summary>
@@ -218,8 +217,10 @@ namespace Hoard.Utils
                     {
                         ErrorCallbackProvider.ReportInfo(string.Format("Loading account {0}", fileName));
                         string password = await userInputProvider.RequestInput(profileName, new HoardID(address), eUserInputType.kPassword, address);
-                        var account = Account.LoadFromKeyStore(json, password);
-                        return new ProfileDesc(profileName, account.Address, account.PrivateKey);
+                        var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
+                        var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json), true);
+
+                        return new ProfileDesc(profileName, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
                     }
                 }
             }
@@ -234,7 +235,7 @@ namespace Hoard.Utils
         /// <param name="password">Password for encrypting the profile</param>
         /// <param name="profilesDir">folder where to store key store data</param>
         /// <returns></returns>
-        public static Tuple<string, string> CreateProfile(string name, string password, string profilesDir)
+        public static Tuple<string, byte[]> CreateProfile(string name, string password, string profilesDir)
         {
             if (!Directory.Exists(profilesDir))
             {
@@ -244,7 +245,7 @@ namespace Hoard.Utils
             //generate new secure random key
             var ecKey = Nethereum.Signer.EthECKey.GenerateKey();
             string accountFile = CreateAccountKeyStoreFile(ecKey, password, name, profilesDir);
-            return new Tuple<string, string>(ecKey.GetPublicAddress(), ecKey.GetPrivateKey());
+            return new Tuple<string, byte[]>(ecKey.GetPublicAddress(), ecKey.GetPrivateKeyAsBytes());
         }
 
         /// <summary>
@@ -255,7 +256,7 @@ namespace Hoard.Utils
         /// <param name="privKey"></param>
         /// <param name="profilesDir"></param>
         /// <returns></returns>
-        public static Tuple<string, string> CreateProfile(string name, string password, string privKey, string profilesDir)
+        public static Tuple<string, byte[]> CreateProfile(string name, string password, string privKey, string profilesDir)
         {
             if (!Directory.Exists(profilesDir))
             {
@@ -264,7 +265,7 @@ namespace Hoard.Utils
 
             var ecKey = new Nethereum.Signer.EthECKey(privKey);
             string accountFile = CreateAccountKeyStoreFile(ecKey, password, name, profilesDir);
-            return new Tuple<string, string>(ecKey.GetPublicAddress(), ecKey.GetPrivateKey());
+            return new Tuple<string, byte[]>(ecKey.GetPublicAddress(), ecKey.GetPrivateKeyAsBytes());
         }
 
         /// <summary>
@@ -283,6 +284,7 @@ namespace Hoard.Utils
             }
 
             string[] files = Directory.GetFiles(profilesDir, "*.keystore");
+            var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
             foreach (string file in files)
             {
                 StreamReader jsonReader = new StreamReader(file);
@@ -294,13 +296,13 @@ namespace Hoard.Utils
                     HoardID actualId = new HoardID(valueAddress.Value<string>());
                     if (id == actualId)
                     {
-                        Account account = null;
+                        Nethereum.Signer.EthECKey key = null;
                         if (passwordNeeded)
                         {
                             string password = await userInputProvider.RequestInput(null, id, eUserInputType.kPassword, valueAddress.Value<string>());
-                            account = Account.LoadFromKeyStore(jobj.ToString(), password);
+                            key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, jobj.ToString()), true);
                         }
-                        if (!passwordNeeded || (account != null))
+                        if (!passwordNeeded || (key != null))
                         {
                             File.Delete(file);
                             return true;
@@ -328,6 +330,7 @@ namespace Hoard.Utils
             }
 
             string[] files = Directory.GetFiles(profilesDir, "*.keystore");
+            var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
             foreach (string file in files)
             {
                 StreamReader jsonReader = new StreamReader(file);
@@ -340,12 +343,9 @@ namespace Hoard.Utils
                     HoardID actualId = new HoardID(valueAddress.Value<string>());
                     if (id == actualId)
                     {
-                        Account account = Account.LoadFromKeyStore(jobj.ToString(), oldPassword);
-                        if (account == null)
-                        {
-                            return null;
-                        }
-                        string newFile = CreateAccountKeyStoreFile(new Nethereum.Signer.EthECKey(account.PrivateKey), newPassword, name.Value<string>(), profilesDir);
+                        
+                        var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(oldPassword, jobj.ToString()), true);
+                        string newFile = CreateAccountKeyStoreFile(key, newPassword, name.Value<string>(), profilesDir);
                         if (newFile != null)
                         {
                             File.Delete(file);
