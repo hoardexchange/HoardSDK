@@ -1,9 +1,11 @@
 ﻿using Device.Net;
 using ProtoBuf;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Hid.Net;
 
 namespace Hoard.HW
 {
@@ -12,6 +14,7 @@ namespace Hoard.HW
         public static async Task<IDevice> GetHIDDeviceAsync(FilterDeviceDefinition[] deviceInfo, UsageSpecification[] usageSpecification)
         {
             Usb.Net.Windows.WindowsUsbDeviceFactory.Register();
+            Hid.Net.Windows.WindowsHidDeviceFactory.Register();
 
             var devices = await DeviceManager.Current.GetDevicesAsync(deviceInfo);
 
