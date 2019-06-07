@@ -25,7 +25,7 @@ namespace PlasmaCore.RPC.Transaction
         /// <param name="blknum">block number (optional)</param>
         /// <param name="limit">result limit (optional)</param>
         /// <returns></returns>
-        public async Task<TransactionsData[]> SendRequestAsync(string address = null, UInt64? blknum = null, UInt32? limit = null)
+        public async Task<TransactionsData[]> SendRequestAsync(string address = null, ulong? blknum = null, UInt32? limit = null)
         {
             RPCRequest request = new RPCRequest(route);
 

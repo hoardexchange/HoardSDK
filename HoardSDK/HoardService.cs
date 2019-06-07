@@ -299,7 +299,7 @@ namespace Hoard
         /// Retrieves number of Hoard games registered on the platform
         /// </summary>
         /// <returns></returns>
-        public async Task<UInt64> GetHoardGameCount()
+        public async Task<ulong> GetHoardGameCount()
         {
             return await BCComm.GetHoardGameCount();
         }

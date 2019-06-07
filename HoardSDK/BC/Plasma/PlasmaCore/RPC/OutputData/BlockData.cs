@@ -12,7 +12,7 @@ namespace PlasmaCore.RPC.OutputData
         /// Timestamp when block was mined
         /// </summary>
         [JsonProperty(propertyName: "timestamp")]
-        public UInt64 Timestamp { get; private set; }
+        public ulong Timestamp { get; private set; }
 
         /// <summary>
         /// Mined block hash
@@ -24,12 +24,12 @@ namespace PlasmaCore.RPC.OutputData
         /// Ethereum height block was published on
         /// </summary>
         [JsonProperty(propertyName: "eth_height")]
-        public UInt64 EthHeight { get; private set; }
+        public ulong EthHeight { get; private set; }
 
         /// <summary>
         /// Block number
         /// </summary>
         [JsonProperty(propertyName: "blknum")]
-        public UInt64 Blknum { get; private set; }
+        public ulong Blknum { get; private set; }
     }
 }

@@ -72,6 +72,6 @@ namespace Hoard.Interfaces
         /// Retrieves number of Hoard games registered on the platform
         /// </summary>
         /// <returns></returns>
-        Task<UInt64> GetHoardGameCount();
+        Task<ulong> GetHoardGameCount();
     }
 }

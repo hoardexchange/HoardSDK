@@ -14,7 +14,7 @@ namespace PlasmaCore.Transactions
         /// Block number
         /// </summary>
         [JsonProperty(propertyName: "blknum")]
-        public UInt64 BlkNum { get; set; }
+        public ulong BlkNum { get; set; }
 
         /// <summary>
         /// Transaction index within the block
@@ -44,7 +44,7 @@ namespace PlasmaCore.Transactions
         /// <param name="blkNum"></param>
         /// <param name="txIndex"></param>
         /// <param name="oIndex"></param>
-        public TransactionInputData(UInt64 blkNum, UInt16 txIndex, UInt16 oIndex)
+        public TransactionInputData(ulong blkNum, UInt16 txIndex, UInt16 oIndex)
         {
             BlkNum = blkNum;
             TxIndex = txIndex;

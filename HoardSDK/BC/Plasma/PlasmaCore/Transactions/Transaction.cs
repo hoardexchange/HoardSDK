@@ -119,7 +119,7 @@ namespace PlasmaCore.Transactions
         /// <param name="blkNum">transaction block number</param>
         /// <param name="txIndex">transaction index</param>
         /// <param name="oIndex">transaction output index</param>
-        public bool AddInput(UInt64 blkNum, UInt16 txIndex, UInt16 oIndex)
+        public bool AddInput(ulong blkNum, UInt16 txIndex, UInt16 oIndex)
         {
             if (Inputs.Count <= MAX_INPUTS)
             {
@@ -256,10 +256,10 @@ namespace PlasmaCore.Transactions
 
         // RLP helpers
 
-        private static UInt64 ToUInt64FromRLPDecoded(byte[] bytes)
+        private static ulong ToUInt64FromRLPDecoded(byte[] bytes)
         {
             if (bytes != null)
-                return (UInt64)(bytes.ToBigIntegerFromRLPDecoded());
+                return (ulong)(bytes.ToBigIntegerFromRLPDecoded());
             return 0;
         }
 

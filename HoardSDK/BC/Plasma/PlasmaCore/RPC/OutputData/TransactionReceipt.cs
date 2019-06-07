@@ -13,7 +13,7 @@ namespace PlasmaCore.RPC.OutputData
         /// Block number
         /// </summary>
         [JsonProperty(propertyName: "blknum")]
-        public UInt64 BlkNum { get; private set; }
+        public ulong BlkNum { get; private set; }
 
         /// <summary>
         /// Transaction index in the block

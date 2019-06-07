@@ -117,7 +117,7 @@ namespace Hoard.BC
         }
 
         /// <inheritdoc/>
-        public async Task<UInt64> GetHoardGameCount()
+        public async Task<ulong> GetHoardGameCount()
         {
             return await bcComm.GetHoardGameCount();
         }

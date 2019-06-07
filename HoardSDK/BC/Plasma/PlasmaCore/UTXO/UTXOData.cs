@@ -32,7 +32,7 @@ namespace PlasmaCore.UTXO
         /// Block number
         /// </summary>
         [JsonProperty(propertyName: "blknum")]
-        public UInt64 BlkNum { get; set; }
+        public ulong BlkNum { get; set; }
 
         /// <summary>
         /// UTXO position
