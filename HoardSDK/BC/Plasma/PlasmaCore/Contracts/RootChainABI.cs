@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace Plasma.RootChain.Contracts
@@ -8,6 +9,12 @@ namespace Plasma.RootChain.Contracts
     /// </summary>
     public enum RootChainVersion
     {
+        /// <summary>
+        /// v0.1 version
+        /// </summary>
+        [Description("default")]
+        Default = 0,
+
         /// <summary>
         /// v0.1 version
         /// </summary>
@@ -29,7 +36,7 @@ namespace Plasma.RootChain.Contracts
         /// <summary>
         /// Current ABI version
         /// </summary>
-        public static string CurrentVersion = RootChainVersion.Ari.DescToString();
+        public static RootChainVersion DefaultVersion = RootChainVersion.Ari;
 
         /// <summary>
         /// Root chain v0.1 version ABI
@@ -44,10 +51,10 @@ namespace Plasma.RootChain.Contracts
         /// <summary>
         /// Dictionary storing root chain's ABI
         /// </summary>
-        public static readonly Dictionary<string, string> ABIs = new Dictionary<string, string>()
+        public static readonly Dictionary<RootChainVersion, string> ABIs = new Dictionary<RootChainVersion, string>()
         {
-            { RootChainVersion.Ari.DescToString(), AriABI },
-            { RootChainVersion.Samrong.DescToString(), SamrongABI },
+            { RootChainVersion.Ari, AriABI },
+            { RootChainVersion.Samrong, SamrongABI },
         };
 
         /// <summary>
@@ -55,19 +62,31 @@ namespace Plasma.RootChain.Contracts
         /// </summary>
         /// <param name="version">requested ABI version</param>
         /// <returns></returns>
-        public static string GetRootChainABI(string version = null)
+        public static string GetRootChainABI(RootChainVersion version = RootChainVersion.Default)
         {
-            if (version == null)
-                version = CurrentVersion;
+            if (version == RootChainVersion.Default)
+                version = DefaultVersion;
             if (ABIs.ContainsKey(version))
                 return ABIs[version];
             return null;
         }
 
-        private static string DescToString(this RootChainVersion value)
+        /// <summary>
+        /// Converts string to rootchain version enum
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static RootChainVersion FromString(string value)
         {
-            DescriptionAttribute[] attributes = (DescriptionAttribute[])value.GetType().GetField(value.ToString()).GetCustomAttributes(typeof(DescriptionAttribute), false);
-            return attributes.Length > 0 ? attributes[0].Description : string.Empty;
+            foreach (var field in typeof(RootChainVersion).GetFields())
+            {
+                DescriptionAttribute[] attributes = (DescriptionAttribute[])field.GetCustomAttributes(typeof(DescriptionAttribute), false);
+
+                if (attributes != null && attributes.Length > 0 && attributes[0].Description == value)
+                    return (RootChainVersion)Enum.Parse(typeof(RootChainVersion), field.Name);
+            }
+
+            throw new Exception("Not found");
         }
     }
 }

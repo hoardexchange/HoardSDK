@@ -51,22 +51,25 @@ namespace PlasmaCore.UTXO
         private string owner;
         private string currency;
         private BigInteger amount;
+        private ITransactionEncoder txEncoder;
 
         /// <summary>
         /// Creates default fungible currency consolidator
         /// </summary>
         /// <param name="_plasmaAPIService">plasma API service</param>
+        /// <param name="_txEncoder">transaction encoder</param>
         /// <param name="_owner">consolidation requester address</param>
         /// <param name="_currency">consolidation currency</param>
         /// <param name="_utxos">array of utxo data for consolidation</param>
         /// <param name="_amount">amount to consolidate (optional, if null or greater than balance consolidate all utxos)</param>
-        public FCConsolidator(PlasmaAPIService _plasmaAPIService, string _owner, string _currency, UTXOData[] _utxos, BigInteger? _amount = null)
+        public FCConsolidator(PlasmaAPIService _plasmaAPIService, ITransactionEncoder _txEncoder, string _owner, string _currency, UTXOData[] _utxos, BigInteger? _amount = null)
         {
             Transactions = new List<Transaction>();
             MergedUtxo = null;
             plasmaAPIService = _plasmaAPIService;
             owner = _owner;
             currency = _currency;
+            txEncoder = _txEncoder;
 
             BigInteger balance = BigInteger.Zero;
             Array.Sort(_utxos, (x, y) => (x as FCUTXOData).Amount.CompareTo((x as FCUTXOData).Amount));
@@ -98,14 +101,15 @@ namespace PlasmaCore.UTXO
             {
                 foreach (var transaction in Transactions)
                 {
-                    TransactionReceipt receipt = await plasmaAPIService.SubmitTransaction(transaction.GetRLPEncoded().ToHex(true));
+                    string encodedTx = txEncoder.EncodeSigned(transaction).ToHex(true);
+                    TransactionReceipt receipt = await plasmaAPIService.SubmitTransaction(encodedTx);
                     if (receipt != null)
                     {
                         FCUTXOData utxo = new FCUTXOData();
                         utxo.BlkNum = receipt.BlkNum;
                         utxo.TxIndex = receipt.TxIndex;
                         utxo.OIndex = 0;
-                        utxo.Amount = RLP.Decode(transaction.Outputs[0].RLPEncodedValue)[0].RLPData.ToBigIntegerFromRLPDecoded();
+                        utxo.Amount = transaction.Outputs[0].Value.ToBigIntegerFromRLPDecoded();
                         utxo.Owner = transaction.Outputs[0].Owner;
                         utxo.Currency = transaction.Outputs[0].Currency;
 

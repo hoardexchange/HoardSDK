@@ -3,7 +3,6 @@ using Nethereum.Hex.HexConvertors.Extensions;
 using PlasmaCore.RPC.OutputData;
 using PlasmaCore.Transactions;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
@@ -139,11 +138,8 @@ namespace Hoard.BC.Plasma
                 if (utxos != null && utxos.Length > 0)
                 {
                     var transaction = FCTransactionBuilder.Build(profileFrom.ID, addressTo, utxos, amount, currencyAddress);
-                    byte[] encodedTransaction = transaction.GetRLPEncodedRaw();
-                    string signature = await profileFrom.SignTransaction(encodedTransaction);
-                    transaction.SetSignature(profileFrom.ID, signature.HexToByteArray());
-                    byte[] signedTransaction = transaction.GetRLPEncoded();
-                    var details = await plasmaComm.SubmitTransaction(signedTransaction.ToHex());
+                    string signedTransaction = await plasmaComm.SignTransaction(profileFrom, transaction);
+                    var details = await plasmaComm.SubmitTransaction(signedTransaction);
                     return (details != null);
                 }
             }
