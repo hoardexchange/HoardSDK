@@ -1,6 +1,7 @@
 ﻿using HoardTests.Fixtures;
 using Nethereum.Hex.HexConvertors.Extensions;
 using PlasmaCore;
+using PlasmaCore.Transactions;
 using PlasmaCore.UTXO;
 using System;
 using System.Linq;
@@ -26,51 +27,50 @@ namespace HoardTests.PlasmaCoreTests
             string currency = "0xda636e31a9800531418213b5c799960f4585c937";
 
             var utxos = await PlasmaAPIService.GetUtxos(address);
-            var consolidator = new FCConsolidator(PlasmaAPIService, address, currency, utxos, 4);
+            RawTransactionEncoder txEncoder = new RawTransactionEncoder();
+            var consolidator = new FCConsolidator(PlasmaAPIService, txEncoder, address, currency, utxos, 4);
             while (consolidator.CanMerge)
             {
                 foreach (var transaction in consolidator.Transactions)
                 {
-                    var sig = PlasmaCoreTestsHelper.Sign(transaction.GetRLPEncodedRaw(), privateKey);
+                    var sig = PlasmaCoreTestsHelper.Sign(txEncoder, transaction, address, privateKey);
                     transaction.SetSignature(address, sig.HexToByteArray());
                 }
                 await consolidator.ProcessTransactions();
             }
 
             Assert.Equal(4, (consolidator.MergedUtxo as FCUTXOData).Amount);
-            Assert.True(consolidator.AllConsolidated);
+            Assert.Equal(true, consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
 
-
-            consolidator = new FCConsolidator(PlasmaAPIService, address, currency, utxos);
+            consolidator = new FCConsolidator(PlasmaAPIService, txEncoder, address, currency, utxos);
             while (consolidator.CanMerge)
             {
                 foreach (var transaction in consolidator.Transactions)
                 {
-                    var sig = PlasmaCoreTestsHelper.Sign(transaction.GetRLPEncodedRaw(), privateKey);
+                    var sig = PlasmaCoreTestsHelper.Sign(txEncoder, transaction, address, privateKey);
                     transaction.SetSignature(address, sig.HexToByteArray());
                 }
                 await consolidator.ProcessTransactions();
             }
 
             Assert.Equal(1744, (consolidator.MergedUtxo as FCUTXOData).Amount);
-            Assert.True(consolidator.AllConsolidated);
+            Assert.Equal(true, consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
 
-
-            consolidator = new FCConsolidator(PlasmaAPIService, address, currency, utxos, 9999999);
+            consolidator = new FCConsolidator(PlasmaAPIService, txEncoder, address, currency, utxos, 9999999);
             while (consolidator.CanMerge)
             {
                 foreach (var transaction in consolidator.Transactions)
                 {
-                    var sig = PlasmaCoreTestsHelper.Sign(transaction.GetRLPEncodedRaw(), privateKey);
+                    var sig = PlasmaCoreTestsHelper.Sign(txEncoder, transaction, address, privateKey);
                     transaction.SetSignature(address, sig.HexToByteArray());
                 }
                 await consolidator.ProcessTransactions();
             }
 
             Assert.Equal(1744, (consolidator.MergedUtxo as FCUTXOData).Amount);
-            Assert.True(consolidator.AllConsolidated);
+            Assert.Equal(true, consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
         }
     }

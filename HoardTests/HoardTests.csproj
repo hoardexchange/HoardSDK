@@ -76,6 +76,7 @@
     <Compile Include="PlasmaCoreTests\ConsolidatorTests.cs" />
     <Compile Include="PlasmaCoreTests\SignHelper.cs" />
     <Compile Include="PlasmaCoreTests\TransactionBuilderTests.cs" />
+    <Compile Include="PlasmaCoreTests\TypedDataTests.cs" />
     <Compile Include="PlasmaRpcClient.cs" />
     <Compile Include="Plasma\HoardServiceTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

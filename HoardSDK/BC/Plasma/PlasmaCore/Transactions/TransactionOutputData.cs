@@ -22,7 +22,7 @@ namespace PlasmaCore.Transactions
         /// <summary>
         /// Value of the transaction output
         /// </summary>
-        public byte[] RLPEncodedValue { get; protected set; }
+        public byte[] Value { get; protected set; }
 
         /// <summary>
         /// Creates empty transaction output data
@@ -31,7 +31,7 @@ namespace PlasmaCore.Transactions
         {
             Owner = string.Empty.PadLeft(40, '0').EnsureHexPrefix();
             Currency = string.Empty.PadLeft(40, '0').EnsureHexPrefix();
-            RLPEncodedValue = RLP.EncodeElement(BigInteger.Zero.ToBytesForRLPEncoding());
+            Value = BigInteger.Zero.ToBytesForRLPEncoding();
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace PlasmaCore.Transactions
         {
             Owner = owner.EnsureHexPrefix();
             Currency = currency.EnsureHexPrefix();
-            RLPEncodedValue = RLP.EncodeElement(value);
+            Value = value;
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace PlasmaCore.Transactions
             var data = new byte[3][];
             data[0] = RLP.EncodeElement(Owner.HexToByteArray());
             data[1] = RLP.EncodeElement(Currency.HexToByteArray());
-            data[2] = RLPEncodedValue;
+            data[2] = RLP.EncodeElement(Value);
             return RLP.EncodeList(data);
         }
 
@@ -68,7 +68,7 @@ namespace PlasmaCore.Transactions
         {
             return (Owner == string.Empty.PadLeft(40, '0').EnsureHexPrefix() &&
                 Currency == string.Empty.PadLeft(40, '0').EnsureHexPrefix() &&
-                RLPEncodedValue == RLP.EncodeElement(BigInteger.Zero.ToBytesForRLPEncoding()));
+                Value == BigInteger.Zero.ToBytesForRLPEncoding());
         }
     }
 }

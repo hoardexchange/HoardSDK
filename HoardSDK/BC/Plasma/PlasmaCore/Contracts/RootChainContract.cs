@@ -5,7 +5,6 @@ using PlasmaCore.RPC.OutputData;
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
-using Nethereum.ABI;
 
 namespace Plasma.RootChain.Contracts
 {
@@ -31,7 +30,7 @@ namespace Plasma.RootChain.Contracts
         /// <param name="web3">web3 interface</param>
         /// <param name="address">address of this contract (u160)</param>
         /// <param name="abiVersion">abi version of root chain contract</param>
-        public RootChainContract(Web3 web3, string address, string abiVersion = null)
+        public RootChainContract(Web3 web3, string address, RootChainVersion abiVersion)
         {
             this.web3 = web3;
             abi = RootChainABI.GetRootChainABI(abiVersion);

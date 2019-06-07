@@ -1,6 +1,5 @@
 ﻿using Hoard.Interfaces;
 using System;
-using System.Diagnostics;
 
 namespace Hoard.BC
 {
@@ -23,7 +22,8 @@ namespace Hoard.BC
                                     options.GameCenterContract, 
                                     clientOpts.WatcherClient, 
                                     clientOpts.ChildChainClient,
-                                    clientOpts.RootChainAddress);
+                                    clientOpts.RootChainAddress,
+                                    clientOpts.RootChainVersion);
             }
             else if (options.BCClientOptions is EthereumClientOptions)
             {

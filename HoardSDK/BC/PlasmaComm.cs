@@ -7,6 +7,7 @@ using Nethereum.Web3;
 using Plasma.RootChain.Contracts;
 using PlasmaCore;
 using PlasmaCore.RPC.OutputData;
+using PlasmaCore.Transactions;
 using PlasmaCore.UTXO;
 using RestSharp;
 using System;
@@ -36,6 +37,8 @@ namespace Hoard.BC
 
         private RootChainContract rootChainContract = null;
 
+        private ITransactionEncoder transactionEncoder = null;
+
         /// <summary>
         /// Creates PlasmaComm object.
         /// </summary>
@@ -44,21 +47,22 @@ namespace Hoard.BC
         /// <param name="watcherClient">watcher client</param>
         /// <param name="childChainClient">child chain client</param>
         /// <param name="rootChainAddress">root chain address</param>
-        /// <param name="rootChainAbiVersion">root chain abi version (optional)</param>
+        /// <param name="rootChainVersion">root chain version</param>
         public PlasmaComm(Nethereum.JsonRpc.Client.IClient ethClient, 
                         string gameCenterContract, 
                         PlasmaCore.RPC.IClient watcherClient, 
                         PlasmaCore.RPC.IClient childChainClient,
                         string rootChainAddress,
-                        string rootChainAbiVersion = null)
+                        RootChainVersion rootChainVersion)
         {
             web3 = new Web3(ethClient);
-            bcComm = new BCComm(ethClient, gameCenterContract);
+            //bcComm = new BCComm(ethClient, gameCenterContract);
 
             plasmaApiService = new PlasmaAPIService(watcherClient, childChainClient);
+            transactionEncoder = TransactionEncoderFactory.Create(rootChainVersion);
             if (rootChainAddress != null)
             {
-                rootChainContract = new RootChainContract(web3, rootChainAddress, rootChainAbiVersion);
+                rootChainContract = new RootChainContract(web3, rootChainAddress, rootChainVersion);
             }
         }
 
@@ -358,7 +362,10 @@ namespace Hoard.BC
                 var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
                 depositPlasmaTx.AddOutput(profileFrom.ID, ZERO_ADDRESS, amount);
 
-                var depositTx = await rootChainContract.Deposit(web3, profileFrom.ID, depositPlasmaTx.GetRLPEncodedRaw(), amount);
+                RawTransactionEncoder txEncoder = new RawTransactionEncoder();
+                byte[] encodedDepositTx = txEncoder.EncodeRaw(depositPlasmaTx);
+
+                var depositTx = await rootChainContract.Deposit(web3, profileFrom.ID, encodedDepositTx, amount);
                 string signedDepositTx = await SignTransaction(profileFrom, depositTx);
                 return await SubmitTransactionOnRootChain(web3, signedDepositTx, tokenSource);
             }
@@ -393,7 +400,10 @@ namespace Hoard.BC
                     var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
                     depositPlasmaTx.AddOutput(profileFrom.ID, currency, amount);
 
-                    var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, depositPlasmaTx.GetRLPEncodedRaw());
+                    RawTransactionEncoder txEncoder = new RawTransactionEncoder();
+                    byte[] encodedDepositTx = txEncoder.EncodeRaw(depositPlasmaTx);
+
+                    var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, encodedDepositTx);
                     string signedDepositTx = await SignTransaction(profileFrom, depositTx);
                     return await SubmitTransactionOnRootChain(web3, signedDepositTx, tokenSource);
                 }
@@ -415,7 +425,7 @@ namespace Hoard.BC
             var utxos = await GetUtxos(profileFrom.ID, currency);
             if (utxos.Length > 1)
             {
-                FCConsolidator consolidator = new FCConsolidator(plasmaApiService, profileFrom.ID, currency, utxos, amount);
+                FCConsolidator consolidator = new FCConsolidator(plasmaApiService, transactionEncoder, profileFrom.ID, currency, utxos, amount);
                 while (consolidator.CanMerge)
                 {
                     if (tokenSource != null && tokenSource.IsCancellationRequested)
@@ -440,6 +450,20 @@ namespace Hoard.BC
             return null;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="profile"></param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
+        public async Task<string> SignTransaction(Profile profile, PlasmaCore.Transactions.Transaction transaction)
+        {
+            byte[] encodedTx = transactionEncoder.EncodeRaw(transaction);
+            string signature = await profile.SignTransaction(encodedTx);
+            transaction.SetSignature(profile.ID, signature.HexToByteArray());
+            return transactionEncoder.EncodeSigned(transaction).ToHex(true);
+        }
+
         private async Task<string> SendRequestPost(RestClient client, string method, object data)
         {
             var request = new RestRequest(method, Method.POST);
@@ -450,20 +474,12 @@ namespace Hoard.BC
             return response.Content;
         }
 
-        private static async Task<string> SignTransaction(Profile profile, Nethereum.Signer.Transaction transaction)
+        private async Task<string> SignTransaction(Profile profile, Nethereum.Signer.Transaction transaction)
         {
             string signature = await profile.SignTransaction(transaction.GetRLPEncodedRaw());
             transaction.SetSignature(Nethereum.Signer.EthECDSASignatureFactory.ExtractECDSASignature(signature));
             return transaction.GetRLPEncoded().ToHex(true);
         }
-
-        private static async Task<string> SignTransaction(Profile profile, PlasmaCore.Transactions.Transaction transaction)
-        {
-            string signature = await profile.SignTransaction(transaction.GetRLPEncodedRaw());
-            transaction.SetSignature(profile.ID, signature.HexToByteArray());
-            return transaction.GetRLPEncoded().ToHex(true);
-        }
-
 
         private static async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> SubmitTransactionOnRootChain(Web3 web3, string signedTransaction, CancellationTokenSource tokenSource = null)
         {

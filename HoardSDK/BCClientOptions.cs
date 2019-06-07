@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Plasma.RootChain.Contracts;
 using System;
 
 namespace Hoard
@@ -118,6 +119,11 @@ namespace Hoard
         /// Address of root chain
         /// </summary>
         public string RootChainAddress;
+
+        /// <summary>
+        /// Root chain version
+        /// </summary>
+        public string RootChainVersion;
     }
 
     /// <summary>
@@ -166,10 +172,15 @@ namespace Hoard
         public PlasmaCore.RPC.IClient WatcherClient { get; private set; } = null;
 
         /// <summary>
-        /// Plasma watcher client of Hoard network
+        /// Root chain contract address
         /// </summary>
         public string RootChainAddress { get; private set; } = null;
 
+        /// <summary>
+        /// Root chain version
+        /// </summary>
+        public RootChainVersion RootChainVersion { get; private set; } = RootChainVersion.Default;
+        
         /// <summary>
         /// Creates Plasma client options object (without root chain access)
         /// </summary>
@@ -181,7 +192,6 @@ namespace Hoard
             RpcClient = rpcClient;
             WatcherClient = watcherClient;
             ChildChainClient = childChainClient;
-            RootChainAddress = null;
         }
 
         /// <summary>
@@ -189,16 +199,19 @@ namespace Hoard
         /// </summary>
         /// <param name="rpcClient">JsonRpc client implementation</param>
         /// <param name="rootChainAddress">root chain contract address</param>
+        /// <param name="rootChainVersion">root chain version</param>
         /// <param name="watcherClient">Plasma watcher client</param>
         /// <param name="childChainClient">Plasma child chain client (optional)</param>
         public PlasmaClientOptions(
             Nethereum.JsonRpc.Client.IClient rpcClient, 
             string rootChainAddress,
+            string rootChainVersion,
             PlasmaCore.RPC.IClient watcherClient, 
             PlasmaCore.RPC.IClient childChainClient = null)
         {
             RpcClient = rpcClient;
             RootChainAddress = rootChainAddress;
+            RootChainVersion = RootChainABI.FromString(rootChainVersion);
             WatcherClient = watcherClient;
             ChildChainClient = childChainClient;
         }

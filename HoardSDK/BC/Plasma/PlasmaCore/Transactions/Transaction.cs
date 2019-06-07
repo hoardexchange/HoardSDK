@@ -33,22 +33,25 @@ namespace PlasmaCore.Transactions
         /// </summary>
         public List<TransactionOutputData> Outputs { get; protected set; }  = new List<TransactionOutputData>();
 
+        public byte[] Metadata = "0x0000000000000000000000000000000000000000000000000000000000000000".HexToByteArray();
+
+        private byte[][] signatures = new byte[0][];
         /// <summary>
         /// List of signatures
         /// </summary>
-        private byte[][] signatures = new byte[MAX_INPUTS][];
-        private string[] senders = new string[MAX_INPUTS];
+        public byte[][] Signatures { get { return signatures; } }
+
+        private string[] senders = new string[0];
+        /// <summary>
+        /// List of input utxo owners
+        /// </summary>
+        public string[] Senders { get { return senders; } }
 
         /// <summary>
         /// Constructs empty transaction
         /// </summary>
         public Transaction()
         {
-            for (Int32 i = 0; i < Inputs.Count; ++i)
-            {
-                signatures[i] = null;
-                senders[i] = null;
-            }
         }
 
         // <summary>
@@ -106,7 +109,11 @@ namespace PlasmaCore.Transactions
                 if (!tid.IsEmpty())
                 {
                     Inputs.Add(tid);
+
+                    if (senders.Length < Inputs.Count)
+                        Array.Resize(ref senders, Inputs.Count);
                     senders[Inputs.Count - 1] = data.Owner;
+
                     return true;
                 }
             }
@@ -160,6 +167,11 @@ namespace PlasmaCore.Transactions
         /// <param name="signature">sender signature</param>
         public bool SetSignature(string address, byte[] signature)
         {
+            if (signatures.Length < Inputs.Count)
+                Array.Resize(ref signatures, Inputs.Count);
+            if (senders.Length < Inputs.Count)
+                Array.Resize(ref senders, Inputs.Count);
+
             bool found = false;
             for (Int32 i = 0; i < Inputs.Count; ++i)
             {
@@ -179,70 +191,17 @@ namespace PlasmaCore.Transactions
         /// <param name="signature">sender signature</param>
         public bool SetSignature(Int32 idx, byte[] signature)
         {
+            if (signatures.Length < Inputs.Count)
+                Array.Resize(ref signatures, Inputs.Count);
+            if (senders.Length < Inputs.Count)
+                Array.Resize(ref senders, Inputs.Count);
+
             if (signatures.Length > idx)
             {
                 signatures[idx] = signature;
                 return true;
             }
             return false;
-        }
-
-        /// <summary>
-        /// Build RLP encoded transaction with signature
-        /// </summary>
-        /// <returns>RLP encoded signed transaction</returns>
-        public byte[] GetRLPEncoded()
-        {
-            var rlpcollection = new List<byte[]>();
-
-            var rlpSignatures = new List<byte[]>();
-            for (Int32 i = 0; i < Inputs.Count; ++i)
-            {
-                if (signatures[i] != null)
-                {
-                    rlpSignatures.Add(RLP.EncodeElement(signatures[i]));
-                }
-                else
-                {
-                    // missing signature - cannot return valid encoded transaction
-                    return new byte[0];
-                }
-            }
-
-            rlpcollection.Add(RLP.EncodeList(rlpSignatures.ToArray()));
-
-            var rlpInputs = new List<byte[]>();
-            Inputs.ForEach(x => rlpInputs.Add(x.GetRLPEncoded()));
-            rlpInputs.AddRange(Enumerable.Repeat(new TransactionInputData().GetRLPEncoded(), MAX_INPUTS - Inputs.Count));
-            rlpcollection.Add(RLP.EncodeList(rlpInputs.ToArray()));
-
-            var rlpOutputs = new List<byte[]>();
-            Outputs.ForEach(x => rlpOutputs.Add(x.GetRLPEncoded()));
-            rlpOutputs.AddRange(Enumerable.Repeat(new TransactionOutputData().GetRLPEncoded(), MAX_OUTPUTS - Outputs.Count));
-            rlpcollection.Add(RLP.EncodeList(rlpOutputs.ToArray()));
-
-            return RLP.EncodeList(rlpcollection.ToArray());
-        }
-
-        /// <summary>
-        /// Build RLP encoded transaction without signature
-        /// </summary>
-        /// <returns>RLP encoded transaction</returns>
-        public byte[] GetRLPEncodedRaw()
-        {
-            var rlpcollection = new List<byte[]>();
-
-            var rlpInputs = new List<byte[]>();
-            Inputs.ForEach(x => rlpInputs.Add(x.GetRLPEncoded()));
-            rlpInputs.AddRange(Enumerable.Repeat(new TransactionInputData().GetRLPEncoded(), MAX_INPUTS - Inputs.Count));
-            rlpcollection.Add(RLP.EncodeList(rlpInputs.ToArray()));
-
-            var rlpOutputs = new List<byte[]>();
-            Outputs.ForEach(x => rlpOutputs.Add(x.GetRLPEncoded()));
-            rlpOutputs.AddRange(Enumerable.Repeat(new TransactionOutputData().GetRLPEncoded(), MAX_OUTPUTS - Outputs.Count));
-            rlpcollection.Add(RLP.EncodeList(rlpOutputs.ToArray()));
-
-            return RLP.EncodeList(rlpcollection.ToArray());
         }
 
         /// <summary>
