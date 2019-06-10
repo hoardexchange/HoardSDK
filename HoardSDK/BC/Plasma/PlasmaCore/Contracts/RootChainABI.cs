@@ -86,7 +86,7 @@ namespace Plasma.RootChain.Contracts
                     return (RootChainVersion)Enum.Parse(typeof(RootChainVersion), field.Name);
             }
 
-            throw new Exception("Not found");
+            return RootChainVersion.Default;
         }
     }
 }
