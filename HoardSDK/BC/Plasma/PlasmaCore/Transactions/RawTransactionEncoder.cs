@@ -1,4 +1,5 @@
-﻿using Nethereum.RLP;
+﻿using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.RLP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,6 +68,51 @@ namespace PlasmaCore.Transactions
             rlpcollection.Add(RLP.EncodeList(rlpOutputs.ToArray()));
 
             return RLP.EncodeList(rlpcollection.ToArray());
+        }
+
+        /// <inheritdoc/>
+        public Transaction CreateTransaction(byte[] rlpEncodedTrasaction)
+        {
+            Transaction transaction = new Transaction();
+
+            RLPCollection decodedList = (RLPCollection)RLP.Decode(rlpEncodedTrasaction)[0];
+
+            bool isSigned = (decodedList.Count == 3);
+            int inputIdx = isSigned ? 1 : 0;
+            int outputIdx = isSigned ? 2 : 1;
+
+            RLPCollection inputData = (RLPCollection)decodedList[inputIdx];
+            foreach (RLPCollection input in inputData)
+            {
+                if (input.Count == 3)
+                {
+                    transaction.AddInput(Transaction.ToUInt64FromRLPDecoded(input[0].RLPData),
+                             Transaction.ToUInt16FromRLPDecoded(input[1].RLPData),
+                             Transaction.ToUInt16FromRLPDecoded(input[2].RLPData));
+                }
+            }
+
+            RLPCollection outputData = (RLPCollection)decodedList[outputIdx];
+            foreach (RLPCollection output in outputData)
+            {
+                if (output.Count == 3)
+                {
+                    transaction.AddOutput(output[0].RLPData.ToHex().PadLeft(32, '0').EnsureHexPrefix(),
+                              output[1].RLPData.ToHex().PadLeft(32, '0').EnsureHexPrefix(),
+                              output[2].RLPData.ToBigIntegerFromRLPDecoded());
+                }
+            }
+
+            if (isSigned)
+            {
+                RLPCollection signatureData = (RLPCollection)decodedList[0];
+                for (Int32 i = 0; i < signatureData.Count; ++i)
+                {
+                    transaction.SetSignature(i, signatureData[i].RLPData);
+                }
+            }
+
+            return transaction;
         }
     }
 }

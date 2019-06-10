@@ -1,19 +1,27 @@
-﻿using Hoard.Utils;
-using Nethereum.ABI;
+﻿using Nethereum.ABI;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Util;
-using PlasmaCore.EIP712;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Plasma.PlasmaCore
+namespace PlasmaCore.EIP712
 {
+    /// <summary>
+    /// EIP-712 typed data encoder (https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md)
+    /// </summary>
     public class TypedDataEncoder
     {
         private static readonly byte[] HEADER = new byte[] { 0x19, 0x01 };
 
+        /// <summary>
+        /// Encodes data along with its structure 
+        /// </summary>
+        /// <typeparam name="T">data type</typeparam>
+        /// <param name="data">data to encode</param>
+        /// <param name="domain">domain separator specification</param>
+        /// <returns></returns>
         public static byte[] Encode<T>(T data, EIP712Domain domain)
         {
             byte[] domainSeparator = HashStruct(domain);
@@ -21,15 +29,15 @@ namespace Plasma.PlasmaCore
             return ByteUtil.Merge(HEADER, domainSeparator, hashStruct);
         }
 
-        public static byte[] HashStruct<T>(T data)
+        private static byte[] HashStruct<T>(T data)
         {
-            byte[] typeHash = CalculateTypeHash(data);
+            byte[] typeHash = TypeHash(data);
             byte[] encodedData = EncodeData(data);
             byte[] mergedData = ByteUtil.Merge(typeHash, encodedData);
             return new Sha3Keccack().CalculateHash(mergedData);
         }
 
-        public static byte[] EncodeData<T>(T data)
+        private static byte[] EncodeData<T>(T data)
         {
             byte[] encodedData = new byte[0];
             byte[] encodedDataPart = null;
@@ -62,7 +70,7 @@ namespace Plasma.PlasmaCore
             return encodedData;
         }
 
-        public static byte[] CalculateTypeHash<T>(T data)
+        private static byte[] TypeHash<T>(T data)
         {
             string encodedType = EncodeType(data);
             Dictionary<string, string> dependencies = new Dictionary<string, string>();
@@ -75,7 +83,7 @@ namespace Plasma.PlasmaCore
             return new Sha3Keccack().CalculateHash(encodedType).HexToByteArray();
         }
 
-        public static string EncodeType<T>(T data)
+        private static string EncodeType<T>(T data)
         {
             Type dataType = data.GetType();
             List<string> types = new List<string>();
@@ -89,7 +97,7 @@ namespace Plasma.PlasmaCore
             return string.Format("{0}({1})", typeAttr.Name, string.Join(",", types));
         }
 
-        public static void FindDependencies<T>(T data, ref Dictionary<string, string> dependencies)
+        private static void FindDependencies<T>(T data, ref Dictionary<string, string> dependencies)
         {
             Type dataType = data.GetType();
             foreach (PropertyInfo propInfo in dataType.GetProperties())
@@ -104,8 +112,6 @@ namespace Plasma.PlasmaCore
             }
         }
 
-
-        // FIXME not all types are implemented / listed
         private static readonly string[] supportedTypes = new string[]
         {
             "address",
@@ -114,7 +120,7 @@ namespace Plasma.PlasmaCore
             "bool"
         };
 
-        public static bool IsReferenceType(string type)
+        private static bool IsReferenceType(string type)
         {
             if (supportedTypes.Contains(type))
                 return false;

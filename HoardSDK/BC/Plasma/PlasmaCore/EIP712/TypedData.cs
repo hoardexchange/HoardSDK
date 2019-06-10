@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Numerics;
 
 namespace PlasmaCore.EIP712
 {
@@ -60,26 +59,28 @@ namespace PlasmaCore.EIP712
     [TypedStruct("EIP712Domain")]
     public class EIP712Domain 
     {
+        // FIXME? chainId missing - plasma not using it
+
         /// <summary>
-        /// Signing domain name
+        /// The user readable name of signing domain
         /// </summary>
         [TypedData("name", "string")]
         public string Name { get; set; }
 
         /// <summary>
-        /// Signing domain version
+        /// The current major version of the signing domain
         /// </summary>
         [TypedData("version", "string")]
         public string Version { get; set; }
-        
+
         /// <summary>
-        /// Signature verifying contract
+        /// The address of the contract that will verify the signature
         /// </summary>
         [TypedData("verifyingContract", "address")]
         public string VerifyingContract { get; set; }
 
         /// <summary>
-        /// Salt for the protocol
+        /// An disambiguating salt for the protocol
         /// </summary>
         [TypedData("salt", "bytes32")]
         public byte[] Salt { get; set; }
@@ -87,10 +88,10 @@ namespace PlasmaCore.EIP712
         /// <summary>
         /// Constructs EIP-712 domain separator
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="version"></param>
-        /// <param name="verifyingContract"></param>
-        /// <param name="salt"></param>
+        /// <param name="name">user readable name of signing domain</param>
+        /// <param name="version">current major version of the signing domain</param>
+        /// <param name="verifyingContract">the address of the contract that will verify the signature</param>
+        /// <param name="salt">an disambiguating salt for the protocol.</param>
         public EIP712Domain(string name, string version, string verifyingContract, byte[] salt)
         {
             Name = name;

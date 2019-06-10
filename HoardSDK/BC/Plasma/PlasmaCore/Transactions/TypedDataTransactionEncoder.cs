@@ -1,7 +1,5 @@
 ﻿using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.RLP;
-using Newtonsoft.Json.Linq;
-using Plasma.PlasmaCore;
 using PlasmaCore.EIP712;
 using System;
 using System.Collections.Generic;
@@ -11,7 +9,7 @@ using System.Numerics;
 namespace PlasmaCore.Transactions
 {
     /// <summary>
-    /// Encodes child chain (v0.2 - Samrong) transaction using EIP-712 (Ethereum typed structured data hashing and signing)
+    /// Encodes child chain (v0.2 - Samrong) transaction using EIP-712 (Ethereum typed structured data hashing and signing standard)
     /// </summary>
     public class TypedDataTransactionEncoder : ITransactionEncoder
     {
@@ -25,8 +23,6 @@ namespace PlasmaCore.Transactions
             "0x740ecec4c0ee99c285945de8b44e9f5bfb71eea7", 
             "0xfad5c7f626d80f9256ef01929f3beb96e058b8b4b0e3fe52d84f054c0e2a7a83".HexToByteArray());
 
-        private JObject typedData = new JObject();
-        
         /// <summary>
         /// Constructs typed data transaction encoder with given domain
         /// </summary>
@@ -90,6 +86,55 @@ namespace PlasmaCore.Transactions
             rlpcollection.Add(RLP.EncodeElement(transaction.Metadata));
 
             return RLP.EncodeList(rlpcollection.ToArray());
+        }
+
+        /// <inheritdoc/>
+        public Transaction CreateTransaction(byte[] rlpEncodedTrasaction)
+        {
+            Transaction transaction = new Transaction();
+
+            RLPCollection decodedList = (RLPCollection)RLP.Decode(rlpEncodedTrasaction)[0];
+
+            bool isSigned = (decodedList.Count == 4);
+            int inputIdx = isSigned ? 1 : 0;
+            int outputIdx = isSigned ? 2 : 1;
+            int metadataIdx = isSigned ? 3 : 2;
+
+            RLPCollection inputData = (RLPCollection)decodedList[inputIdx];
+            foreach (RLPCollection input in inputData)
+            {
+                if (input.Count == 3)
+                {
+                    transaction.AddInput(Transaction.ToUInt64FromRLPDecoded(input[0].RLPData),
+                             Transaction.ToUInt16FromRLPDecoded(input[1].RLPData),
+                             Transaction.ToUInt16FromRLPDecoded(input[2].RLPData));
+                }
+            }
+
+            RLPCollection outputData = (RLPCollection)decodedList[outputIdx];
+            foreach (RLPCollection output in outputData)
+            {
+                if (output.Count == 3)
+                {
+                    transaction.AddOutput(output[0].RLPData.ToHex().PadLeft(32, '0').EnsureHexPrefix(),
+                              output[1].RLPData.ToHex().PadLeft(32, '0').EnsureHexPrefix(),
+                              output[2].RLPData.ToBigIntegerFromRLPDecoded());
+                }
+            }
+
+            RLPCollection metadata = (RLPCollection)decodedList[metadataIdx];
+            transaction.SetMetadata(metadata.RLPData.ToHex().HexToByteArray());
+
+            if (isSigned)
+            {
+                RLPCollection signatureData = (RLPCollection)decodedList[0];
+                for (Int32 i = 0; i < signatureData.Count; ++i)
+                {
+                    transaction.SetSignature(i, signatureData[i].RLPData);
+                }
+            }
+
+            return transaction;
         }
 
         private PlasmaCore.EIP712.Input CreateEIP712Input(TransactionInputData input)

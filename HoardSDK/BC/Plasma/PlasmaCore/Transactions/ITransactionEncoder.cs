@@ -18,5 +18,12 @@
         /// <param name="transaction"></param>
         /// <returns>encoded transaction with signatures</returns>
         byte[] EncodeSigned(Transaction transaction);
+
+        /// <summary>
+        /// Creates transaction from rlp encoded bytes data
+        /// </summary>
+        /// <param name="rlpEncodedTrasaction">rlp encoded bytes transaction data</param>
+        /// <returns></returns>
+        Transaction CreateTransaction(byte[] rlpEncodedTrasaction);
     }
 }

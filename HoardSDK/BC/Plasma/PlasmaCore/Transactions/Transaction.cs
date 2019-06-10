@@ -33,7 +33,10 @@ namespace PlasmaCore.Transactions
         /// </summary>
         public List<TransactionOutputData> Outputs { get; protected set; }  = new List<TransactionOutputData>();
 
-        public byte[] Metadata = "0x0000000000000000000000000000000000000000000000000000000000000000".HexToByteArray();
+        /// <summary>
+        /// Transaction metadata (optional)
+        /// </summary>
+        public byte[] Metadata { get; protected set; } = "0x0000000000000000000000000000000000000000000000000000000000000000".HexToByteArray();
 
         private byte[][] signatures = new byte[0][];
         /// <summary>
@@ -50,52 +53,7 @@ namespace PlasmaCore.Transactions
         /// <summary>
         /// Constructs empty transaction
         /// </summary>
-        public Transaction()
-        {
-        }
-
-        // <summary>
-        // Constructs transaction from rlp encoded transaction bytes
-        // </summary>
-        public Transaction(byte[] rlpEncodedTrasaction)
-        {
-            RLPCollection decodedList = (RLPCollection)RLP.Decode(rlpEncodedTrasaction)[0];
-
-            bool isSigned = (decodedList.Count == 3);
-            int inputIdx = isSigned ? 1 : 0;
-            int outputIdx = isSigned ? 2 : 1;
-
-            RLPCollection inputData = (RLPCollection)decodedList[inputIdx];
-            foreach (RLPCollection input in inputData)
-            {
-                if (input.Count == 3)
-                {
-                    AddInput(ToUInt64FromRLPDecoded(input[0].RLPData),
-                             ToUInt16FromRLPDecoded(input[1].RLPData),
-                             ToUInt16FromRLPDecoded(input[2].RLPData));
-                }
-            }
-
-            RLPCollection outputData = (RLPCollection)decodedList[outputIdx];
-            foreach (RLPCollection output in outputData)
-            {
-                if (output.Count == 3)
-                {
-                    AddOutput(output[0].RLPData.ToHex().PadLeft(32, '0').EnsureHexPrefix(),
-                              output[1].RLPData.ToHex().PadLeft(32, '0').EnsureHexPrefix(),
-                              output[2].RLPData.ToBigIntegerFromRLPDecoded());
-                }
-            }
-
-            if (isSigned)
-            {
-                RLPCollection signatureData = (RLPCollection)decodedList[0];
-                for (Int32 i = 0; i < signatureData.Count; ++i)
-                {
-                    SetSignature(i, signatureData[i].RLPData);
-                }
-            }
-        }
+        public Transaction() { }
 
         /// <summary>
         /// Adds input to transaction
@@ -205,6 +163,21 @@ namespace PlasmaCore.Transactions
         }
 
         /// <summary>
+        /// Sets transaction metadata
+        /// </summary>
+        /// <param name="data">metadata of transaction (max 32 bytes)</param>
+        /// <returns></returns>
+        public bool SetMetadata(byte[] data)
+        {
+            if(data.Length <= 32)
+            {
+                Metadata = data;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Returns transaction senders. It will always return empty array for transactions decoded from rlp data.
         /// </summary>
         /// <returns></returns>
@@ -215,14 +188,24 @@ namespace PlasmaCore.Transactions
 
         // RLP helpers
 
-        private static ulong ToUInt64FromRLPDecoded(byte[] bytes)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static ulong ToUInt64FromRLPDecoded(byte[] bytes)
         {
             if (bytes != null)
                 return (ulong)(bytes.ToBigIntegerFromRLPDecoded());
             return 0;
         }
 
-        private static UInt16 ToUInt16FromRLPDecoded(byte[] bytes)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static UInt16 ToUInt16FromRLPDecoded(byte[] bytes)
         {
             if (bytes != null)
                 return (UInt16)(bytes.ToBigIntegerFromRLPDecoded());
