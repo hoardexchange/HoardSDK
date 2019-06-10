@@ -5,8 +5,9 @@
     {
         "Type": "Plasma",
         "ClientUrl": "http://localhost:8545",
-        "ChildChainUrl": "http://localhost:9656",
-        "WatcherUrl": "http://localhost:7434"
+        "WatcherUrl": "http://localhost:7434",
+		"RootChainAddress": "0x0",
+		"RootChainVersion", "samrong"
     },
 	"AccountsDir":null,
 	"GameCenterContract":"0x0"

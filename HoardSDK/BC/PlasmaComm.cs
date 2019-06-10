@@ -56,10 +56,17 @@ namespace Hoard.BC
                         RootChainVersion rootChainVersion)
         {
             web3 = new Web3(ethClient);
-            //bcComm = new BCComm(ethClient, gameCenterContract);
+            bcComm = new BCComm(ethClient, gameCenterContract);
 
             plasmaApiService = new PlasmaAPIService(watcherClient, childChainClient);
             transactionEncoder = TransactionEncoderFactory.Create(rootChainVersion);
+
+            if (rootChainAddress == null)
+            {
+                var statusData = plasmaApiService.GetStatus().Result;
+                rootChainAddress = statusData.ContractAddr;
+            }
+
             if (rootChainAddress != null)
             {
                 rootChainContract = new RootChainContract(web3, rootChainAddress, rootChainVersion);

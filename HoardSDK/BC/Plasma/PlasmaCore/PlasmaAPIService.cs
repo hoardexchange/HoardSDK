@@ -136,5 +136,16 @@ namespace PlasmaCore
             var submitTransaction = new RPC.Transaction.SubmitTransaction(watcherClient);
             return await submitTransaction.SendRequestAsync(transaction);
         }
+
+
+        /// <summary>
+        /// Returns status data of the child chain
+        /// </summary>
+        /// <returns></returns>
+        public async Task<StatusData> GetStatus()
+        {
+            var getStatus = new RPC.Status.GetStatus(watcherClient);
+            return await getStatus.SendRequestAsync();
+        }
     }
 }
