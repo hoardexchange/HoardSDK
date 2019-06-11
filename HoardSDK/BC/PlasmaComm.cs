@@ -316,18 +316,55 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Starts standard exit on the root chain
+        /// Consolidates all user's utxos (all currencies) and starts standard exit on the root chain
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
-        /// <param name="utxoData">exit utxo data</param>
         /// <param name="exitBond">exit transaction bond</param>
         /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
-        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> StartStandardExit(Profile profileFrom, UTXOData utxoData, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt[]> StartStandardExit(Profile profileFrom, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
         {
             if (rootChainContract != null)
             {
-                ExitData exitData = await plasmaApiService.GetExitData(utxoData.Position);
+                List<Nethereum.RPC.Eth.DTOs.TransactionReceipt> receipts = new List<Nethereum.RPC.Eth.DTOs.TransactionReceipt>();
+                List<UTXOData> mergedUtxos = new List<UTXOData>();
+                var balanceData = await plasmaApiService.GetBalance(profileFrom.ID);
+                foreach(var data in balanceData)
+                {
+                    if (data is FCBalanceData)
+                    {
+                        var mergedUtxo = await FCConsolidate(profileFrom, data.Currency, null, tokenSource);
+                        if (mergedUtxo != null)
+                        {
+                            mergedUtxos.Add(mergedUtxo);
+                        }
+                    }
+                    
+                    // TODO add support for erc721?
+                }
+
+                foreach (var utxoData in mergedUtxos)
+                {
+                    receipts.Add(await StartStandardExit(profileFrom, utxoData.Position, exitBond, tokenSource));
+                }
+                return receipts.ToArray();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Starts standard exit on the root chain of given utxo
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="utxoPosition">exit utxo position</param>
+        /// <param name="exitBond">exit transaction bond</param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns></returns>
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> StartStandardExit(Profile profileFrom, BigInteger utxoPosition, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        {
+            if (rootChainContract != null)
+            {
+                ExitData exitData = await plasmaApiService.GetExitData(utxoPosition);
                 var transaction = await rootChainContract.StartStandardExit(web3, profileFrom.ID, exitData, exitBond);
                 string signedTransaction = await SignTransaction(profileFrom, transaction);
                 return await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
@@ -442,8 +479,7 @@ namespace Hoard.BC
 
                     foreach (var transaction in consolidator.Transactions)
                     {
-                        string signedTransaction = await SignTransaction(profileFrom, transaction);
-                        await consolidator.ProcessTransactions();
+                        await SignTransaction(profileFrom, transaction);
                     }
                     await consolidator.ProcessTransactions();
                 }

@@ -193,7 +193,7 @@ namespace Hoard.BC.Plasma
                 var utxo = await plasmaComm.GetUtxo(profileFrom.ID, contract.Address, metadata.Balance);
                 if(utxo != null)
                 {
-                    var receipt = await plasmaComm.StartStandardExit(profileFrom, utxo);
+                    var receipt = await plasmaComm.StartStandardExit(profileFrom, utxo.Position);
                     if (receipt != null && receipt.Status.Value == 1)
                         return true;
                 }
