@@ -316,13 +316,15 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Consolidates all user's utxos (all currencies) and starts standard exit on the root chain
+        /// Consolidates user's utxos for given currencies and starts standard exit on the root chain for them
+        /// This function may take a very long time to finish execution
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="currencies">currencies to exit</param>
         /// <param name="exitBond">exit transaction bond</param>
         /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
-        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt[]> StartStandardExit(Profile profileFrom, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt[]> StartStandardExit(Profile profileFrom, string[] currencies, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
         {
             if (rootChainContract != null)
             {
@@ -331,7 +333,7 @@ namespace Hoard.BC
                 var balanceData = await plasmaApiService.GetBalance(profileFrom.ID);
                 foreach(var data in balanceData)
                 {
-                    if (data is FCBalanceData)
+                    if (currencies.Contains(data.Currency) && data is FCBalanceData)
                     {
                         var mergedUtxo = await FCConsolidate(profileFrom, data.Currency, null, tokenSource);
                         if (mergedUtxo != null)
