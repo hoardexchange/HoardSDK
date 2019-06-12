@@ -18,14 +18,11 @@
     <PostBuildEvent>
     </PostBuildEvent>
     <RootNamespace>Hoard</RootNamespace>
-    <AssemblyVersion>0.6.0.0</AssemblyVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Copyright>Hoard A/S</Copyright>
-    <FileVersion>0.6.0.0</FileVersion>
     <Description>Hoard game client SDK</Description>
     <PackageTags>Hoard Blockchain Ethereum Game SDK</PackageTags>
     <PackageReleaseNotes>First alpha release of HoardSDK library for communication with Hoard Platfom</PackageReleaseNotes>
-    <Version>0.6</Version>
     <PackageIconUrl>https://avatars1.githubusercontent.com/u/29191487?s%3D200%26v%3D4</PackageIconUrl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
