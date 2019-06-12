@@ -112,6 +112,54 @@ namespace Plasma.RootChain.Contracts
                 depositTx);
         }
 
+        /// <summary>
+        /// Gets standard exit id for given output id
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="outputId">output id</param>
+        /// <returns></returns>
+        public async Task<BigInteger> GetStandardExitId(Web3 web3, BigInteger outputId)
+        {
+            var function = GetFunctionGetStandardExitId();
+            return await function.CallAsync<BigInteger>(outputId);
+        }
+
+        /// <summary>
+        /// Given an output ID, determines when it's exitable
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="outputId">output id</param>
+        /// <returns></returns>
+        public async Task<ulong> GetExitableTimestamp(Web3 web3, BigInteger outputId)
+        {
+            var function = GetFunctionGetExitableTimestamp();
+            return await function.CallAsync<ulong>(outputId);
+        }
+
+        /// <summary>
+        /// Checks if timestamp is exitable now
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="exitableTimestamp">request timestamp</param>
+        /// <returns></returns>
+        public async Task<bool> IsMature(Web3 web3, ulong exitableTimestamp)
+        {
+            var function = GetFunctionGetExitableTimestamp();
+            return await function.CallAsync<bool>(exitableTimestamp);
+        }
+
+        /// <summary>
+        /// Gets exits if given id
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="exitId">exit id</param>
+        /// <returns></returns>
+        public async Task<Tuple<string, string, BigInteger>> GetExit(Web3 web3, BigInteger exitId)
+        {
+            var function = GetFunctionGetExitableTimestamp();
+            return await function.CallAsync<Tuple<string, string, BigInteger>>(exitId);
+        }
+
         private Function GetFunctionStartStandardExit()
         {
             return contract.GetFunction("startStandardExit");
@@ -130,6 +178,26 @@ namespace Plasma.RootChain.Contracts
         private Function GetFunctionDepositFrom()
         {
             return contract.GetFunction("depositFrom");
+        }
+
+        private Function GetFunctionGetStandardExitId()
+        {
+            return contract.GetFunction("getStandardExitId");
+        }
+
+        private Function GetFunctionGetExitableTimestamp()
+        {
+            return contract.GetFunction("getExitableTimestamp");
+        }
+
+        private Function GetFunctionIsMature()
+        {
+            return contract.GetFunction("isMature");
+        }
+
+        private Function GetFunctionExits()
+        {
+            return contract.GetFunction("exits");
         }
     }
 }
