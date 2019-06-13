@@ -323,12 +323,12 @@ namespace Hoard.BC
         /// <param name="currencies">currencies to exit</param>
         /// <param name="exitBond">exit transaction bond</param>
         /// <param name="tokenSource">cancellation token source</param>
-        /// <returns></returns>
-        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt[]> StartStandardExit(Profile profileFrom, string[] currencies, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        /// <returns>Output identifiers, null if unsuccessful</returns>
+        public async Task<BigInteger?[]> StartStandardExit(Profile profileFrom, string[] currencies, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
         {
             if (rootChainContract != null)
             {
-                List<Nethereum.RPC.Eth.DTOs.TransactionReceipt> receipts = new List<Nethereum.RPC.Eth.DTOs.TransactionReceipt>();
+                List<BigInteger?> outputIds = new List<BigInteger?>();
                 List<UTXOData> mergedUtxos = new List<UTXOData>();
                 var balanceData = await plasmaApiService.GetBalance(profileFrom.ID);
                 foreach(var data in balanceData)
@@ -347,9 +347,9 @@ namespace Hoard.BC
 
                 foreach (var utxoData in mergedUtxos)
                 {
-                    receipts.Add(await StartStandardExit(profileFrom, utxoData.Position, exitBond, tokenSource));
+                    outputIds.Add(await StartStandardExit(profileFrom, utxoData.Position, exitBond, tokenSource));
                 }
-                return receipts.ToArray();
+                return outputIds.ToArray();
             }
             return null;
         }
@@ -361,15 +361,19 @@ namespace Hoard.BC
         /// <param name="utxoPosition">exit utxo position</param>
         /// <param name="exitBond">exit transaction bond</param>
         /// <param name="tokenSource">cancellation token source</param>
-        /// <returns></returns>
-        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> StartStandardExit(Profile profileFrom, BigInteger utxoPosition, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        /// <returns>Output identifier; null if unsuccessful</returns>
+        public async Task<BigInteger?> StartStandardExit(Profile profileFrom, BigInteger utxoPosition, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
         {
             if (rootChainContract != null)
             {
                 ExitData exitData = await plasmaApiService.GetExitData(utxoPosition);
                 var transaction = await rootChainContract.StartStandardExit(web3, profileFrom.ID, exitData, exitBond);
                 string signedTransaction = await SignTransaction(profileFrom, transaction);
-                return await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
+                var receipt = await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
+                if (receipt.Status.Value == 1)
+                {
+                    return exitData.Position;
+                }
             }
             return null;
         }
@@ -496,17 +500,28 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// 
+        /// Signs transaction
         /// </summary>
-        /// <param name="profile"></param>
-        /// <param name="transaction"></param>
-        /// <returns></returns>
+        /// <param name="profile">profile of the signer</param>
+        /// <param name="transaction">transaction to sign</param>
+        /// <returns>encoded signed transaction</returns>
         public async Task<string> SignTransaction(Profile profile, PlasmaCore.Transactions.Transaction transaction)
         {
             byte[] encodedTx = transactionEncoder.EncodeRaw(transaction);
             string signature = await profile.SignTransaction(encodedTx);
             transaction.SetSignature(profile.ID, signature.HexToByteArray());
             return transactionEncoder.EncodeSigned(transaction).ToHex(true);
+        }
+
+        /// <summary>
+        /// Checks if exit with given outpud id is ready to process
+        /// </summary>
+        /// <param name="outputId">output id</param>
+        /// <returns></returns>
+        public async Task<bool> IsExitable(BigInteger outputId)
+        {
+            ulong timestamp = await rootChainContract.GetExitableTimestamp(web3, outputId);
+            return !(await rootChainContract.IsMature(web3, timestamp));
         }
 
         private async Task<string> SendRequestPost(RestClient client, string method, object data)

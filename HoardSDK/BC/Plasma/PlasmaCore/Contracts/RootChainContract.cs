@@ -144,7 +144,7 @@ namespace Plasma.RootChain.Contracts
         /// <returns></returns>
         public async Task<bool> IsMature(Web3 web3, ulong exitableTimestamp)
         {
-            var function = GetFunctionGetExitableTimestamp();
+            var function = GetFunctionIsMature();
             return await function.CallAsync<bool>(exitableTimestamp);
         }
 
