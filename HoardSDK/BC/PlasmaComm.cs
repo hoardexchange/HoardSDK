@@ -477,7 +477,7 @@ namespace Hoard.BC
 
                 var approveInput = new Nethereum.StandardTokenEIP20.ContractDefinition.ApproveFunction();
                 approveInput.Spender = rootChainContract.Address;
-                approveInput.AmountToSend = amount;
+                approveInput.Value = amount;
 
                 var approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
                 string signedApproveTx = await SignTransaction(profileFrom, approveTx);
@@ -560,6 +560,29 @@ namespace Hoard.BC
         {
             ulong timestamp = await rootChainContract.GetExitableTimestamp(web3, outputId);
             return !(await rootChainContract.IsMature(web3, timestamp));
+        }
+
+        /// <summary>
+        /// Checks if token was added to plasma network
+        /// </summary>
+        /// <param name="tokenAddress">token address</param>
+        /// <returns></returns>
+        public async Task<bool> HasToken(string tokenAddress)
+        {
+            return await rootChainContract.HasToken(web3, tokenAddress);
+        }
+
+        /// <summary>
+        /// Adds token to plasma network
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="tokenAddress">token address</param>
+        /// <returns></returns>
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> AddToken(Profile profileFrom, string tokenAddress, CancellationTokenSource tokenSource = null)
+        {
+            var transaction = await rootChainContract.AddToken(web3, profileFrom.ID, tokenAddress);
+            string signedTransaction = await SignTransaction(profileFrom, transaction);
+            return await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
         }
 
         private async Task<string> SendRequestPost(RestClient client, string method, object data)

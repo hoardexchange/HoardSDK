@@ -160,6 +160,33 @@ namespace Plasma.RootChain.Contracts
             return await function.CallAsync<Tuple<string, string, BigInteger>>(exitId);
         }
 
+        /// <summary>
+        /// Adds token to plasma network
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">sender address</param>
+        /// <param name="tokenAddress">token address</param>
+        /// <returns></returns>
+        public async Task<Nethereum.Signer.Transaction> AddToken(Web3 web3, string address, string tokenAddress)
+        {
+            var function = GetFunctionAddToken();
+            return await ContractHelper.CreateTransaction(web3, address,
+                function,
+                tokenAddress);
+        }
+
+        /// <summary>
+        /// Checks if token was added to plasma network
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="tokenAddress">token address</param>
+        /// <returns></returns>
+        public async Task<bool> HasToken(Web3 web3, string tokenAddress)
+        {
+            var function = GetFunctionHasToken();
+            return await function.CallAsync<bool>(tokenAddress);
+        }
+
         private Function GetFunctionStartStandardExit()
         {
             return contract.GetFunction("startStandardExit");
@@ -198,6 +225,16 @@ namespace Plasma.RootChain.Contracts
         private Function GetFunctionExits()
         {
             return contract.GetFunction("exits");
+        }
+
+        private Function GetFunctionAddToken()
+        {
+            return contract.GetFunction("addToken");
+        }
+
+        private Function GetFunctionHasToken()
+        {
+            return contract.GetFunction("hasToken");
         }
     }
 }
