@@ -176,6 +176,18 @@ namespace Hoard.BC
         }
 
         /// <summary>
+        /// Signs and submits transaction to child chain
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="transaction">transaction to submit</param>
+        /// <returns></returns>
+        public async Task<TransactionDetails> SubmitTransaction(Profile profileFrom, Transaction transaction)
+        {
+            string signedTransaction = await SignTransaction(profileFrom, transaction);
+            return await SubmitTransaction(signedTransaction);
+        }
+
+        /// <summary>
         /// Returns current token state (ERC721)
         /// </summary>
         /// <param name="currency">currency to query</param>

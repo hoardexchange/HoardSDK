@@ -45,5 +45,18 @@ namespace PlasmaCore.UTXO
         /// </summary>
         [JsonProperty(propertyName: "owner")]
         public string Owner { get; set; }
+
+
+        /// <summary>
+        /// Returns position based on block number, transaction index and output index
+        /// </summary>
+        /// <param name="blkNum">block number</param>
+        /// <param name="txIndex">transaction index</param>
+        /// <param name="oIndex">output index</param>
+        /// <returns></returns>
+        public static BigInteger CalculatePosition(ulong blkNum, UInt16 txIndex, UInt16 oIndex)
+        {
+            return (blkNum * new BigInteger(1000000000)) + (txIndex * new BigInteger(10000)) + oIndex;
+        }
     }
 }

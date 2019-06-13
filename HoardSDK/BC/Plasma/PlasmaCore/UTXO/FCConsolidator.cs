@@ -112,7 +112,7 @@ namespace PlasmaCore.UTXO
                         utxo.Amount = transaction.Outputs[0].Value.ToBigIntegerFromRLPDecoded();
                         utxo.Owner = transaction.Outputs[0].Owner;
                         utxo.Currency = transaction.Outputs[0].Currency;
-
+                        utxo.Position = UTXOData.CalculatePosition(utxo.BlkNum, utxo.TxIndex, utxo.OIndex);
                         utxoList.Add(utxo);
                     }
                 }
