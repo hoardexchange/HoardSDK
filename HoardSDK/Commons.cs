@@ -90,7 +90,7 @@ namespace Hoard
         /// <inheritdoc/>
         public override string ToString()
         {
-            var ret = Value.ToString("x");
+            var ret = Value.ToString("x40");
             return "0x"+ret.Substring(ret.Length - 40);
         }
 
