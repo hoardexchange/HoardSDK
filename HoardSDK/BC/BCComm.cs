@@ -203,7 +203,7 @@ namespace Hoard.BC
 
                 game.Name = await gameContract.GetName();
                 game.GameOwner = await gameContract.GetOwner();
-                if (url.Length>0)
+                if ((url != null) && (url.Length>0))
                     game.Url = !url.StartsWith("http") ? "http://" + url : url;
 
                 gameContracts.Add(game, gameContract);
