@@ -408,7 +408,7 @@ namespace Hoard.BC
             game.Symbol = await gameContract.GetSymbol();
             game.Name = await gameContract.GetName();
             game.GameOwner = await gameContract.GetOwner();
-            game.Url = !url.StartsWith("http") ? "http://" + url : url;
+            game.Url = ((url != null) && (!url.StartsWith("http"))) ? "http://" + url : url;
             return game;
         }
     }
