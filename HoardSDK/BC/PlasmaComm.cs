@@ -369,11 +369,49 @@ namespace Hoard.BC
                 ExitData exitData = await plasmaApiService.GetExitData(utxoPosition);
                 var transaction = await rootChainContract.StartStandardExit(web3, profileFrom.ID, exitData, exitBond);
                 string signedTransaction = await SignTransaction(profileFrom, transaction);
-                var receipt = await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
+                var receipt = await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
                 if (receipt.Status.Value == 1)
                 {
                     return exitData.Position;
                 }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Starts standard exit on the root chain of given utxo
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="utxoPositions">exit utxo position list</param>
+        /// <param name="exitBond">exit transaction bond per utxo</param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns>list of Output identifiers (or null if unsuccessful) per each utxoPosition given</returns>
+        public async Task<BigInteger?[]> StartStandardExitBulk(Profile profileFrom, BigInteger[] utxoPositions, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        {
+            if (rootChainContract != null)
+            {
+                BigInteger?[] exitPos = new BigInteger?[utxoPositions.Length];
+                string[] txs = new string[utxoPositions.Length];
+                //submit all transactions
+                for(int i=0;i<utxoPositions.Length;++i)
+                {
+                    BigInteger utxoPosition = utxoPositions[i];
+                    ExitData exitData = await plasmaApiService.GetExitData(utxoPosition);
+                    var transaction = await rootChainContract.StartStandardExit(web3, profileFrom.ID, exitData, exitBond);
+                    string signedTransaction = await SignTransaction(profileFrom, transaction);
+                    txs[i] = await SubmitTransactionOnRootChain(web3, signedTransaction);
+                    exitPos[i] = exitData.Position;
+                }
+                //now wait for all transaction to finish
+                for (int i = 0; i < utxoPositions.Length; ++i)
+                {
+                    var receipt = await WaitForTransaction(web3, txs[i], tokenSource);
+                    if (receipt.Status.Value != 1)
+                    {
+                        exitPos[i]=null;
+                    }
+                }
+                return exitPos;
             }
             return null;
         }
@@ -393,7 +431,7 @@ namespace Hoard.BC
             {
                 var transaction = await rootChainContract.ProcessExits(web3, profileFrom.ID, currency, topUtxoPosition, exitsToProcess);
                 string signedTransaction = await SignTransaction(profileFrom, transaction);
-                return await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
+                return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
             }
             return null;
         }
@@ -417,7 +455,7 @@ namespace Hoard.BC
 
                 var depositTx = await rootChainContract.Deposit(web3, profileFrom.ID, encodedDepositTx, amount);
                 string signedDepositTx = await SignTransaction(profileFrom, depositTx);
-                return await SubmitTransactionOnRootChain(web3, signedDepositTx, tokenSource);
+                return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedDepositTx), tokenSource);
             }
             return null;
         }
@@ -443,7 +481,7 @@ namespace Hoard.BC
 
                 var approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
                 string signedApproveTx = await SignTransaction(profileFrom, approveTx);
-                var receipt = await SubmitTransactionOnRootChain(web3, signedApproveTx, tokenSource);
+                var receipt = await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedApproveTx), tokenSource);
 
                 if (receipt.Status.Value == 1)
                 {
@@ -455,7 +493,7 @@ namespace Hoard.BC
 
                     var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, encodedDepositTx);
                     string signedDepositTx = await SignTransaction(profileFrom, depositTx);
-                    return await SubmitTransactionOnRootChain(web3, signedDepositTx, tokenSource);
+                    return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedDepositTx), tokenSource);
                 }
                 return receipt;
             }
@@ -539,11 +577,16 @@ namespace Hoard.BC
             string signature = await profile.SignTransaction(transaction.GetRLPEncodedRaw());
             transaction.SetSignature(Nethereum.Signer.EthECDSASignatureFactory.ExtractECDSASignature(signature));
             return transaction.GetRLPEncoded().ToHex(true);
-        }
+        }        
 
-        private static async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> SubmitTransactionOnRootChain(Web3 web3, string signedTransaction, CancellationTokenSource tokenSource = null)
+        private static async Task<string> SubmitTransactionOnRootChain(Web3 web3, string signedTransaction)
         {
             string txId = await web3.Eth.Transactions.SendRawTransaction.SendRequestAsync(signedTransaction).ConfigureAwait(false);
+            return txId;
+        }
+
+        private static async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> WaitForTransaction(Web3 web3, string txId, CancellationTokenSource tokenSource = null)
+        {
             var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
             while (receipt == null)
             {
