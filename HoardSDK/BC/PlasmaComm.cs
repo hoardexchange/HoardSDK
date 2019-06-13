@@ -582,7 +582,7 @@ namespace Hoard.BC
         {
             var transaction = await rootChainContract.AddToken(web3, profileFrom.ID, tokenAddress);
             string signedTransaction = await SignTransaction(profileFrom, transaction);
-            return await SubmitTransactionOnRootChain(web3, signedTransaction, tokenSource);
+            return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
         }
 
         private async Task<string> SendRequestPost(RestClient client, string method, object data)
