@@ -2,7 +2,6 @@
 using Nethereum.RLP;
 using Nethereum.Signer;
 using Org.BouncyCastle.Crypto.Digests;
-using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;

@@ -589,7 +589,8 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
         /// <param name="tokenAddress">token address</param>
-        /// <returns></returns>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns>receipt of a transaction</returns>
         public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> AddToken(Profile profileFrom, string tokenAddress, CancellationTokenSource tokenSource = null)
         {
             var transaction = await rootChainContract.AddToken(web3, profileFrom.ID, tokenAddress);
@@ -620,6 +621,7 @@ namespace Hoard.BC
             return txId;
         }
 
+        //TODO: move this to utility class
         private static async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> WaitForTransaction(Web3 web3, string txId, CancellationTokenSource tokenSource = null)
         {
             var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);

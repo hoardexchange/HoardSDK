@@ -1,15 +1,28 @@
-﻿using Org.BouncyCastle.Crypto.Digests;
+﻿using Nethereum.RPC.Eth.DTOs;
+using Org.BouncyCastle.Crypto.Digests;
 using System;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Hoard.Eth
 {
     internal class Utils
     {
         public const string EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+        static public async Task<TransactionReceipt> WaitForTransaction(Nethereum.Web3.Web3 web, string txId)
+        {
+            TransactionReceipt receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
+            while (receipt == null)
+            {
+                await Task.Yield();
+                receipt = await web.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
+            }
+            return receipt;
+        }
 
         static public BigInteger Mine(string challenge, BigInteger difficulty)
         {
