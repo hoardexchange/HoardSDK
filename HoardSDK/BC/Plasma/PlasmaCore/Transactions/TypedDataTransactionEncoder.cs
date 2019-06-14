@@ -122,7 +122,7 @@ namespace PlasmaCore.Transactions
                 }
             }
 
-            RLPCollection metadata = (RLPCollection)decodedList[metadataIdx];
+            RLPItem metadata = (RLPItem)decodedList[metadataIdx];
             transaction.SetMetadata(metadata.RLPData.ToHex().HexToByteArray());
 
             if (isSigned)

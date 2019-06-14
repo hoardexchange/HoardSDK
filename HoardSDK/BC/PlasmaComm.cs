@@ -163,16 +163,20 @@ namespace Hoard.BC
         public async Task<TransactionDetails> SubmitTransaction(string signedTransaction)
         {
             var receipt = await plasmaApiService.SubmitTransaction(signedTransaction);
-            TransactionDetails transaction = null;
-
-            // timeout
-            do
+            if (receipt != null)
             {
-                Thread.Sleep(1000);
-                transaction = await plasmaApiService.GetTransaction(receipt.TxHash.HexValue);
-            } while (transaction == null);
+                TransactionDetails transaction = null;
 
-            return transaction;
+                // timeout
+                do
+                {
+                    Thread.Sleep(1000);
+                    transaction = await plasmaApiService.GetTransaction(receipt.TxHash.HexValue);
+                } while (transaction == null);
+
+                return transaction;
+            }
+            return null;
         }
 
         /// <summary>
@@ -594,6 +598,21 @@ namespace Hoard.BC
         public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> AddToken(Profile profileFrom, string tokenAddress, CancellationTokenSource tokenSource = null)
         {
             var transaction = await rootChainContract.AddToken(web3, profileFrom.ID, tokenAddress);
+            string signedTransaction = await SignTransaction(profileFrom, transaction);
+            return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
+        }
+
+        /// <summary>
+        /// Challenges a standard exit
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="utxoPosition">utxo position of exit to challange</param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns></returns>
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> ChallengeStandardExit(Profile profileFrom, BigInteger utxoPosition, CancellationTokenSource tokenSource = null)
+        {
+            var challengeData = await plasmaApiService.GetChallengeData(utxoPosition);
+            var transaction = await rootChainContract.ChallengeStandardExit(web3, profileFrom.ID, challengeData);
             string signedTransaction = await SignTransaction(profileFrom, transaction);
             return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
         }
