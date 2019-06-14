@@ -187,6 +187,24 @@ namespace Plasma.RootChain.Contracts
             return await function.CallAsync<bool>(tokenAddress);
         }
 
+        /// <summary>
+        /// Challenges a standard exit
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">sender address</param>
+        /// <param name="challengeData">challenge data</param>
+        /// <returns></returns>
+        public async Task<Nethereum.Signer.Transaction> ChallengeStandardExit(Web3 web3, string address, ChallengeData challengeData)
+        {
+            var function = GetFunctionChallengeStandardExit();
+            return await ContractHelper.CreateTransaction(web3, address,
+                function,
+                challengeData.ExitId,
+                challengeData.TxBytes.HexToByteArray(),
+                challengeData.InputIndex,
+                challengeData.Signature.HexToByteArray());
+        }
+
         private Function GetFunctionStartStandardExit()
         {
             return contract.GetFunction("startStandardExit");
@@ -235,6 +253,11 @@ namespace Plasma.RootChain.Contracts
         private Function GetFunctionHasToken()
         {
             return contract.GetFunction("hasToken");
+        }
+
+        private Function GetFunctionChallengeStandardExit()
+        {
+            return contract.GetFunction("challengeStandardExit");
         }
     }
 }

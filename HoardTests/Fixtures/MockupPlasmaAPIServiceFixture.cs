@@ -1,6 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿using Hoard.Utils;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using PlasmaCore;
 using PlasmaCore.RPC;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -30,6 +34,10 @@ namespace HoardTests.Fixtures
                 else if (request.Route == "transaction.submit")
                 {
                     responseMessage = PlasmaMockupResponses.SubmitTransaction(request.Parameters.Value<string>("transaction"));
+                }
+                else if (request.Route == "utxo.get_challenge_data")
+                {
+                    responseMessage = PlasmaMockupResponses.GetChallengeData();
                 }
 
                 using (var reader = new JsonTextReader(new StringReader(responseMessage)))
