@@ -347,14 +347,14 @@ namespace Hoard.BC
         {
             Debug.Assert(profile != null);
 
-            HexBigInteger gas = await function.EstimateGasAsync(profile.ID, new HexBigInteger(300000), new HexBigInteger(0), functionInput);
+            var gasPrice = await web.Eth.GasPrice.SendRequestAsync();
+            HexBigInteger gas = await function.EstimateGasAsync(profile.ID, gasPrice, new HexBigInteger(0), functionInput);
 
             var nonceService = new InMemoryNonceService(profile.ID, web.Client);
             BigInteger nonce = await nonceService.GetNextNonceAsync();
 
             string data = function.GetData(functionInput);
-            var defaultGasPrice = Nethereum.Signer.TransactionBase.DEFAULT_GAS_PRICE;
-            var transaction = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, defaultGasPrice, gas.Value, data);
+            var transaction = new Nethereum.Signer.Transaction(function.ContractAddress, BigInteger.Zero, nonce, gasPrice, gas.Value, data);
             var rlpEncodedTx = transaction.GetRLPEncodedRaw();
             
             string signature = await profile.SignTransaction(rlpEncodedTx);
