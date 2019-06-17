@@ -32,7 +32,7 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// ABI of the contract
         /// </summary>
-        public const string ABI = HoardABIConfig.SupportsInterfaceWithLookupABI;
+        public const string ABI = HoardABIConfig.IERC165ABI;
 
         /// <summary>
         /// Creates new instance of contract that supports interface lookups (ERC165)
