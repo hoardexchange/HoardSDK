@@ -39,14 +39,14 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("nextItemIndex");
         }
 
-        private Function GetFunctionGameSrvURL()
+        private Function GetFunctionGameServerURL()
         {
-            return contract.GetFunction("gameSrvURL");
+            return contract.GetFunction("gameServerURL");
         }
 
-        private Function GetFunctionSetGameSrvURL()
+        private Function GetFunctionSetGameServerURL()
         {
-            return contract.GetFunction("setGameSrvURL");
+            return contract.GetFunction("setGameServerURL");
         }
 
         private Function GetFunctionGetItemIdByIndex()
@@ -80,7 +80,7 @@ namespace Hoard.BC.Contracts
         /// <returns></returns>
         public Task<string> GetGameServerURLAsync()
         {
-            var function = GetFunctionGameSrvURL();
+            var function = GetFunctionGameServerURL();
             return function.CallAsync<string>();
         }
 
@@ -92,7 +92,7 @@ namespace Hoard.BC.Contracts
         /// <returns>receipt of the transaction</returns>
         public async Task<TransactionReceipt> SetGameServerURLAsync(string url, Profile profile)
         {
-            var function = GetFunctionSetGameSrvURL();
+            var function = GetFunctionSetGameServerURL();
 
             return await BCComm.EvaluateOnBC(web3, profile, function, url);
         }
