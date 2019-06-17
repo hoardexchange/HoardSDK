@@ -305,15 +305,15 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Transfer HRD amount to another account
+        /// Transfer ETH amount to another account
         /// </summary>
         /// <param name="from">sender profile</param>
         /// <param name="to">receiver address</param>
-        /// <param name="amount">amount to send</param>
+        /// <param name="amount">amount expressed in Wei to send</param>
         /// <returns>true if transfer was successful, false otherwise</returns>
         public async Task<bool> TransferETH(Profile from, string to, BigInteger amount)
         {
-            var receipt = await EvaluateOnBC(web, from, to, new HexBigInteger(Nethereum.Util.UnitConversion.Convert.ToWei(amount)));
+            var receipt = await EvaluateOnBC(web, from, to, new HexBigInteger(amount));
             return receipt.Status.Value == 1;
         }
 
