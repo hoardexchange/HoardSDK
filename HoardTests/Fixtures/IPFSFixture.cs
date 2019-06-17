@@ -19,7 +19,7 @@ namespace HoardTests.Fixtures
 
             RunDevIPFS();
 
-            Client = new IPFSClient("http://10.30.10.121:3081", "http://10.30.10.121:3080");
+            Client = new IPFSClient("http://10.30.9.125:5001", "http://10.30.9.125:8080");
         }
 
         public void Dispose()
