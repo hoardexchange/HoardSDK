@@ -171,6 +171,11 @@ namespace Hoard
         /// <param name="game"></param>
         public async Task<Result> RegisterHoardGame(GameID game)
         {
+            if (Providers.ContainsKey(game) && (Providers[game] is HoardGameItemProvider))
+            {
+                return Result.Ok;
+            }
+
             //assumig this is a hoard game we can use a default hoard provider that connects to Hoard game server backend
             HoardGameItemProvider provider = new HoardGameItemProvider(game);
             //for security reasons (or fallback in case server is down) we will pass a BC provider
