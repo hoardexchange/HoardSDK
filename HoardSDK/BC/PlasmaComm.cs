@@ -453,6 +453,37 @@ namespace Hoard.BC
         }
 
         /// <summary>
+        /// Processes standard exit on the root chain (Bulk version to proccess many at once)
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="currencies">List of transactions currencies</param>
+        /// <param name="topUtxoPosition">starting index of exit</param>
+        /// <param name="exitsToProcess">number exits to process</param>
+        /// <param name="tokenSource">cancellation token source</param>
+        /// <returns></returns>
+        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt[]> ProcessExitsBulk(Profile profileFrom, string[] currencies, BigInteger topUtxoPosition, BigInteger exitsToProcess, CancellationTokenSource tokenSource = null)
+        {
+            Nethereum.RPC.Eth.DTOs.TransactionReceipt[] receipts = null;
+            if (rootChainContract != null)
+            {
+                string[] txs = new string[currencies.Length];
+                for (int i = 0; i < currencies.Length; ++i)
+                {
+                    var transaction = await rootChainContract.ProcessExits(web3, profileFrom.ID, currencies[i], topUtxoPosition, exitsToProcess);
+                    string signedTransaction = await SignTransaction(profileFrom, transaction);
+                    txs[i] = await SubmitTransactionOnRootChain(web3, signedTransaction);
+                }
+                receipts = new Nethereum.RPC.Eth.DTOs.TransactionReceipt[currencies.Length];
+                //now wait for all transaction to finish
+                for (int i = 0; i < txs.Length; ++i)
+                {
+                    receipts[i] = await WaitForTransaction(web3, txs[i], tokenSource);
+                }                
+            }
+            return receipts;
+        }
+
+        /// <summary>
         /// Deposits given amount of ether (wei) to the child chain
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
