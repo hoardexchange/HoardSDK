@@ -48,7 +48,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AccountServices\HoardAccountServiceTest.cs" />
     <Compile Include="AccountServices\KeyStoreAccountServiceTest.cs" />
     <Compile Include="AccountTools\AccountSynchronizerTest.cs" />
     <Compile Include="CryptKittyTests\CKGameItemProvider.cs" />
