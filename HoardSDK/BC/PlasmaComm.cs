@@ -344,8 +344,7 @@ namespace Hoard.BC
         {
             if (rootChainContract != null)
             {
-                List<BigInteger?> outputIds = new List<BigInteger?>();
-                List<UTXOData> mergedUtxos = new List<UTXOData>();
+                List<BigInteger> mergedUtxos = new List<BigInteger>();
                 var balanceData = await plasmaApiService.GetBalance(profileFrom.ID);
                 foreach(var data in balanceData)
                 {
@@ -354,18 +353,14 @@ namespace Hoard.BC
                         var mergedUtxo = await FCConsolidate(profileFrom, data.Currency, null, tokenSource);
                         if (mergedUtxo != null)
                         {
-                            mergedUtxos.Add(mergedUtxo);
+                            mergedUtxos.Add(mergedUtxo.Position);
                         }
                     }
                     
                     // TODO add support for erc721?
                 }
 
-                foreach (var utxoData in mergedUtxos)
-                {
-                    outputIds.Add(await StartStandardExit(profileFrom, utxoData.Position, exitBond, tokenSource));
-                }
-                return outputIds.ToArray();
+                return await StartStandardExitBulk(profileFrom, mergedUtxos.ToArray(), exitBond, tokenSource);
             }
             return null;
         }
@@ -385,7 +380,7 @@ namespace Hoard.BC
                 ExitData exitData = await plasmaApiService.GetExitData(utxoPosition);
                 var transaction = await rootChainContract.StartStandardExit(web3, profileFrom.ID, exitData, exitBond);
                 string signedTransaction = await SignTransaction(profileFrom, transaction);
-                var receipt = await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
+                var receipt = await (await SubmitTransactionOnRootChain(web3, signedTransaction)).Wait(tokenSource);
                 if (receipt.Status.Value == 1)
                 {
                     return exitData.Position;
@@ -407,7 +402,7 @@ namespace Hoard.BC
             if (rootChainContract != null)
             {
                 BigInteger?[] exitPos = new BigInteger?[utxoPositions.Length];
-                string[] txs = new string[utxoPositions.Length];
+                BCTransaction[] txs = new BCTransaction[utxoPositions.Length];
                 //submit all transactions
                 for(int i=0;i<utxoPositions.Length;++i)
                 {
@@ -421,7 +416,7 @@ namespace Hoard.BC
                 //now wait for all transaction to finish
                 for (int i = 0; i < utxoPositions.Length; ++i)
                 {
-                    var receipt = await WaitForTransaction(web3, txs[i], tokenSource);
+                    var receipt = await txs[i].Wait(tokenSource);
                     if (receipt.Status.Value != 1)
                     {
                         exitPos[i]=null;
@@ -439,48 +434,16 @@ namespace Hoard.BC
         /// <param name="currency">transaction currency</param>
         /// <param name="topUtxoPosition">starting index of exit</param>
         /// <param name="exitsToProcess">number exits to process</param>
-        /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
-        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> ProcessExits(Profile profileFrom, string currency, BigInteger topUtxoPosition, BigInteger exitsToProcess, CancellationTokenSource tokenSource = null)
+        public async Task<BCTransaction> ProcessExits(Profile profileFrom, string currency, BigInteger topUtxoPosition, BigInteger exitsToProcess)
         {
             if (rootChainContract != null)
             {
                 var transaction = await rootChainContract.ProcessExits(web3, profileFrom.ID, currency, topUtxoPosition, exitsToProcess);
                 string signedTransaction = await SignTransaction(profileFrom, transaction);
-                return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
+                return await SubmitTransactionOnRootChain(web3, signedTransaction);
             }
             return null;
-        }
-
-        /// <summary>
-        /// Processes standard exit on the root chain (Bulk version to proccess many at once)
-        /// </summary>
-        /// <param name="profileFrom">profile of the sender</param>
-        /// <param name="currencies">List of transactions currencies</param>
-        /// <param name="topUtxoPosition">starting index of exit</param>
-        /// <param name="exitsToProcess">number exits to process</param>
-        /// <param name="tokenSource">cancellation token source</param>
-        /// <returns></returns>
-        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt[]> ProcessExitsBulk(Profile profileFrom, string[] currencies, BigInteger topUtxoPosition, BigInteger exitsToProcess, CancellationTokenSource tokenSource = null)
-        {
-            Nethereum.RPC.Eth.DTOs.TransactionReceipt[] receipts = null;
-            if (rootChainContract != null)
-            {
-                string[] txs = new string[currencies.Length];
-                for (int i = 0; i < currencies.Length; ++i)
-                {
-                    var transaction = await rootChainContract.ProcessExits(web3, profileFrom.ID, currencies[i], topUtxoPosition, exitsToProcess);
-                    string signedTransaction = await SignTransaction(profileFrom, transaction);
-                    txs[i] = await SubmitTransactionOnRootChain(web3, signedTransaction);
-                }
-                receipts = new Nethereum.RPC.Eth.DTOs.TransactionReceipt[currencies.Length];
-                //now wait for all transaction to finish
-                for (int i = 0; i < txs.Length; ++i)
-                {
-                    receipts[i] = await WaitForTransaction(web3, txs[i], tokenSource);
-                }                
-            }
-            return receipts;
         }
 
         /// <summary>
@@ -488,9 +451,8 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
         /// <param name="amount">amount of ether (wei) to send</param>
-        /// <param name="tokenSource">cancellation token source</param>
-        /// <returns></returns>
-        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> Deposit(Profile profileFrom, BigInteger amount, CancellationTokenSource tokenSource = null)
+        /// <returns>transaction object</returns>
+        public async Task<BCTransaction> Deposit(Profile profileFrom, BigInteger amount)
         {
             if (rootChainContract != null)
             {
@@ -502,7 +464,7 @@ namespace Hoard.BC
 
                 var depositTx = await rootChainContract.Deposit(web3, profileFrom.ID, encodedDepositTx, amount);
                 string signedDepositTx = await SignTransaction(profileFrom, depositTx);
-                return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedDepositTx), tokenSource);
+                return await SubmitTransactionOnRootChain(web3, signedDepositTx);
             }
             return null;
         }
@@ -513,9 +475,8 @@ namespace Hoard.BC
         /// <param name="profileFrom">profile of the sender</param>
         /// <param name="currency">transaction currency</param>
         /// <param name="amount">amount to send</param>
-        /// <param name="tokenSource">cancellation token source</param>
         /// <returns></returns>
-        public async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> Deposit(Profile profileFrom, string currency, BigInteger amount, CancellationTokenSource tokenSource = null)
+        public async Task<BCTransaction> Deposit(Profile profileFrom, string currency, BigInteger amount)
         {
             if (rootChainContract != null)
             {
@@ -528,21 +489,19 @@ namespace Hoard.BC
 
                 var approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
                 string signedApproveTx = await SignTransaction(profileFrom, approveTx);
-                var receipt = await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedApproveTx), tokenSource);
+                var allowTrans = await SubmitTransactionOnRootChain(web3, signedApproveTx);
 
-                if (receipt.Status.Value == 1)
-                {
-                    var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
-                    depositPlasmaTx.AddOutput(profileFrom.ID, currency, amount);
+                var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
+                depositPlasmaTx.AddOutput(profileFrom.ID, currency, amount);
 
-                    RawTransactionEncoder txEncoder = new RawTransactionEncoder();
-                    byte[] encodedDepositTx = txEncoder.EncodeRaw(depositPlasmaTx);
+                RawTransactionEncoder txEncoder = new RawTransactionEncoder();
+                byte[] encodedDepositTx = txEncoder.EncodeRaw(depositPlasmaTx);
 
-                    var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, encodedDepositTx);
-                    string signedDepositTx = await SignTransaction(profileFrom, depositTx);
-                    return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedDepositTx), tokenSource);
-                }
-                return receipt;
+                var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, encodedDepositTx);
+                string signedDepositTx = await SignTransaction(profileFrom, depositTx);
+                var depositTrans = await SubmitTransactionOnRootChain(web3, signedDepositTx);
+                depositTrans.Dependency = allowTrans;
+                return depositTrans;
             }
             return null;
         }
@@ -630,7 +589,7 @@ namespace Hoard.BC
         {
             var transaction = await rootChainContract.AddToken(web3, profileFrom.ID, tokenAddress);
             string signedTransaction = await SignTransaction(profileFrom, transaction);
-            return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
+            return await (await SubmitTransactionOnRootChain(web3, signedTransaction)).Wait(tokenSource);
         }
 
         /// <summary>
@@ -645,7 +604,7 @@ namespace Hoard.BC
             var challengeData = await plasmaApiService.GetChallengeData(utxoPosition);
             var transaction = await rootChainContract.ChallengeStandardExit(web3, profileFrom.ID, challengeData);
             string signedTransaction = await SignTransaction(profileFrom, transaction);
-            return await WaitForTransaction(web3, await SubmitTransactionOnRootChain(web3, signedTransaction), tokenSource);
+            return await (await SubmitTransactionOnRootChain(web3, signedTransaction)).Wait(tokenSource);
         }
 
         private async Task<string> SendRequestPost(RestClient client, string method, object data)
@@ -665,26 +624,10 @@ namespace Hoard.BC
             return transaction.GetRLPEncoded().ToHex(true);
         }        
 
-        private static async Task<string> SubmitTransactionOnRootChain(Web3 web3, string signedTransaction)
+        private static async Task<BCTransaction> SubmitTransactionOnRootChain(Web3 web3, string signedTransaction)
         {
             string txId = await web3.Eth.Transactions.SendRawTransaction.SendRequestAsync(signedTransaction).ConfigureAwait(false);
-            return txId;
-        }
-
-        //TODO: move this to utility class
-        private static async Task<Nethereum.RPC.Eth.DTOs.TransactionReceipt> WaitForTransaction(Web3 web3, string txId, CancellationTokenSource tokenSource = null)
-        {
-            var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
-            while (receipt == null)
-            {
-                if (tokenSource != null && tokenSource.IsCancellationRequested)
-                {
-                    break;
-                }
-                Thread.Sleep(1000);
-                receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txId);
-            }
-            return receipt;
+            return new BCTransaction(web3, txId);
         }
     }
 }

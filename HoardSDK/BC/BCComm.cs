@@ -18,6 +18,76 @@ using System.Threading.Tasks;
 namespace Hoard.BC
 {
     /// <summary>
+    /// BCTransaction object
+    /// </summary>
+    public class BCTransaction
+    {
+        /// <summary>
+        /// Transaction identifier
+        /// </summary>
+        public string TxId { get; private set; }
+        /// <summary>
+        /// Optional dependency on another transaction
+        /// </summary>
+        public BCTransaction Dependency { get; set; }
+
+        private Web3 web3 = null;
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        /// <param name="txid">transaction identifier</param>
+        /// <param name="web">Web3 interface</param>
+        public BCTransaction(Web3 web, string txid)
+        {
+            web3 = web;
+            TxId = txid;
+        }
+
+        /// <summary>
+        /// Waits for this transactin to be processed.
+        /// WARNING: not supported in webgl builds!
+        /// </summary>
+        /// <param name="tokenSource">Cancellation source</param>
+        /// <returns>Receipt of the transaction</returns>
+        public async Task<TransactionReceipt> Wait(CancellationTokenSource tokenSource = null)
+        {
+            TransactionReceipt receipt = null;
+            //wait for dependency
+            if (Dependency != null)
+            {
+                receipt = await Dependency.Wait(tokenSource);
+                if (receipt.Status.Value != 1)
+                    return receipt;
+            }
+
+            //process this receipt
+            receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(TxId);
+            while (receipt == null)
+            {
+                if (tokenSource != null && tokenSource.IsCancellationRequested)
+                {
+                    break;
+                }
+                await Task.Delay(1000); //TODO: in webgl build this must be swapped for sth else!!
+                //This could be rewritten if we support websocket connections, or we could also create some external mechanism for waiting
+                //so this could be overwriten by custom implementations
+                receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(TxId);
+            }
+            return receipt;
+        }
+
+        /// <summary>
+        /// Returns trasnaction receipt or null if not yet ready
+        /// </summary>
+        /// <returns>trasnaction receipt or null if not yet ready</returns>
+        public async Task<TransactionReceipt> GetReceipt()
+        {
+            return await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(TxId);
+        }
+    }
+
+    /// <summary>
     /// Utility class for Blockchain communication.
     /// Uses Nethereum library.
     /// </summary>

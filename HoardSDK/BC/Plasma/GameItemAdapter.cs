@@ -100,7 +100,7 @@ namespace Hoard.BC.Plasma
         /// <returns></returns>
         public async Task<bool> ProcessExits(Profile profileFrom)
         {
-            var receipt = await plasmaComm.ProcessExits(profileFrom, contract.Address, BigInteger.Zero, BigInteger.One);
+            var receipt = await (await plasmaComm.ProcessExits(profileFrom, contract.Address, BigInteger.Zero, BigInteger.One)).Wait();
             if (receipt != null && receipt.Status.Value == 1)
                 return true;
             return false;
@@ -177,7 +177,7 @@ namespace Hoard.BC.Plasma
             if (gameItem.Metadata is ERC223GameItemContract.Metadata)
             {
                 var metadata = gameItem.Metadata as ERC223GameItemContract.Metadata;
-                var receipt = await plasmaComm.Deposit(profileFrom, contract.Address, metadata.Balance);
+                var receipt = await (await plasmaComm.Deposit(profileFrom, contract.Address, metadata.Balance)).Wait();
                 if (receipt != null && receipt.Status.Value == 1)
                     return true;
             }
