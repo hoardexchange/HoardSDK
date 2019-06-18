@@ -470,13 +470,13 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Deposits given amount of ERC20 token to the child chain
+        /// Prepare deposit with given amount of ERC20 token to the child chain
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
         /// <param name="currency">transaction currency</param>
-        /// <param name="amount">amount to send</param>
+        /// <param name="amount">amount to prepare</param>
         /// <returns></returns>
-        public async Task<BCTransaction> Deposit(Profile profileFrom, string currency, BigInteger amount)
+        public async Task<BCTransaction> PrepareDeposit(Profile profileFrom, string currency, BigInteger amount)
         {
             if (rootChainContract != null)
             {
@@ -489,8 +489,22 @@ namespace Hoard.BC
 
                 var approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
                 string signedApproveTx = await SignTransaction(profileFrom, approveTx);
-                var allowTrans = await SubmitTransactionOnRootChain(web3, signedApproveTx);
+                return await SubmitTransactionOnRootChain(web3, signedApproveTx);
+            }
+            return null;
+        }
 
+        /// <summary>
+        /// Deposits given amount of ERC20 token to the child chain assuming PrepareDeposit has been called first.
+        /// </summary>
+        /// <param name="profileFrom">profile of the sender</param>
+        /// <param name="currency">transaction currency</param>
+        /// <param name="amount">amount to send (less than or equal to the amount from PrepareDeposit)</param>
+        /// <returns></returns>
+        public async Task<BCTransaction> Deposit(Profile profileFrom, string currency, BigInteger amount)
+        {
+            if (rootChainContract != null)
+            {
                 var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
                 depositPlasmaTx.AddOutput(profileFrom.ID, currency, amount);
 
@@ -500,7 +514,6 @@ namespace Hoard.BC
                 var depositTx = await rootChainContract.DepositToken(web3, profileFrom.ID, encodedDepositTx);
                 string signedDepositTx = await SignTransaction(profileFrom, depositTx);
                 var depositTrans = await SubmitTransactionOnRootChain(web3, signedDepositTx);
-                depositTrans.Dependency = allowTrans;
                 return depositTrans;
             }
             return null;

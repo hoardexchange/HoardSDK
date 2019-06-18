@@ -26,10 +26,6 @@ namespace Hoard.BC
         /// Transaction identifier
         /// </summary>
         public string TxId { get; private set; }
-        /// <summary>
-        /// Optional dependency on another transaction
-        /// </summary>
-        public BCTransaction Dependency { get; set; }
 
         private Web3 web3 = null;
 
@@ -52,17 +48,7 @@ namespace Hoard.BC
         /// <returns>Receipt of the transaction</returns>
         public async Task<TransactionReceipt> Wait(CancellationTokenSource tokenSource = null)
         {
-            TransactionReceipt receipt = null;
-            //wait for dependency
-            if (Dependency != null)
-            {
-                receipt = await Dependency.Wait(tokenSource);
-                if (receipt.Status.Value != 1)
-                    return receipt;
-            }
-
-            //process this receipt
-            receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(TxId);
+            TransactionReceipt receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(TxId);
             while (receipt == null)
             {
                 if (tokenSource != null && tokenSource.IsCancellationRequested)
