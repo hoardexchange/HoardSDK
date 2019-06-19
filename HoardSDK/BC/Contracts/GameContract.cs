@@ -74,6 +74,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("owner");
         }
 
+        private Function GetFunctionAddGameItemContract()
+        {
+            return contract.GetFunction("addGameItemContract");
+        }
+
         /// <summary>
         /// Returns Game Server URL stored within contract
         /// </summary>
@@ -95,6 +100,19 @@ namespace Hoard.BC.Contracts
             var function = GetFunctionSetGameServerURL();
 
             return await BCComm.EvaluateOnBC(web3, profile, function, url);
+        }
+
+        /// <summary>
+        /// Adds game item contract address
+        /// </summary>
+        /// <param name="address">Item contract address</param>
+        /// <param name="profile">signer profile</param>
+        /// <returns></returns>
+        public async Task<TransactionReceipt> AddGameItemAsync(string address, Profile profile)
+        {
+            var function = GetFunctionAddGameItemContract();
+
+            return await BCComm.EvaluateOnBC(web3, profile, function, address);
         }
 
         /// <summary>
