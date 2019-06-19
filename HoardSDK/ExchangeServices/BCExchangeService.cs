@@ -71,7 +71,7 @@ namespace Hoard.ExchangeServices
         public async Task<Order[]> ListOrders(GameItem gaGet, GameItem gaGive, Profile profile)
         {
             // FIXME: is it possible to get orders directly from bc?
-            return new Order[0];
+            return await Task.FromResult(new Order[0]);
         }
 
         /// <inheritdoc/>

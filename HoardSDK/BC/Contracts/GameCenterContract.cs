@@ -22,57 +22,65 @@ namespace Hoard.BC.Contracts
     /// <summary>
     /// Main Hoard contract with a list of all games registered on platform. Central point from which we can get all neccessery data.
     /// </summary>
-    internal class GameCenterContract
+    public class GameCenterContract
     {
-        public const string ABI = HoardABIConfig.HoardGameCenterABI;
+        private const string ABI = HoardABIConfig.HoardGameCenterABI;
 
         private readonly Web3 web3;
         private Contract contract;
 
+        /// <summary>
+        /// Returns address of this contract
+        /// </summary>
         public string Address { get { return contract.Address; } }
 
+        /// <summary>
+        /// Creates new game cetner contract access object
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="address">address of deployed contract</param>
         public GameCenterContract(Web3 web3, string address)
         {
             this.web3 = web3;
             this.contract = web3.Eth.GetContract(ABI, address);
         }
 
-        public Function GetFunctionOwner()
+        private Function GetFunctionOwner()
         {
             return contract.GetFunction("owner");
         }
 
-        public Function GetFunctionName()
+        private Function GetFunctionName()
         {
             return contract.GetFunction("name");
         }
 
-        public Function GetFunctionGetGameContract()
+        private Function GetFunctionGetGameContract()
         {
             return contract.GetFunction("getGameContract");
         }
 
-        public Function GetFunctionGetGameIdByIndex()
+        private Function GetFunctionGetGameIdByIndex()
         {
             return contract.GetFunction("getGameIdByIndex");
         }
 
-        public Function GetFunctionGameExists()
+        private Function GetFunctionGameExists()
         {
             return contract.GetFunction("gameExists");
         }
 
-        public Function GetFunctionAddGame()
+        private Function GetFunctionAddGame()
         {
             return contract.GetFunction("addGame");
         }
 
-        public Function GetFunctionAddAdmin()
+        private Function GetFunctionAddAdmin()
         {
             return contract.GetFunction("addAdmin");
         }
 
-        public Function GetFunctionRemoveAdmin()
+        private Function GetFunctionRemoveAdmin()
         {
             return contract.GetFunction("removeAdmin");
         }
@@ -134,60 +142,111 @@ namespace Hoard.BC.Contracts
             return function.CallAsync<ulong>();
         }
 
-        public Task<bool> GetGameExistsAsync(BigInteger gameID)
+        /// <summary>
+        /// Checks if game exists
+        /// </summary>
+        /// <param name="gameID">ID of the game</param>
+        /// <returns></returns>
+        public Task<bool> GetGameExists(BigInteger gameID)
         {
             var function = GetFunctionGameExists();
             return function.CallAsync<bool>(gameID);
         }
 
-        public async Task<TransactionReceipt> AddGameAsync(string gameAddr, Profile profile)
+        /// <summary>
+        /// Adds new game to game center
+        /// </summary>
+        /// <param name="gameAddr">addres of game contract</param>
+        /// <param name="profile">profile that will pay for transaction</param>
+        /// <returns></returns>
+        public async Task<TransactionReceipt> AddGame(string gameAddr, Profile profile)
         {
             var function = GetFunctionAddGame();
             return await BCComm.EvaluateOnBC(web3, profile, function, gameAddr);
         }
 
-        public async Task<TransactionReceipt> AddAdminAsync(string adminAddr, Profile profile)
+        /// <summary>
+        /// Adds user as an administrator of the contract
+        /// </summary>
+        /// <param name="adminAddr">addres of user</param>
+        /// <param name="profile">profile that will pay for transaction</param>
+        /// <returns></returns>
+        public async Task<TransactionReceipt> AddAdmin(string adminAddr, Profile profile)
         {
             var function = GetFunctionAddAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
         }
 
+        /// <summary>
+        /// Removes administrator privilages from existing user
+        /// </summary>
+        /// <param name="adminAddr">addres of user</param>
+        /// <param name="profile">profile that will pay for transaction</param>
+        /// <returns></returns>
         public async Task<TransactionReceipt> RemoveAdminAsync(string adminAddr, Profile profile)
         {
             var function = GetFunctionRemoveAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
         }
 
-        public async Task<TransactionReceipt> SetExchangeAddressAsync(string address, Profile profile)
+        /// <summary>
+        /// Sets contract to be the Exchange contract
+        /// </summary>
+        /// <param name="address">Exchange contract address</param>
+        /// <param name="profile">payer</param>
+        /// <returns></returns>
+        public async Task<TransactionReceipt> SetExchangeAddress(string address, Profile profile)
         {
             var function = GetFunctionSetExchangeAddress();
             return await BCComm.EvaluateOnBC(web3, profile, function, address);
         }
 
-        public async Task<TransactionReceipt> SetHoardTokenAddressAsync(string address, Profile profile)
+        /// <summary>
+        /// Sets contract to be the Hoard Token
+        /// </summary>
+        /// <param name="address">Hoard Token contract address</param>
+        /// <param name="profile">payer</param>
+        /// <returns></returns>
+        public async Task<TransactionReceipt> SetHoardTokenAddress(string address, Profile profile)
         {
             var function = GetFunctionSetHoardTokenAddress();
             return await BCComm.EvaluateOnBC(web3, profile, function, address);
         }
 
-        public async Task<string> GetExchangeAddressAsync()
+        /// <summary>
+        /// Returns Exchange contract address
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> GetExchangeAddress()
         {
             var function = GetFunctionExchangeAddress();
             return await function.CallAsync<string>();
         }
 
-        public async Task<string> GetExchangeSrvURLAsync()
+        /// <summary>
+        /// Returns Hoard Exchange server URL
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> GetExchangeSrvURL()
         {
             var function = GetFunctionExchangeSrvURL();
             return await function.CallAsync<string>();
         }
 
+        /// <summary>
+        /// Returns Hoard Token contract address
+        /// </summary>
+        /// <returns></returns>
         public async Task<string> GetHoardTokenAddressAsync()
         {
             var function = GetFunctionHoardTokenAddress();
             return await function.CallAsync<string>();
         }
 
+        /// <summary>
+        /// Returns owner of this contract
+        /// </summary>
+        /// <returns></returns>
         public async Task<string> GetContractOwner()
         {
             var function = GetFunctionOwner();

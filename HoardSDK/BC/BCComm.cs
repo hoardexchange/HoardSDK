@@ -308,13 +308,13 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<bool> GetGameExists(BigInteger gameID)
         {
-            return await gameCenter.GetGameExistsAsync(gameID);
+            return await gameCenter.GetGameExists(gameID);
         }
 
         /// <inheritdoc/>
         public async Task<string> GetHoardExchangeContractAddress()
         {
-            return await gameCenter.GetExchangeAddressAsync();
+            return await gameCenter.GetExchangeAddress();
         }
 
         /// <summary>
@@ -323,7 +323,7 @@ namespace Hoard.BC
         /// <returns></returns>
         internal async Task<ExchangeContract> GetHoardExchangeContract()
         {
-            string exchangeAddress = await gameCenter.GetExchangeAddressAsync();
+            string exchangeAddress = await gameCenter.GetExchangeAddress();
             if (exchangeAddress != null)
             {
                 exchangeAddress.RemoveHexPrefix();
@@ -381,7 +381,7 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<TransactionReceipt> SetExchangeContract(Profile profile, string exchangeAddress)
         {
-            return await gameCenter.SetExchangeAddressAsync(exchangeAddress, profile);
+            return await gameCenter.SetExchangeAddress(exchangeAddress, profile);
         }
 
         /// <summary>
@@ -392,7 +392,7 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<TransactionReceipt> SetHRDAddress(Profile profile, string hoardTokenAddress)
         {
-            return await gameCenter.SetHoardTokenAddressAsync(hoardTokenAddress, profile);
+            return await gameCenter.SetHoardTokenAddress(hoardTokenAddress, profile);
         }
 
         /// <summary>
