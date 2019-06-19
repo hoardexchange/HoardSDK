@@ -7,7 +7,12 @@ namespace PlasmaCore.Transactions
     {
         public static ITransactionEncoder Create(RootChainVersion rootChainVersion)
         {
-            if(rootChainVersion == RootChainVersion.Ari)
+            if(rootChainVersion == RootChainVersion.Default)
+            {
+                rootChainVersion = RootChainABI.DefaultVersion;
+            }
+
+            if (rootChainVersion == RootChainVersion.Ari)
             {
                 return new RawTransactionEncoder();
             }

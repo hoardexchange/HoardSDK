@@ -8,17 +8,6 @@ using System.Threading.Tasks;
 
 namespace Hoard.BC.Contracts
 {
-    [FunctionOutput]
-    class GameInfoDTO
-    {
-        [Parameter("uint64", "id", 1)]
-        public ulong ID { get; set; }
-
-        [Parameter("bytes32", "name", 2)]
-        public string Name { get; set; }
-
-    }
-
     /// <summary>
     /// Main Hoard contract with a list of all games registered on platform. Central point from which we can get all neccessery data.
     /// </summary>
