@@ -9,7 +9,9 @@ namespace PlasmaCore.RPC.OutputData
     /// </summary>
     public class ChallengeData
     {
-        // used only in v0.2 (Samrong)
+        /// <summary>
+        /// Exit identifier (used only in v0.2 Samrong)
+        /// </summary>
         [JsonProperty(propertyName: "exit_id")]
         public BigInteger ExitId { get; private set; }
 

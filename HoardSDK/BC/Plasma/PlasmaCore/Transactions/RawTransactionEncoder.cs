@@ -6,6 +6,9 @@ using System.Linq;
 
 namespace PlasmaCore.Transactions
 {
+    /// <summary>
+    /// Encoder of raw transactions (not typed)
+    /// </summary>
     public class RawTransactionEncoder : ITransactionEncoder
     {
         /// <summary>

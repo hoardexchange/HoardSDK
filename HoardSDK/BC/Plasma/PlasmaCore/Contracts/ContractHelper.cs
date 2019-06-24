@@ -13,6 +13,15 @@ namespace Plasma.RootChain.Contracts
     /// </summary>
     public static class ContractHelper
     {
+        /// <summary>
+        /// Creates transaction passing generic arguments
+        /// </summary>
+        /// <param name="web"></param>
+        /// <param name="addressFrom"></param>
+        /// <param name="amount"></param>
+        /// <param name="function"></param>
+        /// <param name="functionInput"></param>
+        /// <returns></returns>
         public static async Task<Nethereum.Signer.Transaction> CreateTransaction(Web3 web, string addressFrom, BigInteger amount, Function function, params object[] functionInput)
         {
             var gasPrice = await web.Eth.GasPrice.SendRequestAsync();
@@ -27,6 +36,16 @@ namespace Plasma.RootChain.Contracts
             return transaction;
         }
 
+        /// <summary>
+        /// Creates transactin passing typed argument
+        /// </summary>
+        /// <typeparam name="TFunctionInput"></typeparam>
+        /// <param name="web"></param>
+        /// <param name="addressFrom"></param>
+        /// <param name="amount"></param>
+        /// <param name="function"></param>
+        /// <param name="functionInput"></param>
+        /// <returns></returns>
         public static async Task<Nethereum.Signer.Transaction> CreateTransaction<TFunctionInput>(Web3 web, string addressFrom, BigInteger amount, Function<TFunctionInput> function, TFunctionInput functionInput)
         {
             var gasPrice = await web.Eth.GasPrice.SendRequestAsync();
@@ -41,6 +60,14 @@ namespace Plasma.RootChain.Contracts
             return transaction;
         }
 
+        /// <summary>
+        /// Creates transaction with dynamic atributes but with 0 amount
+        /// </summary>
+        /// <param name="web"></param>
+        /// <param name="address"></param>
+        /// <param name="function"></param>
+        /// <param name="functionInput"></param>
+        /// <returns></returns>
         public static async Task<Nethereum.Signer.Transaction> CreateTransaction(Web3 web, string address, Function function, params object[] functionInput)
         {
             return await CreateTransaction(web, address, BigInteger.Zero, function, functionInput);
