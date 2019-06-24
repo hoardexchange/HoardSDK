@@ -482,7 +482,7 @@ namespace Hoard.BC.Contracts
         /// <param name="firstItemIndex">Start index for items pack</param>
         /// <param name="itemsToGather">Number of items to gather</param>
         /// <returns></returns>
-        public Task<List<BigInteger>> TokensOfOwnerByIndices(string owner, ulong firstItemIndex, ulong itemsToGather)
+        public Task<List<BigInteger>> TokensOfOwnerByIndices(string owner, BigInteger firstItemIndex, BigInteger itemsToGather)
         {
             Function function = GetFunctionTokensOfOwnerByIndices();
             return function.CallAsync<List<BigInteger>>(owner, firstItemIndex, itemsToGather);
@@ -553,8 +553,8 @@ namespace Hoard.BC.Contracts
         public override async Task<GameItem[]> GetGameItems(Profile profile, ulong page, ulong itemsPerPage)
         {
             BigInteger itemBalance = await GetBalanceOf(profile.ID);
-            ulong count = (ulong)itemBalance;
-            ulong firstItemIndex = page * itemsPerPage;
+            BigInteger count = itemBalance;
+            BigInteger firstItemIndex = page * itemsPerPage;
             if (firstItemIndex >= itemBalance)
                 return new GameItem[0];
             List<BigInteger> ids = await TokensOfOwnerByIndices(profile.ID, firstItemIndex, itemsPerPage);
