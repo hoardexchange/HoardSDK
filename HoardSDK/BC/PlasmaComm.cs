@@ -59,7 +59,6 @@ namespace Hoard.BC
             bcComm = new BCComm(ethClient, gameCenterContract);
 
             plasmaApiService = new PlasmaAPIService(watcherClient, childChainClient);
-            transactionEncoder = TransactionEncoderFactory.Create(rootChainVersion);
 
             if (rootChainAddress == null)
             {
@@ -71,6 +70,8 @@ namespace Hoard.BC
             {
                 rootChainContract = new RootChainContract(web3, rootChainAddress, rootChainVersion);
             }
+
+            transactionEncoder = TransactionEncoderFactory.Create(rootChainVersion, rootChainAddress);
         }
 
         /// <inheritdoc/>

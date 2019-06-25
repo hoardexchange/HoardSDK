@@ -17,20 +17,15 @@ namespace PlasmaCore.Transactions
 
         private static readonly Int32 MAX_OUTPUTS = 4;
 
-        private EIP712Domain defaultDomain = new EIP712Domain(
-            "OMG Network", 
-            "1",
-            "0x740ecec4c0ee99c285945de8b44e9f5bfb71eea7", 
-            "0xfad5c7f626d80f9256ef01929f3beb96e058b8b4b0e3fe52d84f054c0e2a7a83".HexToByteArray());
+        private EIP712Domain domain;
 
         /// <summary>
         /// Constructs typed data transaction encoder with given domain
         /// </summary>
-        /// <param name="domain">EIP-712 domain (optional, OMG Network is default)</param>
-        public TypedDataTransactionEncoder(EIP712Domain domain = null)
+        /// <param name="_domain">EIP-712 domain</param>
+        public TypedDataTransactionEncoder(EIP712Domain _domain)
         {
-            if(domain != null)
-                defaultDomain = domain;
+            domain = _domain;
         }
 
         /// <inheritdoc/>
@@ -49,7 +44,7 @@ namespace PlasmaCore.Transactions
 
             eip712Tx.Metadata = transaction.Metadata;
 
-            return TypedDataEncoder.Encode(eip712Tx, defaultDomain);
+            return TypedDataEncoder.Encode(eip712Tx, domain);
         }
 
         /// <inheritdoc/>
