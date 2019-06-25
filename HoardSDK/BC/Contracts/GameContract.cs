@@ -1,6 +1,7 @@
 using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
+using System.Diagnostics;
 using System.Numerics;
 using System.Threading.Tasks;
 
@@ -79,6 +80,16 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("addGameItemContract");
         }
 
+        private Function GetFunctionAddAdmin()
+        {
+            return contract.GetFunction("addAdmin");
+        }
+
+        private Function GetFunctionRemoveAdmin()
+        {
+            return contract.GetFunction("removeAdmin");
+        }
+
         /// <summary>
         /// Returns Game Server URL stored within contract
         /// </summary>
@@ -98,7 +109,6 @@ namespace Hoard.BC.Contracts
         public async Task<TransactionReceipt> SetGameServerURLAsync(string url, Profile profile)
         {
             var function = GetFunctionSetGameServerURL();
-
             return await BCComm.EvaluateOnBC(web3, profile, function, url);
         }
 
@@ -111,7 +121,40 @@ namespace Hoard.BC.Contracts
         public async Task<TransactionReceipt> AddGameItemAsync(string address, Profile profile)
         {
             var function = GetFunctionAddGameItemContract();
+            return await BCComm.EvaluateOnBC(web3, profile, function, address);
+        }
 
+        /// <summary>
+        /// Adds admin to game contract
+        /// </summary>
+        /// <param name="address">Admin address</param>
+        /// <param name="profile">signer profile</param>
+        /// <returns></returns>
+        public async Task<TransactionReceipt> AddAdminAsync(string address, Profile profile)
+        {
+            if (profile.ID == address)
+            {
+                ErrorCallbackProvider.ReportError("Can't add my self");
+                return null;
+            }
+            var function = GetFunctionAddAdmin();
+            return await BCComm.EvaluateOnBC(web3, profile, function, address);
+        }
+
+        /// <summary>
+        /// Removes admin from game contract
+        /// </summary>
+        /// <param name="address">Admin address</param>
+        /// <param name="profile">signer profile</param>
+        /// <returns></returns>
+        public async Task<TransactionReceipt> RemoveAdminAsync(string address, Profile profile)
+        {
+            if (profile.ID == address)
+            {
+                ErrorCallbackProvider.ReportError("Can't remove my self");
+                return null;
+            }
+            var function = GetFunctionRemoveAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, address);
         }
 
