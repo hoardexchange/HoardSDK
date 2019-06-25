@@ -199,10 +199,10 @@ namespace Hoard.BC.Contracts
         /// Returns type of token (223, 721)
         /// </summary>
         /// <returns></returns>
-        public Task<uint> GetTokenType()
+        public Task<string> GetTokenType()
         {
             var function = GetFunctionTokenType();
-            return function.CallAsync<uint>();
+            return function.CallAsync<string>();
         }
 
         /// <summary>
