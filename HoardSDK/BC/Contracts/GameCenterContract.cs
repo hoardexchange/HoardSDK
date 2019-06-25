@@ -160,8 +160,13 @@ namespace Hoard.BC.Contracts
         /// <param name="adminAddr">addres of user</param>
         /// <param name="profile">profile that will pay for transaction</param>
         /// <returns></returns>
-        public async Task<TransactionReceipt> AddAdmin(string adminAddr, Profile profile)
+        public async Task<TransactionReceipt> AddAdminAsync(string adminAddr, Profile profile)
         {
+            if (profile.ID == adminAddr)
+            {
+                ErrorCallbackProvider.ReportError("Can't add my self");
+                return null;
+            }
             var function = GetFunctionAddAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
         }
@@ -174,6 +179,11 @@ namespace Hoard.BC.Contracts
         /// <returns></returns>
         public async Task<TransactionReceipt> RemoveAdminAsync(string adminAddr, Profile profile)
         {
+            if (profile.ID == adminAddr)
+            {
+                ErrorCallbackProvider.ReportError("Can't remove my self");
+                return null;
+            }
             var function = GetFunctionRemoveAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
         }

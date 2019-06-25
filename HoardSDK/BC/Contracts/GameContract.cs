@@ -127,35 +127,35 @@ namespace Hoard.BC.Contracts
         /// <summary>
         /// Adds admin to game contract
         /// </summary>
-        /// <param name="address">Admin address</param>
+        /// <param name="adminAddr">Admin address</param>
         /// <param name="profile">signer profile</param>
         /// <returns></returns>
-        public async Task<TransactionReceipt> AddAdminAsync(string address, Profile profile)
+        public async Task<TransactionReceipt> AddAdminAsync(string adminAddr, Profile profile)
         {
-            if (profile.ID == address)
+            if (profile.ID == adminAddr)
             {
                 ErrorCallbackProvider.ReportError("Can't add my self");
                 return null;
             }
             var function = GetFunctionAddAdmin();
-            return await BCComm.EvaluateOnBC(web3, profile, function, address);
+            return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
         }
 
         /// <summary>
         /// Removes admin from game contract
         /// </summary>
-        /// <param name="address">Admin address</param>
+        /// <param name="adminAddr">Admin address</param>
         /// <param name="profile">signer profile</param>
         /// <returns></returns>
-        public async Task<TransactionReceipt> RemoveAdminAsync(string address, Profile profile)
+        public async Task<TransactionReceipt> RemoveAdminAsync(string adminAddr, Profile profile)
         {
-            if (profile.ID == address)
+            if (profile.ID == adminAddr)
             {
                 ErrorCallbackProvider.ReportError("Can't remove my self");
                 return null;
             }
             var function = GetFunctionRemoveAdmin();
-            return await BCComm.EvaluateOnBC(web3, profile, function, address);
+            return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
         }
 
         /// <summary>
