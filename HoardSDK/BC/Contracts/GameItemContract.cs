@@ -129,6 +129,11 @@ namespace Hoard.BC.Contracts
             return contract.GetFunction("tokenStateType");
         }
 
+        private Function GetFunctionTokenType()
+        {
+            return contract.GetFunction("getTokenType");
+        }
+
         /// <summary>
         /// Returns total amount of items given account owns
         /// </summary>
@@ -188,6 +193,16 @@ namespace Hoard.BC.Contracts
         {
             var function = GetFunctionTokenStateType();
             return function.CallAsync<byte[]>();
+        }
+
+        /// <summary>
+        /// Returns type of token (223, 721)
+        /// </summary>
+        /// <returns></returns>
+        public Task<uint> GetTokenType()
+        {
+            var function = GetFunctionTokenType();
+            return function.CallAsync<uint>();
         }
 
         /// <summary>
