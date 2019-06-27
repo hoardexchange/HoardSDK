@@ -7,12 +7,13 @@ namespace PlasmaCore.RPC
     /// <summary>
     /// RPC response data
     /// </summary>
+    [JsonObject]
     public class RPCResponse
     {
         /// <summary>
         /// Response version
         /// </summary>
-        [JsonProperty(propertyName: "version")]
+        [JsonProperty(propertyName: "version", Required = Required.Always)]
         public string Version { get; protected set; }
 
         /// <summary>
@@ -26,6 +27,9 @@ namespace PlasmaCore.RPC
         /// </summary>
         [JsonProperty(propertyName: "data")]
         public JToken Data { get; protected set; }
+
+        [JsonConstructor]
+        private RPCResponse() { }
 
         /// <summary>
         /// Deserializes response data into given type

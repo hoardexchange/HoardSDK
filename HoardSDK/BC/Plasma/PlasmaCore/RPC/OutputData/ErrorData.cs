@@ -5,6 +5,7 @@ namespace PlasmaCore.RPC.OutputData
     /// <summary>
     /// Response class for an unsuccessful request
     /// </summary>
+    [JsonObject]
     public class ErrorData
     {
         /// <summary>
@@ -42,5 +43,8 @@ namespace PlasmaCore.RPC.OutputData
         /// </summary>
         [JsonProperty(propertyName: "messages")]
         public MessageData[] Messages { get; private set; }
+
+        [JsonConstructor]
+        private ErrorData() { }
     }
 }

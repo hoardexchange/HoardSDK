@@ -92,6 +92,9 @@ namespace PlasmaCore.Transactions
                 if (!tid.IsEmpty())
                 {
                     Inputs.Add(tid);
+                    if (senders.Length < Inputs.Count)
+                        Array.Resize(ref senders, Inputs.Count);
+                    senders[Inputs.Count - 1] = null;
                     return true;
                 }
             }

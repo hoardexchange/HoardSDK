@@ -6,6 +6,7 @@ namespace PlasmaCore.RPC.OutputData
     /// <summary>
     /// Response class for transaction requests
     /// </summary>
+    [JsonObject]
     public class BlockData
     {
         /// <summary>
@@ -31,5 +32,8 @@ namespace PlasmaCore.RPC.OutputData
         /// </summary>
         [JsonProperty(propertyName: "blknum")]
         public ulong Blknum { get; private set; }
+
+        [JsonConstructor]
+        private BlockData() { }
     }
 }
