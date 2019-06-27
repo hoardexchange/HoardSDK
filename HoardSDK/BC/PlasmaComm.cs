@@ -571,6 +571,23 @@ namespace Hoard.BC
         }
 
         /// <summary>
+        /// Signs transaction
+        /// </summary>
+        /// <param name="profile">profile of the signer</param>
+        /// <param name="transactionBody">transaction body (in Omise format) to sign</param>
+        /// <returns>encoded signed transaction</returns>
+        public async Task<string> SignRawTransaction(Profile profile, byte[] transactionBody)
+        {
+            var transaction = transactionEncoder.CreateTransaction(transactionBody);
+            for (int i = 0; i < transaction.Senders.Length; ++i)
+                transaction.Senders[i] = profile.ID;
+            var encodedTx = transactionEncoder.EncodeRaw(transaction);
+            string signature = await profile.SignTransaction(encodedTx);
+            transaction.SetSignature(profile.ID, signature.HexToByteArray());
+            return transactionEncoder.EncodeSigned(transaction).ToHex(true);
+        }
+
+        /// <summary>
         /// Checks if exit with given outpud id is ready to process
         /// </summary>
         /// <param name="outputId">output id</param>
