@@ -59,7 +59,6 @@ namespace Hoard.BC
             bcComm = new BCComm(ethClient, gameCenterContract);
 
             plasmaApiService = new PlasmaAPIService(watcherClient, childChainClient);
-            transactionEncoder = TransactionEncoderFactory.Create(rootChainVersion);
 
             if (rootChainAddress == null)
             {
@@ -71,6 +70,8 @@ namespace Hoard.BC
             {
                 rootChainContract = new RootChainContract(web3, rootChainAddress, rootChainVersion);
             }
+
+            transactionEncoder = TransactionEncoderFactory.Create(rootChainVersion, rootChainAddress);
         }
 
         /// <inheritdoc/>
@@ -470,24 +471,46 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Prepare deposit with given amount of ERC20 token to the child chain
+        /// Prepare deposit with given tokens to the child chain
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
         /// <param name="currency">transaction currency</param>
-        /// <param name="amount">amount to prepare</param>
+        /// <param name="value">value to prepare (amount ERC20, tokenid ERC721)</param>
         /// <returns></returns>
-        public async Task<BCTransaction> PrepareDeposit(Profile profileFrom, string currency, BigInteger amount)
+        public async Task<BCTransaction> PrepareDeposit(Profile profileFrom, string currency, BigInteger value)
         {
             if (rootChainContract != null)
             {
-                var erc20Handler = web3.Eth.GetContractHandler(currency);
-                var approveFunc = erc20Handler.GetFunction<Nethereum.StandardTokenEIP20.ContractDefinition.ApproveFunction>();
+                Nethereum.Signer.Transaction approveTx = null;
 
-                var approveInput = new Nethereum.StandardTokenEIP20.ContractDefinition.ApproveFunction();
-                approveInput.Spender = rootChainContract.Address;
-                approveInput.Value = amount;
+                var tokenHandler = web3.Eth.GetContractHandler(currency);
+                var supportsFunc = tokenHandler.GetFunction<Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.SupportsInterfaceFunction>();
+                var supportsInput = new Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.SupportsInterfaceFunction();
 
-                var approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
+                // TODO cache currency types?
+                supportsInput.InterfaceId = ERC721GameItemContract.InterfaceID.HexToByteArray();
+                if(await supportsFunc.CallAsync<bool>(supportsInput))
+                {
+                    // TODO approve one item (ApproveFunction) or all (SetApprovalForAllFunction)?
+                    var approveFunc = tokenHandler.GetFunction<Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.ApproveFunction>();
+
+                    var approveInput = new Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.ApproveFunction();
+                    approveInput.To = rootChainContract.Address;
+                    approveInput.TokenId = value;
+
+                    approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
+                }
+                else
+                {
+                    var approveFunc = tokenHandler.GetFunction<Nethereum.StandardTokenEIP20.ContractDefinition.ApproveFunction>();
+
+                    var approveInput = new Nethereum.StandardTokenEIP20.ContractDefinition.ApproveFunction();
+                    approveInput.Spender = rootChainContract.Address;
+                    approveInput.Value = value;
+
+                    approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
+                }
+
                 string signedApproveTx = await SignTransaction(profileFrom, approveTx);
                 return await SubmitTransactionOnRootChain(web3, signedApproveTx);
             }
