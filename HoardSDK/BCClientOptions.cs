@@ -14,11 +14,6 @@ namespace Hoard
 
     internal class BCClientConfigConverter : JsonConverter
     {
-        static BCClientConfigConverter()
-        {
-            new BCClientConfigConverter();
-        }
-
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             JToken jObject = JToken.ReadFrom(reader);
