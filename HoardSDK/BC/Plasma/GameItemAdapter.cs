@@ -194,7 +194,7 @@ namespace Hoard.BC.Plasma
                 if(utxo != null)
                 {
                     var outputId = await plasmaComm.StartStandardExit(profileFrom, utxo.Position);
-                    return outputId.HasValue;
+                    return (outputId != null);
                 }
             }
             return false;

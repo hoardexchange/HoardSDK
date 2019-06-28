@@ -12,18 +12,24 @@ namespace PlasmaCore.RPC.OutputData
         /// UTXO position
         /// </summary>
         [JsonProperty(propertyName: "utxo_pos")]
-        public BigInteger Position { get; private set; }
+        public BigInteger Position { get; set; }
 
         /// <summary>
         /// Transaction byte stream
         /// </summary>
         [JsonProperty(propertyName: "txbytes")]
-        public string TxBytes { get; private set; }
+        public string TxBytes { get; set; }
 
         /// <summary>
         /// Exit data proof
         /// </summary>
         [JsonProperty(propertyName: "proof")]
-        public string Proof { get; private set; }
+        public string Proof { get; set; }
+
+        /// <summary>
+        /// Timestamp when exit can be processed
+        /// </summary>
+        [JsonProperty(propertyName: "process_timestamp")]
+        public BigInteger ProcessTimestamp { get; set; }
     }
 }

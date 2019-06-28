@@ -1,4 +1,5 @@
-﻿using Nethereum.Contracts;
+﻿using Nethereum.ABI.FunctionEncoding.Attributes;
+using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Web3;
 using PlasmaCore.RPC.OutputData;
@@ -8,6 +9,19 @@ using System.Threading.Tasks;
 
 namespace Plasma.RootChain.Contracts
 {
+    [FunctionOutput]
+    public class NextExitData : IFunctionOutputDTO
+    {
+        [Parameter("uint64", "", 1)]
+        public virtual ulong ExitableTimestamp { get; set; }
+
+        [Parameter("uint192", "", 2)]
+        public virtual BigInteger ExitId { get; set; }
+
+        [Parameter("bool", "", 3)]
+        public virtual bool IsInFlight { get; set; }
+    }
+
     /// <summary>
     /// Plasma root chain contract
     /// </summary>
@@ -116,48 +130,34 @@ namespace Plasma.RootChain.Contracts
         /// Gets standard exit id for given output id
         /// </summary>
         /// <param name="web3">web3 interface</param>
-        /// <param name="outputId">output id</param>
+        /// <param name="version">child chain version</param>
+        /// <param name="utxoPosition">UTXO position of the exiting output</param>
+        /// <param name="txBytes">transaction bytes (for Ari version pass null)</param>
         /// <returns></returns>
-        public async Task<BigInteger> GetStandardExitId(Web3 web3, BigInteger outputId)
+        public async Task<BigInteger> GetStandardExitId(Web3 web3, RootChainVersion version, BigInteger utxoPosition, byte[] txBytes)
         {
             var function = GetFunctionGetStandardExitId();
-            return await function.CallAsync<BigInteger>(outputId);
+            if(version == RootChainVersion.Ari)
+            {
+                return await function.CallAsync<BigInteger>(utxoPosition);
+            }
+            else
+            {
+                return await function.CallAsync<BigInteger>(txBytes, utxoPosition);
+            }
+
         }
 
         /// <summary>
-        /// Given an output ID, determines when it's exitable
+        /// Returns timestamp after which this output is exitable (if it were to be exited now)
         /// </summary>
         /// <param name="web3">web3 interface</param>
-        /// <param name="outputId">output id</param>
+        /// <param name="utxoPosition">utxo position</param>
         /// <returns></returns>
-        public async Task<ulong> GetExitableTimestamp(Web3 web3, BigInteger outputId)
+        public async Task<BigInteger> GetExitableTimestamp(Web3 web3, BigInteger utxoPosition)
         {
             var function = GetFunctionGetExitableTimestamp();
-            return await function.CallAsync<ulong>(outputId);
-        }
-
-        /// <summary>
-        /// Checks if timestamp is exitable now
-        /// </summary>
-        /// <param name="web3">web3 interface</param>
-        /// <param name="exitableTimestamp">request timestamp</param>
-        /// <returns></returns>
-        public async Task<bool> IsMature(Web3 web3, ulong exitableTimestamp)
-        {
-            var function = GetFunctionIsMature();
-            return await function.CallAsync<bool>(exitableTimestamp);
-        }
-
-        /// <summary>
-        /// Gets exits if given id
-        /// </summary>
-        /// <param name="web3">web3 interface</param>
-        /// <param name="exitId">exit id</param>
-        /// <returns></returns>
-        public async Task<Tuple<string, string, BigInteger>> GetExit(Web3 web3, BigInteger exitId)
-        {
-            var function = GetFunctionGetExitableTimestamp();
-            return await function.CallAsync<Tuple<string, string, BigInteger>>(exitId);
+            return await function.CallAsync<BigInteger>(utxoPosition);
         }
 
         /// <summary>
@@ -205,6 +205,18 @@ namespace Plasma.RootChain.Contracts
                 challengeData.Signature.HexToByteArray());
         }
 
+        /// <summary>
+        /// Returns the next exit to be processed (a tuple with timestamp for when the next exit is processable, its unique exit id and flag determining if exit is in-flight one)
+        /// </summary>
+        /// <param name="web3">web3 interface</param>
+        /// <param name="tokenAddress">token address</param>
+        /// <returns></returns>
+        public async Task<NextExitData> GetNextExit(Web3 web3, string tokenAddress)
+        {
+            var function = GetFunctionGetNextExit();
+            return await function.CallDeserializingToObjectAsync<NextExitData>(tokenAddress);
+        }
+
         private Function GetFunctionStartStandardExit()
         {
             return contract.GetFunction("startStandardExit");
@@ -235,11 +247,6 @@ namespace Plasma.RootChain.Contracts
             return contract.GetFunction("getExitableTimestamp");
         }
 
-        private Function GetFunctionIsMature()
-        {
-            return contract.GetFunction("isMature");
-        }
-
         private Function GetFunctionExits()
         {
             return contract.GetFunction("exits");
@@ -258,6 +265,11 @@ namespace Plasma.RootChain.Contracts
         private Function GetFunctionChallengeStandardExit()
         {
             return contract.GetFunction("challengeStandardExit");
+        }
+
+        private Function GetFunctionGetNextExit()
+        {
+            return contract.GetFunction("getNextExit");
         }
     }
 }

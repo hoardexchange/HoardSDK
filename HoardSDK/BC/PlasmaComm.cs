@@ -36,6 +36,7 @@ namespace Hoard.BC
         private PlasmaAPIService plasmaApiService = null;
 
         private RootChainContract rootChainContract = null;
+        private RootChainVersion rootChainVersion = RootChainVersion.Default;
 
         private ITransactionEncoder transactionEncoder = null;
 
@@ -47,18 +48,19 @@ namespace Hoard.BC
         /// <param name="watcherClient">watcher client</param>
         /// <param name="childChainClient">child chain client</param>
         /// <param name="rootChainAddress">root chain address</param>
-        /// <param name="rootChainVersion">root chain version</param>
-        public PlasmaComm(Nethereum.JsonRpc.Client.IClient ethClient, 
-                        string gameCenterContract, 
-                        PlasmaCore.RPC.IClient watcherClient, 
+        /// <param name="_rootChainVersion">root chain version</param>
+        public PlasmaComm(Nethereum.JsonRpc.Client.IClient ethClient,
+                        string gameCenterContract,
+                        PlasmaCore.RPC.IClient watcherClient,
                         PlasmaCore.RPC.IClient childChainClient,
                         string rootChainAddress,
-                        RootChainVersion rootChainVersion)
+                        RootChainVersion _rootChainVersion)
         {
             web3 = new Web3(ethClient);
             bcComm = new BCComm(ethClient, gameCenterContract);
 
             plasmaApiService = new PlasmaAPIService(watcherClient, childChainClient);
+            rootChainVersion = _rootChainVersion;
 
             if (rootChainAddress == null)
             {
@@ -340,14 +342,14 @@ namespace Hoard.BC
         /// <param name="currencies">currencies to exit</param>
         /// <param name="exitBond">exit transaction bond</param>
         /// <param name="tokenSource">cancellation token source</param>
-        /// <returns>Output identifiers, null if unsuccessful</returns>
-        public async Task<BigInteger?[]> StartStandardExit(Profile profileFrom, string[] currencies, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        /// <returns>exit data (null if unsuccessful)</returns>
+        public async Task<ExitData[]> StartStandardExit(Profile profileFrom, string[] currencies, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
         {
             if (rootChainContract != null)
             {
                 List<BigInteger> mergedUtxos = new List<BigInteger>();
                 var balanceData = await plasmaApiService.GetBalance(profileFrom.ID);
-                foreach(var data in balanceData)
+                foreach (var data in balanceData)
                 {
                     if (currencies.Contains(data.Currency) && data is FCBalanceData)
                     {
@@ -373,8 +375,8 @@ namespace Hoard.BC
         /// <param name="utxoPosition">exit utxo position</param>
         /// <param name="exitBond">exit transaction bond</param>
         /// <param name="tokenSource">cancellation token source</param>
-        /// <returns>Output identifier; null if unsuccessful</returns>
-        public async Task<BigInteger?> StartStandardExit(Profile profileFrom, BigInteger utxoPosition, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        /// <returns>exit data (null if unsuccessful)</returns>
+        public async Task<ExitData> StartStandardExit(Profile profileFrom, BigInteger utxoPosition, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
         {
             if (rootChainContract != null)
             {
@@ -384,7 +386,8 @@ namespace Hoard.BC
                 var receipt = await (await SubmitTransactionOnRootChain(web3, signedTransaction)).Wait(tokenSource);
                 if (receipt.Status.Value == 1)
                 {
-                    return exitData.Position;
+                    exitData.ProcessTimestamp = await rootChainContract.GetExitableTimestamp(web3, exitData.Position);
+                    return exitData;
                 }
             }
             return null;
@@ -397,33 +400,42 @@ namespace Hoard.BC
         /// <param name="utxoPositions">exit utxo position list</param>
         /// <param name="exitBond">exit transaction bond per utxo</param>
         /// <param name="tokenSource">cancellation token source</param>
-        /// <returns>list of Output identifiers (or null if unsuccessful) per each utxoPosition given</returns>
-        public async Task<BigInteger?[]> StartStandardExitBulk(Profile profileFrom, BigInteger[] utxoPositions, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
+        /// <returns>list of exit data (or null if unsuccessful) per each utxoPosition given</returns>
+        public async Task<ExitData[]> StartStandardExitBulk(Profile profileFrom, BigInteger[] utxoPositions, BigInteger? exitBond = null, CancellationTokenSource tokenSource = null)
         {
             if (rootChainContract != null)
             {
-                BigInteger?[] exitPos = new BigInteger?[utxoPositions.Length];
+                ExitData[] exitsData = new ExitData[utxoPositions.Length];
                 BCTransaction[] txs = new BCTransaction[utxoPositions.Length];
                 //submit all transactions
-                for(int i=0;i<utxoPositions.Length;++i)
+                for (int i = 0; i < utxoPositions.Length; ++i)
                 {
                     BigInteger utxoPosition = utxoPositions[i];
                     ExitData exitData = await plasmaApiService.GetExitData(utxoPosition);
                     var transaction = await rootChainContract.StartStandardExit(web3, profileFrom.ID, exitData, exitBond);
                     string signedTransaction = await SignTransaction(profileFrom, transaction);
                     txs[i] = await SubmitTransactionOnRootChain(web3, signedTransaction);
-                    exitPos[i] = exitData.Position;
+                    exitsData[i] = exitData;
                 }
+
+                BigInteger maxUtxoPosition = exitsData.Where(x => x != null).Max(x => x.Position);
+                BigInteger processTimestamp = await rootChainContract.GetExitableTimestamp(web3, maxUtxoPosition);
+
                 //now wait for all transaction to finish
                 for (int i = 0; i < utxoPositions.Length; ++i)
                 {
                     var receipt = await txs[i].Wait(tokenSource);
                     if (receipt.Status.Value != 1)
                     {
-                        exitPos[i]=null;
+                        exitsData[i] = null;
+                    }
+                    else
+                    {
+                        exitsData[i].ProcessTimestamp = processTimestamp;
                     }
                 }
-                return exitPos;
+
+                return exitsData;
             }
             return null;
         }
@@ -611,14 +623,25 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Checks if exit with given outpud id is ready to process
+        /// Checks if given exit data is ready to process - first in the process queue and exit timestamp older than current block timestamp.
         /// </summary>
-        /// <param name="outputId">output id</param>
+        /// <param name="currency">currency of exit data to check</param>
+        /// <param name="exitData">exit data to check</param>
         /// <returns></returns>
-        public async Task<bool> IsExitable(BigInteger outputId)
+        public async Task<bool> IsExitable(string currency, ExitData exitData)
         {
-            ulong timestamp = await rootChainContract.GetExitableTimestamp(web3, outputId);
-            return !(await rootChainContract.IsMature(web3, timestamp));
+            var exitId = await rootChainContract.GetStandardExitId(web3, rootChainVersion, exitData.Position, exitData.TxBytes.HexToByteArray());
+            var nextExitData = await rootChainContract.GetNextExit(web3, currency);
+
+            // TODO allow user to process other users' pending exits?
+            if (nextExitData.ExitId == exitId)
+            {
+                HexBigInteger blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+                var txs = await web3.Eth.Blocks.GetBlockWithTransactionsHashesByNumber.SendRequestAsync(blockNumber);
+
+                return exitData.ProcessTimestamp < txs.Timestamp.Value;
+            }
+            return false;
         }
 
         /// <summary>
