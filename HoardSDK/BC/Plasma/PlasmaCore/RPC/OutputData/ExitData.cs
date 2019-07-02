@@ -6,6 +6,7 @@ namespace PlasmaCore.RPC.OutputData
     /// <summary>
     /// Response class for exit data request
     /// </summary>
+    [JsonObject]
     public class ExitData
     {
         /// <summary>
@@ -31,5 +32,8 @@ namespace PlasmaCore.RPC.OutputData
         /// </summary>
         [JsonProperty(propertyName: "process_timestamp")]
         public BigInteger ProcessTimestamp { get; set; }
+
+        [JsonConstructor]
+        private ExitData() { }
     }
 }

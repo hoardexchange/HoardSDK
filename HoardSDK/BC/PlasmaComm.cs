@@ -627,21 +627,23 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="currency">currency of exit data to check</param>
         /// <param name="exitData">exit data to check</param>
+        /// <param name="checkFirstInQueue">if false ignores predecessors check and checks only if enough time has passed. defaults to true</param>
         /// <returns></returns>
-        public async Task<bool> IsExitable(string currency, ExitData exitData)
+        public async Task<bool> IsExitable(string currency, ExitData exitData, bool checkFirstInQueue = true)
         {
-            var exitId = await rootChainContract.GetStandardExitId(web3, rootChainVersion, exitData.Position, exitData.TxBytes.HexToByteArray());
-            var nextExitData = await rootChainContract.GetNextExit(web3, currency);
+            HexBigInteger blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+            var txs = await web3.Eth.Blocks.GetBlockWithTransactionsHashesByNumber.SendRequestAsync(blockNumber);
 
-            // TODO allow user to process other users' pending exits?
-            if (nextExitData.ExitId == exitId)
+            bool canExit = exitData.ProcessTimestamp < txs.Timestamp.Value;
+
+            if (canExit && checkFirstInQueue)
             {
-                HexBigInteger blockNumber = await web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
-                var txs = await web3.Eth.Blocks.GetBlockWithTransactionsHashesByNumber.SendRequestAsync(blockNumber);
-
-                return exitData.ProcessTimestamp < txs.Timestamp.Value;
+                var exitId = await rootChainContract.GetStandardExitId(web3, rootChainVersion, exitData.Position, exitData.TxBytes.HexToByteArray());
+                var nextExitData = await rootChainContract.GetNextExit(web3, currency);
+                canExit = nextExitData.ExitId == exitId;
             }
-            return false;
+
+            return canExit;
         }
 
         /// <summary>
