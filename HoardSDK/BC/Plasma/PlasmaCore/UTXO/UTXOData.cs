@@ -7,7 +7,6 @@ namespace PlasmaCore.UTXO
     /// <summary>
     /// Response class for unspent transaction output request
     /// </summary>
-    [JsonConverter(typeof(UTXOConverter))]
     public class UTXOData
     {
         /// <summary>
@@ -46,6 +45,11 @@ namespace PlasmaCore.UTXO
         [JsonProperty(propertyName: "owner")]
         public string Owner { get; set; }
 
+        /// <summary>
+        /// Utxo data - amount of tokens (fungible currencies) / token identifier (non fungible currencies)
+        /// </summary>
+        [JsonProperty(propertyName: "amount")]
+        public BigInteger Data { get; set; }
 
         /// <summary>
         /// Returns position based on block number, transaction index and output index

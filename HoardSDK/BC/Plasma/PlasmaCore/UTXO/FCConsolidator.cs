@@ -38,7 +38,7 @@ namespace PlasmaCore.UTXO
         {
             get
             {
-                return (MergedUtxo != null) && (amount == (MergedUtxo as FCUTXOData).Amount);
+                return (MergedUtxo != null) && (amount == MergedUtxo.Data);
             }
         }
 
@@ -54,7 +54,8 @@ namespace PlasmaCore.UTXO
         private ITransactionEncoder txEncoder;
 
         /// <summary>
-        /// Creates default fungible currency consolidator
+        /// Creates default fungible currency consolidator.
+        /// WARNING: Consolidator does not check if utxos are fungible. Make sure to pass only valid currencies.
         /// </summary>
         /// <param name="_plasmaAPIService">plasma API service</param>
         /// <param name="_txEncoder">transaction encoder</param>
@@ -72,13 +73,13 @@ namespace PlasmaCore.UTXO
             txEncoder = _txEncoder;
 
             BigInteger balance = BigInteger.Zero;
-            Array.Sort(_utxos, (x, y) => (x as FCUTXOData).Amount.CompareTo((x as FCUTXOData).Amount));
+            Array.Sort(_utxos, (x, y) => x.Data.CompareTo(x.Data));
             foreach (var utxo in _utxos)
             {
-                if ((utxo is FCUTXOData) && (utxo.Owner == owner) && (utxo.Currency == _currency))
+                if ((utxo.Owner == owner) && (utxo.Currency == _currency))
                 {
                     utxoList.Add(utxo);
-                    balance += (utxo as FCUTXOData).Amount;
+                    balance += utxo.Data;
                     if(_amount.HasValue && balance >= _amount.Value)
                     {
                         break;
@@ -105,11 +106,11 @@ namespace PlasmaCore.UTXO
                     TransactionReceipt receipt = await plasmaAPIService.SubmitTransaction(encodedTx);
                     if (receipt != null)
                     {
-                        FCUTXOData utxo = new FCUTXOData();
+                        UTXOData utxo = new UTXOData();
                         utxo.BlkNum = receipt.BlkNum;
                         utxo.TxIndex = receipt.TxIndex;
                         utxo.OIndex = 0;
-                        utxo.Amount = transaction.Outputs[0].Value.ToBigIntegerFromRLPDecoded();
+                        utxo.Data = transaction.Outputs[0].Value.ToBigIntegerFromRLPDecoded();
                         utxo.Owner = transaction.Outputs[0].Owner;
                         utxo.Currency = transaction.Outputs[0].Currency;
                         utxo.Position = UTXOData.CalculatePosition(utxo.BlkNum, utxo.TxIndex, utxo.OIndex);
@@ -129,16 +130,15 @@ namespace PlasmaCore.UTXO
 
             if (utxoList.Count == 1)
             {
-                var fcutxo = (utxoList[0] as FCUTXOData);
-                if (fcutxo.Amount > amount)
+                if (utxoList[0].Data > amount)
                 {
                     Transaction tx = new Transaction();
                     tx.AddInput(utxoList[0]);
                     tx.AddOutput(owner, currency, amount);
-                    tx.AddOutput(owner, currency, fcutxo.Amount - amount);
+                    tx.AddOutput(owner, currency, utxoList[0].Data - amount);
                     Transactions.Add(tx);
                 }
-                else if (fcutxo.Amount == amount)
+                else if (utxoList[0].Data == amount)
                 {
                     MergedUtxo = utxoList[0];
                 }
@@ -155,7 +155,7 @@ namespace PlasmaCore.UTXO
                         utxoGroup.ForEach(x =>
                         {
                             tx.AddInput(x);
-                            sum += (x as FCUTXOData).Amount;
+                            sum += x.Data;
                         });
                         tx.AddOutput(owner, currency, sum);
 

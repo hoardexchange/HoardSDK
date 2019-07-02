@@ -40,6 +40,8 @@ namespace Hoard.BC
 
         private ITransactionEncoder transactionEncoder = null;
 
+        private Dictionary<string, Eth.Utils.TokenType> tokenTypesDict = null;
+
         /// <summary>
         /// Creates PlasmaComm object.
         /// </summary>
@@ -147,15 +149,15 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Returns tokens data (balance) of given account and currency
+        /// Returns tokens balance data of given account and currency
         /// </summary>
         /// <param name="account">account to query</param>
         /// <param name="currency">currency to query</param>
         /// <returns></returns>
-        public async Task<BalanceData[]> GetBalanceData(HoardID account, string currency)
+        public async Task<BalanceData> GetBalanceData(HoardID account, string currency)
         {
             var balance = await plasmaApiService.GetBalance(account);
-            return balance.Where(x => x.Currency.RemoveHexPrefix().ToLower() == currency.RemoveHexPrefix().ToLower()).ToArray();
+            return balance.Where(x => x.Currency == currency.EnsureHexPrefix().ToLower()).FirstOrDefault();
         }
 
         /// <summary>
@@ -215,10 +217,15 @@ namespace Hoard.BC
         protected async Task<BigInteger> GetBalance(HoardID account, string currency)
         {
             var balances = await GetBalanceData(account);
-            var utxoData = balances.FirstOrDefault(x => x.Currency.RemoveHexPrefix().ToLower() == currency.RemoveHexPrefix().ToLower());
+            var utxoData = balances.FirstOrDefault(x => x.Currency == currency.EnsureHexPrefix().ToLower());
 
             if (utxoData != null)
-                return (utxoData as FCBalanceData).Amount;
+            {
+                if(utxoData is FCBalanceData)
+                    return (utxoData as FCBalanceData).Amount;
+                if(utxoData is NFCBalanceData)
+                    return (utxoData as NFCBalanceData).TokenIds.Length;
+            }
             return 0;
         }
 
@@ -244,7 +251,7 @@ namespace Hoard.BC
             var result = new List<UTXOData>();
             foreach (var utxo in utxos)
             {
-                if (utxo.Currency.RemoveHexPrefix().ToLower() == currency.RemoveHexPrefix().ToLower())
+                if (utxo.Currency == currency.EnsureHexPrefix().ToLower())
                 {
                     result.Add(utxo);
                 }
@@ -257,19 +264,15 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="account">account to query</param>
         /// <param name="currency">currency to query</param>
-        /// <param name="amount">amount to query</param>
+        /// <param name="data">data to query (amount or token id)</param>
         /// <returns></returns>
-        public async Task<UTXOData> GetUtxo(HoardID account, string currency, BigInteger amount)
+        public async Task<UTXOData> GetUtxo(HoardID account, string currency, BigInteger data)
         {
             var utxos = await GetUtxos(account);
             foreach (var utxo in utxos)
             {
-                if (utxo is FCUTXOData &&
-                    utxo.Currency.RemoveHexPrefix().ToLower() == currency.RemoveHexPrefix().ToLower() &&
-                    (utxo as FCUTXOData).Amount == amount)
-                {
+                if (utxo.Currency == currency.EnsureHexPrefix().ToLower() && utxo.Data == data)
                     return utxo;
-                }
             }
             return null;
         }
@@ -349,18 +352,35 @@ namespace Hoard.BC
             {
                 List<BigInteger> mergedUtxos = new List<BigInteger>();
                 var balanceData = await plasmaApiService.GetBalance(profileFrom.ID);
+                var utxoData = await plasmaApiService.GetUtxos(profileFrom.ID);
+
+                Array.ForEach(currencies, x => x = x.EnsureHexPrefix().ToLower());
                 foreach (var data in balanceData)
                 {
-                    if (currencies.Contains(data.Currency) && data is FCBalanceData)
+                    if (currencies.Contains(data.Currency))
                     {
-                        var mergedUtxo = await FCConsolidate(profileFrom, data.Currency, null, tokenSource);
-                        if (mergedUtxo != null)
+                        if (data is FCBalanceData)
                         {
-                            mergedUtxos.Add(mergedUtxo.Position);
+                            var mergedUtxo = await FCConsolidate(profileFrom, data.Currency, null, tokenSource);
+                            if (mergedUtxo != null)
+                            {
+                                mergedUtxos.Add(mergedUtxo.Position);
+                            }
+                        }
+                        else if (data is NFCBalanceData)
+                        {
+                            var utxos = utxoData.Where(x => x.Currency == data.Currency);
+                            foreach(var utxo in utxos)
+                            {
+                                mergedUtxos.Add(utxo.Position);
+                            }
+                        }
+                        else
+                        {
+                            // TODO not supported currency
+                            throw new NotSupportedException();
                         }
                     }
-                    
-                    // TODO add support for erc721?
                 }
 
                 return await StartStandardExitBulk(profileFrom, mergedUtxos.ToArray(), exitBond, tokenSource);
@@ -487,28 +507,24 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
         /// <param name="currency">transaction currency</param>
-        /// <param name="value">value to prepare (amount ERC20, tokenid ERC721)</param>
+        /// <param name="data">data to prepare (amount for ERC20, tokenid for ERC721)</param>
         /// <returns></returns>
-        public async Task<BCTransaction> PrepareDeposit(Profile profileFrom, string currency, BigInteger value)
+        public async Task<BCTransaction> PrepareDeposit(Profile profileFrom, string currency, BigInteger data)
         {
             if (rootChainContract != null)
             {
                 Nethereum.Signer.Transaction approveTx = null;
 
+                var currencyType = await GetCurrencyType(currency);
                 var tokenHandler = web3.Eth.GetContractHandler(currency);
-                var supportsFunc = tokenHandler.GetFunction<Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.SupportsInterfaceFunction>();
-                var supportsInput = new Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.SupportsInterfaceFunction();
-
-                // TODO cache currency types?
-                supportsInput.InterfaceId = ERC721GameItemContract.InterfaceID.HexToByteArray();
-                if(await supportsFunc.CallAsync<bool>(supportsInput))
+                if(!IsFungibleCurrency(currencyType))
                 {
                     // TODO approve one item (ApproveFunction) or all (SetApprovalForAllFunction)?
                     var approveFunc = tokenHandler.GetFunction<Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.ApproveFunction>();
 
                     var approveInput = new Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.ApproveFunction();
                     approveInput.To = rootChainContract.Address;
-                    approveInput.TokenId = value;
+                    approveInput.TokenId = data;
 
                     approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
                 }
@@ -518,7 +534,7 @@ namespace Hoard.BC
 
                     var approveInput = new Nethereum.StandardTokenEIP20.ContractDefinition.ApproveFunction();
                     approveInput.Spender = rootChainContract.Address;
-                    approveInput.Value = value;
+                    approveInput.Value = data;
 
                     approveTx = await ContractHelper.CreateTransaction(web3, profileFrom.ID, BigInteger.Zero, approveFunc, approveInput);
                 }
@@ -530,18 +546,18 @@ namespace Hoard.BC
         }
 
         /// <summary>
-        /// Deposits given amount of ERC20 token to the child chain assuming PrepareDeposit has been called first.
+        /// Deposits given token data (amount for ERC20 or tokend id for ERC721) to the child chain assuming PrepareDeposit has been called first.
         /// </summary>
         /// <param name="profileFrom">profile of the sender</param>
         /// <param name="currency">transaction currency</param>
-        /// <param name="amount">amount to send (less than or equal to the amount from PrepareDeposit)</param>
+        /// <param name="data">data to send (amount for ERC20 - less than or equal to the amount from PrepareDeposit; tokend id for ERC721)</param>
         /// <returns></returns>
-        public async Task<BCTransaction> Deposit(Profile profileFrom, string currency, BigInteger amount)
+        public async Task<BCTransaction> Deposit(Profile profileFrom, string currency, BigInteger data)
         {
             if (rootChainContract != null)
             {
                 var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
-                depositPlasmaTx.AddOutput(profileFrom.ID, currency, amount);
+                depositPlasmaTx.AddOutput(profileFrom.ID, currency, data);
 
                 RawTransactionEncoder txEncoder = new RawTransactionEncoder();
                 byte[] encodedDepositTx = txEncoder.EncodeRaw(depositPlasmaTx);
@@ -564,29 +580,33 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<UTXOData> FCConsolidate(Profile profileFrom, string currency, BigInteger? amount = null, CancellationTokenSource tokenSource = null)
         {
-            var utxos = await GetUtxos(profileFrom.ID, currency);
-            if (utxos.Length > 1)
+            var currencyType = await GetCurrencyType(currency);
+            if (IsFungibleCurrency(currencyType))
             {
-                FCConsolidator consolidator = new FCConsolidator(plasmaApiService, transactionEncoder, profileFrom.ID, currency, utxos, amount);
-                while (consolidator.CanMerge)
+                var utxos = await GetUtxos(profileFrom.ID, currency);
+                if (utxos.Length > 1)
                 {
-                    if (tokenSource != null && tokenSource.IsCancellationRequested)
+                    FCConsolidator consolidator = new FCConsolidator(plasmaApiService, transactionEncoder, profileFrom.ID, currency, utxos, amount);
+                    while (consolidator.CanMerge)
                     {
-                        break;
+                        if (tokenSource != null && tokenSource.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        foreach (var transaction in consolidator.Transactions)
+                        {
+                            await SignTransaction(profileFrom, transaction);
+                        }
+                        await consolidator.ProcessTransactions();
                     }
 
-                    foreach (var transaction in consolidator.Transactions)
-                    {
-                        await SignTransaction(profileFrom, transaction);
-                    }
-                    await consolidator.ProcessTransactions();
+                    return consolidator.MergedUtxo;
                 }
-
-                return consolidator.MergedUtxo;
-            }
-            else if(utxos.Length == 1)
-            {
-                return utxos[0];
+                else if (utxos.Length == 1)
+                {
+                    return utxos[0];
+                }
             }
             return null;
         }
@@ -706,6 +726,42 @@ namespace Hoard.BC
         {
             string txId = await web3.Eth.Transactions.SendRawTransaction.SendRequestAsync(signedTransaction).ConfigureAwait(false);
             return new BCTransaction(web3, txId);
+        }
+
+        /// <summary>
+        /// Updates token types
+        /// </summary>
+        private async Task<Eth.Utils.TokenType> GetCurrencyType(string currency)
+        {
+            if (!tokenTypesDict.ContainsKey(currency))
+            {
+                if (currency == ZERO_ADDRESS)
+                {
+                    tokenTypesDict[currency] = Eth.Utils.TokenType.Ether;
+                }
+                else
+                {
+                    var tokenHandler = web3.Eth.GetContractHandler(currency);
+                    var supportsFunc = tokenHandler.GetFunction<Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.SupportsInterfaceFunction>();
+                    var supportsInput = new Nethereum.StandardNonFungibleTokenERC721.ContractDefinition.SupportsInterfaceFunction();
+
+                    supportsInput.InterfaceId = ERC721GameItemContract.InterfaceID.HexToByteArray();
+                    if (await supportsFunc.CallAsync<bool>(supportsInput))
+                    {
+                        tokenTypesDict[currency] = Eth.Utils.TokenType.ERC721;
+                    }
+                    else
+                    {
+                        tokenTypesDict[currency] = Eth.Utils.TokenType.ERC20;
+                    }
+                }
+            }
+            return tokenTypesDict[currency];
+        }
+
+        private bool IsFungibleCurrency(Eth.Utils.TokenType currencyType)
+        {
+            return (currencyType == Eth.Utils.TokenType.ERC20 || currencyType == Eth.Utils.TokenType.Ether);
         }
     }
 }
