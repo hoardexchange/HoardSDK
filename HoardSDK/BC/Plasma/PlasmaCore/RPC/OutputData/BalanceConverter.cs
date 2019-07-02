@@ -12,10 +12,24 @@ namespace PlasmaCore.RPC.OutputData.Balance
 
             BalanceData result = null;
             if (jObject["amount"] != null)
-                result = new FCBalanceData();
+            {
+                if (jObject["amount"].Type == JTokenType.Array)
+                {
+                    result = new NFCBalanceData();
+                }
+                else if (jObject["amount"].Type == JTokenType.Integer)
+                {
+                    result = new FCBalanceData();
+                }
+                else
+                {
+                    //TODO not supported balance format
+                    throw new NotSupportedException();
+                }
+            }
             else
             {
-                //TODO not supported utxo format
+                //TODO not supported balance format
                 throw new NotSupportedException();
             }
 

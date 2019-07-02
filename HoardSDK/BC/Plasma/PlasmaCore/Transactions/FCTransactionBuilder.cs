@@ -20,10 +20,10 @@ namespace PlasmaCore.Transactions
         /// <returns></returns>
         public static Transaction Build(string addreesFrom, string addressTo, UTXOData[] utxos, BigInteger amount, string currency)
         {
-            UTXOData[] inputUtxos = Array.FindAll(utxos, x => (x is FCUTXOData) && (x.Currency == currency));
+            UTXOData[] inputUtxos = Array.FindAll(utxos, x => x.Currency == currency);
 
             //TODO write more optimized algorithm to find utxo inputs
-            Array.Sort<UTXOData>(inputUtxos, new Comparison<UTXOData>((x, y) => (x as FCUTXOData).Amount.CompareTo((y as FCUTXOData).Amount)));
+            Array.Sort<UTXOData>(inputUtxos, new Comparison<UTXOData>((x, y) => x.Data.CompareTo(y.Data)));
 
             if (inputUtxos.Length > 0)
             {
@@ -34,7 +34,7 @@ namespace PlasmaCore.Transactions
                 {
                     if (tx.AddInput(inputUtxos[i]))
                     {
-                        sum += (inputUtxos[i] as FCUTXOData).Amount;
+                        sum += inputUtxos[i].Data;
                     }
                     else
                         break;

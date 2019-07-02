@@ -24,7 +24,6 @@ namespace HoardTests.PlasmaCoreTests
             string address = "0x0e5e50883f3a1dd73c170c935339bce1b24a96d0";
             var utxos = await PlasmaAPIService.GetUtxos(address);
 
-            Assert.True(utxos.All(x => x is FCUTXOData));
             Assert.NotEmpty(utxos);
             Assert.True(utxos.All(x => x.Owner == address));
         }
@@ -55,7 +54,7 @@ namespace HoardTests.PlasmaCoreTests
                 foreach (var utxo in utxos)
                 {
                     if (utxo.Currency == data.Currency)
-                        sum += (utxo as FCUTXOData).Amount;
+                        sum += utxo.Data;
                 }
 
                 Assert.Equal(sum, (data as FCBalanceData).Amount);
