@@ -116,9 +116,17 @@ namespace Hoard.Utils
             }
             string password = await userInputProvider.RequestInput(name, new HoardID(address), eUserInputType.kPassword, address);
             var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
-            var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json),true);
-
-            return new ProfileDesc(name, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
+            Nethereum.Signer.EthECKey key = null;
+            try
+            {
+                key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json), true);
+                return new ProfileDesc(name, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
+            }
+            catch (Exception e)
+            {
+                ErrorCallbackProvider.ReportWarning(string.Format("LoadProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
+                return null;
+            }
         }
 
         /// <summary>
@@ -218,9 +226,17 @@ namespace Hoard.Utils
                         ErrorCallbackProvider.ReportInfo(string.Format("Loading account {0}", fileName));
                         string password = await userInputProvider.RequestInput(profileName, new HoardID(address), eUserInputType.kPassword, address);
                         var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
-                        var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json), true);
-
-                        return new ProfileDesc(profileName, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
+                        Nethereum.Signer.EthECKey key = null;
+                        try
+                        {
+                            key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json), true);
+                            return new ProfileDesc(profileName, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
+                        }
+                        catch (Exception e)
+                        {
+                            ErrorCallbackProvider.ReportWarning(string.Format("RequestProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
+                            return null;
+                        }
                     }
                 }
             }
@@ -300,7 +316,15 @@ namespace Hoard.Utils
                         if (passwordNeeded)
                         {
                             string password = await userInputProvider.RequestInput(null, id, eUserInputType.kPassword, valueAddress.Value<string>());
-                            key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, jobj.ToString()), true);
+                            try
+                            {
+                                key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, jobj.ToString()), true);
+                            }
+                            catch (Exception e)
+                            {
+                                ErrorCallbackProvider.ReportWarning(string.Format("DeleteProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
+                                key = null;
+                            }
                         }
                         if (!passwordNeeded || (key != null))
                         {
@@ -343,14 +367,21 @@ namespace Hoard.Utils
                     HoardID actualId = new HoardID(valueAddress.Value<string>());
                     if (id == actualId)
                     {
-                        
-                        var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(oldPassword, jobj.ToString()), true);
-                        string newFile = CreateAccountKeyStoreFile(key, newPassword, name.Value<string>(), profilesDir);
-                        if (newFile != null)
+                        try
                         {
-                            File.Delete(file);
+                            var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(oldPassword, jobj.ToString()), true);
+                            string newFile = CreateAccountKeyStoreFile(key, newPassword, name.Value<string>(), profilesDir);
+                            if (newFile != null)
+                            {
+                                File.Delete(file);
+                            }
+                            return newFile;
                         }
-                        return newFile;
+                        catch(Exception e)
+                        {
+                            ErrorCallbackProvider.ReportWarning(string.Format("ChangePassword::DecryptKeyStoreFromJson failed: {0}", e.Message));
+                            return null;
+                        }
                     }
                 }
             }
