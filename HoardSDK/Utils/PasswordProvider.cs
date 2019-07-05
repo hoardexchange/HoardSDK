@@ -15,7 +15,7 @@ namespace Hoard.Utils
     /// </summary>
     public class PasswordProvider
     {
-        private static readonly byte[] IV = { 0xa5, 0x7f, 0xb2, 0xcc, 0xce, 0xe7, 0x77, 0xea, 0xdb, 0xb9, 0xc0, 0x52, 0x1a, 0x3d, 0xdd, 0xde };
+        private readonly byte[] IV = { 0xa5, 0x7f, 0xb2, 0xcc, 0xce, 0xe7, 0x77, 0xea, 0xdb, 0xb9, 0xc0, 0x52, 0x1a, 0x3d, 0xdd, 0xde };
 
         /// <summary>
         /// 
@@ -88,16 +88,17 @@ namespace Hoard.Utils
         {
             try
             {
-                byte[] encryptionKey = GenerateKey(ProvideEncryptionPhrase());                
-                byte[] encryptedData = Helper.AESEncrypt(encryptionKey, Encoding.UTF8.GetBytes(password), ProvideIV(), 256);
+                byte[] encryptionKey = GenerateKey(ProvideEncryptionPhrase());
+                byte[] _iv = ProvideIV();
+                byte[] encryptedData = Helper.AESEncrypt(encryptionKey, Encoding.UTF8.GetBytes(password), _iv, 256);
                 string hashedId = Helper.Keccak256HexHashString(id.ToString());
                 EncryptedData data = new EncryptedData();
                 data.pswd = BitConverter.ToString(encryptedData).Replace("-", string.Empty);
                 return data;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                ErrorCallbackProvider.ReportError("Can't encrypt password for id " + id.ToString() + " failed!");
+                ErrorCallbackProvider.ReportError("Can't encrypt password for id " + id.ToString() + " failed! " + e.Message);
                 return null;
             }
         }
