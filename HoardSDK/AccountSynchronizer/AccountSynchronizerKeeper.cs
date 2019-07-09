@@ -136,10 +136,9 @@ namespace Hoard
                 Buffer.BlockCopy(length, 0, dtsData, 8, 4);
                 Buffer.BlockCopy(chunks[i], 0, dtsData, 12, chunks[i].Length);
                 byte[] data = BuildMessage(messageId, dtsData);
-
-                await SendMessage(data, ctoken);
+                var res = await SendMessage(data, ctoken);
             }
-            return "Message sent";
+            return await Task.FromResult<string>("Message sent");
         }
 
         private int SplitMessage(byte[] fullMessage, int chunkSize, ref List<byte[]> outChunks)

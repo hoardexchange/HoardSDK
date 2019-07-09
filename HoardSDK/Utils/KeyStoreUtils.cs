@@ -155,11 +155,7 @@ namespace Hoard.Utils
                 string fileName = Path.GetFileName(fullPath);
                 if ((fileName != null) && (fileName != System.String.Empty))
                 {
-                    string json = null;
-                    using (var reader = File.OpenText(fullPath))
-                    {
-                        json = await reader.ReadToEndAsync();
-                    }
+                    string json = File.ReadAllText(fullPath);
                     var details = JObject.Parse(json);
                     if (details == null)
                     {
@@ -168,7 +164,7 @@ namespace Hoard.Utils
                     string address = details["address"].Value<string>();
                     if (new HoardID(address) == id)
                     {
-                        return json;
+                        return await Task.FromResult<string>(json);
                     }
                 }
             }
