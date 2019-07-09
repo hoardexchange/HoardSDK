@@ -135,10 +135,57 @@ namespace Hoard.Utils
         /// <param name="id"></param>
         /// <param name="profilesDir"></param>
         /// <returns></returns>
-        public static async Task<string> LoadEncryptedProfile(HoardID id, string profilesDir)
+        public static async Task<string> LoadEncryptedProfileAsync(HoardID id, string profilesDir)
         {
             if (!Directory.Exists(profilesDir))
         {
+                ErrorCallbackProvider.ReportWarning("Not found any profile files.");
+                return null;
+            }
+
+            var profileFiles = Directory.GetFiles(profilesDir, "*.keystore");
+            if (profileFiles.Length == 0)
+            {
+                ErrorCallbackProvider.ReportWarning("Not found any profiles files.");
+                return null;
+            }
+
+            foreach (var fullPath in profileFiles)
+            {
+                string fileName = Path.GetFileName(fullPath);
+                if ((fileName != null) && (fileName != System.String.Empty))
+                {
+                    string json = null;
+                    using (var reader = File.OpenText(fullPath))
+                    {
+                        json = await reader.ReadToEndAsync();
+                    }
+                    var details = JObject.Parse(json);
+                    if (details == null)
+                    {
+                        continue;
+                    }
+                    string address = details["address"].Value<string>();
+                    if (new HoardID(address) == id)
+                    {
+                        return json;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="profilesDir"></param>
+        /// <returns></returns>
+        public static string LoadEncryptedProfile(HoardID id, string profilesDir)
+        {
+            if (!Directory.Exists(profilesDir))
+            {
                 ErrorCallbackProvider.ReportWarning("Not found any profile files.");
                 return null;
             }
@@ -164,7 +211,7 @@ namespace Hoard.Utils
                     string address = details["address"].Value<string>();
                     if (new HoardID(address) == id)
                     {
-                        return await Task.FromResult<string>(json);
+                        return json;
                     }
                 }
             }

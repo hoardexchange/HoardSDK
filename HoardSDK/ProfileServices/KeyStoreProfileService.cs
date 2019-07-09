@@ -198,7 +198,7 @@ namespace Hoard
         /// <param name="profilesDir"></param>
         /// <param name="profileData"></param>
         /// <returns></returns>
-        public static async Task<string> SaveProfile(string profilesDir, string profileData)
+        public static async Task<string> SaveProfileAsync(string profilesDir, string profileData)
         {
             var accountJsonObject = JObject.Parse(profileData);
             if (accountJsonObject == null)
@@ -214,6 +214,33 @@ namespace Hoard
             {
                 await newfile.WriteAsync(profileData);
                 await newfile.FlushAsync();
+            }
+
+            return fileName;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="profilesDir"></param>
+        /// <param name="profileData"></param>
+        /// <returns></returns>
+        public static string SaveProfile(string profilesDir, string profileData)
+        {
+            var accountJsonObject = JObject.Parse(profileData);
+            if (accountJsonObject == null)
+            {
+                return null;
+            }
+
+            string id = accountJsonObject["id"].Value<string>();
+            var fileName = id + ".keystore";
+
+            //save the File
+            using (var newfile = File.CreateText(Path.Combine(profilesDir, fileName)))
+            {
+                newfile.Write(profileData);
+                newfile.Flush();
             }
 
             return fileName;
