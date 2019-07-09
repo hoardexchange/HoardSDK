@@ -40,7 +40,7 @@ namespace Hoard.BC
 
         private ITransactionEncoder transactionEncoder = null;
 
-        private Dictionary<string, Eth.Utils.TokenType> tokenTypesDict = null;
+        private Dictionary<string, Eth.Utils.TokenType> tokenTypesDict = new Dictionary<string, Eth.Utils.TokenType>();
 
         /// <summary>
         /// Creates PlasmaComm object.
@@ -554,7 +554,7 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<BCTransaction> Deposit(Profile profileFrom, string currency, BigInteger data)
         {
-            if (rootChainContract != null)
+            if (rootChainContract != null && currency != ZERO_ADDRESS)
             {
                 var depositPlasmaTx = new PlasmaCore.Transactions.Transaction();
                 depositPlasmaTx.AddOutput(profileFrom.ID, currency, data);
@@ -566,7 +566,7 @@ namespace Hoard.BC
                 string signedDepositTx = await SignTransaction(profileFrom, depositTx);
                 var depositTrans = await SubmitTransactionOnRootChain(web3, signedDepositTx);
                 return depositTrans;
-            }
+            }        
             return null;
         }
 
