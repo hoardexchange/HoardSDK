@@ -234,23 +234,28 @@ namespace Hoard
         /// 
         /// </summary>
         /// <param name="profilesDir"></param>
-        /// <param name="profileData"></param>
+        /// <param name="encryptedKey"></param>
         /// <returns></returns>
-        public static string SaveProfile(string profilesDir, string profileData)
+        public static string SaveProfile(string profilesDir, string encryptedKey)
         {
-            var accountJsonObject = JObject.Parse(profileData);
-            if (accountJsonObject == null)
+            if (!Directory.Exists(profilesDir))
+            {
+                Directory.CreateDirectory(profilesDir);
+            }
+
+            var keystoreJsonObject = JObject.Parse(encryptedKey);
+            if (keystoreJsonObject == null)
             {
                 return null;
             }
 
-            string id = accountJsonObject["id"].Value<string>();
+            string id = keystoreJsonObject["id"].Value<string>();
             var fileName = id + ".keystore";
 
             //save the File
             using (var newfile = File.CreateText(Path.Combine(profilesDir, fileName)))
             {
-                newfile.Write(profileData);
+                newfile.Write(encryptedKey);
                 newfile.Flush();
             }
 
