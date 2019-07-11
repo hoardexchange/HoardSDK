@@ -225,8 +225,9 @@ namespace Hoard.Utils
         /// <param name="userInputProvider"></param>
         /// <param name="addressOrName"></param>
         /// <param name="profilesDir"></param>
+        /// <param name="password"></param>
         /// <returns></returns>
-        public static async Task<ProfileDesc> RequestProfile(IUserInputProvider userInputProvider, string addressOrName, string profilesDir)
+        public static async Task<ProfileDesc> RequestProfile(IUserInputProvider userInputProvider, string addressOrName, string profilesDir, string password = null)
         {
             if (!Directory.Exists(profilesDir))
             {
@@ -267,12 +268,20 @@ namespace Hoard.Utils
                     if (((isValidAddress == true) && (address == providedAddress)) || ((isValidAddress == false) && (profileName == addressOrName)))
                     {
                         ErrorCallbackProvider.ReportInfo(string.Format("Loading account {0}", fileName));
-                        string password = await userInputProvider.RequestInput(profileName, new HoardID(address), eUserInputType.kPassword, address);
+                        string pswd = null;
+                        if (password == null)
+                        {
+                            pswd = await userInputProvider.RequestInput(profileName, new HoardID(address), eUserInputType.kPassword, address);
+                        }
+                        else
+                        {
+                            pswd = password;
+                        }
                         var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
                         Nethereum.Signer.EthECKey key = null;
                         try
                         {
-                            key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json), true);
+                            key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(pswd, json), true);
                             return new ProfileDesc(profileName, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
                         }
                         catch (Exception e)

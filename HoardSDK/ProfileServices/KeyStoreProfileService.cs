@@ -176,6 +176,23 @@ namespace Hoard
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="addressOrName"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        public async Task<Profile> RequestProfile(string addressOrName, string password)
+        {
+            ErrorCallbackProvider.ReportInfo("Requesting user account.");
+            KeyStoreUtils.ProfileDesc accountDesc = await KeyStoreUtils.RequestProfile(UserInputProvider, addressOrName, ProfilesDir, password);
+            if (accountDesc != null)
+            {
+                return new KeyStoreProfile(accountDesc.Name, new HoardID(accountDesc.Address), accountDesc.PrivKey);
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Retrieves profile stored in profile folder for particular user name.
         /// Found accounts will be stored in User object.
         /// </summary>
@@ -183,13 +200,7 @@ namespace Hoard
         /// <returns>true if at least one profile has been properly loaded</returns>
         public async Task<Profile> RequestProfile(string addressOrName)
         {
-            ErrorCallbackProvider.ReportInfo("Requesting user account.");
-            KeyStoreUtils.ProfileDesc accountDesc = await KeyStoreUtils.RequestProfile(UserInputProvider, addressOrName, ProfilesDir);
-            if (accountDesc != null)
-            {
-                return new KeyStoreProfile(accountDesc.Name, new HoardID(accountDesc.Address), accountDesc.PrivKey);
-            }
-            return null;
+            return await RequestProfile(addressOrName, null);
         }
 
         /// <summary>
