@@ -251,7 +251,7 @@ namespace Hoard.BC
 
             string gameAddress = await gameCenter.GetGameContractAsync(game.ID);
 
-            if (gameAddress != Eth.Utils.EMPTY_ADDRESS)
+            if (gameAddress != Eth.Utils.EMPTY_ADDRESS && gameAddress != "0x")
             {
                 GameContract gameContract = new GameContract(web, gameAddress);
 
