@@ -116,9 +116,17 @@ namespace Hoard.Utils
             }
             string password = await userInputProvider.RequestInput(name, new HoardID(address), eUserInputType.kPassword, address);
             var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
-            var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json),true);
-
-            return new ProfileDesc(name, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
+            Nethereum.Signer.EthECKey key = null;
+            try
+            {
+                key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json), true);
+                return new ProfileDesc(name, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
+            }
+            catch (Exception e)
+            {
+                ErrorCallbackProvider.ReportWarning(string.Format("LoadProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
+                return null;
+            }
         }
 
         /// <summary>
@@ -127,7 +135,7 @@ namespace Hoard.Utils
         /// <param name="id"></param>
         /// <param name="profilesDir"></param>
         /// <returns></returns>
-        public static async Task<string> LoadEncryptedProfile(HoardID id, string profilesDir)
+        public static async Task<string> LoadEncryptedProfileAsync(HoardID id, string profilesDir)
         {
             if (!Directory.Exists(profilesDir))
         {
@@ -171,11 +179,55 @@ namespace Hoard.Utils
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="id"></param>
+        /// <param name="profilesDir"></param>
+        /// <returns></returns>
+        public static string LoadEncryptedProfile(HoardID id, string profilesDir)
+        {
+            if (!Directory.Exists(profilesDir))
+            {
+                ErrorCallbackProvider.ReportWarning("Not found any profile files.");
+                return null;
+            }
+
+            var profileFiles = Directory.GetFiles(profilesDir, "*.keystore");
+            if (profileFiles.Length == 0)
+            {
+                ErrorCallbackProvider.ReportWarning("Not found any profiles files.");
+                return null;
+            }
+
+            foreach (var fullPath in profileFiles)
+            {
+                string fileName = Path.GetFileName(fullPath);
+                if ((fileName != null) && (fileName != System.String.Empty))
+                {
+                    string json = File.ReadAllText(fullPath);
+                    var details = JObject.Parse(json);
+                    if (details == null)
+                    {
+                        continue;
+                    }
+                    string address = details["address"].Value<string>();
+                    if (new HoardID(address) == id)
+                    {
+                        return json;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="userInputProvider"></param>
         /// <param name="addressOrName"></param>
         /// <param name="profilesDir"></param>
+        /// <param name="password"></param>
         /// <returns></returns>
-        public static async Task<ProfileDesc> RequestProfile(IUserInputProvider userInputProvider, string addressOrName, string profilesDir)
+        public static async Task<ProfileDesc> RequestProfile(IUserInputProvider userInputProvider, string addressOrName, string profilesDir, string password = null)
         {
             if (!Directory.Exists(profilesDir))
             {
@@ -216,11 +268,27 @@ namespace Hoard.Utils
                     if (((isValidAddress == true) && (address == providedAddress)) || ((isValidAddress == false) && (profileName == addressOrName)))
                     {
                         ErrorCallbackProvider.ReportInfo(string.Format("Loading account {0}", fileName));
-                        string password = await userInputProvider.RequestInput(profileName, new HoardID(address), eUserInputType.kPassword, address);
+                        string pswd = null;
+                        if (password == null)
+                        {
+                            pswd = await userInputProvider.RequestInput(profileName, new HoardID(address), eUserInputType.kPassword, address);
+                        }
+                        else
+                        {
+                            pswd = password;
+                        }
                         var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
-                        var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json), true);
-
-                        return new ProfileDesc(profileName, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
+                        Nethereum.Signer.EthECKey key = null;
+                        try
+                        {
+                            key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(pswd, json), true);
+                            return new ProfileDesc(profileName, key.GetPublicAddress(), key.GetPrivateKeyAsBytes());
+                        }
+                        catch (Exception e)
+                        {
+                            ErrorCallbackProvider.ReportWarning(string.Format("RequestProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
+                            return null;
+                        }
                     }
                 }
             }
@@ -300,7 +368,15 @@ namespace Hoard.Utils
                         if (passwordNeeded)
                         {
                             string password = await userInputProvider.RequestInput(null, id, eUserInputType.kPassword, valueAddress.Value<string>());
-                            key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, jobj.ToString()), true);
+                            try
+                            {
+                                key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, jobj.ToString()), true);
+                            }
+                            catch (Exception e)
+                            {
+                                ErrorCallbackProvider.ReportWarning(string.Format("DeleteProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
+                                key = null;
+                            }
                         }
                         if (!passwordNeeded || (key != null))
                         {
@@ -343,14 +419,21 @@ namespace Hoard.Utils
                     HoardID actualId = new HoardID(valueAddress.Value<string>());
                     if (id == actualId)
                     {
-                        
-                        var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(oldPassword, jobj.ToString()), true);
-                        string newFile = CreateAccountKeyStoreFile(key, newPassword, name.Value<string>(), profilesDir);
-                        if (newFile != null)
+                        try
                         {
-                            File.Delete(file);
+                            var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(oldPassword, jobj.ToString()), true);
+                            string newFile = CreateAccountKeyStoreFile(key, newPassword, name.Value<string>(), profilesDir);
+                            if (newFile != null)
+                            {
+                                File.Delete(file);
+                            }
+                            return newFile;
                         }
-                        return newFile;
+                        catch(Exception e)
+                        {
+                            ErrorCallbackProvider.ReportWarning(string.Format("ChangePassword::DecryptKeyStoreFromJson failed: {0}", e.Message));
+                            return null;
+                        }
                     }
                 }
             }

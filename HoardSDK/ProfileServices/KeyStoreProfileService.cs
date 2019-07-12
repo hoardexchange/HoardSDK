@@ -176,15 +176,15 @@ namespace Hoard
         }
 
         /// <summary>
-        /// Retrieves profile stored in profile folder for particular user name.
-        /// Found accounts will be stored in User object.
+        /// 
         /// </summary>
-        /// <param name="addressOrName">user address or name to retrieve profile for</param>
-        /// <returns>true if at least one profile has been properly loaded</returns>
-        public async Task<Profile> RequestProfile(string addressOrName)
+        /// <param name="addressOrName"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        public async Task<Profile> RequestProfile(string addressOrName, string password)
         {
             ErrorCallbackProvider.ReportInfo("Requesting user account.");
-            KeyStoreUtils.ProfileDesc accountDesc = await KeyStoreUtils.RequestProfile(UserInputProvider, addressOrName, ProfilesDir);
+            KeyStoreUtils.ProfileDesc accountDesc = await KeyStoreUtils.RequestProfile(UserInputProvider, addressOrName, ProfilesDir, password);
             if (accountDesc != null)
             {
                 return new KeyStoreProfile(accountDesc.Name, new HoardID(accountDesc.Address), accountDesc.PrivKey);
@@ -193,12 +193,23 @@ namespace Hoard
         }
 
         /// <summary>
+        /// Retrieves profile stored in profile folder for particular user name.
+        /// Found accounts will be stored in User object.
+        /// </summary>
+        /// <param name="addressOrName">user address or name to retrieve profile for</param>
+        /// <returns>true if at least one profile has been properly loaded</returns>
+        public async Task<Profile> RequestProfile(string addressOrName)
+        {
+            return await RequestProfile(addressOrName, null);
+        }
+
+        /// <summary>
         /// Saves account to selected directory.
         /// </summary>
         /// <param name="profilesDir"></param>
         /// <param name="profileData"></param>
         /// <returns></returns>
-        public static async Task<string> SaveProfile(string profilesDir, string profileData)
+        public static async Task<string> SaveProfileAsync(string profilesDir, string profileData)
         {
             var accountJsonObject = JObject.Parse(profileData);
             if (accountJsonObject == null)
@@ -214,6 +225,38 @@ namespace Hoard
             {
                 await newfile.WriteAsync(profileData);
                 await newfile.FlushAsync();
+            }
+
+            return fileName;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="profilesDir"></param>
+        /// <param name="encryptedKey"></param>
+        /// <returns></returns>
+        public static string SaveProfile(string profilesDir, string encryptedKey)
+        {
+            if (!Directory.Exists(profilesDir))
+            {
+                Directory.CreateDirectory(profilesDir);
+            }
+
+            var keystoreJsonObject = JObject.Parse(encryptedKey);
+            if (keystoreJsonObject == null)
+            {
+                return null;
+            }
+
+            string id = keystoreJsonObject["id"].Value<string>();
+            var fileName = id + ".keystore";
+
+            //save the File
+            using (var newfile = File.CreateText(Path.Combine(profilesDir, fileName)))
+            {
+                newfile.Write(encryptedKey);
+                newfile.Flush();
             }
 
             return fileName;
