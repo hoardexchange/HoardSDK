@@ -638,7 +638,7 @@ namespace Hoard.BC
                 transaction.Senders[i] = profile.ID;
             var encodedTx = transactionEncoder.EncodeRaw(transaction);
             string signature = await profile.SignTransaction(encodedTx);
-            transaction.SetSignature(profile.ID, signature.HexToByteArray());
+            transaction.SetSignature(signature.HexToByteArray());
             return transactionEncoder.EncodeSigned(transaction).ToHex(true);
         }
 

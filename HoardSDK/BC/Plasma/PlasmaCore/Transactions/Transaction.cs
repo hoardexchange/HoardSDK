@@ -146,6 +146,23 @@ namespace PlasmaCore.Transactions
         }
 
         /// <summary>
+        /// Sets signature of transaction for all inputs
+        /// </summary>
+        /// <param name="signature">sender signature</param>
+        public void SetSignature(byte[] signature)
+        {
+            if (signatures.Length < Inputs.Count)
+                Array.Resize(ref signatures, Inputs.Count);
+            if (senders.Length < Inputs.Count)
+                Array.Resize(ref senders, Inputs.Count);
+
+            for (Int32 i = 0; i < Inputs.Count; ++i)
+            {
+                signatures[i] = signature;
+            }
+        }
+
+        /// <summary>
         /// Sets signature to transaction by index
         /// </summary>
         /// <param name="idx">index of signature in transaction</param>
