@@ -28,7 +28,8 @@ namespace Hoard.ExchangeServices
         public async Task Init()
         {
             await Task.Yield();
-            if (Uri.IsWellFormedUriString(Hoard.Options.ExchangeServiceUrl, UriKind.Absolute))
+            bool isNullOrEmpty = (Hoard.Options.ExchangeServiceUrl == null) || (Hoard.Options.ExchangeServiceUrl == "");
+            if (!isNullOrEmpty && Uri.IsWellFormedUriString(Hoard.Options.ExchangeServiceUrl, UriKind.Absolute))
             {
                 Client = new RestClient(Hoard.Options.ExchangeServiceUrl);
                 Client.AutomaticDecompression = false;
@@ -37,7 +38,11 @@ namespace Hoard.ExchangeServices
                 Client.CookieContainer = new System.Net.CookieContainer();
                 return;
             }
-            throw new HoardException($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
+
+            if (!isNullOrEmpty)
+            {
+                throw new HoardException($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
+            }
         }
 
         /// <summary>

@@ -56,7 +56,8 @@ namespace Hoard.GameItemProviders
 
         private async Task ConnectToGameServer()
         {
-            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            bool isNullOrEmpty = (Game.Url == null) || (Game.Url == "");
+            if (!isNullOrEmpty && Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {
                 Client = new RestClient(Game.Url);
                 Client.AutomaticDecompression = false;
@@ -72,7 +73,11 @@ namespace Hoard.GameItemProviders
                 }
                 return;
             }
-            throw new HoardException($"Not a proper game url: {Game.Url}!");
+
+            if (!isNullOrEmpty)
+            {
+                throw new HoardException($"Not a proper game url: {Game.Url}!");
+            }
         }
 
         /// <summary>
@@ -82,8 +87,9 @@ namespace Hoard.GameItemProviders
         /// <returns></returns>
         public async Task Signin(Profile profile)
         {
-            if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
-            {                
+            bool isNullOrEmpty = (Game.Url == null) || (Game.Url == "");
+            if (!isNullOrEmpty && Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
+            {
                 Client = new RestClient(Game.Url);
                 Client.AutomaticDecompression = false;
                 //setup a cookie container for automatic cookies handling
@@ -100,7 +106,7 @@ namespace Hoard.GameItemProviders
                 {
                     throw new HoardException(response.ErrorException.ToString());
                 }
-                
+
                 string challengeToken = response.Content;
                 challengeToken = challengeToken.Substring(2);
 
@@ -128,7 +134,11 @@ namespace Hoard.GameItemProviders
                 }
                 return;
             }
-            throw new HoardException($"Not a proper game url: {Game.Url}!");            
+
+            if(!isNullOrEmpty)
+            {
+                throw new HoardException($"Not a proper game url: {Game.Url}!");
+            }
         }
 
         private void PrepareRequest(RestRequest req)
@@ -380,8 +390,7 @@ namespace Hoard.GameItemProviders
                 return SecureProvider.Transfer(from, addressTo, item, amount);
             }
 
-            ErrorCallbackProvider.ReportError("Invalid Client or SecureProvider!");
-            return new Task<bool>(()=> { return false; });
+            throw new HoardException("Invalid Client or SecureProvider!");
         }
 
         /// <summary>
@@ -397,7 +406,7 @@ namespace Hoard.GameItemProviders
             }
             else
             {
-                throw new HoardException("Game.Url is empty - all data will be provided by BlockChain provider!");
+                ErrorCallbackProvider.ReportWarning("Game.Url is empty - all data will be provided by BlockChain provider!");
             }       
             
             //2. check also fallback connector
