@@ -13,7 +13,7 @@ namespace Hoard
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<bool> Connect(CancellationToken token);
+        Task Connect(CancellationToken token);
 
         /// <summary>
         /// 

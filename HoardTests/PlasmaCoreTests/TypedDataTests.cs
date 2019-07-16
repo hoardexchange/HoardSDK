@@ -3,6 +3,7 @@ using Nethereum.Util;
 using PlasmaCore.EIP712;
 using PlasmaCore.Transactions;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace HoardTests.PlasmaCoreTests
@@ -19,6 +20,7 @@ namespace HoardTests.PlasmaCoreTests
         [Trait("Category", "Unit")]
         public async void ShouldSignCorrectly()
         {
+            await Task.Yield();
             string privateKey = "0xa07cb7889ab3a164dcc72cb6103f2573c7ef2d4a855810594d2bf25df60bc39e";
 
             PlasmaCore.Transactions.Transaction transaction = new PlasmaCore.Transactions.Transaction();

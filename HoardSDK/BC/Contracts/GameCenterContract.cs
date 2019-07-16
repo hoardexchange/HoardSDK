@@ -1,4 +1,5 @@
-﻿using Nethereum.ABI.FunctionEncoding.Attributes;
+﻿using Hoard.Exceptions;
+using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
@@ -164,8 +165,7 @@ namespace Hoard.BC.Contracts
         {
             if (profile.ID == adminAddr)
             {
-                ErrorCallbackProvider.ReportError("Can't add my self");
-                return null;
+                throw new HoardException("Can't add my self");
             }
             var function = GetFunctionAddAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
@@ -181,8 +181,7 @@ namespace Hoard.BC.Contracts
         {
             if (profile.ID == adminAddr)
             {
-                ErrorCallbackProvider.ReportError("Can't remove my self");
-                return null;
+                throw new HoardException("Can't remove my self");
             }
             var function = GetFunctionRemoveAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);

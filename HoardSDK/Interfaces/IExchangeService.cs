@@ -13,7 +13,7 @@ namespace Hoard
         /// Connects to Exchange service
         /// </summary>
         /// <returns></returns>
-        Task<bool> Init();
+        Task Init();
 
         /// <summary>
         /// TODO: document this! make parameters human readable!!!

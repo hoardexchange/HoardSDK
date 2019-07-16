@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Hoard.Exceptions;
+using Newtonsoft.Json;
 using RestSharp;
 using System;
 using System.Numerics;
@@ -24,8 +25,9 @@ namespace Hoard.ExchangeServices
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Init()
+        public async Task Init()
         {
+            await Task.Yield();
             if (Uri.IsWellFormedUriString(Hoard.Options.ExchangeServiceUrl, UriKind.Absolute))
             {
                 Client = new RestClient(Hoard.Options.ExchangeServiceUrl);
@@ -33,11 +35,9 @@ namespace Hoard.ExchangeServices
 
                 //setup a cookie container for automatic cookies handling
                 Client.CookieContainer = new System.Net.CookieContainer();
-
-                return true;
+                return;
             }
-            ErrorCallbackProvider.ReportError($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
-            return false;
+            throw new HoardException($"Exchange service Url is not valid: {Hoard.Options.ExchangeServiceUrl}!");
         }
 
         /// <summary>

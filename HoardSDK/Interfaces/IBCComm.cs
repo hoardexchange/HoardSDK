@@ -13,7 +13,7 @@ namespace Hoard.Interfaces
         /// Connects to blockchain
         /// </summary>
         /// <returns>a pair of [bool result, string return infromation] received from client</returns>
-        Task<Tuple<bool, string>> Connect();
+        Task<string> Connect();
 
         /// <summary>
         /// Returns ETH balance of given account
@@ -35,7 +35,7 @@ namespace Hoard.Interfaces
         /// </summary>
         /// <param name="game">[in/out] game object must contain valid ID. Other fields will be retrieved from platform</param>
         /// <returns></returns>
-        Task<Result> RegisterHoardGame(GameID game);
+        Task RegisterHoardGame(GameID game);
 
         /// <summary>
         /// Removes game from system. Call when you are finished with using that game

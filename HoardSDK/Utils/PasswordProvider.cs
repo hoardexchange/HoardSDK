@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Hoard.Exceptions;
+using NBitcoin;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -98,8 +99,7 @@ namespace Hoard.Utils
             }
             catch (Exception e)
             {
-                ErrorCallbackProvider.ReportError("Can't encrypt password for id " + id.ToString() + " failed! " + e.Message);
-                return null;
+                throw new HoardException("Can't encrypt password for id " + id.ToString(), e);
             }
         }
 
@@ -117,10 +117,9 @@ namespace Hoard.Utils
                 byte[] decrypted = Helper.AESDecrypt(decryptionKey, WhisperService.HexStringToByteArray(encryptedData.pswd), ProvideIV(), 256);
                 return Encoding.UTF8.GetString(decrypted);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                ErrorCallbackProvider.ReportError("Can't decrypt password for id " + id.ToString());
-                return null;
+                throw new HoardException("Can't decrypt password for id " + id.ToString(), e);
             }
         }
     }

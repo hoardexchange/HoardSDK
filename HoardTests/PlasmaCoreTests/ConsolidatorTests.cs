@@ -40,7 +40,7 @@ namespace HoardTests.PlasmaCoreTests
             }
 
             Assert.Equal(4, consolidator.MergedUtxo.Data);
-            Assert.Equal(true, consolidator.AllConsolidated);
+            Assert.True(consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
 
             consolidator = new FCConsolidator(PlasmaAPIService, txEncoder, address, currency, utxos);
@@ -55,7 +55,7 @@ namespace HoardTests.PlasmaCoreTests
             }
 
             Assert.Equal(1744, consolidator.MergedUtxo.Data);
-            Assert.Equal(true, consolidator.AllConsolidated);
+            Assert.True(consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
 
             consolidator = new FCConsolidator(PlasmaAPIService, txEncoder, address, currency, utxos, 9999999);
@@ -70,7 +70,7 @@ namespace HoardTests.PlasmaCoreTests
             }
 
             Assert.Equal(1744, consolidator.MergedUtxo.Data);
-            Assert.Equal(true, consolidator.AllConsolidated);
+            Assert.True(consolidator.AllConsolidated);
             Assert.Equal(!consolidator.CanMerge, consolidator.AllConsolidated);
         }
     }

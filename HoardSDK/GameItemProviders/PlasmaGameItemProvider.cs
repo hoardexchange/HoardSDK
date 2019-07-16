@@ -1,5 +1,6 @@
 ﻿using Hoard.BC.Contracts;
 using Hoard.BC.Plasma;
+using Hoard.Exceptions;
 using Hoard.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -47,10 +48,10 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<Result> Connect()
+        public async Task Connect()
         {
             GameItemAdapters.Clear();
-            return await RegisterHoardGameContracts();
+            await RegisterHoardGameContracts();
         }
 
         /// <inheritdoc/>
@@ -74,6 +75,7 @@ namespace Hoard.GameItemProviders
         /// <inheritdoc/>
         public async Task<GameItemType> GetItemTypeInfo(string itemType)
         {
+            await Task.Yield();
             throw new NotImplementedException();
         }
 
@@ -102,6 +104,7 @@ namespace Hoard.GameItemProviders
         /// <inheritdoc/>
         public async Task<GameItem[]> GetPlayerItems(Profile profile, string itemType, ulong firstItemIndex, ulong itemsToGather)
         {
+            await Task.Yield();
             throw new NotImplementedException();
         }
 
@@ -129,7 +132,7 @@ namespace Hoard.GameItemProviders
         /// <summary>
         /// Helper function to automatically register all contracts for given game
         /// </summary>
-        public async Task<Result> RegisterHoardGameContracts()
+        public async Task RegisterHoardGameContracts()
         {
             string[] contracts = await plasmaComm.GetGameItemContracts(Game);
             if (contracts != null)
@@ -146,14 +149,12 @@ namespace Hoard.GameItemProviders
                     }
                     else
                     {
-                        return Result.InvalidContractError;
+                        throw new HoardException("Invalid contract");
                     }
                 }
-                return Result.Ok;
+                return;
             }
-
-            ErrorCallbackProvider.ReportError($"Cannot find any contracts for Game: {Game.ID}!");
-            return Result.ContractNotFoundError;
+            throw new HoardException($"Cannot find any contracts for Game: {Game.ID}!");
         }
 
         /// <summary>

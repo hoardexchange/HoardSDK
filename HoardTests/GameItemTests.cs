@@ -132,20 +132,27 @@ namespace HoardTests
             hoardFixture = _hoardFixture;
             ipfsFixture = _ipfsFixture;
 
-            hoardFixture.Initialize(HoardGameTestName);
+            try
+            {
+                hoardFixture.Initialize(HoardGameTestName);
 
-            GameID[] games = hoardFixture.HoardService.GetAllHoardGames().Result;
-            Assert.NotEmpty(games);
+                GameID[] games = hoardFixture.HoardService.GetAllHoardGames().Result;
+                Assert.NotEmpty(games);
 
-            GameID game = games[0];
-            HoardGameItemProvider hoardItemProvider = new HoardGameItemProvider(game);
-            gameItemProvider = new BCGameItemMockProvider(game, (BCComm)hoardFixture.HoardService.BCComm);
-            hoardItemProvider.SecureProvider = gameItemProvider;
-            Assert.True(hoardFixture.HoardService.RegisterGame(game, hoardItemProvider).Result == Result.Ok);
+                GameID game = games[0];
+                HoardGameItemProvider hoardItemProvider = new HoardGameItemProvider(game);
+                gameItemProvider = new BCGameItemMockProvider(game, (BCComm)hoardFixture.HoardService.BCComm);
+                hoardItemProvider.SecureProvider = gameItemProvider;
+                hoardFixture.HoardService.RegisterGame(game, hoardItemProvider);
 
-            Assert.NotNull(gameItemProvider);
+                Assert.NotNull(gameItemProvider);
 
-            DefaultPlayer = hoardFixture.UserIDs[2];
+                DefaultPlayer = hoardFixture.UserIDs[2];
+            }
+            catch (Exception)
+            {
+                Assert.True(false);
+            }
         }
 
         [Fact]
@@ -165,15 +172,20 @@ namespace HoardTests
 
             items = gameItemProvider.GetPlayerItems(DefaultPlayer, swordItem.Symbol).Result;
             GameItem downloadedSwordItem = items[0];
-            Result result = hoardFixture.HoardService.FetchItemProperties(downloadedSwordItem).Result;
-            Assert.Equal(Result.Ok, result);
+            try
+            {
+                hoardFixture.HoardService.FetchItemProperties(downloadedSwordItem);
+                Assert.Equal(swordItem.State, downloadedSwordItem.State);
 
-            Assert.Equal(swordItem.State, downloadedSwordItem.State);
+                string downloadedPropsJson = Encoding.ASCII.GetString(ipfsFixture.Client.DownloadBytesAsync(downloadedSwordItem.State).Result);
+                SwordProperties downloadedProps = JsonConvert.DeserializeObject<SwordProperties>(downloadedPropsJson);
 
-            string downloadedPropsJson = Encoding.ASCII.GetString(ipfsFixture.Client.DownloadBytesAsync(downloadedSwordItem.State).Result);
-            SwordProperties downloadedProps = JsonConvert.DeserializeObject<SwordProperties>(downloadedPropsJson);
-
-            Assert.Equal((SwordProperties)swordItem.Properties, downloadedProps);
+                Assert.Equal((SwordProperties)swordItem.Properties, downloadedProps);
+            }
+            catch(Exception)
+            {
+                Assert.True(false);
+            }
         }
     }
 }

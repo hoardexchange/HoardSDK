@@ -1,4 +1,5 @@
 using Hoard.BC.Contracts;
+using Hoard.Exceptions;
 using Hoard.Interfaces;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexConvertors.Extensions;
@@ -103,26 +104,30 @@ namespace Hoard.BC
         /// <summary>
         /// Connects to blockchain using the JsonRpc client and performs a handshake
         /// </summary>
-        /// <returns>a pair of [bool result, string return infromation] received from client</returns>
-        public async Task<Tuple<bool,string>> Connect()
-        {            
+        /// <returns>String return infromation received from client</returns>
+        public async Task<string> Connect()
+        {
+            string verStr = null;
+            string codeStr = null;
             try
             {
                 var ver = new Nethereum.RPC.Web3.Web3ClientVersion(web.Client);
-                string verStr = await ver.SendRequestAsync();
+                verStr = await ver.SendRequestAsync();
                 //check if game contract exists
                 var code = new Nethereum.RPC.Eth.EthGetCode(web.Client);
-                string codeStr = await code.SendRequestAsync(gameCenter.Address);
-                bool result = !string.IsNullOrEmpty(codeStr) && codeStr != "0x";
-                if (!result)
-                    ErrorCallbackProvider.ReportError("Could not find Game Center contract at address: " + gameCenter.Address);
-                return new Tuple<bool, string>(result, verStr);
+                codeStr = await code.SendRequestAsync(gameCenter.Address);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                ErrorCallbackProvider.ReportError(ex.ToString());
-                return new Tuple<bool, string>(false, ex.Message);
+                throw new Exception(ex.ToString(), ex);
             }
+
+            if (string.IsNullOrEmpty(codeStr) || (codeStr == "0x"))
+            {
+                throw new HoardException("Could not find Game Center contract at address: " + gameCenter.Address);
+            }
+            return verStr;
+            
         }
 
         /// <inheritdoc/>
@@ -205,8 +210,7 @@ namespace Hoard.BC
             else if (contractType == typeof(SupportsInterfaceWithLookupContract))
                 return new SupportsInterfaceWithLookupContract(web, contractAddress);
 
-            ErrorCallbackProvider.ReportError($"Unknown contract type: {contractType.ToString()}");
-            return null;
+            throw new HoardException($"Unknown contract type: {contractType.ToString()}");
         }
 
         /// <summary>
@@ -241,16 +245,15 @@ namespace Hoard.BC
         /// </summary>
         /// <param name="game">[in/out] game object must contain valid ID. Other fields will be retrieved from platform</param>
         /// <returns></returns>
-        public async Task<Result> RegisterHoardGame(GameID game)
+        public async Task RegisterHoardGame(GameID game)
         {
             if (gameContracts.ContainsKey(game))
             {
                 ErrorCallbackProvider.ReportWarning("Game already registered!");
-                return Result.Ok;
+                return;
             }
 
             string gameAddress = await gameCenter.GetGameContractAsync(game.ID);
-
             if (gameAddress != Eth.Utils.EMPTY_ADDRESS && gameAddress != "0x")
             {
                 GameContract gameContract = new GameContract(web, gameAddress);
@@ -263,10 +266,10 @@ namespace Hoard.BC
                     game.Url = !url.StartsWith("http") ? "http://" + url : url;
 
                 gameContracts.Add(game, gameContract);
-                return Result.Ok;
+                return;
             }
-            ErrorCallbackProvider.ReportError($"Game is not registered in Hoard Game Center: game = {game.ID}!");
-            return Result.GameNotFoundError;
+
+            throw new HoardException($"Game is not registered in Hoard Game Center: game = {game.ID}!");
         }
 
         /// <inheritdoc/>
@@ -356,8 +359,7 @@ namespace Hoard.BC
                     return await hrdContract.Transfer(from, to, amount);
                 }
             }
-            ErrorCallbackProvider.ReportError("Cannot get proper Hoard Token contract!");
-            return false;
+            throw new HoardException("Cannot get proper Hoard Token contract!");
         }
 
         /// <summary>

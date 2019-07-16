@@ -27,6 +27,7 @@ namespace HoardTests.HW
             /// <returns></returns>
             public async Task<string> RequestInput(string name, HoardID id, eUserInputType type, string description)
             {
+                await Task.Yield();
                 if (type == eUserInputType.kPIN)
                 {
                     var pinWindow = new PINWindow();

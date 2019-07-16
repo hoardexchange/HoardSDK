@@ -1,4 +1,5 @@
 ﻿using Hoard.BC.Contracts;
+using Hoard.Exceptions;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -53,7 +54,7 @@ namespace Hoard.GameItemProviders
         {
         }
 
-        private async Task<Result> ConnectToGameServer()
+        private async Task ConnectToGameServer()
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {
@@ -65,25 +66,21 @@ namespace Hoard.GameItemProviders
                 var request = new RestRequest("", Method.GET);
                 request.AddDecompressionMethod(System.Net.DecompressionMethods.None);
                 var response = await Client.ExecuteTaskAsync(request).ConfigureAwait(false);
-
                 if (response.ErrorException != null)
                 {
-                    ErrorCallbackProvider.ReportError(response.ErrorException.ToString());
-                    return Result.ConnectionError;
+                    throw new HoardException(response.ErrorException.ToString());
                 }
-
-                return Result.Ok;
+                return;
             }
-            ErrorCallbackProvider.ReportError($"Not a proper game url: {Game.Url}!");
-            return Result.ConnectionError;
+            throw new HoardException($"Not a proper game url: {Game.Url}!");
         }
 
         /// <summary>
         /// Signin given user profile to the server. Must be done before calling endpoints protected by default challenge based authentication.
         /// </summary>
         /// <param name="profile">Profile ot be singed in</param>
-        /// <returns>Result code.</returns>
-        public async Task<Result> Signin(Profile profile)
+        /// <returns></returns>
+        public async Task Signin(Profile profile)
         {
             if (Uri.IsWellFormedUriString(Game.Url, UriKind.Absolute))
             {                
@@ -101,8 +98,7 @@ namespace Hoard.GameItemProviders
 
                 if (response.ErrorException != null)
                 {
-                    ErrorCallbackProvider.ReportError(response.ErrorException.ToString());
-                    return Result.ConnectionError;
+                    throw new HoardException(response.ErrorException.ToString());
                 }
                 
                 string challengeToken = response.Content;
@@ -115,8 +111,7 @@ namespace Hoard.GameItemProviders
                 string sig = await profile.SignMessage(dataBytes).ConfigureAwait(false);
                 if (sig == null)
                 {
-                    ErrorCallbackProvider.ReportError("Cannot sign challenge answer");
-                    return Result.Error;
+                    throw new HoardException("Cannot sign challenge answer");
                 }
 
                 var data = new JObject();
@@ -129,14 +124,11 @@ namespace Hoard.GameItemProviders
 
                 if (responseLogin.StatusCode != System.Net.HttpStatusCode.OK || responseLogin.Content != "Logged in")
                 {
-                    ErrorCallbackProvider.ReportError($"Failed to log in with response: {responseLogin.Content}!");
-                    return Result.Error;
+                    throw new HoardException($"Failed to log in with response: {responseLogin.Content}!");
                 }
-
-                return Result.Ok;
+                return;
             }
-            ErrorCallbackProvider.ReportError($"Not a proper game url: {Game.Url}!");            
-            return Result.ConnectionError;
+            throw new HoardException($"Not a proper game url: {Game.Url}!");            
         }
 
         private void PrepareRequest(RestRequest req)
@@ -395,28 +387,24 @@ namespace Hoard.GameItemProviders
         /// <summary>
         /// Connects to Hoard Game Server
         /// </summary>
-        /// <returns>true if connection has been established, false otherwise</returns>
-        public async Task<Result> Connect()
+        /// <returns></returns>
+        public async Task Connect()
         {
             //1. connect to REST server
-            Result result = Result.Ok;
             if (!string.IsNullOrEmpty(Game.Url))
             {
-                result = await ConnectToGameServer();
+                await ConnectToGameServer();
             }
             else
             {
-                ErrorCallbackProvider.ReportWarning("Game.Url is empty - all data will be provided by BlockChain provider!");
-            }            
+                throw new HoardException("Game.Url is empty - all data will be provided by BlockChain provider!");
+            }       
+            
             //2. check also fallback connector
             if (SecureProvider != null)
             {
-                Result fallbackResult = await SecureProvider.Connect();
-                if (result != Result.Ok)
-                    result = fallbackResult;
+                await SecureProvider.Connect();
             }
-
-            return result;
         }
         #endregion
 

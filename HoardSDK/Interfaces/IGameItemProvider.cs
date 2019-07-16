@@ -104,6 +104,6 @@ namespace Hoard
         /// Initializes provider (connects to backend)
         /// </summary>
         /// <returns></returns>
-        Task<Result> Connect();
+        Task Connect();
     }
 }

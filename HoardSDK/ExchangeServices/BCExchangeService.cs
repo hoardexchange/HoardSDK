@@ -1,4 +1,5 @@
 using Hoard.BC.Contracts;
+using Hoard.Exceptions;
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -25,15 +26,13 @@ namespace Hoard.ExchangeServices
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Init()
+        public async Task Init()
         {
             ExchangeContract = await BCComm.GetHoardExchangeContract();
             if (ExchangeContract == null)
             {
-                ErrorCallbackProvider.ReportError("Cannot get proper GameExchange contract!");
-                return false;
+                throw new HoardException("Cannot get proper GameExchange contract!");
             }
-            return true;
         }
 
         /// <summary>
@@ -144,13 +143,12 @@ namespace Hoard.ExchangeServices
                 {
                     return await gameItemProvider.Transfer(profile, ExchangeContract.Address, item, amount);
                 }
-                ErrorCallbackProvider.ReportWarning($"Cannot find GameItemProvider for item: {item.Symbol}!");
+                throw new HoardException($"Cannot find GameItemProvider for item: {item.Symbol}!");
             }
             catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
-                ErrorCallbackProvider.ReportError(ex.ToString());
+                throw new Exception(ex.ToString(), ex);
             }
-            return false;
         }
 
         /// <inheritdoc/>
@@ -177,8 +175,7 @@ namespace Hoard.ExchangeServices
             }
             catch (Nethereum.JsonRpc.Client.RpcResponseException ex)
             {
-                ErrorCallbackProvider.ReportError(ex.ToString());
-                return false;
+                throw new Exception(ex.ToString(), ex);
             }
         }
 

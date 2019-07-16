@@ -1,3 +1,4 @@
+using Hoard.Exceptions;
 using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
@@ -134,8 +135,7 @@ namespace Hoard.BC.Contracts
         {
             if (profile.ID == adminAddr)
             {
-                ErrorCallbackProvider.ReportError("Can't add my self");
-                return null;
+                throw new HoardException("Can't add my self");
             }
             var function = GetFunctionAddAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);
@@ -151,8 +151,7 @@ namespace Hoard.BC.Contracts
         {
             if (profile.ID == adminAddr)
             {
-                ErrorCallbackProvider.ReportError("Can't remove my self");
-                return null;
+                throw new HoardException("Can't remove my self");
             }
             var function = GetFunctionRemoveAdmin();
             return await BCComm.EvaluateOnBC(web3, profile, function, adminAddr);

@@ -47,12 +47,11 @@ namespace HoardTests.CryptKittyTests
             Game = game;
         }
 
-        public async Task<Result> Connect()
+        public async Task Connect()
         {
+            await Task.Yield();
             Client = new RestClient("https://api.cryptokitties.co");
             Client.AutomaticDecompression = false;
-
-            return Result.Ok;
         }
 
         public string[] GetItemTypes()
@@ -97,11 +96,13 @@ namespace HoardTests.CryptKittyTests
 
         public async Task<GameItemType> GetItemTypeInfo(string type)
         {
+            await Task.Yield();
             throw new NotImplementedException();
         }
 
         public async Task<GameItem[]> GetItems(GameItemsParams[] gameItemsParams)
         {
+            await Task.Yield();
             throw new NotImplementedException();
         }
 

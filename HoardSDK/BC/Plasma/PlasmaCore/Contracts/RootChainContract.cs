@@ -9,15 +9,27 @@ using System.Threading.Tasks;
 
 namespace Plasma.RootChain.Contracts
 {
+    /// <summary>
+    /// 
+    /// </summary>
     [FunctionOutput]
     public class NextExitData : IFunctionOutputDTO
     {
+        /// <summary>
+        /// 
+        /// </summary>
         [Parameter("uint64", "", 1)]
         public virtual ulong ExitableTimestamp { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [Parameter("uint192", "", 2)]
         public virtual BigInteger ExitId { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [Parameter("bool", "", 3)]
         public virtual bool IsInFlight { get; set; }
     }

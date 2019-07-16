@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Nethereum.Hex.HexConvertors.Extensions;
+using System;
 
 namespace HoardTests.AccountTools
 {
@@ -35,7 +36,6 @@ namespace HoardTests.AccountTools
         [Trait("Category", "Unit")]
         public async Task TransferKey()
         {
-            bool res = false;
             AccountSynchronizerKeeper keeper = new AccountSynchronizerKeeper(new SystemWebSocketProvider(NodeUrl));
             AccountSynchronizerApplicant applicant = new AccountSynchronizerApplicant(new SystemWebSocketProvider(NodeUrl));
 
@@ -43,34 +43,39 @@ namespace HoardTests.AccountTools
 
             using (var cts = new System.Threading.CancellationTokenSource(new System.TimeSpan(0, 0, 45)))
             {
-                res = await keeper.Initialize(pin, cts.Token);//subscribe
-                Assert.True(res);
-                res = await applicant.Initialize(pin, cts.Token);//subscribe
-                Assert.True(res);
+                try
+                {
+                    await keeper.Initialize(pin, cts.Token);//subscribe
+                    await applicant.Initialize(pin, cts.Token);//subscribe
 
-                //1. applicant sends its public key Pa
-                await applicant.SendPublicKey(cts.Token);
-                //2. keeper sends its public key Pk
-                await keeper.SendPublicKey(cts.Token);
+                    //1. applicant sends its public key Pa
+                    await applicant.SendPublicKey(cts.Token);
+                    //2. keeper sends its public key Pk
+                    await keeper.SendPublicKey(cts.Token);
 
-                //3. wait for confirmations
-                string hashKeeper = await keeper.AcquireConfirmationHash(cts.Token);
-                string hashApplicant = await applicant.AcquireConfirmationHash(cts.Token);
+                    //3. wait for confirmations
+                    string hashKeeper = await keeper.AcquireConfirmationHash(cts.Token);
+                    string hashApplicant = await applicant.AcquireConfirmationHash(cts.Token);
 
 
-                Assert.Equal(hashApplicant, hashKeeper);
+                    Assert.Equal(hashApplicant, hashKeeper);
 
-                //4. keeper sends keystore file
-                string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
-                string retMsg = await keeper.EncryptAndTransferKeystore(Encoding.UTF8.GetBytes(keyStoreData), cts.Token);
+                    //4. keeper sends keystore file
+                    string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
+                    string retMsg = await keeper.EncryptAndTransferKeystore(Encoding.UTF8.GetBytes(keyStoreData), cts.Token);
 
-                //5. applicant receives keystore
-                string data = await applicant.AcquireKeystoreData(cts.Token);
+                    //5. applicant receives keystore
+                    string data = await applicant.AcquireKeystoreData(cts.Token);
 
-                Assert.Equal(keyStoreData, data);
+                    Assert.Equal(keyStoreData, data);
 
-                await keeper.Shutdown(cts.Token);
-                await applicant.Shutdown(cts.Token);
+                    await keeper.Shutdown(cts.Token);
+                    await applicant.Shutdown(cts.Token);
+                }
+                catch (Exception)
+                {
+                    Assert.True(false);
+                }
             }
         }
 
@@ -81,9 +86,9 @@ namespace HoardTests.AccountTools
             AccountSynchronizerKeeper keeper = new AccountSynchronizerKeeper(new SystemWebSocketProvider(NodeUrl));
             using (var cts = new System.Threading.CancellationTokenSource(new System.TimeSpan(0, 0, 45)))
             {
-                bool res = await keeper.Initialize(TestPIN.ToUpper(), cts.Token);
-                if (res)
+                try
                 {
+                    await keeper.Initialize(TestPIN.ToUpper(), cts.Token);
                     string confirmationHash = await keeper.AcquireConfirmationHash(cts.Token);
 
                     await keeper.SendPublicKey(cts.Token);
@@ -93,8 +98,12 @@ namespace HoardTests.AccountTools
                         string keyStoreData = "{'crypto':{'cipher':'aes-128-ctr','ciphertext':'8fe0507d2858178a8832c3b921f994ddb43d3ba727786841d3499b94fdcaaf90','cipherparams':{'iv':'fad9089caee2003792ce6fec6d74f399'},'kdf':'scrypt','mac':'0da29fcf2ccfa9327cd5bb2a5f7e2a4b4a01ab6ba61954b174fdeeae46b228ab','kdfparams':{'n':262144,'r':1,'p':8,'dklen':32,'salt':'472c9a8bb1898a8abacca45ebb560427621004914edb78dfed4f82163d7fd2a2'}},'id':'1543aac7-c474-4819-98ee-af104528a91f','address':'0x167ba0a6918321b69d5792022ccb99dbeeb0f49a','version':3}";
                         await keeper.EncryptAndTransferKeystore(Encoding.UTF8.GetBytes(keyStoreData), cts.Token);
                     }
+                    await keeper.Shutdown(cts.Token);
                 }
-                await keeper.Shutdown(cts.Token);
+                catch (Exception)
+                {
+                    Assert.True(false);
+                }
             }
         }
 
@@ -106,14 +115,18 @@ namespace HoardTests.AccountTools
             string pin = TestPIN.ToUpper();
             using (var cts = new System.Threading.CancellationTokenSource(new System.TimeSpan(0, 0, 45)))
             {
-                bool res = await applicant.Initialize(TestPIN.ToUpper(), cts.Token);
-                if (res)
+                try
                 {
+                    await applicant.Initialize(TestPIN.ToUpper(), cts.Token);
                     await applicant.SendPublicKey(cts.Token);
                     string confirmationHash = await applicant.AcquireConfirmationHash(cts.Token);
                     string keystore = await applicant.AcquireKeystoreData(cts.Token);
+                    await applicant.Shutdown(cts.Token);
                 }
-                await applicant.Shutdown(cts.Token);
+                catch (Exception)
+                {
+                    Assert.True(false);
+                }
             }
         }
     }

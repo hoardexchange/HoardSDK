@@ -1,4 +1,5 @@
 ﻿using Hoard.BC;
+using Hoard.Exceptions;
 using Hoard.ExchangeServices;
 using Hoard.GameItemProviders;
 using Hoard.Interfaces;
@@ -115,72 +116,58 @@ namespace Hoard
         /// Connects to BC and fills missing options.
         /// </summary>
         /// <param name="options">Hoard service options.</param>
-        /// <returns>Result code.</returns>
-        public async Task<Result> Initialize(HoardServiceOptions options)
+        /// <returns></returns>
+        public async Task Initialize(HoardServiceOptions options)
         {
             Options = options;
 
             //access point to block chain - a must have
             BCComm = BCCommFactory.Create(Options);
-            Tuple<bool,string> result = await BCComm.Connect();
-            if (!result.Item1)
-            {
-                ErrorCallbackProvider.ReportError("Node not available!");
-                return Result.ConnectionError;
-            }
-
-            ErrorCallbackProvider.ReportInfo(result.Item2);
+            string result = await BCComm.Connect();
+            ErrorCallbackProvider.ReportInfo(result);
 
             //our default GameItemProvider
             if (Options.Game != GameID.kInvalidID)
             {
-                Result rslt = await RegisterHoardGame(Options.Game);
-                if (rslt != Result.Ok)
-                    return rslt;
+                await RegisterHoardGame(Options.Game);
             }
 
             DefaultGame = Options.Game;
 
             //init exchange service
             IExchangeService exchange = new HoardExchangeService(this);
-            if (await exchange.Init())
-            {
-                ExchangeService = exchange;
-            }
-
-            return Result.Ok;
+            await exchange.Init();
+            ExchangeService = exchange;
         }
 
         /// <summary>
         /// Shutdown Hoard service.
         /// </summary>
-        public Result Shutdown()
+        public void Shutdown()
         {
             DefaultGame = GameID.kInvalidID;
             ExchangeService = null;
             ItemPropertyProviders.Clear();
             BCComm = null;
             Providers.Clear();
-
-            return Result.Ok;
         }
 
         /// <summary>
         /// Register default HoardBackend connector with BC fallback.
         /// </summary>
         /// <param name="game"></param>
-        public async Task<Result> RegisterHoardGame(GameID game)
+        public async Task RegisterHoardGame(GameID game)
         {
             if (Providers.ContainsKey(game) && (Providers[game] is HoardGameItemProvider))
             {
-                return Result.Ok;
+                return;
             }
 
             //assumig this is a hoard game we can use a default hoard provider that connects to Hoard game server backend
             HoardGameItemProvider provider = new HoardGameItemProvider(game);
             //for security reasons (or fallback in case server is down) we will pass a BC provider
             provider.SecureProvider = GameItemProviderFactory.CreateSecureProvider(game, BCComm);
-            return await RegisterGame(game, provider);
+            await RegisterGame(game, provider);
         }
 
         /// <summary>
@@ -188,7 +175,7 @@ namespace Hoard
         /// </summary>
         /// <param name="game"></param>
         /// <param name="provider"></param>
-        public async Task<Result> RegisterGame(GameID game, IGameItemProvider provider)
+        public async Task RegisterGame(GameID game, IGameItemProvider provider)
         {
             if (!Providers.ContainsKey(game))
             {
@@ -199,39 +186,29 @@ namespace Hoard
                 // - only when secure check should happen 
                 // - when original GameItemProvider fails
                 // - switch original to SecureProvider upon direct request
-                Result result = await BCComm.RegisterHoardGame(game);
-                if (result == Result.Ok)
-                {
-                    if (DefaultGame == GameID.kInvalidID)
-                        DefaultGame = game;
+                await BCComm.RegisterHoardGame(game);
+                if (DefaultGame == GameID.kInvalidID)
+                    DefaultGame = game;
 
-                    result = await provider.Connect();
-                    if (result == Result.Ok)
-                    {
-                        Providers.Add(game, provider);
-                    }
-                }
-                return result;
+                await provider.Connect();
+                Providers.Add(game, provider);
+                return;
             }
-            else
-            {
-                ErrorCallbackProvider.ReportError($"Game {game.ID} already registered!");
-            }
-            return Result.Error;
+            throw new HoardException($"Game {game.ID} already registered!");
         }
 
         /// <summary>
         /// Register provider of resolving item state and filling properties.
         /// </summary>
         /// <param name="provider">Provider to be registered.</param>
-        public Result RegisterItemPropertyProvider(IItemPropertyProvider provider)
+        public void RegisterItemPropertyProvider(IItemPropertyProvider provider)
         {
             if (!ItemPropertyProviders.Contains(provider))
             {
                 ItemPropertyProviders.Add(provider);
-                return Result.Ok;
+                return;
             }
-            return Result.Error;
+            throw new HoardException("Provider already registered");
         }
 
         #region PRIVATE SECTION
@@ -338,10 +315,9 @@ namespace Hoard
             {
                 return decimal.ToSingle(Nethereum.Util.UnitConversion.Convert.FromWei(await BCComm.GetBalance(profile.ID)));
             }
-            catch(Exception ex)
+            catch(Exception e)
             {
-                ErrorCallbackProvider.ReportError(ex.ToString());
-                return 0;
+                throw new HoardException(e.ToString(), e);
             }
         }
 
@@ -373,10 +349,9 @@ namespace Hoard
             {
                 return await BCComm.GetHRDBalance(profile.ID);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                ErrorCallbackProvider.ReportError(ex.ToString());
-                return 0;
+                throw new HoardException(e.ToString(), e);
             }
         }
 
@@ -477,15 +452,15 @@ namespace Hoard
         /// </summary>
         /// <param name="item">item to fetch properties for</param>
         /// <returns></returns>
-        public async Task<Result> FetchItemProperties(GameItem item)
+        public async Task FetchItemProperties(GameItem item)
         {
             //find compatible provider
             IItemPropertyProvider pp = GetItemPropertyProvider(item);
             if (pp != null)
             {
-                return await pp.FetchGameItemProperties(item);
+                await pp.FetchGameItemProperties(item);
             }
-            return Result.Error;
+            throw new HoardException("Fetch game item failed");
         }
     }
 }

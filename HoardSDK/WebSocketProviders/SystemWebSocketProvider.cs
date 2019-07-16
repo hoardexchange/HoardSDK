@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Hoard.Exceptions;
+using System;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,25 +29,21 @@ namespace Hoard
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public async Task<bool> Connect(CancellationToken token)
+        public async Task Connect(CancellationToken token)
         {
             try
             {
                 await WhisperClient.ConnectAsync(new Uri(Url), token);
             }
-            catch (TimeoutException)
+            catch (TimeoutException e)
             {
-                ErrorCallbackProvider.ReportError("Connection timedout!");
-                return false;
+                throw new TimeoutException("Connection timedout!", e);
             }
 
             if (WhisperClient.State != WebSocketState.Open)
             {
-                ErrorCallbackProvider.ReportError("Cannot connect to destination host: " + Url);
-                return false;
+                throw new HoardException("Cannot connect to destination host: " + Url);
             }
-
-            return true;
         }
 
         /// <summary>

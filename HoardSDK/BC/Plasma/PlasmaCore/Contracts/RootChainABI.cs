@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Hoard.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 

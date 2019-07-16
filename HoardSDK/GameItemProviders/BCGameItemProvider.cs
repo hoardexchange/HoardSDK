@@ -1,5 +1,6 @@
 ﻿using Hoard.BC;
 using Hoard.BC.Contracts;
+using Hoard.Exceptions;
 using Hoard.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -131,17 +132,17 @@ namespace Hoard.GameItemProviders
         }
 
         /// <inheritdoc/>
-        public async Task<Result> Connect()
+        public async Task Connect()
         {
             ItemContracts.Clear();
-            return await RegisterHoardGameContracts();
+            await RegisterHoardGameContracts();
         }
         #endregion
 
         /// <summary>
         /// Helper function to automatically register all contracts for given game
         /// </summary>
-        public async Task<Result> RegisterHoardGameContracts()
+        public async Task RegisterHoardGameContracts()
         {
             string[] contracts = await BCComm.GetGameItemContracts(Game);
             if (contracts != null)
@@ -155,13 +156,12 @@ namespace Hoard.GameItemProviders
                     }
                     else
                     {
-                        return Result.InvalidContractError;
+                        throw new HoardException("Invalid contract");
                     }
                 }
-                return Result.Ok;
+                return;
             }
-            ErrorCallbackProvider.ReportError($"Cannot find any contracts for Game: {Game.ID}!");
-            return Result.ContractNotFoundError;
+            throw new HoardException($"Cannot find any contracts for Game: {Game.ID}!");
         }
 
         /// <summary>

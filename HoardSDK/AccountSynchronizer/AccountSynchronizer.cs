@@ -1,4 +1,5 @@
-﻿using Nethereum.Hex.HexConvertors.Extensions;
+﻿using Hoard.Exceptions;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto;
@@ -125,10 +126,9 @@ namespace Hoard
         /// </summary>
         /// <param name="ctoken">cancelation token</param>
         /// <returns></returns>
-        public async Task<bool> Initialize(CancellationToken ctoken)
+        public async Task Initialize(CancellationToken ctoken)
         {
-            bool result = await WhisperService.Connect(ctoken);
-            return result;
+            await WhisperService.Connect(ctoken);
         }
 
         /// <summary>
@@ -138,15 +138,15 @@ namespace Hoard
         /// <param name="pin">pin to subscribe to.</param>
         /// <param name="ctoken">cancelation token</param>
         /// <returns></returns>
-        public async Task<bool> Initialize(string pin, CancellationToken ctoken)
+        public async Task Initialize(string pin, CancellationToken ctoken)
         {
-            bool result = await WhisperService.Connect(ctoken);
-            if (result)
+            await WhisperService.Connect(ctoken);
+            SubscriptionId = await Subscribe(pin, ctoken);
+            bool result = !string.IsNullOrEmpty(SubscriptionId);
+            if (result == false)
             {
-                SubscriptionId = await Subscribe(pin, ctoken);
-                result = !string.IsNullOrEmpty(SubscriptionId);
+                throw new HoardException("Invalid subscription id");
             }
-            return result;
         }
 
         /// <summary>

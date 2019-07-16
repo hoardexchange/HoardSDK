@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Diagnostics;
+using Hoard.Exceptions;
 
 namespace Hoard
 {    
@@ -216,9 +217,9 @@ namespace Hoard
         /// <summary>
         /// Establishes connection
         /// </summary>
-        public async Task<bool> Connect(CancellationToken token)
+        public async Task Connect(CancellationToken token)
         {
-            return await WebSocketProvider.Connect(token);
+            await WebSocketProvider.Connect(token);
         }
 
         /// <summary>
@@ -372,15 +373,14 @@ namespace Hoard
                 await WebSocketProvider.Send(Encoding.UTF8.GetBytes(jobj.ToString()), ctoken);
                 return await ReceiveResponse<T>(JsonId, defaultValue, ctoken);
             }
-            catch (WebSocketException ex)
+            catch (WebSocketException e)
             {
-                ErrorCallbackProvider.ReportError("Whisper unknown exception:\n" + ex.Message);
+                throw new HoardException("Whisper unknown exception:\n" + e.Message, e);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                ErrorCallbackProvider.ReportError("Unknown exception:\n" + ex.Message);
+                throw new HoardException("Unknown exception:\n" + e.Message, e);
             }
-            return defaultValue;
         }
 
         /// <summary>

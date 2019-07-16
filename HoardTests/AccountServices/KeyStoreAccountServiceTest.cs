@@ -11,13 +11,21 @@ namespace HoardTests.AccountServices
     {
         public class UserInputProviderFixture : IUserInputProvider
         {
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="id"></param>
+            /// <param name="type"></param>
+            /// <param name="description"></param>
+            /// <returns></returns>
             public async Task<string> RequestInput(string name, HoardID id, eUserInputType type, string description)
             {
+                await Task.Yield();
                 if (type == eUserInputType.kLogin)
                     return "TestUser";
                 else if (type == eUserInputType.kPassword)
                     return "dev";
-
                 return null;
             }
         }

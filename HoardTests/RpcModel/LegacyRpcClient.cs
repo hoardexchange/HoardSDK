@@ -72,10 +72,9 @@ namespace HoardTests.RpcModel
                 HttpWebResponse response = (HttpWebResponse)request.GetResponse();
                 return response.StatusCode == HttpStatusCode.OK;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                ErrorCallbackProvider.ReportError(ex.ToString());
-                return false;
+                throw new Exception(e.ToString(), e);
             }
         }
     }

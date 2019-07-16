@@ -1,5 +1,6 @@
 ﻿using Hoard;
 using HoardTests.Fixtures;
+using System;
 using System.Diagnostics;
 using Xunit;
 
@@ -33,12 +34,17 @@ namespace HoardTests.CryptKittyTests
 
             GameID myGame = GameID.FromName("mygame");
 
-            Assert.True(hoard.RegisterGame(myGame, new CKGameItemProvider(myGame)).Result == Result.Ok);
-
-            GameItem[] items = hoard.GetPlayerItems(hoardFixture.UserIDs[0], myGame).Result;
-
-            ErrorCallbackProvider.ReportInfo("Shutting down HOARD...");
-            Assert.True(hoard.Shutdown() == Result.Ok);
+            try
+            {
+                hoard.RegisterGame(myGame, new CKGameItemProvider(myGame));
+                GameItem[] items = hoard.GetPlayerItems(hoardFixture.UserIDs[0], myGame).Result;
+                ErrorCallbackProvider.ReportInfo("Shutting down HOARD...");
+                hoard.Shutdown();
+            }
+            catch(Exception)
+            {
+                Assert.True(false);
+            }
         }
     }
 }

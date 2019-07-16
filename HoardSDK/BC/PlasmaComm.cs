@@ -79,7 +79,7 @@ namespace Hoard.BC
         }
 
         /// <inheritdoc/>
-        public virtual async Task<Tuple<bool, string>> Connect()
+        public virtual async Task<string> Connect()
         {
             return await bcComm.Connect();
         }
@@ -97,9 +97,9 @@ namespace Hoard.BC
         }
 
         /// <inheritdoc/>
-        public async Task<Result> RegisterHoardGame(GameID game)
+        public async Task RegisterHoardGame(GameID game)
         {
-            return await bcComm.RegisterHoardGame(game);
+            await bcComm.RegisterHoardGame(game);
         }
 
         /// <inheritdoc/>
@@ -204,6 +204,7 @@ namespace Hoard.BC
         /// <returns></returns>
         public async Task<byte[]> GetTokenState(string currency, BigInteger tokenId)
         {
+            await Task.Yield();
             //TODO not implemented in plasma
             throw new NotImplementedException();
         }

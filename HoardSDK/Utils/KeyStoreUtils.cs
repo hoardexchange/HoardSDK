@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Hoard.Exceptions;
+using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -88,13 +89,13 @@ namespace Hoard.Utils
         {
             if (!Directory.Exists(profilesDir))
             {
-                return null;
+                throw new HoardException(string.Format("Profile doesn't exists: {0:1}", profilesDir, filename));
             }
 
             var profileFiles = Directory.GetFiles(profilesDir, filename);
             if (profileFiles.Length == 0)
             {
-                return null;
+                throw new HoardException(string.Format("Profile doesn't exists: {0:1}", profilesDir, filename));
             }
             ErrorCallbackProvider.ReportInfo(string.Format("Loading profiles {0}", profileFiles[0]));
 
@@ -106,8 +107,9 @@ namespace Hoard.Utils
             var details = JObject.Parse(json);
             if (details == null)
             {
-                return null;
+                throw new HoardException(string.Format("Can't parse json: {0}", json));
             }
+
             string address = details["address"].Value<string>();
             string name = "";
             if (details["name"] != null)
@@ -117,6 +119,7 @@ namespace Hoard.Utils
             string password = await userInputProvider.RequestInput(name, new HoardID(address), eUserInputType.kPassword, address);
             var keyStoreService = new Nethereum.KeyStore.KeyStoreService();
             Nethereum.Signer.EthECKey key = null;
+
             try
             {
                 key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(password, json), true);
@@ -124,8 +127,7 @@ namespace Hoard.Utils
             }
             catch (Exception e)
             {
-                ErrorCallbackProvider.ReportWarning(string.Format("LoadProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
-                return null;
+                throw new HoardException("Incorrect password", e);
             }
         }
 
@@ -138,16 +140,14 @@ namespace Hoard.Utils
         public static async Task<string> LoadEncryptedProfileAsync(HoardID id, string profilesDir)
         {
             if (!Directory.Exists(profilesDir))
-        {
-                ErrorCallbackProvider.ReportWarning("Not found any profile files.");
-                return null;
+            {
+                throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
             }
 
             var profileFiles = Directory.GetFiles(profilesDir, "*.keystore");
             if (profileFiles.Length == 0)
             {
-                ErrorCallbackProvider.ReportWarning("Not found any profiles files.");
-                return null;
+                throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
             }
 
             foreach (var fullPath in profileFiles)
@@ -173,7 +173,7 @@ namespace Hoard.Utils
                 }
             }
 
-            return null;
+            throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
         }
 
         /// <summary>
@@ -186,15 +186,13 @@ namespace Hoard.Utils
         {
             if (!Directory.Exists(profilesDir))
             {
-                ErrorCallbackProvider.ReportWarning("Not found any profile files.");
-                return null;
+                throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
             }
 
             var profileFiles = Directory.GetFiles(profilesDir, "*.keystore");
             if (profileFiles.Length == 0)
             {
-                ErrorCallbackProvider.ReportWarning("Not found any profiles files.");
-                return null;
+                throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
             }
 
             foreach (var fullPath in profileFiles)
@@ -216,7 +214,7 @@ namespace Hoard.Utils
                 }
             }
 
-            return null;
+            throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
         }
 
         /// <summary>
@@ -231,15 +229,13 @@ namespace Hoard.Utils
         {
             if (!Directory.Exists(profilesDir))
             {
-                ErrorCallbackProvider.ReportWarning("Not found any profile files.");
-                return null;
+                throw new HoardException(string.Format("Profile doesn't exists: {0}", addressOrName));
             }
 
             var profileFiles = Directory.GetFiles(profilesDir, "*.keystore");
             if (profileFiles.Length == 0)
             {
-                ErrorCallbackProvider.ReportWarning("Not found any profiles files.");
-                return null;
+                throw new HoardException(string.Format("Profile doesn't exists: {0}", addressOrName));
             }
 
             string providedAddress = addressOrName;
@@ -248,6 +244,11 @@ namespace Hoard.Utils
                 providedAddress = "0x" + providedAddress;
             }
             bool isValidAddress = Nethereum.Util.AddressUtil.Current.IsValidEthereumAddressHexFormat(providedAddress);
+            if (isValidAddress == false)
+            {
+                throw new HoardException(string.Format("{0} is not a valid ethereum address", providedAddress));
+            }
+
             foreach (var fullPath in profileFiles)
             {
                 string fileName = Path.GetFileName(fullPath);
@@ -286,14 +287,13 @@ namespace Hoard.Utils
                         }
                         catch (Exception e)
                         {
-                            ErrorCallbackProvider.ReportWarning(string.Format("RequestProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
-                            return null;
+                            throw new HoardException("Incorrect password", e);
                         }
                     }
                 }
             }
 
-            return null;
+            throw new HoardException(string.Format("Failed to request profile: {0}", providedAddress));
         }
 
         /// <summary>
@@ -344,11 +344,11 @@ namespace Hoard.Utils
         /// <param name="profilesDir"></param>
         /// <param name="passwordNeeded"></param>
         /// <returns></returns>
-        public static async Task<bool> DeleteProfile(IUserInputProvider userInputProvider, HoardID id, string profilesDir, bool passwordNeeded)
+        public static async Task DeleteProfile(IUserInputProvider userInputProvider, HoardID id, string profilesDir, bool passwordNeeded)
         {
             if (!Directory.Exists(profilesDir))
             {
-                return false;
+                throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
             }
 
             string[] files = Directory.GetFiles(profilesDir, "*.keystore");
@@ -374,20 +374,16 @@ namespace Hoard.Utils
                             }
                             catch (Exception e)
                             {
-                                ErrorCallbackProvider.ReportWarning(string.Format("DeleteProfile::DecryptKeyStoreFromJson failed: {0}", e.Message));
-                                key = null;
+                                throw new HoardException("Incorrect password", e);
                             }
                         }
-                        if (!passwordNeeded || (key != null))
-                        {
-                            File.Delete(file);
-                            return true;
-                        }
-                        return false;
+                        File.Delete(file);
+                        return;
                     }
                 }
             }
-            return false;
+
+            throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
         }
 
         /// <summary>
@@ -402,7 +398,7 @@ namespace Hoard.Utils
         {
             if (!Directory.Exists(profilesDir))
             {
-                return null;
+                throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
             }
 
             string[] files = Directory.GetFiles(profilesDir, "*.keystore");
@@ -419,25 +415,25 @@ namespace Hoard.Utils
                     HoardID actualId = new HoardID(valueAddress.Value<string>());
                     if (id == actualId)
                     {
+                        string newFile = null;
                         try
                         {
                             var key = new Nethereum.Signer.EthECKey(keyStoreService.DecryptKeyStoreFromJson(oldPassword, jobj.ToString()), true);
-                            string newFile = CreateAccountKeyStoreFile(key, newPassword, name.Value<string>(), profilesDir);
-                            if (newFile != null)
-                            {
-                                File.Delete(file);
-                            }
-                            return newFile;
+                            newFile = CreateAccountKeyStoreFile(key, newPassword, name.Value<string>(), profilesDir);
                         }
                         catch(Exception e)
                         {
-                            ErrorCallbackProvider.ReportWarning(string.Format("ChangePassword::DecryptKeyStoreFromJson failed: {0}", e.Message));
-                            return null;
+                            throw new HoardException("Incorrect password", e);
                         }
+                        if (newFile != null)
+                        {
+                            File.Delete(file);
+                        }
+                        return newFile;
                     }
                 }
             }
-            return null;
+            throw new HoardException(string.Format("Profile doesn't exists: {0}", id.ToString()));
         }
 
         private static string CreateAccountKeyStoreFile(Nethereum.Signer.EthECKey ecKey, string password, string name, string path)
@@ -450,12 +446,12 @@ namespace Hoard.Utils
             var encryptedKey = service.EncryptAndGenerateKeyStoreAsJson(password, ecKey.GetPrivateKeyAsBytes(), address).ToLower();
             if (encryptedKey == null)
             {
-                return null;
+                throw new HoardException("Failed to encrypt kyestore");
             }
             var keystoreJsonObject = JObject.Parse(encryptedKey);
             if (keystoreJsonObject == null)
             {
-                return null;
+                throw new HoardException("Failed to parse json file: " + encryptedKey);
             }
             keystoreJsonObject.Add("name", name);
             encryptedKey = keystoreJsonObject.ToString();

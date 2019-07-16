@@ -16,13 +16,13 @@ namespace HoardTests.Fixtures
         {
             public async Task<string> RequestInput(string name, HoardID id, eUserInputType type, string description)
             {
+                await Task.Yield();
                 if (type == eUserInputType.kLogin)
                     return "TestUser";
                 else if (type == eUserInputType.kPassword)
                     return "dev";
                 else if (type == eUserInputType.kEmail)
                     return "test.user@not.existing.domain";
-
                 return null;
             }
         }
@@ -89,8 +89,14 @@ namespace HoardTests.Fixtures
 
             HoardService = HoardService.Instance;
 
-            Result result = HoardService.Initialize(options).Result;
-            Assert.True(result == Result.Ok, "ERROR: Could not initialize HOARD!");
+            try
+            {
+                HoardService.Initialize(options);
+            }
+            catch (Exception)
+            {
+                Assert.True(false);
+            }
 
             //authenticate user
             UserIDs.Add(CreateUser().Result);
@@ -111,8 +117,15 @@ namespace HoardTests.Fixtures
             options.BCClientOptions = new EthereumClientOptions(new Nethereum.JsonRpc.Client.RpcClient(new Uri(string.Format("http://{0}:{1}", data["network"]["host"], data["network"]["port"]))));
             
             HoardService = HoardService.Instance;
-            
-            Assert.True(HoardService.Initialize(options).Result == Result.Ok, "ERROR: Could not initialize HOARD!");
+
+            try
+            {
+                HoardService.Initialize(options);
+            }
+            catch (Exception)
+            {
+                Assert.True(false);
+            }
 
             //authenticate user
             UserIDs.Add(CreateUser().Result);

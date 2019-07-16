@@ -170,9 +170,9 @@ namespace Hoard
         /// <param name="id"></param>
         /// <param name="passwordNeeded"></param>
         /// <returns></returns>
-        public async Task<bool> DeleteProfile(HoardID id, bool passwordNeeded = false)
+        public async Task DeleteProfile(HoardID id, bool passwordNeeded = false)
         {
-            return await KeyStoreUtils.DeleteProfile(UserInputProvider, id, ProfilesDir, passwordNeeded);
+            await KeyStoreUtils.DeleteProfile(UserInputProvider, id, ProfilesDir, passwordNeeded);
         }
 
         /// <summary>

@@ -41,10 +41,17 @@ namespace HoardTests.Fixtures
             HoardExchangeService = new HoardExchangeService(HoardService);
             HoardExchangeService.Init().Wait();
 
-            GameIDs = HoardService.GetAllHoardGames().Result;
-            foreach (var game in GameIDs)
+            try
             {
-                Assert.True(HoardService.RegisterHoardGame(game).Result == Result.Ok);
+                GameIDs = HoardService.GetAllHoardGames().Result;
+                foreach (var game in GameIDs)
+                {
+                    HoardService.RegisterHoardGame(game);
+                }
+            }
+            catch (Exception)
+            {
+                Assert.True(false);
             }
 
             Items = GetGameItems(Users[0]).Result;

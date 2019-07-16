@@ -20,21 +20,18 @@ namespace Hoard.ItemPropertyProviders
         }
 
         /// <inheritdoc/>
-        public async Task<Result> FetchGameItemProperties(GameItem item)
+        public async Task FetchGameItemProperties(GameItem item)
         {
             try
             {
                 byte[] globalData = await Client.DownloadBytesAsync(item.State);
                 string globalJson = Encoding.UTF8.GetString(globalData);
-
                 item.Properties = JsonConvert.DeserializeObject<ItemProperties>(globalJson);
-                return Result.Ok;
             }
             catch (Exception ex)
             {
-                ErrorCallbackProvider.ReportError(ex.ToString());
+                throw new Exception(ex.ToString(), ex);
             }
-            return Result.Error;
         }
     }
 }

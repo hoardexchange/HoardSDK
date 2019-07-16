@@ -1,5 +1,6 @@
 ﻿using Hoard;
 using HoardTests.Fixtures;
+using System;
 using System.Numerics;
 using Xunit;
 
@@ -41,10 +42,16 @@ namespace HoardTests.Plasma
             Assert.NotEmpty(games);
 
             Assert.DoesNotContain(GameID.FromName("12345"), games);
-            Assert.Equal(Result.GameNotFoundError, HoardService.RegisterHoardGame(GameID.FromName("12345")).Result);
-
-            Assert.Contains(gameID, games);
-            Assert.Equal(Result.Ok, HoardService.RegisterHoardGame(gameID).Result);
+            try
+            {
+                HoardService.RegisterHoardGame(GameID.FromName("12345"));
+                Assert.Contains(gameID, games);
+                HoardService.RegisterHoardGame(gameID);
+            }
+            catch (Exception)
+            {
+                Assert.True(false);
+            }
         }
 
         [Fact, TestPriority(1)]

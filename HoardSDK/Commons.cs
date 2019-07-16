@@ -7,42 +7,6 @@ using System.Threading.Tasks;
 namespace Hoard
 {
     /// <summary>
-    /// Result code
-    /// </summary>
-    public enum Result
-    {
-        /// <summary>
-        /// Success
-        /// </summary>
-        Ok = 0,
-
-        /// <summary>
-        /// Failure
-        /// </summary>
-        Error,
-
-        /// <summary>
-        /// Connection error
-        /// </summary>
-        ConnectionError,
-
-        /// <summary>
-        /// Game not found
-        /// </summary>
-        GameNotFoundError,
-
-        /// <summary>
-        /// Contract not found
-        /// </summary>
-        ContractNotFoundError,
-
-        /// <summary>
-        /// Invalid contract
-        /// </summary>
-        InvalidContractError,
-    }
-
-    /// <summary>
     /// Hoard identifier (20 byte integer).
     /// </summary>
     public class HoardID
