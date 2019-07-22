@@ -124,7 +124,18 @@ namespace Hoard
     /// <summary>
     /// Abstract blockchain client options
     /// </summary>
-    public abstract class BCClientOptions { }
+    public abstract class BCClientOptions
+    {
+        /// <summary>
+        /// Rpc client - accessor for the Hoard network
+        /// </summary>
+        public Nethereum.JsonRpc.Client.IClient RpcClient { get; private set; } = null;
+
+        protected BCClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient)
+        {
+            RpcClient = rpcClient;
+        }
+    }
 
     /// <summary>
     /// Ethereum blockchain client options
@@ -132,17 +143,12 @@ namespace Hoard
     public class EthereumClientOptions : BCClientOptions
     {
         /// <summary>
-        /// Rpc client - accessor for the Hoard network
-        /// </summary>
-        public Nethereum.JsonRpc.Client.IClient RpcClient { get; private set; } = null;
-
-        /// <summary>
         /// Creates Ethereum client options object.
         /// </summary>
         /// <param name="rpcClient">JsonRpc client implementation</param>
-        public EthereumClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient)
+        public EthereumClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient) :
+            base(rpcClient)
         {
-            RpcClient = rpcClient;
         }
     }
 
@@ -151,11 +157,6 @@ namespace Hoard
     /// </summary>
     public class PlasmaClientOptions : BCClientOptions
     {
-        /// <summary>
-        /// Rpc client - accessor for the Hoard network
-        /// </summary>
-        public Nethereum.JsonRpc.Client.IClient RpcClient { get; private set; } = null;
-
         /// <summary>
         /// Plasma child chain client of Hoard network
         /// </summary>
@@ -183,8 +184,8 @@ namespace Hoard
         /// <param name="watcherClient">Plasma watcher client</param>
         /// <param name="childChainClient">Plasma child chain client (optional)</param>
         public PlasmaClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient, PlasmaCore.RPC.IClient watcherClient, PlasmaCore.RPC.IClient childChainClient = null)
+            : base(rpcClient)
         {
-            RpcClient = rpcClient;
             WatcherClient = watcherClient;
             ChildChainClient = childChainClient;
         }
@@ -202,9 +203,9 @@ namespace Hoard
             string rootChainAddress,
             string rootChainVersion,
             PlasmaCore.RPC.IClient watcherClient, 
-            PlasmaCore.RPC.IClient childChainClient = null)
+            PlasmaCore.RPC.IClient childChainClient = null) :
+            base (rpcClient)
         {
-            RpcClient = rpcClient;
             RootChainAddress = rootChainAddress;
             RootChainVersion = RootChainABI.FromString(rootChainVersion);
             WatcherClient = watcherClient;
