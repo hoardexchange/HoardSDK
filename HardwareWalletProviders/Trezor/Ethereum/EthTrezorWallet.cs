@@ -1,4 +1,5 @@
 ﻿using Device.Net;
+using System;
 using System.Threading.Tasks;
 
 namespace Hoard.HW.Trezor.Ethereum
@@ -8,15 +9,16 @@ namespace Hoard.HW.Trezor.Ethereum
     /// </summary>
     internal class EthTrezorWallet : TrezorWallet
     {
-        //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
         private class HDWalletProfile : Profile
         {
             private EthTrezorWallet Wallet;
+            public uint[] DerivationIndices { get; private set; }
 
-            public HDWalletProfile(string name, HoardID id, EthTrezorWallet wallet)
+            public HDWalletProfile(string name, HoardID id, uint[] indices, EthTrezorWallet wallet)
                 : base(name, id)
             {
                 Wallet = wallet;
+                DerivationIndices = indices;
             }
 
             public override async Task<string> SignMessage(byte[] input)
@@ -29,35 +31,39 @@ namespace Hoard.HW.Trezor.Ethereum
                 return await Wallet.SignTransaction(input, this);
             }
         }
-        private KeyPath keyPath;
-        private byte[] derivation;
-        private uint[] indices;
 
-        //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
-        public EthTrezorWallet(IDevice hidDevice, string derivationPath, IUserInputProvider pinInputProvider, uint index = 0) 
+        public EthTrezorWallet(IDevice hidDevice, string derivationPath, IUserInputProvider pinInputProvider) 
             : base(hidDevice, derivationPath, pinInputProvider)
         {
-            keyPath = new KeyPath(derivationPath).Derive(index);
-            indices = keyPath.Indices;
-            derivation = keyPath.ToBytes();
+        }
+
+        public override async Task<Profile> CreateProfile(string name)
+        {
+            uint accountIndex = 0;
+            if (!uint.TryParse(name, out accountIndex))
+                throw new ArgumentException("Name argument should be an index of account in range [0-UINT_MAX]!");
+            return await RequestProfile(IndexToProfileName(accountIndex));
         }
 
         public override async Task<Profile> RequestProfile(string name)
         {
-            var output = await SendRequestAsync(EthGetAddress.Request(indices));
+            uint accountIndex = ProfileNameToIndex(name);
+            var keyPath = new KeyPath(DerivationPath).Derive(accountIndex);
+
+            var output = await SendRequestAsync(EthGetAddress.Request(keyPath.Indices));
             var address = new HoardID(EthGetAddress.GetAddress(output));
-            return new HDWalletProfile(name, address, this);
+            return new HDWalletProfile(name, address, keyPath.Indices, this);
         }
 
-        private async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
+        private async Task<string> SignTransaction(byte[] rlpEncodedTransaction, HDWalletProfile profile)
         {
-            var output = await SendRequestAsync(EthSignTransaction.Request(indices, rlpEncodedTransaction));
+            var output = await SendRequestAsync(EthSignTransaction.Request(profile.DerivationIndices, rlpEncodedTransaction));
             return EthSignTransaction.GetSignature(output);
         }
 
-        private async Task<string> SignMessage(byte[] message, Profile profile)
+        private async Task<string> SignMessage(byte[] message, HDWalletProfile profile)
         {
-            var output = await SendRequestAsync(EthSignMessage.Request(indices, message));
+            var output = await SendRequestAsync(EthSignMessage.Request(profile.DerivationIndices, message));
             return EthSignMessage.GetRLPEncoded(output, message);
         }
     }

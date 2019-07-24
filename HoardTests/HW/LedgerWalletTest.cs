@@ -26,9 +26,10 @@ namespace HoardTests.HW
         [Fact]
         public async Task DisplayAddress()
         {
-            var user = await signer.RequestProfile("LedgerUser");
+            var user = await signer.CreateProfile("0");
             Assert.True(user != null);
-            Assert.True(user.Name == LedgerWallet.AccountInfoName);
+            var user2 = await signer.RequestProfile(user.Name);
+            Assert.True(user == user2);
         }
 
         [Fact]
@@ -51,7 +52,7 @@ namespace HoardTests.HW
 
             for(var i = 0; i < messages.Count; ++i)
             {                
-                var user = await signer.RequestProfile("LedgerUser");
+                var user = await signer.RequestProfile(signer.Name+"\0");
                 var signature = await user.SignMessage(messages[i]);
                 var addressRec = Hoard.Utils.Helper.RecoverHoardIdFromMessage(messages[i], signature);
                 Assert.Equal(user.ID, addressRec);
@@ -78,7 +79,7 @@ namespace HoardTests.HW
 
             var rlpEncodedTransaction = RLP.EncodeList(txEncoded.ToArray());
 
-            var user = await signer.RequestProfile("LedgerUser");
+            var user = await signer.RequestProfile(signer.Name+"\0");
 
             var signature = await user.SignTransaction(rlpEncodedTransaction);
             var account = Hoard.Utils.Helper.RecoverHoardIdFromTransaction(signature, rlpEncodedTransaction);

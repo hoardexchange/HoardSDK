@@ -8,15 +8,16 @@ namespace Hoard.HW.Ledger.Ethereum
     /// </summary>
     internal class EthLedgerWallet : LedgerWallet
     {
-        //TODO: Profile should keep derivation and key path, wallet should not have any account related state!
         private class HDWalletProfile : Profile
         {
             private EthLedgerWallet Wallet;
+            public byte[] DerivationData { get; private set; }
 
-            public HDWalletProfile(string name, HoardID id, EthLedgerWallet wallet)
+            public HDWalletProfile(string name, HoardID id, byte[] data, EthLedgerWallet wallet)
                 :base(name, id)
             {
                 Wallet = wallet;
+                DerivationData = data;
             }
 
             public override async Task<string> SignMessage(byte[] input)
@@ -30,42 +31,42 @@ namespace Hoard.HW.Ledger.Ethereum
             }
         }
 
-        /// <summary>
-        /// TODO: move this to profile
-        /// </summary>
-        private KeyPath keyPath;        
-        /// <summary>
-        /// TODO: move this to profile
-        /// </summary>
-        private byte[] derivation;
-
-        //TODO: Profile should keep derivation and key path and index , wallet should not have any account related state!
-        public EthLedgerWallet(Device.Net.IDevice hidDevice, string derivationPath, uint index = 0) : base(hidDevice, derivationPath)
+        public EthLedgerWallet(Device.Net.IDevice hidDevice, string derivationPath) : base(hidDevice, derivationPath)
         {
-            keyPath = new KeyPath(derivationPath).Derive(index);
-            derivation = keyPath.ToBytes();
+            
+        }
+
+        public override async Task<Profile> CreateProfile(string name)
+        {
+            uint accountIndex = 0;
+            if (!uint.TryParse(name, out accountIndex))
+                throw new ArgumentException("Name argument should be an index of account in range [0-UINT_MAX]!");
+            return await RequestProfile(IndexToProfileName(accountIndex));
         }
 
         public override async Task<Profile> RequestProfile(string name)
         {
-            var output = await SendRequestAsync(EthGetAddress.Request(derivation));
+            uint accountIndex = ProfileNameToIndex(name);
+            var keyPath = new KeyPath(DerivationPath).Derive(accountIndex);
+            byte[] derivationData = keyPath.ToBytes();
+            var output = await SendRequestAsync(EthGetAddress.Request(derivationData));
             if(IsSuccess(output.StatusCode))
             {
                 var address = new HoardID(EthGetAddress.GetAddress(output.Data));
-                return new HDWalletProfile(AccountInfoName, address, this);
+                return new HDWalletProfile(name, address, derivationData, this);
             }
 
-            return null;
+            throw new Exception("HD wallet returned error: " + output.StatusCode);
         }
 
-        private async Task<string> SignTransaction(byte[] rlpEncodedTransaction, Profile profile)
+        private async Task<string> SignTransaction(byte[] rlpEncodedTransaction, HDWalletProfile profile)
         {
             uint txLength = (uint)rlpEncodedTransaction.Length;
-            uint bytesToCopy = Math.Min(0xff - (uint)derivation.Length, txLength);
+            uint bytesToCopy = Math.Min(0xff - (uint)profile.DerivationData.Length, txLength);
 
             var txChunk = new byte[bytesToCopy];
             Array.Copy(rlpEncodedTransaction, 0, txChunk, 0, bytesToCopy);
-            var output = await SendRequestAsync(EthSignTransaction.Request(derivation, txChunk, true));
+            var output = await SendRequestAsync(EthSignTransaction.Request(profile.DerivationData, txChunk, true));
 
             txLength -= bytesToCopy;
             uint pos = bytesToCopy;
@@ -75,7 +76,7 @@ namespace Hoard.HW.Ledger.Ethereum
                 txChunk = new byte[bytesToCopy];
 
                 Array.Copy(rlpEncodedTransaction, pos, txChunk, 0, bytesToCopy);
-                output = await SendRequestAsync(EthSignTransaction.Request(derivation, txChunk, false));
+                output = await SendRequestAsync(EthSignTransaction.Request(profile.DerivationData, txChunk, false));
 
                 txLength -= bytesToCopy;
                 pos += bytesToCopy;
@@ -89,16 +90,16 @@ namespace Hoard.HW.Ledger.Ethereum
             return null;
         }
 
-        private async Task<string> SignMessage(byte[] message, Profile profile)
+        private async Task<string> SignMessage(byte[] message, HDWalletProfile profile)
         {
             uint msgLength = (uint)message.Length;
-            uint bytesToCopy = Math.Min(0xff - (uint)derivation.Length - sizeof(int), msgLength);
+            uint bytesToCopy = Math.Min(0xff - (uint)profile.DerivationData.Length - sizeof(int), msgLength);
 
             var messageChunk = new byte[bytesToCopy + sizeof(int)];
             msgLength.ToBytes().CopyTo(messageChunk, 0);
 
             Array.Copy(message, 0, messageChunk, sizeof(int), bytesToCopy);
-            var output = await SendRequestAsync(EthSignMessage.Request(derivation, messageChunk, true));
+            var output = await SendRequestAsync(EthSignMessage.Request(profile.DerivationData, messageChunk, true));
 
             msgLength -= bytesToCopy;
             uint pos = bytesToCopy;
@@ -108,7 +109,7 @@ namespace Hoard.HW.Ledger.Ethereum
                 messageChunk = new byte[bytesToCopy];
 
                 Array.Copy(message, pos, messageChunk, 0, bytesToCopy);
-                output = await SendRequestAsync(EthSignMessage.Request(derivation, messageChunk, false));
+                output = await SendRequestAsync(EthSignMessage.Request(profile.DerivationData, messageChunk, false));
 
                 msgLength -= bytesToCopy;
                 pos += bytesToCopy;

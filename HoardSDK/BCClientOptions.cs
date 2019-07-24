@@ -131,6 +131,10 @@ namespace Hoard
         /// </summary>
         public Nethereum.JsonRpc.Client.IClient RpcClient { get; private set; } = null;
 
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        /// <param name="rpcClient"></param>
         protected BCClientOptions(Nethereum.JsonRpc.Client.IClient rpcClient)
         {
             RpcClient = rpcClient;

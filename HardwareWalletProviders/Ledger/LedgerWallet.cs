@@ -13,18 +13,17 @@ namespace Hoard.HW.Ledger
     public abstract class LedgerWallet : IProfileService
     {
         /// <summary>
-        /// Name of this Wallet type
-        /// </summary>
-        public const string AccountInfoName = "LedgerWallet";
-
-        /// <summary>
         /// HID device accessor
         /// </summary>
-        public IDevice HIDDevice { get; }
+        private IDevice HIDDevice { get; }
         /// <summary>
         /// Path name for this wallet
         /// </summary>
         public string DerivationPath { get; }
+        /// <summary>
+        /// Name of this device
+        /// </summary>
+        public string Name { get { return HIDDevice.DeviceId; } }
 
         private SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
@@ -44,7 +43,7 @@ namespace Hoard.HW.Ledger
         }
 
         /// <ineritdoc/>
-        public async Task<Profile> CreateProfile(string name) { return await Task.FromResult<Profile>(null); }
+        abstract public Task<Profile> CreateProfile(string name);
 
         /// <ineritdoc/>
         abstract public Task<Profile> RequestProfile(string name);
@@ -239,6 +238,20 @@ namespace Hoard.HW.Ledger
                 default:
                     return "Internal error";
             }
+        }
+
+        //TODO: rethink this, might be some more fancy way
+        protected string IndexToProfileName(uint index)
+        {
+            return Name + "/" + index;
+        }
+
+        //TODO: rethink this, might be some more fancy way
+        protected uint ProfileNameToIndex(string name)
+        {
+            if (name.StartsWith(Name + "/"))
+                return uint.Parse(name.Substring(Name.Length + 1));
+            throw new ArgumentException("Name argument should be in form \"DeviceID/index\"");
         }
     }
 }
