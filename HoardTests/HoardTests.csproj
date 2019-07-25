@@ -97,11 +97,16 @@
       <Project>{c9517a0e-ec39-4e8b-951a-6cfc4a7c76e3}</Project>
       <Name>HoardSDK</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Json.Net4Unity\src\Newtonsoft.Json\Newtonsoft.Json.csproj">
+      <Project>{8d6267ea-cb9b-4150-b739-43ead9b3fcbd}</Project>
+      <Name>Newtonsoft.Json</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Nethereum4Unity\projects\Nethereum\Nethereum.csproj">
+      <Project>{f6eddf77-611a-497f-bc38-4a6a037a8fe8}</Project>
+      <Name>Nethereum</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Hoard.NethereumCore">
-      <Version>3.1.68</Version>
-    </PackageReference>
     <PackageReference Include="ini-parser">
       <Version>2.5.2</Version>
     </PackageReference>

@@ -1,0 +1,6 @@
+[submodule "Nethereum4Unity"]
+	path = Nethereum4Unity
+	url = https://github.com/hoardexchange/Nethereum4Unity.git
+[submodule "Json.Net4Unity"]
+	path = Json.Net4Unity
+	url = https://github.com/hoardexchange/Json.Net4Unity.git
