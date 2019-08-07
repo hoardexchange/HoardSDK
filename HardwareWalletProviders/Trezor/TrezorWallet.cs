@@ -1,4 +1,5 @@
-﻿using Device.Net;
+﻿/// This code is based on awesome libraries from https://github.com/MelbourneDeveloper/Trezor.Net
+using Device.Net;
 using Hoard.HW.Trezor.Ethereum;
 using System;
 using System.Linq;

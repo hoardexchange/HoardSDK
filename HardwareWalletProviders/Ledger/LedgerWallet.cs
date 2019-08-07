@@ -1,4 +1,5 @@
-﻿using Device.Net;
+﻿/// This code is based on awesome libraries from https://github.com/MelbourneDeveloper/Ledger.Net
+using Device.Net;
 using System;
 using System.IO;
 using System.Threading;
